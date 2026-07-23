@@ -4,8 +4,25 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CheckCircle, Clock, AlertCircle, Download,
-  Loader2, Send, Lock, Mail, Eye, BellRing, X, ChevronDown
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  Download,
+  Loader2,
+  Send,
+  Lock,
+  Mail,
+  Eye,
+  BellRing,
+  X,
+  ChevronDown,
+  ShieldCheck,
+  CreditCard,
+  Calendar,
+  Receipt,
+  Sparkles,
+  ArrowRight,
+  RefreshCw,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
@@ -18,8 +35,8 @@ type BillingSectionProps = {
   companySlug: string;
 };
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+const fmt = (n: number | null | undefined) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
 
 function generateInvoiceNumber(projectNumber?: number): string {
   const base = projectNumber ? String(projectNumber).padStart(3, '0') : '001';
@@ -31,6 +48,14 @@ function fmtDate(d: string | null | undefined) {
   return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+function StripeWordmark() {
+  return (
+    <span className="font-extrabold text-xs tracking-tight text-[#635BFF]">
+      stripe
+    </span>
+  );
+}
+
 export default function BillingSection({
   lead,
   company,
@@ -39,71 +64,65 @@ export default function BillingSection({
   hasProject,
   companySlug,
 }: BillingSectionProps) {
-
+  // ── UI MODAL STATES ──
   const [showActivity, setShowActivity] = useState(false);
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
-  // ── LOADING ───────────────────────────────────────────────
+  // ── LOADING STATES ──
   const [downloading, setDownloading] = useState(false);
   const [sending, setSending] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
-  // ── INVOICE FIELDS ────────────────────────────────────────
+  // ── INVOICE FIELDS ──
   const [dueDate, setDueDate] = useState('');
 
-  // ── PAYMENT FIELDS ────────────────────────────────────────
+  // ── PAYMENT FIELDS ──
   const [paymentAmount, setPaymentAmount] = useState('');
   const [rawAmount, setRawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
- const isStripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
 
-
-
-  // ── LOGS ─────────────────────────────────────────────────
+  // ── LOGS ──
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [invoiceLog, setInvoiceLog] = useState<any[]>([]);
 
-  // ── PERMISSIONS ───────────────────────────────────────────
+  // ── PERMISSIONS ──
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const canSendInvoice = can(planTier, 'send_invoice_email');
 
-  // ── DERIVED ───────────────────────────────────────────────
+  // ── DERIVED METRICS & CALCS ──
   const lineItems = (() => {
     try {
       const raw = lead?.quote_data;
       if (!raw) return [];
       return typeof raw === 'string' ? JSON.parse(raw) : raw;
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   })();
 
   const invoiceNumber = lead?.invoice_number || generateInvoiceNumber(lead?.project_number);
   const quoteTotal = parseFloat(lead?.quote_total || '0');
   const hasQuote = quoteTotal > 0;
-const total = quoteTotal;
+  const total = quoteTotal;
 
-  // quote_total is tax-inclusive (set when the quote was saved), so back out
-  // the subtotal algebraically rather than assuming a stored pre-tax value.
   const invoiceTaxRate = parseFloat(lead?.quote_tax_rate || '0');
   const invoiceSubtotal = invoiceTaxRate > 0 ? total / (1 + invoiceTaxRate / 100) : total;
   const invoiceTaxAmount = total - invoiceSubtotal;
   const paidAmount = parseFloat(lead?.payment_amount || '0');
   const remaining = Math.max(total - paidAmount, 0);
- // ── Refund state comes from DB status, NOT from the amount fields.
-  // payment_amount deliberately preserves the original charge, so the
-  // amount-based derivation below would otherwise mis-classify a refunded
-  // project as "Paid." Refund flags take precedence in every UI branch.
+
   const isRefunded = lead?.payment_status === 'refunded';
   const isStripeVerified = !!lead?.stripe_payment_intent_id;
   const isPartiallyRefunded = lead?.payment_status === 'partially_refunded';
   const isClosed = isRefunded || isPartiallyRefunded;
   const refundedAmount = parseFloat(lead?.refunded_amount || '0');
 
- const stripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
+  const stripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
   const hasManualLink = !!company?.payment_link_url;
   const hasPayLink = stripeActive || hasManualLink;
 
@@ -119,55 +138,70 @@ const total = quoteTotal;
   const activeMethodLabel = stripeActive
     ? 'Stripe'
     : hasManualLink
-      ? paymentMethodLabels[company?.payment_link_type || 'other'] || 'your payment link'
-      : null;
+    ? paymentMethodLabels[company?.payment_link_type || 'other'] || 'your payment link'
+    : null;
 
   const isPaid = !isClosed && total > 0 && paidAmount >= total;
   const isPartial = !isClosed && paidAmount > 0 && !isPaid;
-  const hasExistingInvoice = !!lead?.invoice_number;
   const invoiceSent = invoiceLog.length > 0;
   const lastReminderSent = lead?.reminder_sent_at || null;
   const daysSinceReminder = lastReminderSent
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
     : null;
   const progressPct = total > 0 ? Math.min((paidAmount / total) * 100, 100) : 0;
-  const hasPartialPayment = paidAmount > 0 && paidAmount < total;
-  const balanceDue = hasPartialPayment ? total - paidAmount : total;
 
-  // Combined activity log sorted by date
-  const activityLog = [...invoiceLog, ...outboxLog]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  const activityLog = [...invoiceLog, ...outboxLog].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
-  // ── EFFECTS ───────────────────────────────────────────────
+  // ── EFFECTS ──
   useEffect(() => {
     setDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
     setPaymentMethod(lead?.payment_method || '');
     setPaymentDate(lead?.payment_date ? String(lead.payment_date).split('T')[0] : '');
     const num = parseFloat(lead?.payment_amount || '0');
     setRawAmount(num > 0 ? num.toString() : '');
-    setPaymentAmount(num > 0 ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '');
+    setPaymentAmount(
+      num > 0 ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
+    );
   }, [lead?.id]);
 
-  // Always fetch invoice log on mount (needed for sent status badge)
   useEffect(() => {
     if (!lead?.id || !companySlug) return;
     fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=invoice`)
-      .then(r => r.json()).then(d => { if (d.entries) setInvoiceLog(d.entries); }).catch(() => {});
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.entries) setInvoiceLog(d.entries);
+      })
+      .catch(() => {});
   }, [lead?.id, companySlug]);
 
-  // Lazy load full activity (reminders too) only when opened
   useEffect(() => {
     if (!lead?.id || !companySlug || !showActivity) return;
     fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`)
-      .then(r => r.json()).then(d => { if (d.entries) setOutboxLog(d.entries); }).catch(() => {});
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.entries) setOutboxLog(d.entries);
+      })
+      .catch(() => {});
     fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=invoice`)
-      .then(r => r.json()).then(d => { if (d.entries) setInvoiceLog(d.entries); }).catch(() => {});
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.entries) setInvoiceLog(d.entries);
+      })
+      .catch(() => {});
   }, [lead?.id, companySlug, showActivity]);
 
-  // ── HANDLERS ──────────────────────────────────────────────
+  // ── HANDLERS ──
   const handleDownload = async () => {
-    if (!hasQuote) { toast.error('No quote saved yet'); return; }
-    if (!lead?.project_id) { toast.error('Convert to project first'); return; }
+    if (!hasQuote) {
+      toast.error('No quote saved yet');
+      return;
+    }
+    if (!lead?.project_id) {
+      toast.error('Convert to project first');
+      return;
+    }
     setDownloading(true);
     try {
       const res = await fetch(`/api/company/${company?.slug}/generate-invoice-pdf?project_id=${lead.project_id}`);
@@ -180,8 +214,11 @@ const total = quoteTotal;
       a.click();
       URL.revokeObjectURL(url);
       toast.success('Invoice downloaded');
-    } catch { toast.error('Failed to generate PDF'); }
-    finally { setDownloading(false); }
+    } catch {
+      toast.error('Failed to generate PDF');
+    } finally {
+      setDownloading(false);
+    }
   };
 
   const handleSendInvoice = async () => {
@@ -205,18 +242,52 @@ const total = quoteTotal;
         toast.success('Invoice sent!');
         setShowSendConfirm(false);
         await onRefresh();
-        // refresh invoice log
         fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=invoice`)
-          .then(r => r.json()).then(d => { if (d.entries) setInvoiceLog(d.entries); }).catch(() => {});
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.entries) setInvoiceLog(d.entries);
+          })
+          .catch(() => {});
       } else toast.error(result.error || 'Failed to send invoice');
-    } catch { toast.error('Failed to send invoice'); }
-    finally { setSending(false); }
+    } catch {
+      toast.error('Failed to send invoice');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const handleDueDateChange = async (newDate: string) => {
+    setDueDate(newDate);
+    try {
+      await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'save_invoice',
+          invoice_number: invoiceNumber,
+          due_date: newDate || null,
+          user_name: currentUser?.name || 'Unknown',
+          user_email: currentUser?.email || '',
+        }),
+      });
+      await onRefresh();
+      toast.success('Due date updated');
+    } catch {
+      toast.error('Failed to update due date');
+    }
   };
 
   const handleSavePayment = async () => {
-    if (!hasProject) { toast.error('Convert to project first'); return; }
+    if (!hasProject) {
+      toast.error('Convert to project first');
+      return;
+    }
     const amount = parseFloat(rawAmount || '0');
-    if (isNaN(amount)) { toast.error('Enter a valid amount'); return; }
+    if (isNaN(amount)) {
+      toast.error('Enter a valid amount');
+      return;
+    }
     setSavingPayment(true);
     try {
       const res = await fetch('/api/leads/update', {
@@ -240,8 +311,11 @@ const total = quoteTotal;
         setShowRecordPayment(false);
         await onRefresh();
       } else toast.error(result.error || 'Failed to save payment');
-    } catch { toast.error('Failed to save payment'); }
-    finally { setSavingPayment(false); }
+    } catch {
+      toast.error('Failed to save payment');
+    } finally {
+      setSavingPayment(false);
+    }
   };
 
   const handleSendReminder = async () => {
@@ -258,331 +332,335 @@ const total = quoteTotal;
         setShowReminderConfirm(false);
         await onRefresh();
         fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`)
-          .then(r => r.json()).then(d => { if (d.entries) setOutboxLog(d.entries); }).catch(() => {});
+          .then((r) => r.json())
+          .then((d) => {
+            if (d.entries) setOutboxLog(d.entries);
+          })
+          .catch(() => {});
       } else toast.error(data.error || 'Failed to send reminder');
-    } catch { toast.error('Failed to send reminder'); }
-    finally { setSendingReminder(false); }
+    } catch {
+      toast.error('Failed to send reminder');
+    } finally {
+      setSendingReminder(false);
+    }
   };
 
   if (!hasQuote) {
     return (
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 text-center">
-        <p className="text-sm font-bold text-black">Save a quote first to enable billing</p>
+      <div className="bg-slate-50/50 border border-slate-200/80 rounded-2xl p-8 text-center backdrop-blur-sm">
+        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400">
+          <Receipt className="w-5 h-5" />
+        </div>
+        <p className="text-sm font-semibold text-slate-700">No active quote available</p>
+        <p className="text-xs text-slate-400 mt-1">Save a quote first to activate billing options.</p>
       </div>
     );
   }
 
-  function StripeWordmark() {
-  return (
-    <span className="font-bold text-sm tracking-tight" style={{ color: '#635BFF' }}>
-      stripe
-    </span>
-  );
-}
-
   return (
     <>
-      {/* ── MAIN CARD ── */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      {/* ── MAIN CARD HUB ── */}
+      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-sm overflow-hidden text-slate-900">
+        
+        {/* ── FINANCIAL HIGHLIGHT HEADER ── */}
+        <div className="p-6 bg-slate-900 text-white relative overflow-hidden">
+          {/* Subtle bg glow */}
+          <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* ── FINANCIAL SNAPSHOT ── */}
-       <div className="p-5 border-b border-slate-100">
-          <div className="md:flex md:items-end md:justify-between md:gap-6">
-            <div className="mb-4 md:mb-0">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">
-                {isRefunded ? 'Refunded'
-                  : isPartiallyRefunded ? 'Partially refunded'
-                  : isPaid ? 'Paid in full'
-                  : 'Outstanding balance'}
-              </p>
-              <p className="text-4xl font-black text-slate-900 leading-none">
-                {isClosed ? fmt(refundedAmount)
-                  : isPaid ? fmt(total)
-                  : fmt(remaining)}
-              </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative z-10">
+            <div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="text-[10px] font-bold tracking-widest uppercase text-slate-400">
+                  {isRefunded
+                    ? 'Refunded'
+                    : isPartiallyRefunded
+                    ? 'Partially Refunded'
+                    : isPaid
+                    ? 'Settled'
+                    : 'Balance Due'}
+                </span>
+                <span
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    isRefunded || isPartiallyRefunded
+                      ? 'bg-slate-800 text-slate-300 border border-slate-700'
+                      : isPaid
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      : isPartial
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                      : 'bg-slate-800 text-slate-300 border border-slate-700'
+                  }`}
+                >
+                  {isRefunded
+                    ? 'Refunded'
+                    : isPartiallyRefunded
+                    ? 'Partial Refund'
+                    : isPaid
+                    ? 'Paid in Full'
+                    : isPartial
+                    ? 'Partial Payment'
+                    : 'Unpaid'}
+                </span>
+              </div>
+
+              <div className="flex items-baseline gap-2">
+                <p className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+                  {isClosed ? fmt(refundedAmount) : isPaid ? fmt(total) : fmt(remaining)}
+                </p>
+                {total > 0 && !isClosed && (
+                  <span className="text-xs text-slate-400 font-medium">
+                    of {fmt(total)} total
+                  </span>
+                )}
+              </div>
+
               {isClosed && lead?.refunded_at && (
-                <p className="text-[11px] text-slate-400 mt-2">
-                  Refunded {fmtDate(lead.refunded_at)}
+                <p className="text-xs text-slate-400 mt-1">
+                  Refund processed on {fmtDate(lead.refunded_at)}
                 </p>
               )}
-              {!isClosed && invoiceTaxRate > 0 && (
-                <div className="mt-2 flex items-center gap-3 text-[11px] font-semibold text-slate-400">
-                  <span>Subtotal {fmt(invoiceSubtotal)}</span>
-                  <span>·</span>
-                  <span>Tax ({invoiceTaxRate}%) {fmt(invoiceTaxAmount)}</span>
+            </div>
+
+            {/* Micro Breakdown */}
+            {!isClosed && invoiceTaxRate > 0 && (
+              <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs space-y-1 sm:min-w-[180px]">
+                <div className="flex justify-between text-slate-400">
+                  <span>Subtotal</span>
+                  <span>{fmt(invoiceSubtotal)}</span>
                 </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <span className={`text-[11px] font-black px-2.5 py-1 rounded-full inline-block ${
-                isRefunded || isPartiallyRefunded ? 'bg-slate-100 text-slate-500'
-                : isPaid ? 'bg-emerald-50 text-emerald-700'
-                : isPartial ? 'bg-amber-50 text-amber-700'
-                : 'bg-slate-100 text-slate-500'
-              }`}>
-                {isRefunded ? 'Refunded'
-                  : isPartiallyRefunded ? 'Partial refund'
-                  : isPaid ? 'Paid'
-                  : isPartial ? 'Partial'
-                  : 'Unpaid'}
-              </span>
-            </div>
+                <div className="flex justify-between text-slate-400">
+                  <span>Tax ({invoiceTaxRate}%)</span>
+                  <span>{fmt(invoiceTaxAmount)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="mt-4 h-1.5 rounded-full overflow-hidden bg-slate-100">
-            <motion.div
-              className="h-full rounded-full"
-              style={{ backgroundColor: isClosed ? '#94a3b8' : '#10b981' }}
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-            />
+          {/* Progress Indicator */}
+          <div className="mt-5 space-y-1.5 relative z-10">
+            <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${
+                  isClosed
+                    ? 'bg-slate-500'
+                    : isPaid
+                    ? 'bg-emerald-400'
+                    : 'bg-emerald-500'
+                }`}
+                initial={{ width: 0 }}
+                animate={{ width: `${progressPct}%` }}
+                transition={{ duration: 0.7, ease: 'easeInOut' }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-[11px] text-slate-400">
+              <span>{isClosed ? `${fmt(refundedAmount)} refunded` : `${fmt(paidAmount)} collected`}</span>
+              <span>{Math.round(progressPct)}%</span>
+            </div>
           </div>
-          <p className="text-[11px] text-slate-400 mt-1.5">
-            {isClosed ? `${fmt(refundedAmount)} refunded` : `${fmt(paidAmount)} collected · ${Math.round(progressPct)}%`}
-          </p>
         </div>
 
-        {/* ── INVOICE + PAYMENT — Payment stacks below Invoice ── */}
-        <div className="flex flex-col gap-3 p-3">
+        {/* ── TWO-COLUMN ACTIONS GRID ── */}
+        <div className="p-4 bg-slate-50/50 grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-slate-100">
+          
+          {/* Invoice Management Tile */}
+          <div className="bg-white border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-all">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <Receipt className="w-3.5 h-3.5 text-slate-500" />
+                  Invoice
+                </div>
+                <span
+                  className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+                    invoiceSent
+                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
+                      : 'bg-amber-50 text-amber-700 border border-amber-200/60'
+                  }`}
+                >
+                  {invoiceSent ? 'Sent' : 'Draft'}
+                </span>
+              </div>
 
-        {/* Invoice block */}
-          <div className="p-4 bg-slate-50 rounded-xl flex flex-col">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Invoice</p>
-                <p className="text-xl font-black text-slate-900 leading-none">{invoiceNumber}</p>
-                <label className="cursor-pointer inline-flex items-center gap-1 mt-1.5 text-xs font-semibold text-slate-500 hover:text-slate-700 transition-colors">
+              <div className="flex items-baseline justify-between mb-3">
+                <p className="text-lg font-bold text-slate-900 tracking-tight">{invoiceNumber}</p>
+                <label className="cursor-pointer text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1">
+                  <Calendar className="w-3 h-3 text-slate-400" />
                   {dueDate ? `Due ${fmtDate(dueDate)}` : 'Set due date'}
                   <input
                     type="date"
                     value={dueDate}
-                    onChange={async (e) => {
-                      setDueDate(e.target.value);
-                      await fetch('/api/leads/update', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                          id: lead.id,
-                          action: 'save_invoice',
-                          invoice_number: invoiceNumber,
-                          due_date: e.target.value || null,
-                          user_name: currentUser?.name || 'Unknown',
-                          user_email: currentUser?.email || '',
-                        }),
-                      });
-                      await onRefresh();
-                    }}
+                    onChange={(e) => handleDueDateChange(e.target.value)}
                     className="sr-only"
                   />
                 </label>
-              <p className="text-xs mt-1.5 font-semibold flex items-center gap-1">
-                  {invoiceSent ? (
-                    <span className="text-emerald-600">
-                      Sent {fmtDate(invoiceLog[0].created_at)}{invoiceLog.length > 1 ? ` · ${invoiceLog.length}x` : ''}
-                    </span>
-                  ) : (
-                    <span className="text-amber-600">Not sent yet</span>
-                  )}
-                </p>
-             <p className="text-[10.5px] text-slate-400 mt-1.5 leading-relaxed">
-                  {hasPayLink ? (
-                    <>Includes a Pay Now link via <span className="font-semibold text-slate-500">{activeMethodLabel}</span> on the email and PDF.</>
-                  ) : (
-                    <>
-                      No payment link yet — customers can't pay online until you{' '}
-                      <a
-                        href={`/${company?.slug}/admin/settings#billing`}
-                        className="text-blue-600 font-semibold hover:underline"
-                      >
-                        connect Stripe or add a manual link
-                      </a>
-                      .
-                    </>
-                  )}
-                </p>
               </div>
+
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                {hasPayLink ? (
+                  <>
+                    Pay link integrated via{' '}
+                    <span className="font-semibold text-slate-700">{activeMethodLabel}</span>.
+                  </>
+                ) : (
+                  <>
+                    No payment gateway connected.{' '}
+                    <a
+                      href={`/${company?.slug}/admin/settings#billing`}
+                      className="text-blue-600 font-semibold hover:underline"
+                    >
+                      Connect Stripe
+                    </a>
+                  </>
+                )}
+              </p>
             </div>
 
-          <div className="flex items-stretch gap-2 mt-auto pt-3">
-             {canSendInvoice ? (
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+              {canSendInvoice ? (
                 <button
                   onClick={() => setShowSendConfirm(true)}
                   disabled={isPaid}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-colors disabled:opacity-40"
+                  className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-40"
                 >
-                  <Send className="w-4 h-4" />
-                  {isPaid ? 'Paid' : invoiceSent ? 'Resend invoice' : 'Send invoice'}
+                  <Send className="w-3.5 h-3.5" />
+                  {isPaid ? 'Paid' : invoiceSent ? 'Resend' : 'Send Invoice'}
                 </button>
               ) : (
                 <button
-                  onClick={() => window.location.href = `/${company?.slug}/admin/settings#billing`}
-                  className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 text-white font-bold text-sm rounded-xl"
+                  onClick={() => (window.location.href = `/${company?.slug}/admin/settings#billing`)}
+                  className="flex-1 py-2 px-3 bg-blue-600 text-white font-semibold text-xs rounded-lg flex items-center justify-center gap-1.5"
                 >
-                  <Lock className="w-4 h-4" />
-                  Upgrade to send
+                  <Lock className="w-3.5 h-3.5" />
+                  Upgrade Plan
                 </button>
               )}
+
               <button
                 onClick={handleDownload}
                 disabled={downloading}
-                aria-label="Download invoice PDF"
-                className="
-                  group flex items-center justify-center gap-1.5 shrink-0
-                  px-3.5
-                  bg-white border border-slate-200
-                  hover:border-slate-300 hover:bg-slate-50
-                  text-slate-500 hover:text-slate-700
-                  font-semibold text-xs rounded-xl
-                  transition-all duration-200
-                  disabled:opacity-50
-                "
+                title="Download PDF"
+                className="py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-semibold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
                 {downloading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Download className="w-3.5 h-3.5" />
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
                 )}
                 PDF
               </button>
             </div>
           </div>
 
-       {/* Payment block */}
-          <div className="p-4 bg-slate-50 rounded-xl flex flex-col">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1">Payment</p>
-                {isClosed ? (
-                  <p className="text-sm font-bold text-slate-700">
-                    Refunded{lead?.refunded_at ? ` · ${fmtDate(lead.refunded_at)}` : ''}
-                  </p>
-                ) : lead?.payment_method ? (
-                  <p className="text-sm font-bold text-slate-700 capitalize">
-                    {lead.payment_method.replace('_', ' ')} · {fmtDate(lead.payment_date)}
-                  </p>
-                ) : (
-                  <p className="text-sm font-semibold text-slate-400">Not yet collected</p>
-                )}
-                {isPartiallyRefunded && (
-                  <p className="text-xs text-slate-400 mt-0.5">{fmt(paidAmount - refundedAmount)} kept after refund</p>
+          {/* Payment Collection Tile */}
+          <div className="bg-white border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:border-slate-300 transition-all">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <CreditCard className="w-3.5 h-3.5 text-slate-500" />
+                  Collection
+                </div>
+
+                {!isPaid && !isClosed && (
+                  <div className="relative group">
+                    <button
+                      onClick={() => setShowReminderConfirm(true)}
+                      disabled={!lead?.project_id || daysSinceReminder === 0}
+                      className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg transition-colors disabled:opacity-40"
+                      title="Send payment reminder"
+                    >
+                      <BellRing className="w-3.5 h-3.5" />
+                    </button>
+                    {daysSinceReminder === 0 && (
+                      <div className="absolute bottom-full right-0 mb-2 w-48 bg-slate-900 text-white text-[11px] rounded-lg p-2 text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-20 shadow-lg">
+                        Reminder sent today
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
-              {!isPaid && !isClosed && (
-                <div className="relative group">
-                  <button
-                    onClick={() => setShowReminderConfirm(true)}
-                    disabled={!lead?.project_id || daysSinceReminder === 0}
-                    className="flex items-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                  >
-                    <BellRing className="w-3.5 h-3.5" />
-                    Remind
-                  </button>
-                  {daysSinceReminder === 0 && (
-                    <div className="absolute bottom-full right-0 mb-2 w-52 bg-slate-900 text-white text-xs font-medium rounded-xl px-3 py-2 text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-                      Sent today — wait 24 hours before sending another
-                      <div className="absolute top-full right-4 border-4 border-transparent border-t-slate-900" />
+
+              <div className="mb-3">
+                {isClosed ? (
+                  <p className="text-sm font-semibold text-slate-700">
+                    Refunded {lead?.refunded_at ? `(${fmtDate(lead.refunded_at)})` : ''}
+                  </p>
+                ) : lead?.payment_method ? (
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 capitalize">
+                      {lead.payment_method.replace('_', ' ')}
+                    </p>
+                    <p className="text-xs text-slate-400">{fmtDate(lead.payment_date)}</p>
+                  </div>
+                ) : (
+                  <p className="text-sm font-medium text-slate-400">No payment logged yet</p>
+                )}
+              </div>
+
+              {isStripeVerified && !isClosed && (
+                <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/60 mb-3 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1">
+                      <span className="text-slate-500">Charged via</span>
+                      <StripeWordmark />
                     </div>
+                    <a
+                      href={`https://dashboard.stripe.com/${company?.stripe_connect_account_id}/payments/${lead.stripe_payment_intent_id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-blue-600 font-medium hover:underline"
+                    >
+                      Stripe
+                    </a>
+                  </div>
+                  {lead.card_brand && lead.card_last4 && (
+                    <p className="text-[11px] text-slate-500 capitalize">
+                      {lead.card_brand} •••• {lead.card_last4}
+                    </p>
                   )}
                 </div>
               )}
             </div>
 
-            {/* Stripe-verified payment — locked, not editable via this UI.
-                Verification is based on stripe_payment_intent_id existing
-                (set only by Stripe's webhook), NOT on payment_method === 'stripe',
-                since that string can be typed in manually and wouldn't be a
-                real guarantee. */}
-            {!isClosed && isStripeVerified && (
-              <div className="w-full py-2.5 px-3 rounded-xl mt-auto bg-slate-50 border border-slate-200">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-[11px] font-medium text-slate-500">Charged via</span>
-                    <StripeWordmark />
-                    {lead.card_brand && lead.card_last4 && (
-                      <span className="text-[11px] font-medium text-slate-600 capitalize">
-                        · {lead.card_brand} •••• {lead.card_last4}
-                      </span>
-                    )}
-                  </div>
-                  <a
-                    href={`https://dashboard.stripe.com/${company?.stripe_connect_account_id}/payments/${lead.stripe_payment_intent_id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-[11px] font-semibold text-slate-600 hover:text-slate-900 underline"
-                  >
-                    View in Stripe
-                  </a>
+            <div className="pt-2 border-t border-slate-100">
+              {!isClosed && !isStripeVerified && (
+                <button
+                  onClick={() => setShowRecordPayment(true)}
+                  className={`w-full py-2 px-3 font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 ${
+                    isPaid
+                      ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  }`}
+                >
+                  {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
+                </button>
+              )}
+
+              {isClosed && (
+                <div className="w-full py-2 bg-slate-100 rounded-lg text-center text-xs font-medium text-slate-500">
+                  Closed
                 </div>
-                <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                  Verified automatically by Stripe — locked from manual editing here.
-                </p>
-              </div>
-            )}
-
-            {/* Manual (non-Stripe) payment.
-                If Stripe is active for this company, manual entry is a
-                low-emphasis fallback, not the primary action — the
-                default expectation is that Stripe records itself. */}
-            {!isClosed && !isStripeVerified && (
-              <div className="mt-auto">
-                {isStripeActive && !isPaid && !isPartial ? (
-                  <>
-                    <div className="w-full py-2.5 px-3 rounded-xl bg-white border border-slate-200 text-center">
-                      <p className="text-xs font-semibold text-slate-500">Awaiting payment via Stripe</p>
-                      <p className="text-[10.5px] text-slate-400 mt-0.5">Updates automatically once they pay</p>
-                    </div>
-                    <button
-                      onClick={() => setShowRecordPayment(true)}
-                      className="mt-2 w-full text-[11px] font-semibold text-slate-400 hover:text-slate-600 underline underline-offset-2 transition-colors"
-                    >
-                      Record a manual payment instead
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      onClick={() => setShowRecordPayment(true)}
-                      className={`w-full py-2.5 font-bold text-xs rounded-xl transition-colors ${
-                        isPaid
-                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-600'
-                          : 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                      }`}
-                    >
-                      {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
-                    </button>
-                    {isStripeActive && (
-                      <p className="mt-2 text-[10.5px] leading-relaxed text-slate-400">
-                        Only use this for cash, check, or other manual payments.
-                        Stripe payments are detected and recorded automatically.
-                      </p>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* Refunded state gets a plain informational tag instead of a button */}
-            {isClosed && (
-              <div className="w-full py-2.5 rounded-xl mt-auto bg-slate-100 text-center">
-                <p className="text-xs font-medium text-slate-500">
-                  Payment record closed
-                  {isStripeVerified && ' · originally charged via Stripe'}
-                </p>
-              </div>
-            )}
+              )}
+            </div>
           </div>
+
         </div>
 
-        {/* ── ACTIVITY ── */}
-        <div className="border-t border-slate-100">
+        {/* ── EXPANDABLE AUDIT/ACTIVITY LOG ── */}
+        <div>
           <button
-            onClick={() => setShowActivity(v => !v)}
-            className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors"
+            onClick={() => setShowActivity((v) => !v)}
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-slate-50/80 transition-colors text-left"
           >
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Activity</p>
-            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${showActivity ? 'rotate-180' : ''}`} />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Activity History
+            </span>
+            <div className="flex items-center gap-2 text-slate-400">
+              <span className="text-xs font-medium">{activityLog.length} events</span>
+              <ChevronDown
+                className={`w-4 h-4 transition-transform duration-200 ${
+                  showActivity ? 'rotate-180' : ''
+                }`}
+              />
+            </div>
           </button>
 
           <AnimatePresence initial={false}>
@@ -591,42 +669,56 @@ const total = quoteTotal;
                 initial={{ height: 0, opacity: 0 }}
                 animate={{ height: 'auto', opacity: 1 }}
                 exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
-                className="overflow-hidden"
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden border-t border-slate-100 bg-slate-50/40"
               >
-                <div className="px-4 pb-4">
+                <div className="p-4 space-y-2">
                   {activityLog.length === 0 ? (
-                    <p className="text-xs text-slate-400 py-2">No activity yet</p>
+                    <p className="text-xs text-slate-400 py-2 text-center">No recorded activity</p>
                   ) : (
-                    <div className="space-y-3">
-                      {activityLog.map((entry: any, i: number) => (
-                        <div key={i} className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${entry.status === 'failed' ? 'bg-red-400' : 'bg-emerald-500'}`} />
-                            <div>
-                              <p className="text-sm font-bold text-slate-700">
-                                {entry.type === 'invoice' ? 'Invoice sent'
-                                  : entry.type === 'payment_reminder' ? 'Reminder sent'
-                                  : entry.type}
-                              </p>
-                              <p className="text-xs text-slate-400">
-                                {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                                {' · '}
-                                {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </p>
-                            </div>
+                    activityLog.map((entry: any, i: number) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between p-2.5 rounded-lg bg-white border border-slate-200/60 text-xs"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <div
+                            className={`w-2 h-2 rounded-full ${
+                              entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'
+                            }`}
+                          />
+                          <div>
+                            <p className="font-bold text-slate-800">
+                              {entry.type === 'invoice'
+                                ? 'Invoice Dispatched'
+                                : entry.type === 'payment_reminder'
+                                ? 'Reminder Dispatched'
+                                : entry.type}
+                            </p>
+                            <p className="text-[11px] text-slate-400">
+                              {new Date(entry.created_at).toLocaleDateString(undefined, {
+                                month: 'short',
+                                day: 'numeric',
+                              })}{' '}
+                              ·{' '}
+                              {new Date(entry.created_at).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </p>
                           </div>
-                          {entry.html_body && (
-                            <button
-                              onClick={() => setPreviewHtml(entry.html_body)}
-                              className="flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[10px] font-bold text-blue-600 hover:bg-blue-50 transition-all"
-                            >
-                              <Eye className="w-3 h-3" /> View
-                            </button>
-                          )}
                         </div>
-                      ))}
-                    </div>
+
+                        {entry.html_body && (
+                          <button
+                            onClick={() => setPreviewHtml(entry.html_body)}
+                            className="flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded text-[11px] transition-colors"
+                          >
+                            <Eye className="w-3 h-3 text-slate-500" /> Preview
+                          </button>
+                        )}
+                      </div>
+                    ))
                   )}
                 </div>
               </motion.div>
@@ -635,87 +727,127 @@ const total = quoteTotal;
         </div>
       </div>
 
-      {/* ── SEND INVOICE MODAL ── */}
+      {/* ── MODALS SECTION ── */}
+
+      {/* SEND INVOICE MODAL */}
       <AnimatePresence>
         {showSendConfirm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4">
-            <motion.div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !sending && setShowSendConfirm(false)} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl max-h-[90dvh] overflow-y-auto">
-              <div className="flex justify-center mb-5 sm:hidden">
-                <div className="w-12 h-1.5 rounded-full bg-slate-200" />
-              </div>
-              <div className="text-center">
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <Send className="w-7 h-7 text-blue-500" />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200 overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <Send className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {invoiceSent ? 'Resend Invoice' : 'Send Invoice'}
+                  </h3>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 mb-1">
-                  {invoiceSent ? 'Resend Invoice?' : 'Send Invoice?'}
-                </h3>
-                <p className="text-sm text-slate-500 mb-1">{lead?.name}</p>
-                <p className="text-2xl font-black text-slate-900 mb-5">{fmt(total)}</p>
+                <button
+                  onClick={() => !sending && setShowSendConfirm(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-                <div className="text-left mb-5">
-                  <label className="block text-xs font-bold text-slate-500 mb-1.5">Due Date (optional)</label>
+              <div className="space-y-3 mb-5">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                  <p className="text-xs text-slate-500">Recipient</p>
+                  <p className="text-sm font-semibold text-slate-900">{lead?.name}</p>
+                  <p className="text-xs font-bold text-slate-800 mt-1">{fmt(total)}</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Due Date
+                  </label>
                   <input
                     type="date"
                     value={dueDate}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-300 transition-colors"
-                    style={{ fontSize: '14px', WebkitAppearance: 'none' }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white outline-none focus:border-blue-500 transition-colors"
                   />
                 </div>
 
                 {isPartial && (
-                  <div className="px-4 py-3 bg-emerald-50 border border-emerald-100 rounded-2xl mb-4 text-left">
-                    <p className="text-xs font-bold text-emerald-700">
-                      {fmt(paidAmount)} already collected. PDF will show balance due of {fmt(total - paidAmount)}.
-                    </p>
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-200/60 rounded-lg text-xs text-emerald-800">
+                    {fmt(paidAmount)} collected. Balance due: {fmt(total - paidAmount)}.
                   </div>
                 )}
+              </div>
 
-                <div className="flex flex-col gap-3">
-                  <motion.button whileTap={{ scale: 0.97 }} onClick={handleSendInvoice} disabled={sending}
-                    className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition disabled:opacity-60">
-                    {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Send Now</>}
-                  </motion.button>
-                  <button onClick={() => setShowSendConfirm(false)} disabled={sending}
-                    className="w-full py-3 text-slate-400 font-bold text-sm hover:text-slate-600 transition">
-                    Cancel
-                  </button>
-                </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowSendConfirm(false)}
+                  disabled={sending}
+                  className="flex-1 py-2 px-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendInvoice}
+                  disabled={sending}
+                  className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm & Send'}
+                </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-{/* ── RECORD PAYMENT MODAL ── */}
+
+      {/* RECORD PAYMENT MODAL */}
       <AnimatePresence>
         {showRecordPayment && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4">
-            <motion.div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => !savingPayment && setShowRecordPayment(false)} />
-            <motion.div initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '100%', opacity: 0 }}
-              transition={{ type: 'spring', damping: 30, stiffness: 320 }}
-              className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full sm:w-[380px] p-5 shadow-2xl max-h-[85dvh] overflow-y-auto">
-              <div className="flex justify-center mb-4 sm:hidden">
-                <div className="w-10 h-1 rounded-full bg-slate-200" />
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200 overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-slate-900">
+                  {isPaid ? 'Edit Payment' : isPartial ? 'Update Payment' : 'Record Payment'}
+                </h3>
+                <button
+                  onClick={() => !savingPayment && setShowRecordPayment(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <h3 className="text-base font-semibold text-slate-900 mb-4">
-                {isPaid ? 'Edit payment' : isPartial ? 'Update payment' : 'Record payment'}
-              </h3>
 
-              <div className="space-y-3">
+              <div className="space-y-3 mb-5">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Amount</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    Amount Received
+                  </label>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={paymentAmount}
-                    onChange={e => {
-                      const stripped = e.target.value.replace(/[^0-9.]/g, '').replace(/(\..*?)\./g, '$1');
+                    onChange={(e) => {
+                      const stripped = e.target.value
+                        .replace(/[^0-9.]/g, '')
+                        .replace(/(\..*?)\./g, '$1');
                       setRawAmount(stripped);
                       setPaymentAmount(stripped);
                     }}
@@ -723,17 +855,21 @@ const total = quoteTotal;
                     onBlur={() => {
                       const num = parseFloat(rawAmount || '0');
                       if (!isNaN(num) && num > 0) {
-                        setPaymentAmount(num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                        setPaymentAmount(
+                          num.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        );
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base font-medium text-slate-900 focus:bg-white outline-none focus:border-blue-300 transition-colors"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold focus:bg-white outline-none focus:border-emerald-500 transition-colors"
                   />
 
-                  {/* Mark paid in full toggle */}
                   {total > 0 && (
-                    <motion.div
-                      whileTap={{ scale: 0.98 }}
+                    <button
+                      type="button"
                       onClick={() => {
                         const isFullAmount = rawAmount === total.toString();
                         if (isFullAmount) {
@@ -741,121 +877,133 @@ const total = quoteTotal;
                           setPaymentAmount('');
                         } else {
                           setRawAmount(total.toString());
-                          setPaymentAmount(total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+                          setPaymentAmount(
+                            total.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          );
                           if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
                         }
                       }}
-                      className={`mt-2.5 w-full p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                        rawAmount === total.toString() ? 'bg-emerald-50 border-emerald-200' : 'bg-slate-50 border-slate-200'
+                      className={`mt-2 w-full p-2 rounded-lg border text-xs font-medium flex items-center justify-between transition-colors ${
+                        rawAmount === total.toString()
+                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                       }`}
                     >
-                      <div className="flex items-center gap-2">
-                        <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                          rawAmount === total.toString() ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300'
-                        }`}>
-                          {rawAmount === total.toString() && <CheckCircle className="w-3 h-3 text-white" />}
-                        </div>
-                        <span className="text-[13px] font-medium text-slate-700">Mark as paid in full</span>
-                      </div>
-                      <span className="text-[13px] font-medium text-slate-500">{fmt(total)}</span>
-                    </motion.div>
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5" /> Mark paid in full
+                      </span>
+                      <span>{fmt(total)}</span>
+                    </button>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Method</label>
-                  <div className="relative">
-                    <select
-                      value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 focus:bg-white outline-none appearance-none focus:border-blue-300 transition-colors"
-                    >
-                      <option value="">Select method...</option>
-                      <option value="cash">Cash</option>
-                      <option value="check">Check</option>
-                      <option value="credit_card">Credit Card</option>
-                      <option value="zelle">Zelle</option>
-                      <option value="venmo">Venmo</option>
-                      <option value="stripe">Stripe</option>
-                      <option value="other">Other</option>
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                  </div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Method</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white outline-none focus:border-emerald-500 transition-colors"
+                  >
+                    <option value="">Select method...</option>
+                    <option value="cash">Cash</option>
+                    <option value="check">Check</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="zelle">Zelle</option>
+                    <option value="venmo">Venmo</option>
+                    <option value="stripe">Stripe</option>
+                    <option value="other">Other</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-500 mb-1.5">Date received</label>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Date</label>
                   <input
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 outline-none focus:border-blue-300 focus:bg-white transition-colors"
-                    style={{ fontSize: '14px', WebkitAppearance: 'none' }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white outline-none focus:border-emerald-500 transition-colors"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 mt-5">
-                <button onClick={() => setShowRecordPayment(false)} disabled={savingPayment}
-                  className="flex-1 py-2.5 text-slate-500 font-medium text-sm rounded-xl border border-slate-200 hover:bg-slate-50 transition">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowRecordPayment(false)}
+                  disabled={savingPayment}
+                  className="flex-1 py-2 px-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                >
                   Cancel
                 </button>
-                <button onClick={handleSavePayment} disabled={savingPayment}
-                  className="flex-1 py-2.5 bg-emerald-600 text-white font-medium rounded-xl text-sm flex items-center justify-center gap-2 hover:bg-emerald-700 transition disabled:opacity-60">
-                  {savingPayment ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save payment'}
+                <button
+                  onClick={handleSavePayment}
+                  disabled={savingPayment}
+                  className="flex-1 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {savingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save Payment'}
                 </button>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* ── REMINDER MODAL ── */}
+
+      {/* REMINDER MODAL */}
       <AnimatePresence>
         {showReminderConfirm && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4">
-            <motion.div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => !sendingReminder && setShowReminderConfirm(false)} />
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="relative bg-white rounded-t-[2.5rem] sm:rounded-[2.5rem] w-full max-w-sm p-6 shadow-2xl max-h-[90dvh] overflow-y-auto">
-              <div className="flex justify-center mb-5 sm:hidden">
-                <div className="w-12 h-1.5 rounded-full bg-slate-200" />
-              </div>
-              <div className="text-center">
-                <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <BellRing className="w-7 h-7 text-blue-500" />
-                </div>
-                <h3 className="text-xl font-black text-slate-900 mb-1">Send Reminder?</h3>
-                <p className="text-sm text-slate-500 mb-1">{lead?.name}</p>
-                <p className="text-2xl font-black text-slate-900 mb-5">{fmt(remaining)} due</p>
-
-                {lastReminderSent && (
-                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-5 text-left">
-                    <p className="text-xs font-bold text-slate-500">Last reminder sent {fmtDate(lastReminderSent)}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {daysSinceReminder === 0 ? 'Earlier today' : `${daysSinceReminder} day${daysSinceReminder === 1 ? '' : 's'} ago`}
-                    </p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200 overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <BellRing className="w-4 h-4" />
                   </div>
-                )}
-
-                <div className="relative group">
-                  <motion.button whileTap={{ scale: daysSinceReminder === 0 ? 1 : 0.97 }}
-                    onClick={handleSendReminder}
-                    disabled={sendingReminder || daysSinceReminder === 0}
-                    className="w-full py-4 bg-blue-600 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2 hover:bg-blue-700 transition disabled:opacity-40 disabled:cursor-not-allowed">
-                    {sendingReminder ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Send Reminder</>}
-                  </motion.button>
-                  {daysSinceReminder === 0 && (
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-slate-900 text-white text-xs font-medium rounded-xl px-3 py-2 text-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-10">
-                      Sent today — wait 24 hours before sending another
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-                    </div>
-                  )}
+                  <h3 className="text-base font-bold text-slate-900">Payment Reminder</h3>
                 </div>
-                <button onClick={() => setShowReminderConfirm(false)} disabled={sendingReminder}
-                  className="w-full py-3 text-slate-400 font-bold text-sm hover:text-slate-600 transition mt-3">
+                <button
+                  onClick={() => !sendingReminder && setShowReminderConfirm(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 mb-5 text-xs space-y-1">
+                <p className="text-slate-500">Recipient: <span className="font-semibold text-slate-800">{lead?.name}</span></p>
+                <p className="text-slate-500">Outstanding: <span className="font-bold text-slate-800">{fmt(remaining)}</span></p>
+                {lastReminderSent && (
+                  <p className="text-slate-400 text-[11px] pt-1">
+                    Last sent {fmtDate(lastReminderSent)}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowReminderConfirm(false)}
+                  disabled={sendingReminder}
+                  className="flex-1 py-2 px-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                >
                   Cancel
+                </button>
+                <button
+                  onClick={handleSendReminder}
+                  disabled={sendingReminder || daysSinceReminder === 0}
+                  className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {sendingReminder ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send Reminder'}
                 </button>
               </div>
             </motion.div>
@@ -863,33 +1011,39 @@ const total = quoteTotal;
         )}
       </AnimatePresence>
 
-      {/* ── EMAIL PREVIEW MODAL ── */}
+      {/* PREVIEW MODAL */}
       <AnimatePresence>
         {previewHtml && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] bg-black/70 flex items-end sm:items-center justify-center"
-            onClick={() => setPreviewHtml(null)}>
-            <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="relative w-full sm:max-w-2xl flex flex-col bg-white rounded-t-2xl sm:rounded-2xl overflow-hidden shadow-2xl"
-              style={{ maxHeight: '92dvh', height: '92dvh' }}
-              onClick={e => e.stopPropagation()}>
-              <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
-                <div className="flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-slate-400" />
-                  <p className="text-sm font-black text-slate-800">Email Preview</p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-xs flex items-center justify-center p-4"
+            onClick={() => setPreviewHtml(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0.95 }}
+              className="bg-white rounded-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                  <Mail className="w-4 h-4 text-slate-400" /> Dispatch Preview
                 </div>
-                <motion.button whileTap={{ scale: 0.9 }} onClick={() => setPreviewHtml(null)}
-                  className="p-2 hover:bg-slate-100 rounded-full transition">
-                  <X className="w-4 h-4 text-slate-500" />
-                </motion.button>
+                <button
+                  onClick={() => setPreviewHtml(null)}
+                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
-              <div className="flex-1 overflow-hidden p-3" style={{ minHeight: 0 }}>
+              <div className="flex-1 bg-slate-50 p-2">
                 <iframe
-                  title="Email Preview"
-                  srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}*{user-select:none!important;}</style>`}
-                  className="w-full h-full border-0 rounded-xl bg-white"
-                  sandbox="allow-same-origin"
+                  title="Preview"
+                  srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;}*{user-select:none!important;}</style>`}
+                  className="w-full h-full border-0 rounded-lg bg-white shadow-xs"
                 />
               </div>
             </motion.div>

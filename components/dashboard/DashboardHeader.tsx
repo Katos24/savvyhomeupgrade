@@ -1,12 +1,10 @@
 'use client';
-import { Menu, Plus, Lock, Loader2, RefreshCw, Eye, Home } from 'lucide-react';
+import { Menu, Plus, Lock, Loader2, RefreshCw, Eye } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import { useState } from 'react';
 
-
-
-// Picks readable text color against an arbitrary background color
-function getContrastTextColor(input: string): string {
+// Checks if color is dark (luminance < 0.5)
+function checkIsColorDark(input: string): boolean {
   let c = input.trim().replace('#', '');
 
   if (c.length === 3) {
@@ -18,15 +16,17 @@ function getContrastTextColor(input: string): string {
   const b = parseInt(c.substring(4, 6), 16);
 
   if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
-    return '#0f172a';
+    return false;
   }
 
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return luminance > 0.6 ? '#0f172a' : '#ffffff';
+  return luminance <= 0.5;
 }
 
-
-
+// Picks readable text color against an arbitrary background color
+function getContrastTextColor(input: string): string {
+  return checkIsColorDark(input) ? '#ffffff' : '#0f172a';
+}
 
 export default function DashboardHeader({
   company,
@@ -53,11 +53,21 @@ export default function DashboardHeader({
   testDriveLoading?: boolean;
   accentColor?: string;
 }) {
-const buttonTextColor = getContrastTextColor(accentColor);
   const [newLeadHover, setNewLeadHover] = useState(false);
+  const isAccentDark = checkIsColorDark(accentColor);
+
+  // Border logic: If dark color, add subtle light border for definition
+  const getButtonBorder = () => {
+    if (isAccentDark) {
+      return newLeadHover 
+        ? '1px solid rgba(255, 255, 255, 0.45)' 
+        : '1px solid rgba(255, 255, 255, 0.25)';
+    }
+    return `1px solid ${accentColor}${newLeadHover ? '80' : '59'}`;
+  };
 
   return (
- <header
+    <header
       className={`sticky top-3 z-50 rounded-2xl px-3 py-2.5 sm:px-5 sm:py-3 mb-5 transition-all backdrop-blur-xl overflow-hidden relative ${
         isDark
           ? 'bg-[#0A0C14]/80 border border-white/5 shadow-[0_8px_24px_rgba(0,0,0,0.25)]'
@@ -80,7 +90,7 @@ const buttonTextColor = getContrastTextColor(accentColor);
           >
             <Menu className="w-4.5 h-4.5" />
           </button>
-       <div className={`flex items-center gap-3 sm:gap-4 min-w-0 border-l pl-2.5 sm:pl-4 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
+          <div className={`flex items-center gap-3 sm:gap-4 min-w-0 border-l pl-2.5 sm:pl-4 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
             {company.logo_url ? (
               <div
                 className="h-11 sm:h-16 w-11 sm:w-16 shrink-0 rounded-xl p-1 ring-2"
@@ -119,7 +129,7 @@ const buttonTextColor = getContrastTextColor(accentColor);
           </div>
         </div>
 
-       <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
@@ -160,7 +170,7 @@ const buttonTextColor = getContrastTextColor(accentColor);
               onMouseLeave={() => setNewLeadHover(false)}
               style={{
                 backgroundColor: newLeadHover ? `${accentColor}3d` : `${accentColor}26`,
-                border: `1px solid ${accentColor}${newLeadHover ? '80' : '59'}`,
+                border: getButtonBorder(),
                 boxShadow: newLeadHover ? `0 4px 14px ${accentColor}40` : 'none',
               }}
               className={`inline-flex items-center gap-1.5 px-3 py-2 sm:px-4 sm:py-2.5 rounded-xl font-medium text-sm transition-all duration-150 active:scale-95 ${

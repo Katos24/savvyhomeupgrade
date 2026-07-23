@@ -2,6 +2,7 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import ComparisonSection from '@/components/marketing/ComparisonSection';
 import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
 import TruckSection from '@/components/marketing/TruckSection';
 import DashboardShowcase from '@/components/marketing/DashboardShowcase';
@@ -21,6 +22,8 @@ export default function NewHome() {
 
       {/* 1. Sign up and create your form */}
       <NewHero />
+
+      <ComparisonSection></ComparisonSection>
 
       <CustomizeFormSection />
 

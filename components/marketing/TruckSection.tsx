@@ -2,15 +2,13 @@
 
 import { motion } from 'framer-motion';
 import {
-  Globe,
   QrCode,
   Facebook,
   Instagram,
   CreditCard,
   Star,
   ArrowRight,
-  Sparkles,
-  Zap,
+  Check
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -29,31 +27,35 @@ function GoogleLogo({ className }: { className?: string }) {
 
 function GoogleProfileMockup() {
   return (
-    <div className="w-full bg-white rounded-2xl shadow-2xl p-4 border border-slate-100">
-      <div className="flex items-center gap-2.5 mb-3">
-        <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+    <div className="w-full bg-white rounded-xl p-3.5 border border-slate-200/80 shadow-md">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-9 h-9 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
           <GoogleLogo className="w-4.5 h-4.5" />
         </div>
         <div className="min-w-0">
-          <p className="text-[12px] font-black text-slate-900 truncate">Ridge Line Roofing</p>
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <p className="text-[13px] font-bold text-slate-900 truncate">Ridge Line Roofing</p>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+          </div>
+          <div className="flex items-center gap-1">
             {[...Array(5)].map((_, i) => (
-              <Star key={i} size={9} className="text-amber-400" fill="currentColor" />
+              <Star key={i} size={10} className="text-amber-400" fill="currentColor" />
             ))}
-            <span className="text-[9px] font-bold text-slate-400 ml-1">4.9 (124 reviews)</span>
+            <span className="text-[10px] font-semibold text-slate-500 ml-1">4.9 (124 reviews)</span>
           </div>
         </div>
       </div>
+
       <div className="border-t border-slate-100 pt-2.5 space-y-2">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-slate-500">Website</span>
-          <span className="text-[10px] font-black text-emerald-600 flex items-center gap-1">
-            Request a Quote <ArrowRight size={10} />
+        <div className="flex items-center justify-between text-slate-700">
+          <span className="text-[11px] font-medium text-slate-500">Primary Booking Link</span>
+          <span className="text-[11px] font-bold text-emerald-700 flex items-center gap-1">
+            Quote Form <ArrowRight size={11} />
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold text-slate-500">Appointments</span>
-          <span className="text-[10px] font-black text-blue-600">Schedule Job</span>
+        <div className="flex items-center justify-between text-slate-700">
+          <span className="text-[11px] font-medium text-slate-500">Direct Actions</span>
+          <span className="text-[11px] font-bold text-teal-700">Schedule Job</span>
         </div>
       </div>
     </div>
@@ -61,10 +63,10 @@ function GoogleProfileMockup() {
 }
 
 const OTHER_CHANNELS = [
-  { label: 'Instagram bio', icon: Instagram, color: 'text-pink-400', border: 'hover:border-pink-500/40' },
-  { label: 'Facebook page', icon: Facebook, color: 'text-blue-400', border: 'hover:border-blue-500/40' },
-  { label: 'Business cards', icon: CreditCard, color: 'text-emerald-400', border: 'hover:border-emerald-500/40' },
-  { label: 'Yard Signs & Decals', icon: QrCode, color: 'text-amber-400', border: 'hover:border-amber-500/40' },
+  { label: 'Instagram Bio Link', icon: Instagram, color: 'text-pink-600', badge: 'Active' },
+  { label: 'Facebook Page Callout', icon: Facebook, color: 'text-blue-600', badge: 'Active' },
+  { label: 'Printed Business Cards', icon: CreditCard, color: 'text-emerald-600', badge: 'QR Ready' },
+  { label: 'Yard Signs & Vehicle Decals', icon: QrCode, color: 'text-amber-600', badge: 'QR Ready' },
 ];
 
 export default function TruckSection() {
@@ -72,114 +74,120 @@ export default function TruckSection() {
     <section
       id="distribution"
       style={{ fontFamily: font }}
-      className="relative bg-[#0B1220] py-24 sm:py-32 overflow-hidden border-b border-white/5"
+      className="relative bg-slate-100 py-16 sm:py-24 overflow-hidden border-b border-slate-300/70"
     >
-      {/* Background Ambient Glow Effects */}
-      <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[150px] pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none" />
-
       <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-14">
-     
-
+        <div className="text-center max-w-2xl mx-auto mb-12">
           <motion.div
-            initial={{ opacity: 0, y: -8 }}
+            initial={{ opacity: 0, y: -6 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="flex items-center justify-center gap-3 mb-4"
+            className="inline-flex items-center gap-2 rounded-full border border-teal-300 bg-teal-50 px-3 py-1 mb-4"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-lg font-black text-white shadow-lg shadow-emerald-500/20">
-              2
-            </span>
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.25em] text-slate-400">
-              Blast your link everywhere
+            <span className="w-2 h-2 rounded-full bg-teal-600" />
+            <span className="text-xs font-black text-teal-800 uppercase tracking-wide">
+              Step 2: Universal Distribution
             </span>
           </motion.div>
 
           <motion.h2
-            initial={{ opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 12 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="text-white font-black tracking-tight leading-[1.05] text-4xl sm:text-5xl mb-4"
+            transition={{ duration: 0.4 }}
+            className="text-slate-900 font-black tracking-tight leading-[1.1] text-3xl sm:text-5xl mb-4"
           >
-            Share your link and QR code — <span className="text-emerald-400">put it everywhere.</span>
+            Share your link and QR code.{' '}
+            <span className="text-teal-700 block sm:inline">Put it everywhere.</span>
           </motion.h2>
 
           <motion.p
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-slate-400 font-bold text-base sm:text-lg max-w-xl mx-auto"
+            className="text-slate-700 font-semibold text-base sm:text-lg"
           >
-            Truck decals, yard signs, social posts — one link and QR code work everywhere you can put them.
+            From vehicle decals and yard signs to social profiles, route all lead traffic into one structured pipeline.
           </motion.p>
         </div>
 
-        {/* Main Content Card Container */}
-        <div className="relative p-4 sm:p-8 bg-white/[0.02] border border-white/10 rounded-[2.5rem] backdrop-blur-xl shadow-2xl">
-          
-          {/* Main Grid: Left side image, Right side Google + Channels */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6 items-start">
+        {/* Main Section Outer Card */}
+        <div className="p-4 sm:p-6 bg-slate-200/80 border-2 border-slate-300 rounded-3xl shadow-xl">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-6 items-stretch">
             
-            {/* Left: Main QR Graphic Image */}
+            {/* Featured Showcase Image */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.98 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="relative w-full rounded-2xl overflow-hidden border border-white/10 shadow-2xl group h-full"
+              transition={{ duration: 0.4 }}
+              className="relative rounded-2xl overflow-hidden border border-slate-300 bg-white shadow-md group min-h-[320px] flex items-center justify-center"
             >
               <Image
                 src="/images/qrbranded2.webp"
-                alt="Ridge Line Roofing QR code and booking link shown on a truck decal, yard sign, and social media post"
+                alt="Ridge Line Roofing QR code and booking link presentation"
                 width={1920}
                 height={1300}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
+                className="w-full h-full object-cover"
                 priority
               />
+              <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md border border-slate-200 px-3 py-1 rounded-lg shadow-sm">
+                <span className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                  <Check size={13} className="text-emerald-600 stroke-[3]" /> Print & Digital Sync
+                </span>
+              </div>
             </motion.div>
 
-            {/* Right Column: Google Profile + Social Channels Stacked */}
-            <div className="flex flex-col gap-4">
+            {/* Channels Sidebar Stack */}
+            <div className="flex flex-col gap-4 justify-between">
               
-              {/* Google Business Card */}
+              {/* Google Business Profile Block */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.15 }}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md"
+                transition={{ duration: 0.4, delay: 0.1 }}
+                className="rounded-2xl border border-slate-300 bg-slate-100 p-4"
               >
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3 text-center">
-                  Google Business Profile Integration
-                </p>
+                <div className="flex items-center justify-between mb-3 px-0.5">
+                  <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider">
+                    Google Integration
+                  </span>
+                  <span className="text-[10px] font-bold text-teal-800 bg-teal-100 border border-teal-300 px-2 py-0.5 rounded-md">
+                    Verified
+                  </span>
+                </div>
                 <GoogleProfileMockup />
               </motion.div>
 
-              {/* Social Channels Stack (Instagram, Facebook, etc.) */}
+              {/* Connected Channels List */}
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 backdrop-blur-md flex flex-col gap-2.5"
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="rounded-2xl border border-slate-300 bg-slate-100 p-4 flex flex-col gap-2"
               >
-                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 text-center">
-                  More Distribution Channels
-                </p>
+                <span className="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-1 px-0.5">
+                  Connected Touchpoints
+                </span>
+
                 {OTHER_CHANNELS.map((channel) => (
                   <div
                     key={channel.label}
-                    className={`flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-3.5 py-2.5 transition-all duration-300 ${channel.border} hover:bg-white/[0.06] cursor-default`}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm hover:border-slate-300 transition-colors"
                   >
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10">
-                      <channel.icon size={15} className={channel.color} />
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
+                        <channel.icon size={14} className={channel.color} />
+                      </div>
+                      <span className="text-xs font-bold text-slate-800">{channel.label}</span>
                     </div>
-                    <span className="text-xs font-bold text-slate-200">{channel.label}</span>
+                    <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                      {channel.badge}
+                    </span>
                   </div>
                 ))}
               </motion.div>
@@ -187,7 +195,6 @@ export default function TruckSection() {
             </div>
 
           </div>
-
         </div>
 
       </div>

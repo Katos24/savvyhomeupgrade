@@ -16,8 +16,6 @@ import {
   Eye,
   EyeOff,
   Globe,
-  LayoutDashboard,
-  FileText,
 } from 'lucide-react';
 
 interface CustomInputProps {
@@ -146,6 +144,8 @@ function SignupForm() {
     }
   };
 
+  const activeSlug = formData.slug || 'your-company';
+
   return (
     <div className="min-h-screen bg-white flex flex-col lg:flex-row">
 
@@ -248,7 +248,8 @@ function SignupForm() {
           )}
 
           <div className="mb-10">
-<div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full mb-4">              <UserPlus className="w-3.5 h-3.5" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full mb-4">
+              <UserPlus className="w-3.5 h-3.5" />
               <span className="text-[10px] font-black uppercase tracking-widest">{STEP_LABELS[step - 1]}</span>
             </div>
             <h1 className="text-3xl font-black text-slate-900 mb-2">
@@ -330,7 +331,7 @@ function SignupForm() {
                {formData.slug && (
                   <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-emerald-100 bg-emerald-50/50">
                     <Globe className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                    <code className="text-[13px] font-mono font-medium text-emerald-700 truncate">
+                    <code className="text-[13px] font-mono font-medium text-emerald-700 break-all">
                       lead2project.com/{formData.slug}
                     </code>
                   </div>
@@ -367,42 +368,8 @@ function SignupForm() {
 
             {step === 3 && (
               <div className="space-y-5">
-                <div className="relative">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <PreviewCard
-                      badge="Public"
-                      badgeColor="emerald"
-                      caption="Anyone with the link sees this"
-                      title="Your customer booking form"
-                      description="Customers fill this out themselves — share the link anywhere"
-                      url={`lead2project.com/${formData.slug || 'your-company'}`}
-                    >
-                      <FormPreviewMockup />
-                    </PreviewCard>
 
-                    <PreviewCard
-                      badge="Private"
-                      badgeColor="slate"
-                      caption="Only you can see this"
-                      title="Your dashboard"
-                      description="Every submission lands here automatically, as a new lead"
-                      url={`lead2project.com/${formData.slug || 'your-company'}/dashboard`}
-                    >
-                      <DashboardPreviewMockup />
-                    </PreviewCard>
-                  </div>
-
-                  {/* Connecting arrow, desktop only */}
-                  <div className="hidden sm:flex absolute top-[76px] left-1/2 -translate-x-1/2 -translate-y-1/2 items-center justify-center w-7 h-7 rounded-full bg-white border border-slate-200 shadow-sm z-10">
-                    <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                  </div>
-                </div>
-
-                <p className="text-[11.5px] text-slate-400 text-center leading-relaxed -mt-1">
-                  When a customer submits the form on the left, it instantly becomes a lead on your private dashboard on the right.
-                </p>
-
-                <div>
+                    <div>
                   <p className="text-[11px] font-black text-slate-700 uppercase tracking-wider mb-2 ml-1">
                     Workspace name
                   </p>
@@ -411,10 +378,47 @@ function SignupForm() {
                       .split(/[\s-]+/)
                       .filter(Boolean)
                       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                      .join(' ')}
+                      .join(' ') || 'Your Workspace'}
                   </div>
                 </div>
+                <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-200">
+                        <th className="py-2.5 px-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500 w-28">Page</th>
+                        <th className="py-2.5 px-3.5 text-[10px] font-black uppercase tracking-wider text-slate-500">Full Web Link</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs">
+                      <tr>
+                        <td className="py-3 px-3.5 font-bold text-slate-800 align-top">
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-emerald-50 text-emerald-600 border border-emerald-100 mb-1">Public</span>
+                          <div>Booking Form</div>
+                        </td>
+                        <td className="py-3 px-3.5 align-top">
+                          <code className="font-mono text-[11px] font-semibold text-emerald-600 break-all block bg-emerald-50/50 p-1.5 rounded border border-emerald-100/60">
+                            lead2project.com/{activeSlug}
+                          </code>
+                          <p className="text-[10.5px] text-slate-400 mt-1">Customers fill this out to request service</p>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="py-3 px-3.5 font-bold text-slate-800 align-top">
+                          <span className="inline-block px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-slate-100 text-slate-500 border border-slate-200 mb-1">Private</span>
+                          <div>Dashboard</div>
+                        </td>
+                        <td className="py-3 px-3.5 align-top">
+                          <code className="font-mono text-[11px] font-semibold text-emerald-600 break-all block bg-slate-50 p-1.5 rounded border border-slate-200/60">
+                            lead2project.com/{activeSlug}/dashboard
+                          </code>
+                          <p className="text-[10.5px] text-slate-400 mt-1">Private workspace to manage incoming submissions</p>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
 
+            
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-[13px] text-slate-800">
                   <p className="font-black mb-1">This URL is permanent</p>
                   Your booking link and dashboard address can't be changed once your workspace is created — double check it above.
@@ -425,7 +429,7 @@ function SignupForm() {
                     type="checkbox"
                     id="terms"
                     checked={agreedToTerms}
-                   onChange={(e) => setAgreedToTerms(e.target.checked)}
+                    onChange={(e) => setAgreedToTerms(e.target.checked)}
                     className="mt-1 w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer shrink-0"
                   />
                   <label htmlFor="terms" className="text-xs text-slate-500 leading-relaxed cursor-pointer">
@@ -497,137 +501,6 @@ function SignupForm() {
             </div>
           </form>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function PreviewCard({
-  badge,
-  badgeColor,
-  caption,
-  title,
-  description,
-  url,
-  children,
-}: {
-  badge: string;
-  badgeColor: 'emerald' | 'slate';
-  caption: string;
-  title: string;
-  description: string;
-  url: string;
-  children: React.ReactNode;
-}) {
-  const badgeClasses =
-    badgeColor === 'emerald'
-      ? 'text-emerald-600 bg-emerald-50 border-emerald-100'
-      : 'text-slate-500 bg-slate-100 border-slate-200';
-
-  return (
-    <div className="rounded-xl border border-slate-200 overflow-hidden bg-white">
-      <div className="flex items-center gap-1.5 px-3 pt-3">
-        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${badgeClasses}`}>
-          {badge}
-        </span>
-        <span className="text-[10px] text-slate-400">{caption}</span>
-      </div>
-      <div className="h-28 bg-slate-50 border-y border-slate-100 mt-2.5 overflow-hidden">
-        {children}
-      </div>
-      <div className="p-3.5">
-        <p className="text-[11px] font-black text-slate-700 mb-1">{title}</p>
-       <p className="text-[10.5px] text-slate-400 leading-relaxed mb-2">{description}</p>
-                <code className="text-[10.5px] font-mono font-medium text-emerald-600 block truncate">{url}</code>
-      </div>
-    </div>
-  );
-}
-
-function BrowserChrome({ label }: { label: string }) {
-  return (
-    <div className="flex items-center gap-1.5 px-2.5 h-6 bg-white border-b border-slate-100">
-      <div className="flex gap-1">
-        <span className="w-1.5 h-1.5 rounded-full bg-rose-300" />
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
-        <span className="w-1.5 h-1.5 rounded-full bg-emerald-300" />
-      </div>
-      <div className="flex-1 h-3.5 rounded bg-slate-50 flex items-center px-2">
-        <span className="text-[7px] text-slate-400 font-medium truncate">{label}</span>
-      </div>
-    </div>
-  );
-}
-
-function FormPreviewMockup() {
-  return (
-    <div className="w-full h-full flex flex-col">
-      <BrowserChrome label="lead2project.com/your-company" />
-      <div className="flex-1 flex items-center justify-center px-4">
-        <div className="w-full max-w-[220px] space-y-1.5">
-          <div className="flex items-center gap-1.5 mb-1">
-          <FileText className="w-2.5 h-2.5 text-emerald-500" />
-            <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Request a Quote</span>
-          </div>
-          <div>
-            <p className="text-[7px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Full Name</p>
-            <div className="h-5 rounded bg-white border border-slate-200 flex items-center px-1.5">
-              <span className="text-[8.5px] font-medium text-slate-700 truncate">Sarah Johnson</span>
-            </div>
-          </div>
-          <div>
-            <p className="text-[7px] font-bold text-slate-400 uppercase tracking-wide mb-0.5">Project Description</p>
-            <div className="h-5 rounded bg-white border border-slate-200 flex items-center px-1.5">
-              <span className="text-[8.5px] font-medium text-slate-700 truncate">Kitchen remodel — 123 Main St</span>
-            </div>
-          </div>
-          <div className="h-5 w-16 rounded bg-emerald-600 flex items-center justify-center mt-1.5">
-            <span className="text-[8px] font-bold text-white">Submit</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DashboardPreviewMockup() {
-  const rows = [
-    { name: 'Sarah Johnson', detail: 'Kitchen remodel — 123 Main St', tag: 'New', tagColor: 'blue' as const },
-    { name: 'Mike Torres', detail: 'Roof inspection — 88 Oak Ave', tag: 'New', tagColor: 'blue' as const },
-    { name: 'Dana Wells', detail: 'Bathroom repipe — 4 Elm Ct', tag: 'Won', tagColor: 'emerald' as const },
-  ];
-
-  return (
-    <div className="w-full h-full flex flex-col">
-      <BrowserChrome label="lead2project.com/your-company/dashboard" />
-      <div className="flex-1 px-2.5 py-2 space-y-1">
-        <div className="flex items-center gap-1.5 mb-1">
-<LayoutDashboard className="w-2.5 h-2.5 text-emerald-500" />
-          <span className="text-[8px] font-black text-slate-600 uppercase tracking-wide">Leads</span>
-        </div>
-        {rows.map((row, i) => (
-          <div
-            key={row.name}
-           className={`rounded-md bg-white border px-2 py-1 flex items-center gap-1.5 ${
-              i === 0 ? 'border-emerald-200 shadow-sm' : 'border-slate-100'
-            }`}
-          >
-            <div className="w-3.5 h-3.5 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-              <span className="text-[6px] font-black text-slate-500">{row.name.charAt(0)}</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-[8px] font-bold text-slate-800 truncate leading-tight">{row.name}</p>
-              <p className="text-[7px] text-slate-400 truncate leading-tight">{row.detail}</p>
-            </div>
-            <span
-              className={`text-[6.5px] font-bold px-1 py-0.5 rounded shrink-0 ${
-                row.tagColor === 'blue' ? 'text-blue-600 bg-blue-50' : 'text-emerald-600 bg-emerald-50'
-              }`}
-            >
-              {row.tag}
-            </span>
-          </div>
-        ))}
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import { CheckCircle2, Mail, Star } from 'lucide-react';
 
 const font = "'Nunito', sans-serif";
 
-const ACCENT = '#0F766E';
+const ACCENT = '#0D9488'; // Vibrant Teal 600
 
 function GoogleLogo({ className }: { className?: string }) {
   return (
@@ -22,29 +22,29 @@ export default function GoogleReviewSection() {
   return (
     <section 
       style={{ fontFamily: font }}
-      className="relative overflow-hidden bg-[#0B1220] py-16 sm:py-24 border-t border-white/5 text-left"
+      className="relative overflow-hidden bg-slate-800 py-16 sm:py-24 border-t border-slate-700/80 text-left"
     >
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
+      <div className="absolute inset-0 opacity-[0.08] pointer-events-none bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]" />
 
       <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
 
         <div className="text-center mb-12 sm:mb-16">
           <div className="flex items-center justify-center gap-3 mb-4">
             <span 
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white shadow-md shadow-teal-900/30"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white shadow-md shadow-slate-900/40"
               style={{ backgroundColor: ACCENT }}
             >
               6
             </span>
-            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-teal-400 font-mono">
+            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-teal-300 font-mono">
               Collect the review
             </span>
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight max-w-2xl mx-auto">
             Mark the job complete.{' '}
-            <span className="text-teal-400">The review request sends itself.</span>
+            <span className="text-teal-300">The review request sends itself.</span>
           </h2>
-          <p className="text-sm sm:text-base font-bold text-slate-400 max-w-xl mx-auto mt-4">
+          <p className="text-sm sm:text-base font-bold text-slate-300 max-w-xl mx-auto mt-4">
             Automatically dispatch a review request the moment you mark a job Completed — no extra step, nothing to remember.
           </p>
         </div>
@@ -56,7 +56,7 @@ export default function GoogleReviewSection() {
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-sm p-6 flex flex-col justify-between"
+            className="rounded-2xl border border-slate-700 bg-slate-900/80 shadow-lg p-6 flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between mb-4">
@@ -64,8 +64,8 @@ export default function GoogleReviewSection() {
                   <Mail className="w-4 h-4 text-teal-400" /> Customer email preview
                 </div>
                 {/* Google 5-star badge pill */}
-                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
-                  <span className="text-[10px] font-black text-amber-400">5.0</span>
+                <div className="flex items-center gap-1 bg-amber-500/15 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black text-amber-300">5.0</span>
                   <div className="flex items-center">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
@@ -74,8 +74,9 @@ export default function GoogleReviewSection() {
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-5 border border-slate-200 text-sm text-slate-700 shadow-sm relative text-left">
-                <p className="mb-2.5 font-bold text-slate-800">Hi Jennifer,</p>
+              {/* Clean White Card inside the preview for high contrast */}
+              <div className="bg-white rounded-xl p-5 border border-slate-200 text-sm text-slate-800 shadow-md relative text-left">
+                <p className="mb-2.5 font-bold text-slate-900">Hi Jennifer,</p>
                 <p className="mb-4 text-xs font-semibold text-slate-600 leading-relaxed">
                   &quot;Thanks for choosing Ridge Line Roofing! Could you spare a moment to leave us a 5-star Google review?&quot;
                 </p>
@@ -105,7 +106,7 @@ export default function GoogleReviewSection() {
               </div>
             </div>
 
-            <p className="text-[11px] text-teal-400 font-bold mt-4 text-left">
+            <p className="text-[11px] text-teal-300 font-bold mt-4 text-left">
               Customize this template in Email Settings.
             </p>
           </motion.div>
@@ -116,13 +117,13 @@ export default function GoogleReviewSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.08 }}
-            className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-sm p-6 flex flex-col justify-between"
+            className="rounded-2xl border border-slate-700 bg-slate-900/80 shadow-lg p-6 flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center gap-2 mb-4 text-white font-black text-sm">
                 <CheckCircle2 className="w-4 h-4 text-teal-400" /> Trigger: mark job complete
               </div>
-              <div className="rounded-xl overflow-hidden border border-white/10 shadow-sm h-[250px] sm:h-[280px]">
+              <div className="rounded-xl overflow-hidden border border-slate-700 shadow-sm h-[250px] sm:h-[280px]">
                 <img
                   src="/images/mark-job-complete.webp"
                   alt="Mark job as complete"
@@ -131,7 +132,7 @@ export default function GoogleReviewSection() {
               </div>
             </div>
 
-            <div className="mt-4 flex items-center justify-between text-xs text-slate-400 border-t border-white/5 pt-3">
+            <div className="mt-4 flex items-center justify-between text-xs text-slate-300 border-t border-slate-700/60 pt-3">
               <span className="font-semibold">Automatic Dispatch</span>
               <span className="text-emerald-400 font-black flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" /> Enabled
@@ -146,7 +147,7 @@ export default function GoogleReviewSection() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.15 }}
-          className="text-center text-[11px] font-bold text-slate-500 mt-8"
+          className="text-center text-[11px] font-bold text-slate-400 mt-8"
         >
           Requires a Google Business Profile review link. Every email sent — quotes, reminders, and reviews — is logged in your Outbox, so you always know what went out and when.
         </motion.p>

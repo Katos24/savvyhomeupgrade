@@ -180,7 +180,7 @@ export default function HumanDesignedHero() {
             </h1>
 
             {/* Subheading */}
-            <p className="text-slate-300 font-medium text-base sm:text-lg mb-8 leading-relaxed max-w-xl">
+            <p className="text-white font-medium text-base sm:text-lg mb-8 leading-relaxed max-w-xl">
               Capture leads, dispatch crews, send quotes, and auto-collect payments, without bouncing between five clunky apps.
             </p>
 

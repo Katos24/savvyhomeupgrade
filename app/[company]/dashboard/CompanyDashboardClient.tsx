@@ -533,8 +533,12 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
 
     
 
-        <DashboardStats globalStats={globalStats} allLeads={allLeads} isDark={isDark} />
-
+<DashboardStats
+  globalStats={globalStats}
+  allLeads={allLeads}
+  isDark={isDark}
+  accentColor={accentColor}
+/>
         <div className="mb-4 sm:mb-6">
           <FreePlanBanner
             company={company}
@@ -594,6 +598,7 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
             lastPollCount.current = null;
             fetchLeads(1);
           }}
+          
           refreshKey={refreshKey}
           onBulkUpdate={handleBulkUpdate}
           onBulkDelete={handleBulkDelete}
@@ -601,6 +606,7 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
           onLockedFeature={setLockedDashboardModal}
           pagination={pagination}
           onLoadMore={() => fetchLeads(pagination.page + 1, false)}
+          accentColor={accentColor}
         />
       </main>
 
