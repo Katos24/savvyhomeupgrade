@@ -2844,3 +2844,226 @@ export async function sendStripeActionNeededEmail({
   }
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// Append to lib/email.ts
+//
+// `SEND DEMO REQUEST EMIAL
+// ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Append to lib/email.ts
+//
+// `resend`, `buildEmail`, `buildEmailRow`, `buildEmailTable` and
+// `buildEmailSection` are already imported at the top of that file.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Escapes user input before it goes into email HTML.
+ *
+ * Note: the existing lead emails interpolate `description` and custom answers
+ * straight into the markup. That's worth revisiting separately — a customer
+ * can put arbitrary HTML in a form field and it renders in your inbox.
+ */
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+const DEMO_NOTIFY_TO = ['alexkatos24@gmail.com', 'hello@lead2project.com'];
+
+/**
+ * Must be an absolute URL — email clients can't resolve site-relative paths.
+ * PNG rather than the .webp alongside it: Outlook on Windows won't render webp.
+ */
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://lead2project.com';
+const LOGO_URL = `${SITE_URL}/Lead2ProjectLogo.png`;
+
+export async function sendDemoRequestEmail({
+  id,
+  name,
+  email,
+  phone,
+  company,
+  trade,
+  teamSize,
+  message,
+  source,
+}: {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  trade?: string;
+  teamSize?: string;
+  message?: string;
+  source?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const safe = {
+      name: escapeHtml(name),
+      email: escapeHtml(email),
+      phone: phone ? escapeHtml(phone) : '',
+      company: company ? escapeHtml(company) : '',
+      trade: trade ? escapeHtml(trade) : '',
+      teamSize: teamSize ? escapeHtml(teamSize) : '',
+      message: message ? escapeHtml(message) : '',
+      source: source ? escapeHtml(source) : '',
+    };
+
+    const detailsTable = buildEmailTable([
+      buildEmailRow('Name', safe.name),
+      buildEmailRow(
+        'Email',
+        `<a href="mailto:${safe.email}" style="color: #3b82f6; text-decoration: none;">${safe.email}</a>`
+      ),
+      safe.phone
+        ? buildEmailRow(
+            'Phone',
+            `<a href="tel:${safe.phone}" style="color: #3b82f6; text-decoration: none;">${safe.phone}</a>`
+          )
+        : '',
+      buildEmailRow('Company', safe.company),
+      buildEmailRow('Trade', safe.trade),
+      buildEmailRow('Team size', safe.teamSize),
+      buildEmailRow('Came from', safe.source),
+    ]);
+
+    const messageHtml = safe.message
+      ? `
+        <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px;">
+          <p style="margin: 0; color: #334155; font-size: 14px; line-height: 1.6; white-space: pre-line;">${safe.message}</p>
+        </div>
+      `
+      : '';
+
+    const bodyHtml = `
+      <div style="margin-bottom: 24px;">
+        <span style="display: inline-block; background-color: #ccfbf1; border: 1px solid #99f6e4; border-radius: 50px; padding: 6px 16px; color: #0f766e; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">
+          Demo Request
+        </span>
+        <span style="margin-left: 8px; color: #64748b; font-size: 14px; font-weight: 600;">#${id}</span>
+      </div>
+
+      ${buildEmailSection('Who', detailsTable)}
+      ${messageHtml ? buildEmailSection('What they said', messageHtml) : ''}
+    `;
+
+    const html = buildEmail({
+      companyName: 'Lead2Project',
+      logoUrl: LOGO_URL,
+      brandColor: '#0f172a',
+      brandColor2: '#1e293b',
+      bodyHtml,
+      preheader: `Demo request from ${name}${company ? ` at ${company}` : ''}`,
+    });
+
+    await resend.emails.send({
+      from: 'Lead2Project <hello@lead2project.com>',
+      to: DEMO_NOTIFY_TO,
+      replyTo: email, // hit reply and you're answering them directly
+      subject: `Demo request: ${name}${company ? ` — ${company}` : ''}`,
+      html,
+    });
+
+    return { ok: true };
+  } catch (error) {
+    // Returned rather than swallowed, so the route can record why it failed.
+    console.error('Failed to send demo request email:', error);
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// sendDemoRequestConfirmationEmail
+// Goes to the person who asked for the demo, so they know it landed.
+// ─────────────────────────────────────────────────────────────
+
+export async function sendDemoRequestConfirmationEmail({
+  name,
+  email,
+}: {
+  name: string;
+  email: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const safeName = escapeHtml(name);
+
+    const nextStepsHtml = `
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+        ${[
+          'We read every request personally — usually the same day.',
+          'You get an email back with a couple of times that work.',
+          'We walk through your setup on a call, about 20 minutes.',
+        ]
+          .map(
+            (step, i) => `
+          <tr>
+            <td style="padding: 10px 0; vertical-align: top;">
+              <table cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="width: 28px; vertical-align: top; padding-top: 1px;">
+                    <div style="width: 22px; height: 22px; border-radius: 50%; background-color: #0f766e; color: #ffffff; font-size: 11px; font-weight: 800; text-align: center; line-height: 22px;">
+                      ${i + 1}
+                    </div>
+                  </td>
+                  <td style="padding-left: 12px; color: #334155; font-size: 14px; font-weight: 500; line-height: 1.55;">
+                    ${step}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        `
+          )
+          .join('')}
+      </table>
+    `;
+
+    const bodyHtml = `
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div style="display: inline-block; background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 50px; padding: 9px 20px;">
+          <span style="color: #16a34a; font-size: 13px; font-weight: 700;">Request received</span>
+        </div>
+      </div>
+
+      <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+        Hi ${safeName}, thanks for asking about Lead2Project. Your request is in and
+        someone will be in touch shortly to find a time.
+      </p>
+
+      ${buildEmailSection('What happens next', nextStepsHtml)}
+
+      <p style="margin: 8px 0 0 0; color: #94a3b8; font-size: 13px; line-height: 1.6;">
+        In a hurry? Reply to this email and it comes straight to us. You can also
+        poke around the product yourself at lead2project.com/demo.
+      </p>
+    `;
+
+    const html = buildEmail({
+      companyName: 'Lead2Project',
+      logoUrl: LOGO_URL,
+      brandColor: '#0f766e',
+      brandColor2: '#134e4a',
+      bodyHtml,
+      preheader: 'We got your demo request — here is what happens next.',
+    });
+
+    await resend.emails.send({
+      from: 'Lead2Project <hello@lead2project.com>',
+      to: email,
+      replyTo: 'hello@lead2project.com',
+      subject: 'We got your demo request — Lead2Project',
+      html,
+    });
+
+    return { ok: true };
+  } catch (error) {
+    console.error('Failed to send demo confirmation:', error);
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+}

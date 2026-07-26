@@ -7,10 +7,9 @@ import {
   ChevronDown, Eye, Plus,
   User, Mail, Phone, MapPin, Calendar,
   Clock, HelpCircle, Image as ImageIcon, Megaphone, Lock,
-  Link2, Truck, Trash2, SlidersHorizontal, Inbox, Sparkles,
+  Link2, Truck, Trash2, Tag, ArrowUpRight,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
-import type { Transition } from 'framer-motion';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 
 type CustomQuestion = {
@@ -21,16 +20,9 @@ type CustomQuestion = {
   options?: string[];
 };
 
-type Category = {
-  emoji?: string;
-  label: string;
-  value: string;
-};
+type Category = { emoji?: string; label: string; value: string };
 
-type FieldConfigItem = {
-  enabled: boolean;
-  required?: boolean;
-};
+type FieldConfigItem = { enabled: boolean; required?: boolean };
 
 type FieldConfig = {
   address: FieldConfigItem & { required: boolean };
@@ -48,9 +40,11 @@ const DEFAULT_FIELD_CONFIG: FieldConfig = {
   file_upload: { enabled: false },
 };
 
-const spring: Transition = { type: 'spring', damping: 28, stiffness: 320 };
+/** Single source of truth for what unlocks the gated features. */
+const REQUIRED_PLAN = { label: 'Basic', price: '$49.99/mo' };
 
-/* ───────────────────────── Brand Logo Marks ───────────────────────── */
+/* ───────────────────────── Brand marks ───────────────────────── */
+
 function GoogleLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 48 48" className={className} aria-hidden="true">
@@ -66,10 +60,7 @@ function FacebookLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} aria-hidden="true">
       <circle cx="12" cy="12" r="12" fill="#1877F2" />
-      <path
-        fill="#fff"
-        d="M15.5 12.5h-2v7h-3v-7H9v-2.6h1.5V8.4c0-1.5.9-2.9 3.2-2.9h2v2.5h-1.5c-.3 0-.7.2-.7.8v1.6H16l-.5 2.6z"
-      />
+      <path fill="#fff" d="M15.5 12.5h-2v7h-3v-7H9v-2.6h1.5V8.4c0-1.5.9-2.9 3.2-2.9h2v2.5h-1.5c-.3 0-.7.2-.7.8v1.6H16l-.5 2.6z" />
     </svg>
   );
 }
@@ -94,7 +85,8 @@ function InstagramLogo({ className }: { className?: string }) {
   );
 }
 
-/* ───────────────────────── Info Cards ───────────────────────── */
+/* ───────────────────────── Share-your-link cards ───────────────────────── */
+
 type InfoCard = {
   id: string;
   icon: React.ElementType;
@@ -111,7 +103,7 @@ const FORM_INFO_CARDS: InfoCard[] = [
     title: 'Google Business Profile',
     teaser: 'Often the first thing customers see',
     image: '/images/form-guide/google.png',
-    body: 'Add your booking link under "Booking link" or "Quote link" on your Google Business Profile. When a customer finds you on Google, they can click straight through and fill out your form — no extra steps, no phone tag. It\u2019s one of the easiest ways to capture more leads from people who are already searching for someone like you.',
+    body: 'Add your booking link under "Booking link" or "Quote link" on your Google Business Profile. When a customer finds you on Google, they can click straight through and fill out your form \u2014 no extra steps, no phone tag.',
   },
   {
     id: 'facebook',
@@ -119,7 +111,7 @@ const FORM_INFO_CARDS: InfoCard[] = [
     title: 'Facebook',
     teaser: 'Add it to your bio or a post',
     image: '/images/form-guide/facebook.png',
-    body: 'Pin your booking link to the top of your Facebook Page, or add it to a post whenever you post a job photo. People scrolling their feed can tap through and book right then — while the job you just finished is still fresh in their mind.',
+    body: 'Pin your booking link to the top of your Facebook Page, or add it to a post whenever you share a job photo. People scrolling their feed can tap through and book right then \u2014 while the job you just finished is still fresh in their mind.',
   },
   {
     id: 'instagram',
@@ -135,7 +127,7 @@ const FORM_INFO_CARDS: InfoCard[] = [
     title: 'Your website',
     teaser: "Link it from a 'Book Now' button",
     image: '/images/form-guide/website.png',
-    body: "If you have a website, link your booking form from a \u201cGet a Quote\u201d or \u201cBook Now\u201d button. It's a better handoff than listing a phone number — the visitor stays on your site and fills out the form instead of having to remember to call later.",
+    body: 'If you have a website, link your booking form from a "Get a Quote" or "Book Now" button. It\u2019s a better handoff than listing a phone number \u2014 the visitor stays on your site and fills out the form instead of having to remember to call later.',
   },
   {
     id: 'flyers',
@@ -143,7 +135,7 @@ const FORM_INFO_CARDS: InfoCard[] = [
     title: 'Flyers & signs',
     teaser: 'Print the link or QR code',
     image: '/images/flyers.webp',
-    body: 'Print your booking link, or better, the QR code from your Overview tab, on flyers, yard signs, or door hangers. Someone can scan it standing right in front of their house instead of typing a URL by hand — fewer steps means more of them actually follow through.',
+    body: 'Print your booking link, or better, the QR code from your Overview tab, on flyers, yard signs, or door hangers. Someone can scan it standing right in front of their house instead of typing a URL by hand.',
   },
   {
     id: 'vehicle',
@@ -151,7 +143,7 @@ const FORM_INFO_CARDS: InfoCard[] = [
     title: 'Vehicle & business cards',
     teaser: 'Book on the spot',
     image: '/images/qrbranded2.webp',
-    body: "Put a QR code on your truck magnet or business card. A neighbor who sees your truck parked down the street, or someone you hand a card to on the spot, can book in the time it takes to scan it — no need to remember your name later.",
+    body: 'Put a QR code on your truck magnet or business card. A neighbor who sees your truck parked down the street, or someone you hand a card to on the spot, can book in the time it takes to scan it.',
   },
 ];
 
@@ -165,19 +157,17 @@ function ImageOrPlaceholder({ src, alt, className }: { src: string; alt: string;
       </div>
     );
   }
-  return (
-    <img src={src} alt={alt} className={className} onError={() => setErrored(true)} />
-  );
+  return <img src={src} alt={alt} className={className} onError={() => setErrored(true)} />;
 }
 
 function InfoCardBar({ onSelect }: { onSelect: (id: string) => void }) {
   return (
-    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+    <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
       {FORM_INFO_CARDS.map((card) => (
         <button
           key={card.id}
           onClick={() => onSelect(card.id)}
-          className="flex min-w-[200px] shrink-0 items-start gap-3 rounded-xl border border-stone-250 bg-white p-4 text-left transition hover:border-stone-400 hover:bg-stone-50"
+          className="flex min-w-[210px] shrink-0 items-start gap-3 rounded-xl border border-stone-200 bg-white p-4 text-left transition hover:border-stone-400 hover:bg-stone-50"
         >
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50">
             <card.icon className="h-4 w-4 text-stone-700" />
@@ -199,81 +189,104 @@ function InfoModal({ card, onClose }: { card: InfoCard; onClose: () => void }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg overflow-hidden rounded-2xl bg-white border border-stone-200 shadow-xl"
+        className="w-full max-w-lg overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-150 px-5 py-4">
+        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
           <span className="text-sm font-bold uppercase tracking-wider text-stone-900">{card.title}</span>
-          <button
-            onClick={onClose}
-            className="rounded-full p-1 text-stone-450 hover:bg-stone-100 hover:text-stone-700"
-            aria-label="Close"
-          >
+          <button onClick={onClose} className="rounded-full p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
         <div className="p-6">
-          <ImageOrPlaceholder
-            src={card.image}
-            alt={card.title}
-            className="block h-44 w-full rounded-xl object-cover shadow-sm border border-stone-200"
-          />
-          <p className="mt-4 text-[13px] font-semibold leading-relaxed text-stone-700">
-            {card.body}
-          </p>
+          <ImageOrPlaceholder src={card.image} alt={card.title} className="block h-44 w-full rounded-xl border border-stone-200 object-cover shadow-sm" />
+          <p className="mt-4 text-[13px] font-semibold leading-relaxed text-stone-700">{card.body}</p>
         </div>
       </div>
     </div>
   );
 }
 
-/* ───────────────────────── Main FormTab Component ───────────────────────── */
+/* ───────────────────────── Upgrade affordances ─────────────────────────
+   One component, used everywhere something is gated, so the message and the
+   destination never drift apart again.                                     */
+
+function UpgradePill({ companySlug, className = '' }: { companySlug: string; className?: string }) {
+  return (
+    <a
+      href={`/${companySlug}/admin/settings`}
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1.5 text-white transition hover:bg-amber-700 ${className}`}
+    >
+      <Lock className="h-3 w-3" />
+      <span className="text-[10px] font-bold uppercase tracking-wider">
+        {REQUIRED_PLAN.label} plan
+      </span>
+    </a>
+  );
+}
+
+function UpgradeNotice({ companySlug, feature }: { companySlug: string; feature: string }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-start gap-3">
+        <Lock className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+        <p className="text-[13px] font-semibold leading-relaxed text-amber-900">
+          {feature} is on the{' '}
+          <span className="font-bold">
+            {REQUIRED_PLAN.label} plan ({REQUIRED_PLAN.price})
+          </span>
+          .
+        </p>
+      </div>
+      <a
+        href={`/${companySlug}/admin/settings`}
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700"
+      >
+        Upgrade <ArrowUpRight className="h-3.5 w-3.5" />
+      </a>
+    </div>
+  );
+}
+
+/* ───────────────────────── Main ───────────────────────── */
+
 export default function FormTab({ company, currentUser }: { company: any; currentUser: any }) {
   const planTier = (company.plan_tier ?? 'basic') as PlanTier;
-  const canUsePhotoUpload     = can(planTier, 'customer_video_upload');
+  const canUsePhotoUpload = can(planTier, 'customer_video_upload');
   const canUseCustomQuestions = can(planTier, 'custom_form_questions');
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
-  const [ctaSuccessMessage, setCtaSuccessMessage] = useState(company.cta_success_message || '');
+  const [ctaSuccessMessage] = useState(company.cta_success_message || '');
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(company.custom_questions || []);
- const [activeCardId, setActiveCardId] = useState<string | null>(null);
-  const [step1Open, setStep1Open] = useState(false);
+  const [activeCardId, setActiveCardId] = useState<string | null>(null);
 
   const existingConfig = company.form_field_config;
   const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
-    const base = existingConfig ? {
-      address: {
-        enabled: existingConfig.address?.enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
-        required: existingConfig.address?.required ?? DEFAULT_FIELD_CONFIG.address.required,
-      },
-      preferred_date: { enabled: existingConfig.preferred_date?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_date.enabled },
-      preferred_time: { enabled: existingConfig.preferred_time?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_time.enabled },
-      lead_source: { enabled: existingConfig.lead_source?.enabled ?? DEFAULT_FIELD_CONFIG.lead_source.enabled },
-      file_upload: { enabled: existingConfig.file_upload?.enabled ?? DEFAULT_FIELD_CONFIG.file_upload.enabled },
-    } : {
-      address: {
-        enabled: company.address_enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
-        required: company.address_required ?? DEFAULT_FIELD_CONFIG.address.required,
-      },
-      preferred_date: { enabled: DEFAULT_FIELD_CONFIG.preferred_date.enabled },
-      preferred_time: { enabled: DEFAULT_FIELD_CONFIG.preferred_time.enabled },
-      lead_source: { enabled: DEFAULT_FIELD_CONFIG.lead_source.enabled },
-      file_upload: { enabled: DEFAULT_FIELD_CONFIG.file_upload.enabled },
-    };
+    const base = existingConfig
+      ? {
+          address: {
+            enabled: existingConfig.address?.enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
+            required: existingConfig.address?.required ?? DEFAULT_FIELD_CONFIG.address.required,
+          },
+          preferred_date: { enabled: existingConfig.preferred_date?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_date.enabled },
+          preferred_time: { enabled: existingConfig.preferred_time?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_time.enabled },
+          lead_source: { enabled: existingConfig.lead_source?.enabled ?? DEFAULT_FIELD_CONFIG.lead_source.enabled },
+          file_upload: { enabled: existingConfig.file_upload?.enabled ?? DEFAULT_FIELD_CONFIG.file_upload.enabled },
+        }
+      : {
+          address: {
+            enabled: company.address_enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
+            required: company.address_required ?? DEFAULT_FIELD_CONFIG.address.required,
+          },
+          preferred_date: { enabled: DEFAULT_FIELD_CONFIG.preferred_date.enabled },
+          preferred_time: { enabled: DEFAULT_FIELD_CONFIG.preferred_time.enabled },
+          lead_source: { enabled: DEFAULT_FIELD_CONFIG.lead_source.enabled },
+          file_upload: { enabled: DEFAULT_FIELD_CONFIG.file_upload.enabled },
+        };
     if (!canUsePhotoUpload) base.file_upload = { enabled: false };
     return base;
   });
-
-  const getCtaHeading = () => {
-    if (company.cta_heading) return company.cta_heading;
-    switch (company.business_type) {
-      case 'restaurant': return 'Order Your Custom Meal';
-      case 'salon': return 'Book Your Appointment';
-      case 'photography': return 'Request a Photo Session';
-      default: return 'Submit Your Request';
-    }
-  };
 
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
@@ -282,9 +295,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [linkCopied, setLinkCopied] = useState(false);
   const [publicUrl, setPublicUrl] = useState(`https://lead2project.com/${company.slug}`);
 
-  const [savedSnapshot, setSavedSnapshot] = useState(() =>
-    JSON.stringify({ fieldConfig, customQuestions })
-  );
+  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify({ fieldConfig, customQuestions }));
   const isDirty = JSON.stringify({ fieldConfig, customQuestions }) !== savedSnapshot;
 
   useEffect(() => {
@@ -309,8 +320,18 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const brandColor1 = company.email_brand_color_1 || '#6366f1';
   const brandColor2 = company.email_brand_color_2 || '#4f46e5';
 
+  const getCtaHeading = () => {
+    if (company.cta_heading) return company.cta_heading;
+    switch (company.business_type) {
+      case 'restaurant': return 'Order Your Custom Meal';
+      case 'salon': return 'Book Your Appointment';
+      case 'photography': return 'Request a Photo Session';
+      default: return 'Submit Your Request';
+    }
+  };
+
   const toggleField = (field: keyof FieldConfig) =>
-    setFieldConfig(prev => ({ ...prev, [field]: { ...prev[field], enabled: !prev[field].enabled } }));
+    setFieldConfig((prev) => ({ ...prev, [field]: { ...prev[field], enabled: !prev[field].enabled } }));
 
   const handleSaveAll = async () => {
     setLoading(true);
@@ -342,7 +363,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
     } catch (err) {
       setStatus({
         type: 'error',
-        message: err instanceof Error ? err.message : 'Something went wrong — please try again.',
+        message: err instanceof Error ? err.message : 'Something went wrong \u2014 please try again.',
       });
     } finally {
       setLoading(false);
@@ -352,7 +373,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const addOrUpdateQuestion = () => {
     if (!newQuestion.label.trim()) return setStatus({ type: 'error', message: 'Label is required' });
     if (editingQuestionId) {
-      setCustomQuestions(customQuestions.map(q => q.id === editingQuestionId ? { ...newQuestion, required: false } : q));
+      setCustomQuestions(customQuestions.map((q) => (q.id === editingQuestionId ? { ...newQuestion, required: false } : q)));
     } else {
       setCustomQuestions([...customQuestions, { ...newQuestion, id: `q_${Date.now()}`, required: false }]);
     }
@@ -370,31 +391,32 @@ export default function FormTab({ company, currentUser }: { company: any; curren
 
   return (
     <div className="bg-stone-50 px-4 py-8 sm:px-8">
-      <div className="mx-auto max-w-4xl pb-24">
+      <div className="mx-auto max-w-6xl pb-28">
+
         {company.plan_tier === 'free' && (
           <div className="mb-6">
             <SettingsUpgradeBanner
-              planLabel="Basic"
-              price="$49.99/mo"
+              planLabel={REQUIRED_PLAN.label}
+              price={REQUIRED_PLAN.price}
               message="Your booking form is live. Upgrade to add custom branding, photo uploads, and custom questions."
               companySlug={company.slug}
             />
           </div>
         )}
 
-        {/* ── HEADER PANEL ── */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* ── Header ── */}
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
               <h2 className="text-2xl font-bold tracking-tight text-stone-900">Booking form</h2>
               {isDirty && (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700 border border-amber-200">
-                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Unsaved changes
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-amber-700">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" /> Unsaved changes
                 </span>
               )}
             </div>
             <p className="mt-1 text-sm font-medium text-stone-500">
-              Customize how customers schedule and share project details.
+              Choose what customers are asked when they book with you.
             </p>
           </div>
 
@@ -418,60 +440,12 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
-        {/* ── QUICK TIPS PANEL ── */}
+        {/* ── Link + sharing ── */}
         <div className="mb-8 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-          <h3 className="text-[16px] font-bold text-stone-900">
-            Get leads without lifting a finger
-          </h3>
-          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50">
-                <SlidersHorizontal className="h-4 w-4 text-stone-700" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-stone-900">1. Customize form</p>
-                <p className="mt-0.5 text-[12px] font-medium leading-relaxed text-stone-500">
-                  Toggle custom questions and extra details below.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50">
-                <Inbox className="h-4 w-4 text-stone-700" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-stone-900">2. Share anywhere</p>
-                <p className="mt-0.5 text-[12px] font-medium leading-relaxed text-stone-500">
-                  Copy your link to Google Maps, social bios, or flyers.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50">
-                <Sparkles className="h-4 w-4 text-stone-700" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-stone-900">3. Collect details</p>
-                <p className="mt-0.5 text-[12px] font-medium leading-relaxed text-stone-500">
-                  Submissions land straight onto your active pipeline.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ── CUSTOMER BOOKING LINK ── */}
-        <div className="mb-8 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
-            Your Public Form Link
-          </p>
+          <p className="text-[11px] font-bold uppercase tracking-wider text-stone-700">Your public form link</p>
           <div className="mt-3 flex flex-col gap-2.5 sm:flex-row sm:items-center">
-            <div className="flex-1 truncate rounded-xl border border-stone-200 bg-stone-50/50 px-4 py-2.5">
-              <code className="truncate font-mono text-[13px] font-semibold text-stone-700">
-                {publicUrl}
-              </code>
+            <div className="flex-1 truncate rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5">
+              <code className="truncate font-mono text-[13px] font-semibold text-stone-700">{publicUrl}</code>
             </div>
             <button
               onClick={() => {
@@ -479,28 +453,18 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 setLinkCopied(true);
                 setTimeout(() => setLinkCopied(false), 1800);
               }}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-bold text-stone-850 transition hover:bg-stone-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-bold text-stone-800 transition hover:bg-stone-50"
             >
-              {linkCopied ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-emerald-600" /> Copied
-                </>
-              ) : (
-                'Copy link'
-              )}
+              {linkCopied ? (<><Check className="h-3.5 w-3.5 text-emerald-600" /> Copied</>) : 'Copy link'}
             </button>
           </div>
-        </div>
 
-        {/* ── WHERE TO PUT YOUR LINK ── */}
-        <div className="mb-8">
-          <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-stone-700">
-            Where to display your link
+          <p className="mb-3 mt-6 text-[11px] font-bold uppercase tracking-widest text-stone-700">
+            Where to put it
           </p>
           <InfoCardBar onSelect={setActiveCardId} />
         </div>
 
-        {/* ── STATUS TOAST ── */}
         <AnimatePresence>
           {status.type && (
             <motion.div
@@ -509,54 +473,32 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               exit={{ opacity: 0, y: -8 }}
               className={`mb-6 flex items-center gap-2 rounded-xl border p-4 text-sm font-semibold ${
                 status.type === 'success'
-                  ? 'border-emerald-250 bg-emerald-50 text-emerald-800'
-                  : 'border-rose-250 bg-rose-50 text-rose-800'
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-rose-200 bg-rose-50 text-rose-800'
               }`}
             >
-              {status.type === 'success' ? (
-                <Check className="h-4 w-4 shrink-0" />
-              ) : (
-                <AlertCircle className="h-4 w-4 shrink-0" />
-              )}
+              {status.type === 'success' ? <Check className="h-4 w-4 shrink-0" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
               {status.message}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* ── FORM PREVIEW SECTION ── */}
-        <p className="mb-3 text-[11px] font-bold uppercase tracking-widest text-stone-700">
-          Form Layout & Live Customization
-        </p>
+        {/* ══ Two columns: what's fixed | what you control ══ */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
 
-      <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-          {/* Step 1 Title Panel — accordion trigger */}
-          <button
-            type="button"
-            onClick={() => setStep1Open((prev) => !prev)}
-            className="flex w-full items-center justify-between border-b border-stone-150 bg-stone-50/45 px-5 py-3 text-left"
-          >
-            <span className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
-              Step 1: Contact details
-            </span>
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-indigo-700">
-                <Lock className="h-3 w-3" /> Always Required
-              </span>
-              <ChevronDown
-                className={`h-4 w-4 text-stone-500 transition-transform duration-200 ${step1Open ? 'rotate-180' : ''}`}
-              />
-            </div>
-          </button>
+          {/* LEFT — always-on fields, read only */}
+          <div className="lg:col-span-5">
+            <div className="lg:sticky lg:top-6">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-stone-700">
+                  Always on the form
+                </p>
+                <span className="inline-flex items-center gap-1 rounded-full border border-stone-300 bg-white px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-stone-600">
+                  <Lock className="h-3 w-3" /> Can&apos;t be removed
+                </span>
+              </div>
 
-          <AnimatePresence initial={false}>
-            {step1Open && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                className="overflow-hidden"
-              >
+              <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
                 <FormStep1
                   heading={getCtaHeading()}
                   categories={categories}
@@ -564,38 +506,234 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                   brandColor2={brandColor2}
                   logoUrl={company.logo_url}
                 />
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
 
-          {/* Step 2 Section */}
-          <div className="border-t border-stone-200">
-            <FormStep2Editable
-              fieldConfig={fieldConfig}
-              toggleField={toggleField}
-              customQuestions={customQuestions}
-              setCustomQuestions={setCustomQuestions}
-              canUseCustomQuestions={canUseCustomQuestions}
-              canUsePhotoUpload={canUsePhotoUpload}
-              brandColor1={brandColor1}
-              brandColor2={brandColor2}
-              companySlug={company.slug}
-              showAddQuestion={showAddQuestion}
-              setShowAddQuestion={setShowAddQuestion}
-              editingQuestionId={editingQuestionId}
-              setEditingQuestionId={setEditingQuestionId}
-              newQuestion={newQuestion}
-              setNewQuestion={setNewQuestion}
-              newOption={newOption}
-              setNewOption={setNewOption}
-              onSaveQuestion={addOrUpdateQuestion}
-              onCancelQuestion={resetForm}
-            />
+              {/* Where services actually get edited */}
+              <div className="mt-3 flex items-start gap-3 rounded-xl border border-stone-200 bg-white p-4">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50">
+                  <Tag className="h-4 w-4 text-stone-700" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-bold text-stone-900">Editing your services?</p>
+                  <p className="mt-0.5 text-[12px] font-medium leading-relaxed text-stone-500">
+                    The service options customers pick from come from your{' '}
+                    <a
+                      href={`/${company.slug}/categories`}
+                      className="font-bold text-stone-900 underline underline-offset-2 hover:text-stone-700"
+                    >
+                      Categories &amp; Pricing
+                    </a>{' '}
+                    section — add or rename them there and they update here.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT — the controls */}
+          <div className="space-y-6 lg:col-span-7">
+
+            {/* Additional details */}
+            <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+              <div className="border-b border-stone-200 bg-stone-50 px-5 py-4 sm:px-6">
+                <p className="text-[13px] font-bold text-stone-900">Additional details</p>
+                <p className="mt-0.5 text-[12px] font-medium text-stone-500">
+                  Turn these on to collect more up front. Each one shows a preview when it&apos;s on.
+                </p>
+              </div>
+
+              <div className="space-y-3 p-5 sm:p-6">
+                <EditableFieldRow
+                  icon={MapPin}
+                  label="Address"
+                  enabled={fieldConfig.address.enabled}
+                  onToggle={() => toggleField('address')}
+                  mockContent={
+                    <div className="max-w-xl space-y-4">
+                      <div>
+                        <label className={innerLabelClass}>Street address</label>
+                        <div className={innerInputClass}>123 Main St</div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className={innerLabelClass}>City</label>
+                          <div className={innerInputClass}>New York</div>
+                        </div>
+                        <div>
+                          <label className={innerLabelClass}>Zip code</label>
+                          <div className={innerInputClass}>12345</div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                />
+
+                <EditableFieldRow
+                  icon={Calendar}
+                  label="Preferred date"
+                  enabled={fieldConfig.preferred_date.enabled}
+                  onToggle={() => toggleField('preferred_date')}
+                  mockContent={
+                    <div className="max-w-md">
+                      <label className={innerLabelClass}>Requested date</label>
+                      <div className={innerInputClass}>MM / DD / YYYY</div>
+                    </div>
+                  }
+                />
+
+                <EditableFieldRow
+                  icon={Clock}
+                  label="Preferred time"
+                  enabled={fieldConfig.preferred_time.enabled}
+                  onToggle={() => toggleField('preferred_time')}
+                  mockContent={
+                    <div className="max-w-md">
+                      <label className={innerLabelClass}>Best time of day</label>
+                      <div className={innerInputClass}>Morning, afternoon...</div>
+                    </div>
+                  }
+                />
+
+                <EditableFieldRow
+                  icon={Megaphone}
+                  label="Lead source"
+                  enabled={fieldConfig.lead_source.enabled}
+                  onToggle={() => toggleField('lead_source')}
+                  mockContent={
+                    <div className="max-w-md">
+                      <label className={innerLabelClass}>How did you hear about us?</label>
+                      <div className={innerInputClass}>Selection dropdown...</div>
+                    </div>
+                  }
+                />
+
+                <EditableFieldRow
+                  icon={ImageIcon}
+                  label="Photo upload"
+                  enabled={fieldConfig.file_upload.enabled}
+                  onToggle={() => toggleField('file_upload')}
+                  locked={!canUsePhotoUpload}
+                  companySlug={company.slug}
+                  mockContent={
+                    <div className="flex max-w-xl flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 py-6">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-stone-200 bg-white shadow-sm">
+                        <ImageIcon className="h-5 w-5 text-stone-600" />
+                      </div>
+                      <p className="text-xs font-bold text-stone-800">Drag or click to upload photos</p>
+                      <p className="text-[10px] font-medium text-stone-500">JPG, PNG, or video up to 25MB</p>
+                    </div>
+                  }
+                />
+
+                {!canUsePhotoUpload && (
+                  <UpgradeNotice companySlug={company.slug} feature="Photo upload" />
+                )}
+              </div>
+            </div>
+
+            {/* Custom questions */}
+            <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+              <div className="flex items-start justify-between gap-3 border-b border-stone-200 bg-stone-50 px-5 py-4 sm:px-6">
+                <div>
+                  <p className="text-[13px] font-bold text-stone-900">Custom questions</p>
+                  <p className="mt-0.5 text-[12px] font-medium text-stone-500">
+                    Anything else you want to know before you quote.
+                  </p>
+                </div>
+                {/* Only shown when it's actually locked. */}
+                {!canUseCustomQuestions && <UpgradePill companySlug={company.slug} />}
+              </div>
+
+              <div className="space-y-3 p-5 sm:p-6">
+                {customQuestions.length === 0 && canUseCustomQuestions && (
+                  <div className="rounded-xl border border-dashed border-stone-300 bg-stone-50 px-4 py-8 text-center">
+                    <HelpCircle className="mx-auto mb-2 h-5 w-5 text-stone-400" />
+                    <p className="text-[13px] font-bold text-stone-700">No custom questions yet</p>
+                    <p className="mt-0.5 text-[12px] font-medium text-stone-500">
+                      Roof age, gate code, budget range — whatever saves you a phone call.
+                    </p>
+                  </div>
+                )}
+
+                {customQuestions.map((q) => (
+                  <div
+                    key={q.id}
+                    className="group relative rounded-xl border border-stone-200 bg-stone-50 p-5 transition-all hover:border-stone-300 hover:shadow-sm"
+                  >
+                    <div className="absolute right-4 top-4 flex items-center gap-1.5">
+                      <button
+                        onClick={() => {
+                          setNewQuestion(q);
+                          setEditingQuestionId(q.id);
+                          setShowAddQuestion(true);
+                        }}
+                        className="rounded-lg border border-stone-200 bg-white p-1.5 text-stone-700 shadow-sm hover:bg-stone-50"
+                        aria-label="Edit question"
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setCustomQuestions(customQuestions.filter((x) => x.id !== q.id))}
+                        className="rounded-lg border border-stone-200 bg-white p-1.5 text-rose-600 shadow-sm hover:bg-rose-50"
+                        aria-label="Delete question"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="mb-3 flex items-center gap-2 pr-24">
+                      <HelpCircle className="h-4 w-4 shrink-0 text-stone-600" />
+                      <p className="truncate text-xs font-bold uppercase tracking-wider text-stone-800">{q.label}</p>
+                    </div>
+
+                    {q.type === 'text' && (
+                      <div className="flex h-10 w-full max-w-xl items-center rounded-xl border border-stone-200 bg-white px-4 text-xs font-medium text-stone-400">
+                        User types response text...
+                      </div>
+                    )}
+
+                    {q.type === 'select' && (
+                      <div className="flex h-10 w-full max-w-xl items-center justify-between rounded-xl border border-stone-200 bg-white px-4 text-xs font-medium text-stone-600">
+                        <span className="truncate">
+                          {q.options?.length
+                            ? `${q.options.length} option${q.options.length === 1 ? '' : 's'}: ${q.options.slice(0, 3).join(', ')}${q.options.length > 3 ? '\u2026' : ''}`
+                            : 'Select an option...'}
+                        </span>
+                        <ChevronDown className="ml-2 h-4 w-4 shrink-0 text-stone-400" />
+                      </div>
+                    )}
+
+                    {q.type === 'checkbox' && (
+                      <div className="flex gap-5">
+                        <div className="flex items-center gap-2.5 text-xs font-bold text-stone-600">
+                          <div className="h-4 w-4 rounded border border-stone-300 bg-white" /> Yes
+                        </div>
+                        <div className="flex items-center gap-2.5 text-xs font-bold text-stone-600">
+                          <div className="h-4 w-4 rounded border border-stone-300 bg-white" /> No
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {canUseCustomQuestions ? (
+                  <button
+                    onClick={() => setShowAddQuestion(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-50"
+                  >
+                    <Plus className="h-4 w-4 text-stone-600" /> Add custom question
+                  </button>
+                ) : (
+                  <UpgradeNotice companySlug={company.slug} feature="Custom questions" />
+                )}
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
 
-      {/* ── STICKY SAVING PROMPT ── */}
+      {/* ── Sticky save ── */}
       <AnimatePresence>
         {isDirty && (
           <motion.div
@@ -604,9 +742,9 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             exit={{ y: 80, opacity: 0 }}
             className="fixed bottom-0 left-0 right-0 z-40 border-t border-stone-200 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
           >
-            <div className="mx-auto flex max-w-4xl flex-col items-stretch gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+            <div className="mx-auto flex max-w-6xl flex-col items-stretch gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
               <p className="flex items-center gap-1.5 text-[13px] font-bold text-stone-800">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500 animate-pulse" />
+                <span className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-amber-500" />
                 You have unsaved changes.
               </p>
               <button
@@ -614,7 +752,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 disabled={loading}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-[13px] font-bold text-white shadow-sm transition hover:bg-stone-800 disabled:opacity-60 sm:w-auto"
               >
-                {loading && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white mr-1.5" />}
+                {loading && <div className="mr-1.5 h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
                 {loading ? 'Saving...' : 'Save changes'}
               </button>
             </div>
@@ -622,14 +760,28 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         )}
       </AnimatePresence>
 
-      {activeCard && (
-        <InfoModal card={activeCard} onClose={() => setActiveCardId(null)} />
+      {activeCard && <InfoModal card={activeCard} onClose={() => setActiveCardId(null)} />}
+
+      {showAddQuestion && (
+        <QuestionModal
+          question={newQuestion}
+          newOption={newOption}
+          isEditing={!!editingQuestionId}
+          onChange={setNewQuestion}
+          onOptionChange={setNewOption}
+          onSave={addOrUpdateQuestion}
+          onCancel={resetForm}
+        />
       )}
     </div>
   );
 }
 
-/* ─────────────────── TOGGLE SWITCH ─────────────────── */
+const innerLabelClass = 'mb-1.5 block text-[9px] font-bold uppercase tracking-widest text-stone-600';
+const innerInputClass = 'flex h-10 w-full items-center rounded-xl border border-stone-200 bg-white px-3 text-xs font-semibold text-stone-600';
+
+/* ─────────────────── Toggle ─────────────────── */
+
 function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onToggle: () => void; ariaLabel: string }) {
   return (
     <button
@@ -638,19 +790,20 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
       aria-checked={enabled}
       aria-label={ariaLabel}
       onClick={onToggle}
-      className={`relative h-5.5 w-9.5 shrink-0 rounded-full transition-all duration-200 outline-none ${
-        enabled ? 'bg-emerald-600' : 'bg-stone-200'
+      className={`relative h-6 w-10 shrink-0 rounded-full outline-none transition-all duration-200 ${
+        enabled ? 'bg-emerald-600' : 'bg-stone-300'
       }`}
     >
       <div
-        className="absolute top-[2px] left-[2px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
+        className="absolute left-[3px] top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200"
         style={{ transform: enabled ? 'translateX(16px)' : 'translateX(0)' }}
       />
     </button>
   );
 }
 
-/* ─────────────────── EDITABLE FIELD ROW ─────────────────── */
+/* ─────────────────── Field row ─────────────────── */
+
 function EditableFieldRow({
   icon: Icon,
   label,
@@ -659,7 +812,6 @@ function EditableFieldRow({
   onToggle,
   locked,
   companySlug,
-  planTier,
 }: {
   icon: React.ElementType;
   label: string;
@@ -668,58 +820,40 @@ function EditableFieldRow({
   onToggle?: () => void;
   locked?: boolean;
   companySlug?: string;
-  planTier?: string;
 }) {
   const active = enabled && !locked;
 
   return (
     <div
       className={`overflow-hidden rounded-xl border transition-all duration-200 ${
-        locked
-          ? 'border-stone-200 bg-stone-50/50'
-          : active
-          ? 'border-stone-250 bg-stone-50/20 shadow-sm'
-          : 'border-stone-200/80 bg-white'
+        locked ? 'border-stone-200 bg-stone-50' : active ? 'border-stone-300 bg-white shadow-sm' : 'border-stone-200 bg-white'
       }`}
     >
-      <div className="flex items-center gap-3.5 px-4 py-3.5">
+      <div className="flex items-center gap-3 px-4 py-3.5">
         <div className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
-          active ? 'border-stone-300 bg-white' : 'border-transparent bg-stone-50'
+          active ? 'border-stone-300 bg-white' : 'border-transparent bg-stone-100'
         }`}>
           <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-stone-800' : 'text-stone-400'}`} />
         </div>
-        
+
         <p className={`min-w-0 flex-1 truncate text-xs font-bold uppercase tracking-wider ${
           active ? 'text-stone-700' : 'text-stone-500'
         }`}>
           {label}
         </p>
 
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider border ${
+        <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${
           locked
-            ? 'bg-stone-50 border-stone-200 text-stone-500'
+            ? 'border-amber-200 bg-amber-50 text-amber-700'
             : active
-            ? 'bg-emerald-50 border-emerald-250 text-emerald-700'
-            : 'bg-stone-50 border-stone-200 text-stone-500'
+            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+            : 'border-stone-200 bg-stone-50 text-stone-500'
         }`}>
-          {locked ? 'Locked' : active ? 'Active' : 'Off'}
+          {locked ? `${REQUIRED_PLAN.label} plan` : active ? 'On' : 'Off'}
         </span>
 
-       {locked ? (
-          planTier === 'free' ? (
-            <a
-              href={`/${companySlug}/admin/settings`}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1.5 text-white transition hover:bg-amber-700"
-            >
-              <Lock className="h-3 w-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Upgrade</span>
-            </a>
-          ) : (
-            <span className="flex shrink-0 items-center gap-1.5 rounded-lg bg-stone-100 px-2.5 py-1.5 text-stone-400">
-              <Lock className="h-3 w-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Locked</span>
-            </span>
-          )
+        {locked && companySlug ? (
+          <UpgradePill companySlug={companySlug} />
         ) : (
           <ToggleSwitch enabled={enabled} onToggle={onToggle!} ariaLabel={`Toggle ${label}`} />
         )}
@@ -733,9 +867,7 @@ function EditableFieldRow({
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.15 }}
           >
-            <div className="border-t border-stone-150/60 bg-stone-50/20 px-5 pb-4.5 pt-4">
-              {mockContent}
-            </div>
+            <div className="border-t border-stone-200 bg-stone-50 px-5 pb-5 pt-4">{mockContent}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -743,7 +875,8 @@ function EditableFieldRow({
   );
 }
 
-/* ─────────────────── STEP 1 READ-ONLY PREVIEW ─────────────────── */
+/* ─────────────────── Step 1 preview ─────────────────── */
+
 function FormStep1({
   heading,
   categories,
@@ -757,60 +890,51 @@ function FormStep1({
   brandColor2: string;
   logoUrl?: string | null;
 }) {
-  const labelClass = "text-[9px] font-bold text-stone-750 uppercase tracking-widest ml-1 mb-1.5";
+  const labelClass = 'mb-1.5 ml-1 text-[9px] font-bold uppercase tracking-widest text-stone-600';
   const inputClass =
-    "w-full h-11 bg-stone-50/50 border border-stone-200/70 rounded-xl px-4 text-stone-800 text-xs flex items-center gap-3 font-semibold";
+    'flex h-11 w-full items-center gap-3 rounded-xl border border-stone-200 bg-stone-50 px-4 text-xs font-semibold text-stone-800';
 
   return (
     <div className="bg-white">
-      <div
-        className="p-6 text-white"
-        style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-      >
-        {logoUrl && (
-          <img src={logoUrl} alt="" className="h-8 w-auto object-contain mb-4" />
-        )}
-        <h3 className="text-lg font-bold tracking-tight text-white">
-          {heading || 'Request a Free Quote'}
-        </h3>
+      <div className="p-6 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
+        {logoUrl && <img src={logoUrl} alt="" className="mb-4 h-8 w-auto object-contain" />}
+        <h3 className="text-lg font-bold tracking-tight text-white">{heading || 'Request a Free Quote'}</h3>
       </div>
 
-      <div className="p-5 sm:p-6 space-y-5">
+      <div className="space-y-5 p-5 sm:p-6">
         <div>
-          <p className={labelClass}>Full Name</p>
+          <p className={labelClass}>Full name</p>
           <div className={inputClass}>
-            <User className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+            <User className="h-3.5 w-3.5 shrink-0 text-stone-400" />
             John Smith
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <p className={labelClass}>Email Address</p>
+            <p className={labelClass}>Email address</p>
             <div className={inputClass}>
-              <Mail className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+              <Mail className="h-3.5 w-3.5 shrink-0 text-stone-400" />
               john@example.com
             </div>
           </div>
           <div>
-            <p className={labelClass}>Phone Number</p>
+            <p className={labelClass}>Phone number</p>
             <div className={inputClass}>
-              <Phone className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+              <Phone className="h-3.5 w-3.5 shrink-0 text-stone-400" />
               (555) 123-4567
             </div>
           </div>
         </div>
 
         <div>
-          <p className={labelClass}>Service Needed</p>
+          <p className={labelClass}>Service needed</p>
           <div className="flex flex-wrap gap-2">
             {categories.map((cat, i) => (
               <div
                 key={i}
-                className={`px-3 py-1.5 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border ${
-                  i === 0
-                    ? 'text-white border-transparent'
-                    : 'bg-white text-stone-800 border-stone-200'
+                className={`rounded-lg border px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wider ${
+                  i === 0 ? 'border-transparent text-white' : 'border-stone-200 bg-white text-stone-800'
                 }`}
                 style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
               >
@@ -821,8 +945,8 @@ function FormStep1({
         </div>
 
         <div>
-          <p className={labelClass}>Project Description</p>
-          <div className="w-full h-20 bg-stone-50/50 border border-stone-200/70 rounded-xl p-4 text-stone-500 text-xs font-semibold">
+          <p className={labelClass}>Project description</p>
+          <div className="h-20 w-full rounded-xl border border-stone-200 bg-stone-50 p-4 text-xs font-semibold text-stone-500">
             Describe your project here...
           </div>
         </div>
@@ -831,266 +955,8 @@ function FormStep1({
   );
 }
 
-/* ─────────────────── STEP 2 — EDITABLE PANEL ─────────────────── */
-function FormStep2Editable({
-  fieldConfig,
-  toggleField,
-  customQuestions,
-  setCustomQuestions,
-  canUseCustomQuestions,
-  canUsePhotoUpload,
-  brandColor1,
-  brandColor2,
-  companySlug,
-  showAddQuestion,
-  setShowAddQuestion,
-  editingQuestionId,
-  setEditingQuestionId,
-  newQuestion,
-  setNewQuestion,
-  newOption,
-  setNewOption,
-  onSaveQuestion,
-  onCancelQuestion,
-}: {
-  fieldConfig: FieldConfig;
-  toggleField: (f: keyof FieldConfig) => void;
-  customQuestions: CustomQuestion[];
-  setCustomQuestions: (q: CustomQuestion[]) => void;
-  canUseCustomQuestions: boolean;
-  canUsePhotoUpload: boolean;
-  brandColor1: string;
-  brandColor2: string;
-  companySlug: string;
-  showAddQuestion: boolean;
-  setShowAddQuestion: (v: boolean) => void;
-  editingQuestionId: string | null;
-  setEditingQuestionId: (v: string | null) => void;
-  newQuestion: CustomQuestion;
-  setNewQuestion: (q: CustomQuestion) => void;
-  newOption: string;
-  setNewOption: (v: string) => void;
-  onSaveQuestion: () => void;
-  onCancelQuestion: () => void;
-}) {
-  const innerLabelClass = "text-[9px] font-bold text-stone-750 uppercase tracking-widest mb-1.5 block";
-  const innerInputClass = "h-10 w-full bg-white border border-stone-200 rounded-xl px-3 text-xs text-stone-600 flex items-center font-semibold";
+/* ─────────────────── Question modal ─────────────────── */
 
-  return (
-    <div className="bg-white">
-      <div
-        className="p-6 text-white"
-        style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-      >
-        <h3 className="text-lg font-bold tracking-tight">Step 2: Extra Details</h3>
-        <p className="text-white/80 text-xs mt-1 font-medium">
-          Toggle optional fields to customize additional information collected.
-        </p>
-      </div>
-
-      <div className="p-5 sm:p-6 space-y-4">
-        {/* Address */}
-        <EditableFieldRow
-          icon={MapPin}
-          label="Address"
-          enabled={fieldConfig.address.enabled}
-          onToggle={() => toggleField('address')}
-          mockContent={
-            <div className="space-y-4 max-w-xl">
-              <div>
-                <label className={innerLabelClass}>Street Address</label>
-                <div className={innerInputClass}>123 Main St</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={innerLabelClass}>City</label>
-                  <div className={innerInputClass}>New York</div>
-                </div>
-                <div>
-                  <label className={innerLabelClass}>Zip Code</label>
-                  <div className={innerInputClass}>12345</div>
-                </div>
-              </div>
-            </div>
-          }
-        />
-
-        {/* Preferred Date */}
-        <EditableFieldRow
-          icon={Calendar}
-          label="Preferred Date"
-          enabled={fieldConfig.preferred_date.enabled}
-          onToggle={() => toggleField('preferred_date')}
-          mockContent={
-            <div className="max-w-md">
-              <label className={innerLabelClass}>Requested Date</label>
-              <div className={innerInputClass}>MM / DD / YYYY</div>
-            </div>
-          }
-        />
-
-        {/* Preferred Time */}
-        <EditableFieldRow
-          icon={Clock}
-          label="Preferred Time"
-          enabled={fieldConfig.preferred_time.enabled}
-          onToggle={() => toggleField('preferred_time')}
-          mockContent={
-            <div className="max-w-md">
-              <label className={innerLabelClass}>Best Time of Day</label>
-              <div className={innerInputClass}>Morning, Afternoon...</div>
-            </div>
-          }
-        />
-
-        {/* Lead Source */}
-        <EditableFieldRow
-          icon={Megaphone}
-          label="Lead Source"
-          enabled={fieldConfig.lead_source.enabled}
-          onToggle={() => toggleField('lead_source')}
-          mockContent={
-            <div className="max-w-md">
-              <label className={innerLabelClass}>How did you hear about us?</label>
-              <div className={innerInputClass}>Selection dropdown...</div>
-            </div>
-          }
-        />
-
-        {/* File Upload */}
-        <EditableFieldRow
-          icon={ImageIcon}
-          label="Photo Upload"
-          enabled={fieldConfig.file_upload.enabled}
-          onToggle={() => toggleField('file_upload')}
-          locked={!canUsePhotoUpload}
-          companySlug={companySlug}
-          mockContent={
-            <div className="max-w-xl border-2 border-dashed border-stone-200 hover:border-stone-300 rounded-xl flex flex-col items-center justify-center gap-2 py-6 bg-stone-50/50">
-              <div className="w-10 h-10 rounded-xl bg-white border border-stone-200 flex items-center justify-center shadow-sm">
-                <ImageIcon className="w-5 h-5 text-stone-600" />
-              </div>
-              <p className="text-xs font-bold text-stone-800">Drag or click to upload photos</p>
-              <p className="text-[10px] font-medium text-stone-500">Supports JPG, PNG, or video files up to 25MB</p>
-            </div>
-          }
-        />
-
-        {/* Custom Questions Section */}
-        <div className="space-y-3 pt-4">
-         <div className="flex items-center justify-between">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-stone-700">
-              Custom Questions
-            </p>
-            <a
-            
-          href={`/${companySlug}/admin/settings`}
-              className="flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1.5 text-white transition hover:bg-amber-700"
-            >
-              <Lock className="h-3 w-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">Upgrade</span>
-            </a>
-          </div>
-
-          <div className="space-y-3">
-            {customQuestions.map((q) => (
-              <div
-                key={q.id}
-                className="group relative rounded-xl border border-stone-200 bg-stone-50/20 p-5 transition-all hover:border-stone-300 hover:shadow-sm"
-              >
-                <div className="absolute top-4 right-4 flex items-center gap-1.5">
-                  <button
-                    onClick={() => {
-                      setNewQuestion(q);
-                      setEditingQuestionId(q.id);
-                      setShowAddQuestion(true);
-                    }}
-                    className="p-1.5 bg-white border border-stone-200 rounded-lg text-stone-700 hover:bg-stone-50 shadow-sm"
-                    aria-label="Edit question"
-                  >
-                    <Edit2 className="w-3.5 h-3.5" />
-                  </button>
-                  <button
-                    onClick={() => setCustomQuestions(customQuestions.filter((x) => x.id !== q.id))}
-                    className="p-1.5 bg-white border border-stone-200 rounded-lg text-rose-600 hover:bg-rose-50/50 shadow-sm"
-                    aria-label="Delete question"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-
-                <div className="flex items-center gap-2 pr-24 mb-3">
-                  <HelpCircle className="w-4 h-4 text-stone-600 shrink-0" />
-                  <p className="text-xs font-bold text-stone-800 uppercase tracking-wider truncate">
-                    {q.label}
-                  </p>
-                </div>
-
-                {q.type === 'text' && (
-                  <div className="h-10 w-full max-w-xl bg-white border border-stone-200 rounded-xl flex items-center px-4 text-xs font-medium text-stone-400">
-                    User types response text...
-                  </div>
-                )}
-
-                {q.type === 'select' && (
-                  <div className="h-10 w-full max-w-xl bg-white border border-stone-200 rounded-xl flex items-center justify-between px-4 text-xs font-medium text-stone-600">
-                    <span className="truncate">
-                      {q.options?.length
-                        ? `${q.options.length} option${q.options.length === 1 ? '' : 's'}: ${q.options.slice(0, 3).join(', ')}${q.options.length > 3 ? '…' : ''}`
-                        : 'Select an option...'}
-                    </span>
-                    <ChevronDown className="w-4 h-4 text-stone-400 shrink-0 ml-2" />
-                  </div>
-                )}
-
-                {q.type === 'checkbox' && (
-                  <div className="flex gap-5">
-                    <div className="flex items-center gap-2.5 text-xs text-stone-650 font-bold">
-                      <div className="w-4.5 h-4.5 rounded border border-stone-300 bg-white" /> Yes
-                    </div>
-                    <div className="flex items-center gap-2.5 text-xs text-stone-650 font-bold">
-                      <div className="w-4.5 h-4.5 rounded border border-stone-300 bg-white" /> No
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {!canUseCustomQuestions ? (
-            <div className="p-4 rounded-xl border border-stone-200 bg-stone-50 flex items-center gap-3">
-              <Lock className="w-4 h-4 text-stone-400 shrink-0" />
-              <p className="text-xs font-bold text-stone-500">
-                Upgrade to add custom fields and questionnaires
-              </p>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAddQuestion(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-4 py-2 text-xs font-bold text-stone-800 shadow-sm transition hover:bg-stone-50"
-            >
-              <Plus className="h-4 w-4 text-stone-600" /> Add Custom Question
-            </button>
-          )}
-        </div>
-      </div>
-
-      {showAddQuestion && (
-        <QuestionModal
-          question={newQuestion}
-          newOption={newOption}
-          isEditing={!!editingQuestionId}
-          onChange={setNewQuestion}
-          onOptionChange={setNewOption}
-          onSave={onSaveQuestion}
-          onCancel={onCancelQuestion}
-        />
-      )}
-    </div>
-  );
-}
-
-/* ─────────────────── QUESTION MODAL ─────────────────── */
 function QuestionModal({
   question,
   newOption,
@@ -1109,65 +975,48 @@ function QuestionModal({
   onCancel: () => void;
 }) {
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm"
-      onClick={onCancel}
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 p-4 backdrop-blur-sm" onClick={onCancel}>
       <div
-        className="w-full max-w-md overflow-hidden rounded-2xl bg-white border border-stone-100 shadow-xl"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-150 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-stone-200 px-6 py-4">
           <span className="text-[14px] font-bold uppercase tracking-wider text-stone-900">
-            {isEditing ? 'Edit Question' : 'Add Custom Question'}
+            {isEditing ? 'Edit question' : 'Add custom question'}
           </span>
-          <button
-            onClick={onCancel}
-            className="rounded-full p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700"
-            aria-label="Close"
-          >
+          <button onClick={onCancel} className="rounded-full p-1 text-stone-400 transition hover:bg-stone-100 hover:text-stone-700" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="space-y-5 p-6">
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-700 block mb-1.5">
-              Question Title
-            </label>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-stone-700">Question title</label>
             <input
               type="text"
               value={question.label}
               onChange={(e) => onChange({ ...question, label: e.target.value })}
-              className="w-full px-4 py-2.5 rounded-xl border border-stone-200 bg-white text-stone-900 placeholder-stone-400 outline-none transition text-sm font-semibold focus:border-stone-900 focus:ring-4 focus:ring-stone-100"
-              placeholder='e.g., "What is your budget range?"'
+              className="w-full rounded-xl border border-stone-200 bg-white px-4 py-2.5 text-sm font-semibold text-stone-900 outline-none transition placeholder:text-stone-400 focus:border-stone-900 focus:ring-4 focus:ring-stone-100"
+              placeholder='e.g., "How old is your roof?"'
               autoFocus
             />
           </div>
 
           <div>
-            <label className="text-[10px] font-bold uppercase tracking-wider text-stone-700 block mb-1.5">
-              Input Type
-            </label>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-stone-700">Input type</label>
             <div className="grid grid-cols-3 gap-2">
               {[
-                { val: 'text', label: 'Text Input' },
+                { val: 'text', label: 'Text input' },
                 { val: 'select', label: 'Dropdown' },
                 { val: 'checkbox', label: 'Yes/No' },
               ].map((t) => (
                 <button
                   key={t.val}
-                  onClick={() =>
-                    onChange({
-                      ...question,
-                      type: t.val as any,
-                      options: t.val === 'select' ? question.options : [],
-                    })
-                  }
-                  className={`py-2 rounded-lg border text-[11px] font-bold transition ${
+                  onClick={() => onChange({ ...question, type: t.val as any, options: t.val === 'select' ? question.options : [] })}
+                  className={`rounded-lg border py-2 text-[11px] font-bold transition ${
                     question.type === t.val
-                      ? 'bg-stone-900 border-stone-900 text-white'
-                      : 'bg-white border-stone-250 text-stone-700 hover:bg-stone-50'
+                      ? 'border-stone-900 bg-stone-900 text-white'
+                      : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
                   }`}
                 >
                   {t.label}
@@ -1177,12 +1026,10 @@ function QuestionModal({
           </div>
 
           {question.type === 'select' && (
-            <div className="space-y-2 border-t border-stone-150 pt-4">
-              <label className="text-[10px] font-bold uppercase tracking-wider text-stone-700 block mb-1.5">
-                Dropdown Options
-              </label>
-              
-              <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+            <div className="space-y-2 border-t border-stone-200 pt-4">
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-wider text-stone-700">Dropdown options</label>
+
+              <div className="max-h-36 space-y-1.5 overflow-y-auto pr-1">
                 <AnimatePresence>
                   {question.options?.map((opt, i) => (
                     <motion.div
@@ -1190,20 +1037,15 @@ function QuestionModal({
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 4 }}
-                      className="flex items-center justify-between bg-stone-50 border border-stone-200 px-3 py-2 rounded-lg"
+                      className="flex items-center justify-between rounded-lg border border-stone-200 bg-stone-50 px-3 py-2"
                     >
                       <span className="text-xs font-semibold text-stone-800">{opt}</span>
                       <button
-                        onClick={() =>
-                          onChange({
-                            ...question,
-                            options: question.options?.filter((_, idx) => idx !== i),
-                          })
-                        }
-                        className="text-stone-400 hover:text-rose-600 transition"
+                        onClick={() => onChange({ ...question, options: question.options?.filter((_, idx) => idx !== i) })}
+                        className="text-stone-400 transition hover:text-rose-600"
                         aria-label="Remove option"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                     </motion.div>
                   ))}
@@ -1215,10 +1057,11 @@ function QuestionModal({
                   type="text"
                   value={newOption}
                   onChange={(e) => onOptionChange(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs rounded-xl border border-stone-200 bg-white outline-none focus:border-stone-900 transition font-semibold"
-                  placeholder="Add custom option..."
+                  className="flex-1 rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold outline-none transition focus:border-stone-900"
+                  placeholder="Add option..."
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && newOption) {
+                      e.preventDefault();
                       onChange({ ...question, options: [...(question.options || []), newOption] });
                       onOptionChange('');
                     }
@@ -1231,7 +1074,7 @@ function QuestionModal({
                       onOptionChange('');
                     }
                   }}
-                  className="px-4 py-2 bg-stone-900 text-white rounded-xl text-xs font-bold hover:bg-stone-800 transition shadow-sm"
+                  className="rounded-xl bg-stone-900 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-stone-800"
                 >
                   Add
                 </button>
@@ -1242,13 +1085,13 @@ function QuestionModal({
           <div className="flex gap-2 pt-2">
             <button
               onClick={onSave}
-              className="flex-1 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold uppercase tracking-wider transition shadow-sm"
+              className="flex-1 rounded-xl bg-stone-900 py-2.5 text-xs font-bold uppercase tracking-wider text-white shadow-sm transition hover:bg-stone-800"
             >
-              {isEditing ? 'Update' : 'Add Question'}
+              {isEditing ? 'Update' : 'Add question'}
             </button>
             <button
               onClick={onCancel}
-              className="px-4 py-2.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 rounded-xl text-xs font-bold uppercase tracking-wider transition"
+              className="rounded-xl border border-stone-300 bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider text-stone-700 transition hover:bg-stone-50"
             >
               Cancel
             </button>

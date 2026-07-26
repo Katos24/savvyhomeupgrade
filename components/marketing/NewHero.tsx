@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, CheckCircle2, QrCode, Link2, Check, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, QrCode, Link2, Check, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 
 const font = "'Nunito', sans-serif";
@@ -14,6 +14,7 @@ const TRADE_IMAGES = [
   { name: 'HVAC', src: '/images/hvac.webp' },
   { name: 'Plumbing', src: '/images/plumbing.webp' },
   { name: 'Electrical', src: '/images/electrical.webp' },
+  { name: 'Solar', src: '/images/solar.webp' },
 ];
 
 const QUICK_FEATURES = [
@@ -27,6 +28,10 @@ const QUICK_FEATURES = [
 export default function Hero() {
   const [currentTradeIndex, setCurrentTradeIndex] = useState(0);
 
+  // Once someone scrolls the strip themselves, stop moving it under them.
+  const [userScrolled, setUserScrolled] = useState(false);
+  const stripRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const reduced =
       typeof window !== 'undefined' &&
@@ -38,6 +43,21 @@ export default function Hero() {
     }, 5000);
     return () => clearInterval(timer);
   }, []);
+
+  // Keep the mobile strip in step with the cycling background.
+  useEffect(() => {
+    if (userScrolled) return;
+    const strip = stripRef.current;
+    const card = strip?.children[currentTradeIndex] as HTMLElement | undefined;
+    if (!strip || !card) return;
+
+    strip.scrollTo({
+      left: card.offsetLeft - 16,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+    });
+  }, [currentTradeIndex, userScrolled]);
 
   return (
     <section
@@ -97,21 +117,30 @@ export default function Hero() {
               straight to your board with photos and job details attached.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-              <Link href="/signup">
+            {/* Primary is filled, demo is outlined — one obvious next step,
+                with a lower-commitment option beside it. */}
+            <div className="flex flex-col sm:flex-row items-stretch gap-3.5">
+              <Link href="/signup" className="sm:flex-initial">
                 <button
                   style={{ backgroundColor: ACCENT_TEAL }}
-                  className="w-full sm:w-auto text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                  className="w-full text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
                   Get started free
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
 
-              <div className="flex items-center justify-center sm:justify-start gap-2 text-slate-300 text-xs font-bold px-2 py-2">
-                <CheckCircle2 size={16} className="text-teal-400 shrink-0" />
-                No credit card required
-              </div>
+              <Link href="/book-demo" className="sm:flex-initial">
+                <button className="w-full text-white font-black text-sm uppercase tracking-wider px-7 py-4 rounded-xl border border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
+                  <CalendarDays size={16} className="shrink-0" />
+                  Book a demo
+                </button>
+              </Link>
+            </div>
+
+            <div className="flex items-center gap-2 text-slate-300 text-xs font-bold mt-4">
+              <CheckCircle2 size={16} className="text-teal-400 shrink-0" />
+              No credit card required
             </div>
           </div>
 
@@ -168,31 +197,23 @@ export default function Hero() {
 
         </div>
 
-        {/* ── Pixar-Style Light Feature Banner ─────────────────────── */}
+        {/* ── Feature banner ───────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
           className="mt-12 sm:mt-16 rounded-[2.5rem] bg-gradient-to-b from-white via-slate-50 to-slate-100 p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-white/80 ring-1 ring-slate-200/50"
         >
-          {/* Top Headline Section */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-200/80">
-            <div className="flex items-center gap-3">
-             
-              <div>
-               
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                  Everything you need to run your business
-                </h2>
-              </div>
-            </div>
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              Everything you need to run your business
+            </h2>
 
-            <span className="text-xs font-black text-teal-800 bg-teal-100/80 border border-teal-200/60 px-4 py-2 rounded-full shadow-inner self-start md:self-auto shrink-0">
+            <span className="text-xs font-black text-teal-800 bg-teal-100/80 border border-teal-200/60 px-4 py-2 rounded-full self-start md:self-auto shrink-0">
               Zero extra apps needed
             </span>
           </div>
 
-          {/* Light Pixar-Style Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
             {QUICK_FEATURES.map((feat) => (
               <div

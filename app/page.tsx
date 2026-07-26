@@ -50,9 +50,7 @@ export default function NewHome() {
 
 
 
-      {/* 6. Collect the Google review — TODO: no section built yet, needs a new component */}
 
-      <GoogleReviewSection />
 
       <DigestBanner />
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Zap, Trash2, Star, Download, Paperclip } from 'lucide-react';
+import { Check, Zap, Trash2, Star, Download, Paperclip, Mail, Sparkles } from 'lucide-react';
 import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
@@ -33,9 +33,7 @@ const TEMPLATE_ITEMS = [
   { label: 'Drip Edge (10ft Sections)', price: 18 },
 ];
 
-/* ── Row scaffold ───────────────────────────────────────────────────────────
-   No card. Just a rule, an eyebrow, and type. The visual bleeds free of any
-   container, which is what keeps this from reading as a grid of boxes.       */
+/* ── Row scaffold ─────────────────────────────────────────────────────────── */
 
 function Row({
   eyebrow,
@@ -96,11 +94,6 @@ function Row({
 
 /* ── Visuals ───────────────────────────────────────────────────────────── */
 
-/**
- * Signature moment: the reusable template overlapping the finished estimate.
- * Two artifacts, one relationship — this is the only place on the page where
- * anything overlaps, so it carries the weight.
- */
 const QuoteCollage = () => (
   <div className="relative w-full">
     <div className="relative ml-auto w-[78%] sm:w-[68%] rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-white">
@@ -167,35 +160,6 @@ const OutboxStrip = () => {
   );
 };
 
-const ReviewStrip = () => (
-  <div className="w-full rounded-2xl border border-white/10 bg-white shadow-xl p-5 sm:p-7">
-    <div className="flex items-center gap-3 mb-4">
-      <GoogleLogo className="w-7 h-7" />
-      <div className="min-w-0">
-        <p className="text-sm font-black text-slate-900 truncate">Ridge Line Roofing</p>
-        <div className="flex items-center gap-1 mt-0.5">
-          {[...Array(5)].map((_, i) => (
-            <Star key={i} size={11} className="text-amber-400" fill="currentColor" />
-          ))}
-          <span className="text-[11px] font-bold text-slate-500 ml-1">4.9 · 124 reviews</span>
-        </div>
-      </div>
-    </div>
-    <div className="rounded-xl bg-slate-50 border border-slate-200 p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
-        Sent automatically on job close
-      </p>
-      <p className="text-sm font-semibold text-slate-700 leading-relaxed">
-        Thanks again, Jennifer. If you have a minute, a quick review helps other
-        homeowners find us.
-      </p>
-      <span className="inline-flex items-center gap-1.5 mt-3 rounded-lg bg-teal-700 text-white text-[11px] font-black px-3 py-2">
-        Leave a review
-      </span>
-    </div>
-  </div>
-);
-
 const ExportStrip = () => {
   const cols = ['Customer', 'Job', 'Status', 'Total'];
   return (
@@ -243,8 +207,8 @@ export default function FeaturesSection() {
       style={{ fontFamily: font }}
       className="bg-gradient-to-b from-slate-800 via-slate-800 to-slate-900 py-20 sm:py-28 px-4 sm:px-8 border-t border-white/10"
     >
-      <div className="max-w-6xl mx-auto">
-        <div className="max-w-2xl mb-16 sm:mb-20">
+      <div className="max-w-6xl mx-auto space-y-16 sm:space-y-24">
+        <div className="max-w-2xl mb-12 sm:mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.08]">
             You saw the lead land.{' '}
             <span className="text-teal-300">Here&apos;s the rest of the job.</span>
@@ -274,21 +238,98 @@ export default function FeaturesSection() {
         </Row>
 
         <Row
-          eyebrow="Reviews"
-          title="The ask that always gets forgotten."
-          body="Mark a job complete and the review request sends itself, pointing customers straight at your Google Business Profile. Recent reviews are the ones that count."
-        >
-          <ReviewStrip />
-        </Row>
-
-        <Row
           eyebrow="Your data"
           title="It's yours. Take it whenever."
           body="Export leads, jobs, and payments to CSV any time, including a version formatted for QuickBooks import. Bulk edit from the table instead of opening cards one at a time."
-          flip
         >
           <ExportStrip />
         </Row>
+
+        {/* ── Grow with Google Feature Block ────────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-80px' }}
+          transition={{ duration: 0.6 }}
+          className="border-t border-white/10 pt-16 sm:pt-20"
+        >
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <div className="inline-flex items-center gap-2 bg-slate-900 border border-white/10 px-3.5 py-1.5 rounded-full mb-4">
+              <GoogleLogo className="w-4 h-4" />
+              <span className="text-xs font-black uppercase tracking-widest text-white">
+                Grow with Google
+              </span>
+            </div>
+            <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight mb-4">
+              Turn every completed job into 5-star reviews
+            </h3>
+            <p className="text-slate-300 font-semibold text-base sm:text-lg">
+              Mark a job complete and an automated review request sends straight to your customer, bringing new leads right back to your Google Business Profile.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-12 gap-8 items-center bg-slate-900/80 border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl">
+            
+            {/* Left: Email Template Preview */}
+            <div className="md:col-span-7 space-y-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
+                  <Mail className="w-4 h-4 text-teal-400" />
+                  <span>Automated Review Email Preview</span>
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-teal-400 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-md">
+                  Auto-sent on completion
+                </span>
+              </div>
+
+              <div className="rounded-2xl bg-white p-5 sm:p-6 shadow-xl text-slate-900 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <GoogleLogo className="w-5 h-5" />
+                    <span className="font-bold text-sm text-slate-800">Ridge Line Roofing</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} size={13} className="text-amber-400" fill="currentColor" />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-black text-slate-900">How did we do?</p>
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                    Hi Jennifer, thanks for choosing us! If you have a minute, could you leave us a quick review on Google? It helps other homeowners find us.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  <div className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-black text-xs px-5 py-3 rounded-xl shadow-md">
+                    <GoogleLogo className="w-4 h-4" />
+                    Leave a Google Review
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 pl-1">
+                <Sparkles className="w-3.5 h-3.5 text-teal-400" />
+                <span>Customizable templates connected directly to your Google Business URL.</span>
+              </div>
+            </div>
+
+            {/* Right: Phone Visual Asset Showcase */}
+            <div className="md:col-span-5 flex justify-center">
+              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-slate-950 group hover:scale-[1.02] transition-transform duration-300">
+                <img
+                  src="/images/GoogleReview.png"
+                  alt="Google Automated Review Requests on Mobile"
+                  className="w-full h-auto max-w-[320px] object-contain block"
+                />
+              </div>
+            </div>
+
+          </div>
+        </motion.div>
+
       </div>
     </section>
   );
