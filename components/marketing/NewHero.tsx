@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, CheckCircle2, QrCode, Link2 } from 'lucide-react';
+import { ArrowRight, CheckCircle2, QrCode, Link2, Check, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const font = "'Nunito', sans-serif";
@@ -14,6 +14,14 @@ const TRADE_IMAGES = [
   { name: 'HVAC', src: '/images/hvac.webp' },
   { name: 'Plumbing', src: '/images/plumbing.webp' },
   { name: 'Electrical', src: '/images/electrical.webp' },
+];
+
+const QUICK_FEATURES = [
+  'Track jobs',
+  'Schedule jobs',
+  'Send estimates in seconds',
+  'Generate branded invoices',
+  'Collect Google reviews',
 ];
 
 export default function Hero() {
@@ -34,7 +42,7 @@ export default function Hero() {
   return (
     <section
       style={{ fontFamily: font }}
-      className="relative overflow-hidden bg-slate-950 pt-28 pb-24 sm:pt-40 sm:pb-32 lg:pt-48 lg:pb-40 px-4 sm:px-8 text-left"
+      className="relative overflow-hidden bg-slate-950 pt-28 pb-16 sm:pt-40 sm:pb-24 lg:pt-48 lg:pb-28 px-4 sm:px-8 text-left"
     >
       {/* Background trade imagery */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
@@ -58,7 +66,7 @@ export default function Hero() {
 
         {/* Left-weighted scrim keeps the headline readable over any photo. */}
         <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/35 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-slate-950/25" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40" />
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
@@ -159,6 +167,49 @@ export default function Hero() {
           </div>
 
         </div>
+
+        {/* ── Pixar-Style Light Feature Banner ─────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.96, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
+          className="mt-12 sm:mt-16 rounded-[2.5rem] bg-gradient-to-b from-white via-slate-50 to-slate-100 p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-white/80 ring-1 ring-slate-200/50"
+        >
+          {/* Top Headline Section */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-200/80">
+            <div className="flex items-center gap-3">
+             
+              <div>
+               
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  Everything you need to run your business
+                </h2>
+              </div>
+            </div>
+
+            <span className="text-xs font-black text-teal-800 bg-teal-100/80 border border-teal-200/60 px-4 py-2 rounded-full shadow-inner self-start md:self-auto shrink-0">
+              Zero extra apps needed
+            </span>
+          </div>
+
+          {/* Light Pixar-Style Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
+            {QUICK_FEATURES.map((feat) => (
+              <div
+                key={feat}
+                className="flex items-center gap-3 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_rgba(15,118,110,0.12)] hover:border-teal-400 hover:-translate-y-0.5 transition-all group"
+              >
+                <div className="w-7 h-7 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0 group-hover:scale-110 transition-transform">
+                  <Check size={16} strokeWidth={3} />
+                </div>
+                <span className="text-sm sm:text-base font-black text-slate-800 leading-snug">
+                  {feat}
+                </span>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
       </div>
     </section>
   );
