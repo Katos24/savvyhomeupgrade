@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Zap, Trash2, Star, Download, Paperclip, Mail, Sparkles } from 'lucide-react';
+import { Check, Zap, Trash2, Download, Paperclip, Mail, Sparkles, FileText, Send, Database } from 'lucide-react';
 import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
@@ -33,69 +33,55 @@ const TEMPLATE_ITEMS = [
   { label: 'Drip Edge (10ft Sections)', price: 18 },
 ];
 
-/* ── Row scaffold ─────────────────────────────────────────────────────────── */
+/* ── Section Block Container ─────────────────────────────────────────────── */
 
-function Row({
-  eyebrow,
+function FeatureBlock({
+  badgeIcon,
+  badgeText,
   title,
-  body,
-  bullets,
-  flip = false,
+  subtitle,
   children,
 }: {
-  eyebrow: string;
+  badgeIcon?: React.ReactNode;
+  badgeText: string;
   title: React.ReactNode;
-  body: React.ReactNode;
-  bullets?: React.ReactNode[];
-  flip?: boolean;
+  subtitle: string;
   children: React.ReactNode;
 }) {
   return (
-    <article className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center border-t border-white/10 py-14 sm:py-20 first:border-t-0 first:pt-0">
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.5 }}
-        className={`lg:col-span-5 ${flip ? 'lg:order-last' : ''}`}
-      >
-        <span className="block text-[10px] font-black uppercase tracking-[0.28em] text-teal-300 mb-4">
-          {eyebrow}
-        </span>
-        <h3 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-black text-white tracking-tight leading-[1.1] mb-4">
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-80px' }}
+      transition={{ duration: 0.55 }}
+      className="border-t border-white/10 pt-14 sm:pt-16 first:border-t-0 first:pt-0"
+    >
+      <div className="text-center max-w-2xl mx-auto mb-10">
+        <div className="inline-flex items-center gap-2 bg-slate-900 border border-white/10 px-3.5 py-1.5 rounded-full mb-3.5 shadow-sm">
+          {badgeIcon}
+          <span className="text-xs font-black uppercase tracking-widest text-teal-300">
+            {badgeText}
+          </span>
+        </div>
+        <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-3">
           {title}
         </h3>
-        <p className="text-base text-slate-300 font-semibold leading-relaxed">{body}</p>
+        <p className="text-slate-300 font-semibold text-sm sm:text-base leading-relaxed">
+          {subtitle}
+        </p>
+      </div>
 
-        {bullets && (
-          <ul className="mt-6 space-y-2.5">
-            {bullets.map((b, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm text-slate-200 font-semibold">
-                <Check size={15} className="text-teal-400 stroke-[3] shrink-0 mt-0.5" />
-                <span className="leading-relaxed">{b}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-80px' }}
-        transition={{ duration: 0.55, delay: 0.1 }}
-        className="lg:col-span-7"
-      >
+      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl">
         {children}
-      </motion.div>
-    </article>
+      </div>
+    </motion.div>
   );
 }
 
-/* ── Visuals ───────────────────────────────────────────────────────────── */
+/* ── Visual Sub-Components ────────────────────────────────────────────────── */
 
 const QuoteCollage = () => (
-  <div className="relative w-full">
+  <div className="relative w-full py-4">
     <div className="relative ml-auto w-[78%] sm:w-[68%] rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-white">
       <Image
         src="/images/invoice_full.webp"
@@ -104,20 +90,19 @@ const QuoteCollage = () => (
         height={1040}
         className="w-full h-auto object-cover object-top"
       />
-      <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-900/70 to-transparent pointer-events-none" />
+      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-900/70 to-transparent pointer-events-none" />
     </div>
 
-    <div className="absolute left-0 bottom-6 sm:bottom-10 w-[62%] sm:w-[54%] rounded-xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden -rotate-2">
-      <div className="px-3 py-2.5 border-b border-white/10">
-        <div className="flex items-center gap-1.5 text-teal-400 mb-1">
+    <div className="absolute left-0 bottom-2 sm:bottom-6 w-[62%] sm:w-[54%] rounded-xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden -rotate-2">
+      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
+        <div className="flex items-center gap-1.5 text-teal-400">
           <Zap className="w-3 h-3 fill-teal-400" />
           <span className="text-[9px] font-black uppercase tracking-widest">Saved template</span>
         </div>
-        <h4 className="text-white font-black text-xs leading-none">Full Roof Replacement</h4>
       </div>
       <div className="divide-y divide-white/5">
-        {TEMPLATE_ITEMS.map((item) => (
-          <div key={item.label} className="flex items-center gap-2 px-3 py-2">
+        {TEMPLATE_ITEMS.slice(0, 4).map((item) => (
+          <div key={item.label} className="flex items-center gap-2 px-3 py-1.5">
             <span className="text-white text-[10px] font-bold truncate flex-1">{item.label}</span>
             <span className="text-teal-400 text-[10px] font-black shrink-0">${item.price}</span>
             <Trash2 className="w-2.5 h-2.5 text-slate-600 shrink-0" />
@@ -136,26 +121,25 @@ const OutboxStrip = () => {
     { t: 'Review request', to: 'dana@example.com', time: '4:48p' },
   ];
   return (
-    <div className="w-full rounded-2xl border border-white/10 overflow-hidden bg-slate-900/60 shadow-xl">
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10">
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outbox</span>
+    <div className="w-full rounded-2xl border border-white/10 overflow-hidden bg-slate-950/70 shadow-xl">
+      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-slate-900/90">
+        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outbox History</span>
         <span className="text-[10px] font-black uppercase tracking-widest text-teal-300">Today</span>
       </div>
-      {rows.map((r) => (
-        <div
-          key={r.t}
-          className="flex items-center gap-3 px-4 sm:px-5 py-3.5 border-t border-white/5 first:border-t-0"
-        >
-          <span className="w-5 h-5 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center shrink-0">
-            <Check className="w-3 h-3 text-teal-300" strokeWidth={4} />
-          </span>
-          <span className="text-xs sm:text-sm font-black text-white flex-1 truncate">{r.t}</span>
-          <span className="hidden sm:block text-[11px] font-semibold text-slate-500 truncate max-w-[180px]">
-            {r.to}
-          </span>
-          <span className="text-[11px] font-bold text-slate-500 shrink-0">{r.time}</span>
-        </div>
-      ))}
+      <div className="divide-y divide-white/5">
+        {rows.map((r) => (
+          <div key={r.t} className="flex items-center gap-3 px-4 sm:px-5 py-3">
+            <span className="w-5 h-5 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center shrink-0">
+              <Check className="w-3 h-3 text-teal-300" strokeWidth={4} />
+            </span>
+            <span className="text-xs sm:text-sm font-bold text-white flex-1 truncate">{r.t}</span>
+            <span className="hidden sm:block text-[11px] font-medium text-slate-400 truncate max-w-[160px]">
+              {r.to}
+            </span>
+            <span className="text-[11px] font-bold text-slate-500 shrink-0">{r.time}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
@@ -163,43 +147,40 @@ const OutboxStrip = () => {
 const ExportStrip = () => {
   const cols = ['Customer', 'Job', 'Status', 'Total'];
   return (
-    <div className="w-full">
-      <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-900/60 shadow-xl">
-        <div className="grid grid-cols-4 bg-slate-900/80 px-4 sm:px-5 py-2.5 gap-4">
+    <div className="w-full space-y-4">
+      <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-950/70 shadow-xl">
+        <div className="grid grid-cols-4 bg-slate-900/90 px-4 sm:px-5 py-2.5 gap-4 border-b border-white/5">
           {cols.map((c) => (
-            <span
-              key={c}
-              className="text-[10px] font-black uppercase tracking-widest text-slate-400 truncate"
-            >
+            <span key={c} className="text-[10px] font-black uppercase tracking-widest text-slate-400 truncate">
               {c}
             </span>
           ))}
         </div>
         {[0, 1, 2, 3].map((r) => (
-          <div key={r} className="grid grid-cols-4 px-4 sm:px-5 py-3.5 gap-4 border-t border-white/5">
+          <div key={r} className="grid grid-cols-4 px-4 sm:px-5 py-3 gap-4 border-t border-white/5 first:border-t-0">
             {cols.map((c, ci) => (
               <span
                 key={c}
-                className={`h-2 rounded-full ${r === 0 ? 'bg-slate-500' : 'bg-slate-600'}`}
+                className={`h-2 rounded-full ${r === 0 ? 'bg-slate-400' : 'bg-slate-600'}`}
                 style={{ width: `${55 + ((r + ci) % 4) * 12}%` }}
               />
             ))}
           </div>
         ))}
       </div>
-      <div className="flex flex-wrap gap-2.5 mt-4">
-        <span className="inline-flex items-center gap-2 rounded-xl bg-slate-900/70 border border-white/10 px-3.5 py-2 text-[11px] font-black text-slate-200">
+      <div className="flex flex-wrap gap-2.5 justify-center sm:justify-start">
+        <span className="inline-flex items-center gap-2 rounded-xl bg-slate-950 border border-white/10 px-3.5 py-2 text-[11px] font-black text-slate-200 shadow-md">
           <Download className="w-3.5 h-3.5 text-teal-400" /> Export CSV
         </span>
-        <span className="inline-flex items-center gap-2 rounded-xl bg-slate-900/70 border border-white/10 px-3.5 py-2 text-[11px] font-black text-slate-200">
-          <Paperclip className="w-3.5 h-3.5 text-teal-400" /> QuickBooks format
+        <span className="inline-flex items-center gap-2 rounded-xl bg-slate-950 border border-white/10 px-3.5 py-2 text-[11px] font-black text-slate-200 shadow-md">
+          <Paperclip className="w-3.5 h-3.5 text-teal-400" /> QuickBooks Format
         </span>
       </div>
     </div>
   );
 };
 
-/* ── Section ────────────────────────────────────────────────────────────── */
+/* ── Main Features Section ───────────────────────────────────────────────── */
 
 export default function FeaturesSection() {
   return (
@@ -207,70 +188,142 @@ export default function FeaturesSection() {
       style={{ fontFamily: font }}
       className="bg-gradient-to-b from-slate-800 via-slate-800 to-slate-900 py-20 sm:py-28 px-4 sm:px-8 border-t border-white/10"
     >
-      <div className="max-w-6xl mx-auto space-y-16 sm:space-y-24">
-        <div className="max-w-2xl mb-12 sm:mb-16">
+      <div className="max-w-5xl mx-auto space-y-12 sm:space-y-16">
+        
+        {/* Section Header */}
+        <div className="text-center max-w-2xl mx-auto mb-10">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.08]">
             You saw the lead land.{' '}
             <span className="text-teal-300">Here&apos;s the rest of the job.</span>
           </h2>
         </div>
 
-        <Row
-          eyebrow="Quotes"
-          title="Build the quote once. Reuse it forever."
-          body="Save your standard line items per job category, then adjust quantities on site. Totals calculate themselves and the estimate comes out branded."
-          bullets={[
-            'Customer accepts or declines right in the email',
-            <>Take the deposit by card through <StripeWordmark className="text-sm" /></>,
-            'Reminders go out on unpaid balances',
-          ]}
-        >
-          <QuoteCollage />
-        </Row>
+      {/* 1. Instant Quotes */}
+<FeatureBlock
+  badgeIcon={<FileText className="w-3.5 h-3.5 text-teal-400" />}
+  badgeText="Instant Quotes"
+  title="Build the quote once. Reuse it forever."
+  subtitle="Save standard line items per job category, adjust quantities on site, and calculate totals automatically into branded estimates."
+>
+  <div className="grid md:grid-cols-12 gap-8 items-start pt-2">
+    {/* Left Side: Top-Aligned Bullet Points & Interactive Saved Template Builder */}
+    <div className="md:col-span-5 space-y-6 pt-1">
+      <ul className="space-y-4">
+        <li className="flex items-start gap-3 text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
+          <Check size={18} className="text-teal-400 stroke-[3] shrink-0 mt-0.5" />
+          <span>Customer accepts or declines directly in email</span>
+        </li>
+        <li className="flex items-start gap-3 text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
+          <Check size={18} className="text-teal-400 stroke-[3] shrink-0 mt-0.5" />
+          <span>Collect deposits instantly with <StripeWordmark className="text-xs" /></span>
+        </li>
+        <li className="flex items-start gap-3 text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
+          <Check size={18} className="text-teal-400 stroke-[3] shrink-0 mt-0.5" />
+          <span>Automatic follow-ups for unpaid balances</span>
+        </li>
+      </ul>
 
-        <Row
-          eyebrow="Email"
-          title="One click to send. A receipt for every one."
-          body="Schedule confirmations, estimates, and payment reminders go out from the job card using your own templates. The Outbox keeps a record of exactly what was sent and when."
-          flip
-        >
-          <OutboxStrip />
-        </Row>
-
-        <Row
-          eyebrow="Your data"
-          title="It's yours. Take it whenever."
-          body="Export leads, jobs, and payments to CSV any time, including a version formatted for QuickBooks import. Bulk edit from the table instead of opening cards one at a time."
-        >
-          <ExportStrip />
-        </Row>
-
-        {/* ── Grow with Google Feature Block ────────────────────────────────── */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6 }}
-          className="border-t border-white/10 pt-16 sm:pt-20"
-        >
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <div className="inline-flex items-center gap-2 bg-slate-900 border border-white/10 px-3.5 py-1.5 rounded-full mb-4">
-              <GoogleLogo className="w-4 h-4" />
-              <span className="text-xs font-black uppercase tracking-widest text-white">
-                Grow with Google
-              </span>
-            </div>
-            <h3 className="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight mb-4">
-              Turn every completed job into 5-star reviews
-            </h3>
-            <p className="text-slate-300 font-semibold text-base sm:text-lg">
-              Mark a job complete and an automated review request sends straight to your customer, bringing new leads right back to your Google Business Profile.
-            </p>
+      {/* Saved Template Card with Action Buttons & Quantity Column */}
+      <div className="w-full rounded-xl border border-slate-700 bg-slate-950/90 shadow-xl overflow-hidden mt-4">
+        <div className="px-3.5 py-2.5 border-b border-white/10 flex items-center justify-between bg-slate-900/80">
+          <div className="flex items-center gap-1.5 text-teal-400">
+            <Zap className="w-3.5 h-3.5 fill-teal-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest">Build Template</span>
           </div>
+        </div>
 
-          <div className="grid md:grid-cols-12 gap-8 items-center bg-slate-900/80 border border-white/10 rounded-3xl p-6 sm:p-10 shadow-2xl">
-            
-            {/* Left: Email Template Preview */}
+        {/* Table Header */}
+        <div className="grid grid-cols-12 px-3.5 py-1.5 bg-slate-900/40 text-[10px] font-bold text-slate-400 border-b border-white/5 uppercase tracking-wider">
+          <span className="col-span-6">Item</span>
+          <span className="col-span-2 text-center">Qty</span>
+          <span className="col-span-3 text-right">Price</span>
+          <span className="col-span-1"></span>
+        </div>
+
+        {/* Items List */}
+        <div className="divide-y divide-white/5">
+          {[
+            { label: 'Tear-off & Disposal', qty: 25, price: 85 },
+            { label: 'Architectural Shingles', qty: 25, price: 165 },
+            { label: 'Synthetic Underlayment', qty: 5, price: 88 },
+            { label: 'Ice & Water Shield', qty: 4, price: 120 },
+          ].map((item) => (
+            <div key={item.label} className="grid grid-cols-12 items-center px-3.5 py-2 text-xs">
+              <span className="col-span-6 text-slate-200 font-semibold truncate">{item.label}</span>
+              <div className="col-span-2 flex justify-center">
+                <span className="bg-slate-900 border border-white/10 text-slate-300 font-bold px-1.5 py-0.5 rounded text-[11px]">
+                  {item.qty}
+                </span>
+              </div>
+              <span className="col-span-3 text-right text-teal-400 font-black">${item.price}</span>
+              <div className="col-span-1 flex justify-end">
+                <Trash2 className="w-3 h-3 text-slate-600 hover:text-rose-400 cursor-pointer transition-colors" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Action Controls: Save & Close */}
+        <div className="px-3.5 py-2.5 bg-slate-900/60 border-t border-white/10 flex items-center justify-between gap-3">
+          <button className="text-xs font-bold text-slate-400 hover:text-white transition-colors">
+            Close
+          </button>
+          <button className="inline-flex items-center gap-1.5 bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg shadow transition-colors">
+            <Check className="w-3.5 h-3.5 stroke-[3]" /> Save Template
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* Right Side: Full-Sized Invoice Image */}
+    <div className="md:col-span-7 relative w-full">
+      <div className="relative w-full rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-white">
+        <Image
+          src="/images/invoice_full.webp"
+          alt="A finished branded estimate ready to send"
+          width={1000}
+          height={1300}
+          className="w-full h-auto object-cover object-top"
+        />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
+      </div>
+    </div>
+  </div>
+</FeatureBlock>
+
+
+
+        {/* 2. Automated Messaging */}
+        <FeatureBlock
+          badgeIcon={<Send className="w-3.5 h-3.5 text-teal-400" />}
+          badgeText="Automated Messaging"
+          title="One click to send. A receipt for every message."
+          subtitle="Schedule confirmations, estimates, and payment reminders go out straight from the job card with full tracking in your outbox."
+        >
+          <div className="grid md:grid-cols-12 gap-6 items-center">
+            <div className="md:col-span-5 space-y-2">
+              <p className="text-xs sm:text-sm font-semibold text-slate-300 leading-relaxed">
+                Keep clients informed throughout every step of the project automatically while maintaining an exact audit trail of communications.
+              </p>
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-400 pt-2">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Pre-built email templates included</span>
+              </div>
+            </div>
+            <div className="md:col-span-7">
+              <OutboxStrip />
+            </div>
+          </div>
+        </FeatureBlock>
+
+        {/* 3. Grow with Google */}
+        <FeatureBlock
+          badgeIcon={<GoogleLogo className="w-3.5 h-3.5" />}
+          badgeText="Grow with Google"
+          title="Turn every completed job into 5-star reviews"
+          subtitle="Mark a job complete and an automated review request sends straight to your customer, directing top feedback right to your profile."
+        >
+          <div className="grid md:grid-cols-12 gap-6 sm:gap-8 items-center">
             <div className="md:col-span-7 space-y-4">
               <div className="flex items-center justify-between border-b border-white/10 pb-3">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
@@ -282,53 +335,60 @@ export default function FeaturesSection() {
                 </span>
               </div>
 
-              <div className="rounded-2xl bg-white p-5 sm:p-6 shadow-xl text-slate-900 space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="rounded-2xl bg-white p-4 sm:p-5 shadow-xl text-slate-900 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
                   <div className="flex items-center gap-2">
-                    <GoogleLogo className="w-5 h-5" />
-                    <span className="font-bold text-sm text-slate-800">Ridge Line Roofing</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={13} className="text-amber-400" fill="currentColor" />
-                    ))}
+                    <GoogleLogo className="w-4 h-4" />
+                    <span className="font-bold text-xs text-slate-800">Ridge Line Roofing</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <p className="text-sm font-black text-slate-900">How did we do?</p>
-                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
-                    Hi Jennifer, thanks for choosing us! If you have a minute, could you leave us a quick review on Google? It helps other homeowners find us.
+                <div className="space-y-1.5">
+                  <p className="text-xs font-black text-slate-900">How did we do?</p>
+                  <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
+                    Hi Jennifer, thanks for choosing us! Could you leave us a quick review on Google?
                   </p>
                 </div>
 
-                <div className="pt-2">
-                  <div className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-black text-xs px-5 py-3 rounded-xl shadow-md">
-                    <GoogleLogo className="w-4 h-4" />
+                <div className="pt-1">
+                  <div className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-black text-[11px] px-4 py-2.5 rounded-lg shadow-md">
+                    <GoogleLogo className="w-3.5 h-3.5" />
                     Leave a Google Review
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 pl-1">
-                <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-                <span>Customizable templates connected directly to your Google Business URL.</span>
-              </div>
             </div>
 
-            {/* Right: Phone Visual Asset Showcase */}
             <div className="md:col-span-5 flex justify-center">
               <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-slate-950 group hover:scale-[1.02] transition-transform duration-300">
                 <img
                   src="/images/GoogleReview.png"
                   alt="Google Automated Review Requests on Mobile"
-                  className="w-full h-auto max-w-[320px] object-contain block"
+                  className="w-full h-auto max-w-[280px] object-contain block"
                 />
               </div>
             </div>
-
           </div>
-        </motion.div>
+        </FeatureBlock>
+
+        {/* 4. Data Control */}
+        <FeatureBlock
+          badgeIcon={<Database className="w-3.5 h-3.5 text-teal-400" />}
+          badgeText="Data Control"
+          title="It's your business data. Take it whenever."
+          subtitle="Export leads, jobs, and payments to CSV at any time, formatted for quick bulk edits or seamless QuickBooks import."
+        >
+          <div className="grid md:grid-cols-12 gap-6 items-center">
+            <div className="md:col-span-5 space-y-2">
+              <p className="text-xs sm:text-sm font-semibold text-slate-300 leading-relaxed">
+                Never lock your information away. Access full export options anytime and stay completely flexible across your accounting workflow.
+              </p>
+            </div>
+            <div className="md:col-span-7">
+              <ExportStrip />
+            </div>
+          </div>
+        </FeatureBlock>
 
       </div>
     </section>

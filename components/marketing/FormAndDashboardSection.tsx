@@ -536,7 +536,6 @@ export default function FormAndDashboardSection() {
 
                 <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-semibold pt-1">
                   <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
-                  <span>Instant dispatch &amp; client SMS routing enabled</span>
                 </div>
               </div>
             </div>
