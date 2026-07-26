@@ -284,17 +284,7 @@ export default function QuoteToPaidWorkflow() {
 
         {/* Value-Driven Header */}
         <div className="text-center mb-10 sm:mb-16">
-          <div className="flex items-center justify-center gap-2.5 sm:gap-3 mb-3 sm:mb-4">
-            <span 
-              className="flex h-8 w-8 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl text-base sm:text-lg font-black text-white shadow-md shadow-teal-900/20"
-              style={{ backgroundColor: ACCENT }}
-            >
-              5
-            </span>
-            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.2em] sm:tracking-[0.25em] text-teal-700 font-mono">
-              Quote-to-Paid Workflow
-            </span>
-          </div>
+         
           <h2 className="text-2xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight max-w-3xl mx-auto">
             Stop spending evenings on estimates.{' '}
             <span className="text-[#0B3C6D] underline underline-offset-4 decoration-teal-500/40">

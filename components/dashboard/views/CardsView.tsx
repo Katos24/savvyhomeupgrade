@@ -74,13 +74,13 @@ function getQuoteStep(lead: any): Step {
       : undefined;
 
   if (lead.project_quote_accepted_at || lead.quote_accepted_at) {
-    return { state: 'success', label: 'Accepted' };
+    return { state: 'success', label: 'Accepted', sublabel: amount };
   }
   if (lead.project_quote_declined_at || lead.quote_declined_at) {
-    return { state: 'error', label: 'Declined'};
+    return { state: 'error', label: 'Declined', sublabel: amount };
   }
   if (lead.project_quote_sent_at || lead.quote_sent_at) {
-    return { state: 'active', label: 'Sent' };
+    return { state: 'active', label: 'Sent', sublabel: amount };
   }
   return { state: 'empty', label: 'Not sent' };
 }

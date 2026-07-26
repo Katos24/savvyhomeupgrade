@@ -2,10 +2,9 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import FormAndDashboardSection from '@/components/marketing/FormAndDashboardSection';
 import ComparisonSection from '@/components/marketing/ComparisonSection';
-import CustomizeFormSection from '@/components/marketing/CustomizeFormSection';
 import TruckSection from '@/components/marketing/TruckSection';
-import DashboardShowcase from '@/components/marketing/DashboardShowcase';
 import FullStorySection from '@/components/marketing/FullStorySection';
 import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
 import GoogleReviewSection from '@/components/marketing/GoogleReviewSection';
@@ -23,15 +22,17 @@ export default function NewHome() {
       {/* 1. Sign up and create your form */}
       <NewHero />
 
-      <ComparisonSection></ComparisonSection>
+            <ComparisonSection></ComparisonSection>
 
-      <CustomizeFormSection />
+
+      <FormAndDashboardSection></FormAndDashboardSection>
+
+
 
       {/* 2. Blast your link everywhere */}
       <TruckSection />
 
       {/* 3. Form lands, ready to track */}
-      <DashboardShowcase />
 
       {/* 4. The full story, tab by tab */}
       <FullStorySection />

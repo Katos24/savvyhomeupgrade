@@ -88,7 +88,7 @@ export default function TruckSection() {
           >
             <span className="w-2 h-2 rounded-full bg-teal-600" />
             <span className="text-xs font-black text-teal-800 uppercase tracking-wide">
-              Step 2: Universal Distribution
+              What Happens After You Sign Up
             </span>
           </motion.div>
 
@@ -99,8 +99,8 @@ export default function TruckSection() {
             transition={{ duration: 0.4 }}
             className="text-slate-900 font-black tracking-tight leading-[1.1] text-3xl sm:text-5xl mb-4"
           >
-            Share your link and QR code.{' '}
-            <span className="text-teal-700 block sm:inline">Put it everywhere.</span>
+            Get your link and{' '}
+            <span className="text-teal-700 block sm:inline">QR code out there.</span>
           </motion.h2>
 
           <motion.p
@@ -109,7 +109,7 @@ export default function TruckSection() {
             viewport={{ once: true }}
             className="text-slate-700 font-semibold text-base sm:text-lg"
           >
-            From vehicle decals and yard signs to social profiles, route all lead traffic into one structured pipeline.
+            So customers can fill out your form and book the job, wherever they see you.
           </motion.p>
         </div>
 

@@ -437,17 +437,7 @@ export default function InteractiveShowcase() {
         
         {/* Header Section - Left Aligned */}
         <div className="mb-8 sm:mb-12 text-left">
-          <div className="flex items-center gap-2.5 mb-3">
-            <span 
-              className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl text-sm font-black text-white shadow-md shadow-teal-900/30"
-              style={{ backgroundColor: ACCENT }}
-            >
-              4
-            </span>
-            <span className="text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] text-teal-400">
-              The full story, tab by tab
-            </span>
-          </div>
+          
 
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mb-3 leading-[1.1]">
             Manage your entire business <br className="hidden sm:block" />

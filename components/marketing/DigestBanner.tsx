@@ -46,12 +46,7 @@ export default function DigestBanner() {
             transition={{ duration: 0.5 }}
             className="flex flex-col justify-center"
           >
-            <div className="self-start inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-500/10 border border-sky-500/20 mb-6 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
-              <p className="text-[10px] font-black uppercase tracking-wider text-sky-300" style={{ fontFamily: font }}>
-                Automated Operations Brief
-              </p>
-            </div>
+      
 
             <h3
               className="text-4xl sm:text-5xl lg:text-6xl text-white font-black leading-[1.05] tracking-tight mb-6"

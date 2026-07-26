@@ -29,17 +29,7 @@ export default function GoogleReviewSection() {
       <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6">
 
         <div className="text-center mb-12 sm:mb-16">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <span 
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-lg font-black text-white shadow-md shadow-slate-900/40"
-              style={{ backgroundColor: ACCENT }}
-            >
-              6
-            </span>
-            <span className="text-xs sm:text-sm font-black uppercase tracking-[0.25em] text-teal-300 font-mono">
-              Collect the review
-            </span>
-          </div>
+         
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight max-w-2xl mx-auto">
             Mark the job complete.{' '}
             <span className="text-teal-300">The review request sends itself.</span>
