@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import {
-  ChevronRight,
   Camera,
   Check,
   X,
@@ -13,6 +12,7 @@ import {
   AlertCircle,
   CreditCard,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import type { TradeLead } from '@/components/marketing/tradeExamples';
 
@@ -22,10 +22,13 @@ interface StatusOption {
   color: string;
 }
 
+/** A lead that just arrived via the marketing demo form. */
+export type DispatchLead = TradeLead & { isNew?: boolean };
+
 export type ViewKey = 'cards' | 'table' | 'calendar';
 
 interface HeroDispatchCardsProps {
-  leads: TradeLead[];
+  leads: DispatchLead[];
   statusOptions: StatusOption[];
   trade: string;
   view: ViewKey;
@@ -207,7 +210,7 @@ function ProgressTracker({ lead, isDark }: { lead: TradeLead; isDark: boolean })
         return (
           <div
             key={r.key}
-            className={`flex items-center justify-between gap-1.5 px-2 py-1 ${
+            className={`flex items-center justify-between gap-1.5 px-2.5 sm:px-2 py-1.5 sm:py-1 ${
               i !== rows.length - 1
                 ? isDark
                   ? 'border-b border-white/5'
@@ -216,22 +219,22 @@ function ProgressTracker({ lead, isDark }: { lead: TradeLead; isDark: boolean })
             }`}
           >
             <div className="flex items-center gap-1 min-w-0">
-              <r.icon className={`w-2.5 h-2.5 shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
-              <span className={`font-bold text-[8px] uppercase truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <r.icon className={`w-3 h-3 sm:w-2.5 sm:h-2.5 shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+              <span className={`font-bold text-[10px] sm:text-[8px] uppercase truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {r.label}
               </span>
             </div>
 
             <div className="flex items-center gap-1 shrink-0">
               {r.step.sublabel && (
-                <span className={`text-[8px] font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <span className={`text-[10px] sm:text-[8px] font-bold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   {r.step.sublabel}
                 </span>
               )}
 
               {r.isPlain ? (
                 <span
-                  className={`text-[9px] font-extrabold ${
+                  className={`text-[11px] sm:text-[9px] font-extrabold ${
                     r.step.state === 'empty'
                       ? isDark
                         ? 'text-slate-500'
@@ -245,11 +248,11 @@ function ProgressTracker({ lead, isDark }: { lead: TradeLead; isDark: boolean })
                 </span>
               ) : (
                 <span
-                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[8px] font-black border uppercase tracking-wide ${
+                  className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] sm:text-[8px] font-black border uppercase tracking-wide ${
                     style[isDark ? 'dark' : 'light']
                   }`}
                 >
-                  <StateIcon className="w-2 h-2 stroke-[3]" />
+                  <StateIcon className="w-2.5 h-2.5 sm:w-2 sm:h-2 stroke-[3]" />
                   {r.step.label}
                 </span>
               )}
@@ -267,7 +270,7 @@ function CardsGrid({
   tokens,
   isDark,
 }: {
-  leads: TradeLead[];
+  leads: DispatchLead[];
   statusOptions: StatusOption[];
   tokens: Tokens;
   isDark: boolean;
@@ -280,31 +283,74 @@ function CardsGrid({
         const fileUrls = parseFileUrls(lead.file_urls);
         const hasPhotos = fileUrls.length > 0;
         const quoteTotal = lead.quote_total ? parseFloat(lead.quote_total) : 0;
+        const isNew = Boolean(lead.isNew);
 
         return (
           <div
             key={lead.id}
-            className={`w-full border rounded-xl p-3 transition-all ${tokens.cardBg} ${tokens.cardBorder} ${tokens.cardBorderHover}`}
+            className={`relative w-full border rounded-xl p-3 transition-all ${
+              isNew
+                ? 'border-emerald-400 bg-emerald-500/[0.14] ring-2 ring-emerald-400/70 shadow-lg shadow-emerald-500/25'
+                : `${tokens.cardBg} ${tokens.cardBorder} ${tokens.cardBorderHover}`
+            }`}
           >
+            {/* Corner flag — the ring alone gets lost against a busy board,
+                so the arriving lead also gets a label and a colour shift. */}
+            {isNew && (
+              <span className="absolute -top-2 -right-1.5 inline-flex items-center gap-1 rounded-full bg-emerald-400 px-2 py-0.5 text-[10px] sm:text-[8px] font-black uppercase tracking-widest text-slate-950 shadow-md">
+                <Sparkles className="w-2.5 h-2.5" strokeWidth={3} />
+                Just in
+              </span>
+            )}
+
             {/* Top row: Status & Quote */}
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: statusHex }} />
-                <span className={`text-[10px] font-bold ${tokens.chipText}`}>{statusConfig.label}</span>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${isNew ? 'animate-pulse' : ''}`}
+                  style={{ backgroundColor: isNew ? '#34d399' : statusHex }}
+                />
+                <span
+                  className={`text-[11px] sm:text-[10px] font-bold ${isNew ? 'text-emerald-300' : tokens.chipText}`}
+                >
+                  {statusConfig.label}
+                </span>
               </div>
               {quoteTotal > 0 && (
-                <span className={`text-[11px] font-extrabold ${tokens.quoteText}`}>
+                <span className={`text-[12px] sm:text-[11px] font-extrabold ${tokens.quoteText}`}>
                   ${quoteTotal.toLocaleString()}
                 </span>
               )}
             </div>
 
-            {/* Name */}
-            <div className="mb-2 flex items-center justify-between">
-              <h3 className={`text-xs font-bold leading-tight truncate ${tokens.textPrimary}`}>{lead.name}</h3>
-              {hasPhotos && (
-                <span className="flex items-center gap-0.5 text-[8px] font-semibold text-pink-400">
-                  <Camera className="w-2.5 h-2.5" /> {fileUrls.length}
+            {/* Name + the service they asked for */}
+            <div className="mb-2">
+              <div className="flex items-center justify-between gap-2">
+                <h3
+                  className={`text-sm sm:text-xs font-bold leading-tight truncate ${
+                    isNew ? 'text-emerald-50' : tokens.textPrimary
+                  }`}
+                >
+                  {lead.name}
+                </h3>
+                {hasPhotos && (
+                  <span className="flex items-center gap-0.5 text-[10px] sm:text-[8px] font-semibold text-pink-400 shrink-0">
+                    <Camera className="w-3 h-3 sm:w-2.5 sm:h-2.5" /> {fileUrls.length}
+                  </span>
+                )}
+              </div>
+
+              {lead.category && (
+                <span
+                  className={`mt-1 inline-block max-w-full truncate rounded px-1.5 py-0.5 text-[11px] sm:text-[9px] font-bold border ${
+                    isNew
+                      ? 'bg-emerald-400/20 text-emerald-200 border-emerald-400/40'
+                      : isDark
+                      ? 'bg-white/5 text-slate-300 border-white/10'
+                      : 'bg-slate-100 text-slate-600 border-slate-200'
+                  }`}
+                >
+                  {lead.category}
                 </span>
               )}
             </div>
@@ -318,15 +364,24 @@ function CardsGrid({
   );
 }
 
-function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; statusOptions: StatusOption[]; tokens: Tokens }) {
+function TablePreview({
+  leads,
+  statusOptions,
+  tokens,
+}: {
+  leads: DispatchLead[];
+  statusOptions: StatusOption[];
+  tokens: Tokens;
+}) {
   return (
     <div className={`rounded-xl border overflow-hidden ${tokens.wrapperBg} ${tokens.wrapperBorder}`}>
       <table className="w-full">
         <thead>
           <tr className={`border-b ${tokens.divider} ${tokens.theadBg}`}>
-            <th className={`px-2.5 py-1.5 text-left text-[8px] font-black uppercase ${tokens.textFainter}`}>Customer</th>
-            <th className={`px-2.5 py-1.5 text-left text-[8px] font-black uppercase ${tokens.textFainter}`}>Status</th>
-            <th className={`px-2.5 py-1.5 text-left text-[8px] font-black uppercase ${tokens.textFainter}`}>Quote</th>
+            <th className={`px-2.5 py-1.5 text-left text-[10px] sm:text-[8px] font-black uppercase ${tokens.textFainter}`}>Customer</th>
+            <th className={`px-2.5 py-1.5 text-left text-[10px] sm:text-[8px] font-black uppercase ${tokens.textFainter}`}>Service</th>
+            <th className={`px-2.5 py-1.5 text-left text-[10px] sm:text-[8px] font-black uppercase ${tokens.textFainter}`}>Status</th>
+            <th className={`px-2.5 py-1.5 text-left text-[10px] sm:text-[8px] font-black uppercase ${tokens.textFainter}`}>Quote</th>
           </tr>
         </thead>
         <tbody className={`divide-y ${tokens.rowDivider}`}>
@@ -334,18 +389,31 @@ function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; st
             const statusConfig = getStatusConfig(lead.status, statusOptions);
             const statusHex = STATUS_COLOR_HEX[statusConfig.color] || '#60a5fa';
             const quoteTotal = lead.quote_total ? parseFloat(lead.quote_total) : 0;
+            const isNew = Boolean(lead.isNew);
 
             return (
-              <tr key={lead.id} className={tokens.rowHover}>
+              <tr
+                key={lead.id}
+                className={isNew ? 'bg-emerald-500/15 ring-1 ring-inset ring-emerald-400/50' : tokens.rowHover}
+              >
                 <td className="px-2.5 py-1.5">
-                  <div className={`text-[11px] font-bold truncate ${tokens.textPrimary}`}>{lead.name}</div>
+                  <div className={`text-[12px] sm:text-[11px] font-bold truncate flex items-center gap-1.5 ${tokens.textPrimary}`}>
+                    {isNew && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0 animate-pulse" />}
+                    {lead.name}
+                  </div>
+                </td>
+                <td className={`px-2.5 py-1.5 text-[11px] sm:text-[10px] font-semibold truncate ${tokens.textMuted}`}>
+                  {lead.category || '—'}
                 </td>
                 <td className="px-2.5 py-1.5">
-                  <span className="px-1.5 py-0.5 rounded text-[8px] font-extrabold text-white" style={{ backgroundColor: statusHex }}>
+                  <span
+                    className="px-1.5 py-0.5 rounded text-[10px] sm:text-[8px] font-extrabold text-white"
+                    style={{ backgroundColor: isNew ? '#10b981' : statusHex }}
+                  >
                     {statusConfig.label}
                   </span>
                 </td>
-                <td className={`px-2.5 py-1.5 text-[10px] font-extrabold ${tokens.quoteText}`}>
+                <td className={`px-2.5 py-1.5 text-[11px] sm:text-[10px] font-extrabold ${tokens.quoteText}`}>
                   {quoteTotal > 0 ? `$${quoteTotal.toLocaleString()}` : '—'}
                 </td>
               </tr>
@@ -357,7 +425,7 @@ function TablePreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; st
   );
 }
 
-function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[]; statusOptions: StatusOption[]; tokens: Tokens }) {
+function CalendarPreview({ tokens }: { tokens: Tokens }) {
   const referenceDate = useMemo(() => new Date(), []);
   const year = referenceDate.getFullYear();
   const month = referenceDate.getMonth();
@@ -368,7 +436,7 @@ function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[];
     <div className={`rounded-xl border overflow-hidden ${tokens.wrapperBg} ${tokens.wrapperBorder}`}>
       <div className={`grid grid-cols-7 border-b ${tokens.divider}`}>
         {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-          <div key={i} className={`py-1 text-center text-[8px] font-black ${tokens.dayHeaderMuted}`}>
+          <div key={i} className={`py-1 text-center text-[10px] sm:text-[8px] font-black ${tokens.dayHeaderMuted}`}>
             {d}
           </div>
         ))}
@@ -380,7 +448,7 @@ function CalendarPreview({ leads, statusOptions, tokens }: { leads: TradeLead[];
         ))}
         {Array.from({ length: daysInMonth }).map((_, i) => (
           <div key={i + 1} className={`h-8 border-r border-b ${tokens.divider} p-0.5 flex flex-col items-center justify-start`}>
-            <span className={`text-[8px] font-bold ${tokens.dayNumMuted}`}>{i + 1}</span>
+            <span className={`text-[10px] sm:text-[8px] font-bold ${tokens.dayNumMuted}`}>{i + 1}</span>
           </div>
         ))}
       </div>
@@ -423,7 +491,7 @@ export function DispatchViewSwitcher({
           <button
             key={key}
             onClick={() => onChange(key)}
-            className={`relative z-10 flex items-center justify-center gap-1 py-1 rounded-md text-[9px] font-bold uppercase transition-colors cursor-pointer ${
+            className={`relative z-10 flex items-center justify-center gap-1 py-1 rounded-md text-[11px] sm:text-[9px] font-bold uppercase transition-colors cursor-pointer ${
               isActive ? tokens.segTextActive : tokens.segTextInactive
             }`}
           >
@@ -443,7 +511,7 @@ export default function HeroDispatchCards({ leads, statusOptions, view, isDark =
     <>
       {view === 'cards' && <CardsGrid leads={leads} statusOptions={statusOptions} tokens={tokens} isDark={isDark} />}
       {view === 'table' && <TablePreview leads={leads} statusOptions={statusOptions} tokens={tokens} />}
-      {view === 'calendar' && <CalendarPreview leads={leads} statusOptions={statusOptions} tokens={tokens} />}
+      {view === 'calendar' && <CalendarPreview tokens={tokens} />}
     </>
   );
 }

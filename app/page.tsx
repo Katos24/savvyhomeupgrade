@@ -2,11 +2,11 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
+import FeaturesSection from '@/components/marketing/FeaturesSection';
 import FormAndDashboardSection from '@/components/marketing/FormAndDashboardSection';
 import ComparisonSection from '@/components/marketing/ComparisonSection';
 import TruckSection from '@/components/marketing/TruckSection';
 import FullStorySection from '@/components/marketing/FullStorySection';
-import QuoteToPaidSection from '@/components/marketing/QuoteToPaidSection';
 import GoogleReviewSection from '@/components/marketing/GoogleReviewSection';
 import DigestBanner from '@/components/marketing/DigestBanner';
 
@@ -22,23 +22,33 @@ export default function NewHome() {
       {/* 1. Sign up and create your form */}
       <NewHero />
 
-            <ComparisonSection></ComparisonSection>
+
+            <FormAndDashboardSection></FormAndDashboardSection>
+
+                  <FullStorySection />
 
 
-      <FormAndDashboardSection></FormAndDashboardSection>
+
+
+
+
+
 
 
 
       {/* 2. Blast your link everywhere */}
       <TruckSection />
 
+                        <FeaturesSection></FeaturesSection>
+
+
       {/* 3. Form lands, ready to track */}
 
       {/* 4. The full story, tab by tab */}
-      <FullStorySection />
 
-      {/* 5. Send the invoice */}
-      <QuoteToPaidSection />
+            <ComparisonSection></ComparisonSection>
+
+
 
       {/* 6. Collect the Google review — TODO: no section built yet, needs a new component */}
 
