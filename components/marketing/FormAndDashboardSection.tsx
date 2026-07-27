@@ -18,11 +18,11 @@ import {
   Send,
   Sparkles,
   Camera,
+  RotateCcw,
+  Wifi,
+  Battery,
+  Smartphone,
   LayoutDashboard,
-  FileEdit,
-  ArrowRight,
-  X,
-  MousePointerClick,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -49,20 +49,20 @@ const TOP_TRADES = [
 ] as const;
 
 const SERVICE_OPTIONS: Record<string, string[]> = {
-  Roofing: ['Inspection', 'Replace', 'Leak Repair', 'Gutters'],
-  HVAC: ['AC Tune-Up', 'Install', 'Duct Clean', 'Furnace'],
-  Plumbing: ['Drain Clean', 'Pipe Repair', 'Water Heater', 'Leaks'],
-  Electrical: ['Panel Upgrade', 'Rewiring', 'Outlet', 'Lighting'],
-  Solar: ['System Check', 'Panels', 'Inverter', 'Battery'],
+  Roofing: ['Inspection', 'Replacement', 'Leak Repair', 'Gutters'],
+  HVAC: ['AC Tune-Up', 'Install', 'Duct Cleaning', 'Furnace'],
+  Plumbing: ['Drain Cleaning', 'Pipe Repair', 'Water Heater', 'Leak Detection'],
+  Electrical: ['Panel Upgrade', 'Rewiring', 'Outlet Install', 'Lighting'],
+  Solar: ['System Check', 'Panel Install', 'Inverter Repair', 'Battery Backup'],
 };
 
-const DEMO_CUSTOMERS = ['Jennifer L.', 'Marcus T.', 'Dana R.', 'Priya S.'];
-const COLLISION_FALLBACKS = ['Alex K.', 'Taylor B.', 'Sam V.'];
+const DEMO_CUSTOMER = 'Jennifer L.';
+const COLLISION_FALLBACKS = ['Marcus T.', 'Dana R.', 'Priya S.'];
 
 const DEMO_PREFILLS: Record<string, { service: string; notes: string; address: string }> = {
   Roofing: { service: 'Inspection', notes: 'Missing shingles on south ridge', address: '42 Maple Ave, Brooklyn NY' },
   HVAC: { service: 'AC Tune-Up', notes: 'Central AC blowing warm air', address: '128 Highland Rd, Austin TX' },
-  Plumbing: { service: 'Drain Clean', notes: 'Main bathroom drain backing up', address: '88 Ocean Blvd, Miami FL' },
+  Plumbing: { service: 'Drain Cleaning', notes: 'Main bathroom drain backing up', address: '88 Ocean Blvd, Miami FL' },
   Electrical: { service: 'Panel Upgrade', notes: 'Breaker box tripping frequently', address: '154 Pinecrest St, Denver CO' },
   Solar: { service: 'System Check', notes: 'Inverter error light on', address: '910 Sun Valley Way, Phoenix AZ' },
 };
@@ -79,143 +79,64 @@ type Theme = {
 
 const TRADE_THEMES: Record<string, Theme> = {
   Roofing: {
-    sectionBg: 'bg-gradient-to-br from-orange-50 via-white to-slate-100 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-orange-50/50 via-white to-slate-100/80 text-slate-900',
     accent: '#f97316',
     textAccent: '#c2410c',
-    cardBorder: 'border-orange-500/30',
+    cardBorder: 'border-orange-500/20',
     lightBg: '#fff7ed',
     lightBorder: '#ffedd5',
     icon: Home,
   },
   HVAC: {
-    sectionBg: 'bg-gradient-to-br from-sky-50 via-white to-slate-100 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-sky-50/50 via-white to-slate-100/80 text-slate-900',
     accent: '#0284c7',
     textAccent: '#0369a1',
-    cardBorder: 'border-sky-500/30',
+    cardBorder: 'border-sky-500/20',
     lightBg: '#f0f9ff',
     lightBorder: '#e0f2fe',
     icon: Flame,
   },
   Plumbing: {
-    sectionBg: 'bg-gradient-to-br from-emerald-50 via-white to-slate-100 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-emerald-50/50 via-white to-slate-100/80 text-slate-900',
     accent: '#059669',
     textAccent: '#047857',
-    cardBorder: 'border-emerald-500/30',
+    cardBorder: 'border-emerald-500/20',
     lightBg: '#ecfdf5',
     lightBorder: '#d1fae5',
     icon: Droplet,
   },
   Electrical: {
-    sectionBg: 'bg-gradient-to-br from-amber-50 via-white to-slate-100 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-amber-50/50 via-white to-slate-100/80 text-slate-900',
     accent: '#d97706',
     textAccent: '#b45309',
-    cardBorder: 'border-amber-500/30',
+    cardBorder: 'border-amber-500/20',
     lightBg: '#fffbeb',
     lightBorder: '#fef3c7',
     icon: Zap,
   },
   Solar: {
-    sectionBg: 'bg-gradient-to-br from-teal-50 via-white to-slate-100 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-teal-50/50 via-white to-slate-100/80 text-slate-900',
     accent: '#0d9488',
     textAccent: '#0f766e',
-    cardBorder: 'border-teal-500/30',
+    cardBorder: 'border-teal-500/20',
     lightBg: '#f0fdfa',
     lightBorder: '#ccfbf1',
     icon: Sun,
   },
 };
 
-const FIELD_LABEL_CLASS = 'text-[9px] font-black text-slate-500 uppercase tracking-wider block mb-0.5';
-
-function InteractiveInput({
-  icon: Icon,
-  label,
-  value,
-  onChange,
-  theme,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  onChange: (val: string) => void;
-  theme: Theme;
-}) {
-  return (
-    <div>
-      <label className={FIELD_LABEL_CLASS}>{label}</label>
-      <div className="relative group">
-        <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-slate-700 transition-colors" />
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full pl-8 pr-2 py-1.5 rounded-lg text-xs font-bold text-slate-800 border transition-all focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer focus:cursor-text hover:brightness-95"
-          style={{
-            backgroundColor: theme.lightBg,
-            borderColor: theme.lightBorder,
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-function ColumnHeader({
-  step,
-  title,
-  subtitle,
-  accent,
-  trailing,
-}: {
-  step: string;
-  title: string;
-  subtitle: string;
-  accent: string;
-  trailing?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2 mb-3 lg:mb-5">
-      <div className="flex items-center gap-2 min-w-0">
-        <span
-          className="w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-black shrink-0"
-          style={{
-            color: accent,
-            borderColor: `${accent}66`,
-            backgroundColor: `${accent}1a`,
-          }}
-        >
-          {step}
-        </span>
-        <div className="min-w-0">
-          <h3 className="text-sm sm:text-base lg:text-lg font-black tracking-tight text-slate-900 leading-tight truncate">
-            {title}
-          </h3>
-          <p className="text-slate-500 font-semibold text-[11px] sm:text-xs leading-none truncate">
-            {subtitle}
-          </p>
-        </div>
-      </div>
-      {trailing ? <div className="shrink-0">{trailing}</div> : null}
-    </div>
-  );
-}
-
 export default function FormAndDashboardSection() {
   const [activeExample, setActiveExample] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [extraLeads, setExtraLeads] = useState<any[]>([]);
-  
-  // Interactive Form State
-  const [customerName, setCustomerName] = useState(DEMO_CUSTOMERS[0]);
-  const [customerPhone, setCustomerPhone] = useState('(555) 382-9102');
+
+  // Device screen state
+  const [phoneScreen, setPhoneScreen] = useState<'form' | 'success'>('form');
+
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [timeWindow, setTimeWindow] = useState<string>('Morning');
   const [photoCount, setPhotoCount] = useState(1);
-
-  // Mobile navigation
-  const [mobileTab, setMobileTab] = useState<'form' | 'dashboard'>('form');
-  const [showToast, setShowToast] = useState(false);
 
   const current = TRADE_EXAMPLES[activeExample] || TRADE_EXAMPLES[0];
   const theme = TRADE_THEMES[current.trade] || TRADE_THEMES.Roofing;
@@ -232,8 +153,7 @@ export default function FormAndDashboardSection() {
     setSelectedService(null);
     setTimeWindow('Morning');
     setPhotoCount(1);
-    setShowToast(false);
-    setCustomerName(DEMO_CUSTOMERS[Math.floor(Math.random() * DEMO_CUSTOMERS.length)]);
+    setPhoneScreen('form');
   }, [activeExample]);
 
   const handleSimulatedSubmit = () => {
@@ -243,9 +163,9 @@ export default function FormAndDashboardSection() {
     setTimeout(() => {
       const newLiveLead = {
         id: `demo-live-${Date.now()}`,
-        name: customerName,
-        phone: customerPhone,
-        email: `${customerName.toLowerCase().replace(/[^a-z]/g, '')}@example.com`,
+        name: DEMO_CUSTOMER,
+        phone: '(555) 382-9102',
+        email: 'jennifer@example.com',
         category: activeService,
         address: prefill.address,
         notes: `${prefill.notes} — prefers ${timeWindow.toLowerCase()}`,
@@ -260,49 +180,50 @@ export default function FormAndDashboardSection() {
       setExtraLeads([newLiveLead]);
       setIsSubmitting(false);
       setHasSubmitted(true);
-      setShowToast(true);
-    }, 800);
+      setPhoneScreen('success');
+    }, 700);
   };
 
   const combinedLeads = useMemo(() => {
     const BASE_LEAD_COUNT = 3;
     const baseLeads = current.leads.slice(0, BASE_LEAD_COUNT).map((lead, i) =>
-      lead.name?.trim().toLowerCase() === customerName.toLowerCase()
+      lead.name?.trim().toLowerCase() === DEMO_CUSTOMER.toLowerCase()
         ? { ...lead, name: COLLISION_FALLBACKS[i % COLLISION_FALLBACKS.length] }
         : lead
     );
     return [...extraLeads, ...baseLeads];
-  }, [current.leads, extraLeads, customerName]);
+  }, [current.leads, extraLeads]);
 
   return (
     <section
       style={{ fontFamily: font }}
-      className={`relative py-12 sm:py-20 lg:py-28 transition-colors duration-700 ease-in-out overflow-hidden border-t border-b border-slate-200 ${theme.sectionBg}`}
+      className={`relative py-12 sm:py-20 lg:py-24 transition-colors duration-700 ease-in-out overflow-hidden border-t border-b border-slate-200 ${theme.sectionBg}`}
     >
-      <div className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 pointer-events-none opacity-[0.045] transition-all duration-700">
-        <BackgroundTradeIcon className="w-[280px] h-[280px] lg:w-[420px] lg:h-[420px] text-slate-900" strokeWidth={1} />
+      {/* Dynamic Background Watermark */}
+      <div className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 pointer-events-none opacity-[0.035] transition-all duration-700">
+        <BackgroundTradeIcon className="w-[380px] h-[380px] lg:w-[520px] lg:h-[520px] text-slate-900" strokeWidth={1} />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto px-2">
-          <p className="text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase mb-2">
-            See your brand in action
+      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Section Title */}
+        <div className="text-center max-w-2xl mx-auto">
+          <p className="text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase mb-2.5">
+            Interactive Product Demo
           </p>
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-            Get your form and dashboard today.
+            See your brand on mobile.
             <span className="block mt-1 sm:mt-2 transition-colors duration-500" style={{ color: theme.textAccent }}>
-              Your branding. Your way.
+              Watch leads land live on board.
             </span>
           </h2>
           <p className="mt-3 text-slate-600 font-semibold text-xs sm:text-base leading-relaxed">
-            Pick a trade, customize the form fields below, and submit to test real-time sync with the dispatch board.
+            Select a trade below, submit the form inside the phone mockup, and watch the lead appear instantly on the dispatch dashboard.
           </p>
         </div>
 
-        {/* Trade Selector */}
-        <div className="mt-6 mb-6 lg:mb-10 flex justify-center">
-          <div className="inline-flex items-center gap-1 p-1 rounded-xl border border-slate-200 bg-white/80 backdrop-blur-md shadow-sm max-w-full overflow-x-auto no-scrollbar">
+        {/* ── Trade Selector Bar ──────────────────────── */}
+        <div className="mt-6 sm:mt-8 mb-8 sm:mb-12 flex justify-center">
+          <div className="inline-flex items-center gap-1 p-1.5 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-sm max-w-full overflow-x-auto no-scrollbar">
             {TOP_TRADES.map((item) => {
               const Icon = item.icon;
               const isSelected = current.trade.toLowerCase() === item.tradeKey.toLowerCase();
@@ -314,10 +235,10 @@ export default function FormAndDashboardSection() {
                   type="button"
                   onClick={() => setActiveExample(tradeIndex !== -1 ? tradeIndex : 0)}
                   aria-pressed={isSelected}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black tracking-wide transition-all duration-200 shrink-0 ${
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black tracking-wide transition-all duration-200 shrink-0 ${
                     isSelected
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                      ? 'bg-slate-900 text-white shadow-md scale-[1.02]'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
@@ -328,273 +249,230 @@ export default function FormAndDashboardSection() {
           </div>
         </div>
 
-        {/* MOBILE VIEW TOGGLE SWITCH (Hidden on Desktop) */}
-        <div className="flex lg:hidden justify-center mb-6">
-          <div className="grid grid-cols-2 p-1 bg-slate-200/80 rounded-xl w-full max-w-xs font-bold text-xs">
-            <button
-              type="button"
-              onClick={() => setMobileTab('form')}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all ${
-                mobileTab === 'form' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-              }`}
-            >
-              <FileEdit size={14} /> 1. Customer Form
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMobileTab('dashboard');
-                setShowToast(false);
-              }}
-              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all relative ${
-                mobileTab === 'dashboard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
-              }`}
-            >
-              <LayoutDashboard size={14} /> 2. Live Board
-              {hasSubmitted && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping absolute top-1.5 right-2" />
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Grid Container */}
-        <div className="mt-4 lg:mt-12 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+        {/* ── Interactive Grid: Phone Mockup (Left) + Desktop Dashboard (Right) ──────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           
-          {/* LEFT: BRANDED FORM CARD */}
-          <div className={`lg:col-span-5 ${mobileTab === 'form' ? 'block' : 'hidden lg:block'}`}>
-            <ColumnHeader
-              step="1"
-              title="Test Form"
-              subtitle={hasSubmitted ? 'Submitted! Click board tab' : 'Try editing fields & press Submit'}
-              accent={theme.textAccent}
-              trailing={
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
-                  <MousePointerClick size={10} /> Live Demo
-                </span>
-              }
-            />
-
-            <div
-              className="w-full rounded-2xl border overflow-hidden shadow-xl bg-white transition-all relative"
-              style={{ borderColor: `${theme.accent}40` }}
-            >
-              {/* Header */}
-              <div
-                className="px-3 py-2 flex items-center justify-between transition-colors"
-                style={{ backgroundColor: theme.accent }}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0 p-0.5 shadow-sm overflow-hidden">
-                    {current.company?.logo_url ? (
-                      <img src={current.company.logo_url} alt={current.company.name} className="w-full h-full object-contain" />
-                    ) : (
-                      <span className="text-xs font-black" style={{ color: theme.accent }}>
-                        {current.company?.name?.charAt(0) ?? current.trade.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <h4 className="text-white font-black text-xs sm:text-sm leading-tight truncate">
-                      {current.company?.name ?? `${current.trade} Pros`}
-                    </h4>
-                    <p className="text-white/80 uppercase tracking-widest font-extrabold text-[8px] mt-0.5">
-                      Work Request Form
-                    </p>
-                  </div>
-                </div>
-
-                <span className="text-[9px] bg-white/20 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest shrink-0">
-                  Interactive
-                </span>
+          {/* LEFT: PHONE FRAME MOCKUP */}
+          <div className="lg:col-span-5 flex flex-col items-center justify-center">
+            
+            {/* Phone Shell */}
+            <div className="relative w-full max-w-[340px] sm:max-w-[360px] rounded-[42px] p-3.5 bg-slate-900 ring-1 ring-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] transition-all">
+              
+              {/* Dynamic Notch / Island */}
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-950 rounded-full z-30 flex items-center justify-between px-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800" />
+                <div className="w-2 h-2 rounded-full bg-blue-900/40" />
               </div>
 
-              <div className="p-3 space-y-2.5">
-                {/* Editable Inputs */}
-                <div className="grid grid-cols-2 gap-2">
-                  <InteractiveInput
-                    icon={User}
-                    label="Customer Name"
-                    value={customerName}
-                    onChange={setCustomerName}
-                    theme={theme}
-                  />
-                  <InteractiveInput
-                    icon={Phone}
-                    label="Phone"
-                    value={customerPhone}
-                    onChange={setCustomerPhone}
-                    theme={theme}
-                  />
-                </div>
-
-                {/* Service Selection */}
-                <div>
-                  <div className="flex items-center justify-between mb-0.5">
-                    <label className={FIELD_LABEL_CLASS}>Select Service</label>
-                    <span className="text-[8px] font-bold text-slate-400 uppercase">Click to pick</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {serviceOptions.map((opt) => {
-                      const isSelected = opt === activeService;
-                      return (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setSelectedService(opt)}
-                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border truncate transition-all text-left flex items-center justify-between ${
-                            isSelected ? 'ring-2 ring-slate-900/20 shadow-sm' : 'hover:border-slate-400'
-                          }`}
-                          style={
-                            isSelected
-                              ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
-                              : { backgroundColor: theme.lightBg, borderColor: theme.lightBorder, color: '#475569' }
-                          }
-                        >
-                          <span className="truncate">{opt}</span>
-                          {isSelected && <CheckCircle2 size={12} className="shrink-0 ml-1" />}
-                        </button>
-                      );
-                    })}
+              {/* Phone Screen Container */}
+              <div className="relative w-full rounded-[32px] overflow-hidden bg-slate-50 border border-slate-200 pt-8 pb-4 px-3 flex flex-col min-h-[560px] sm:min-h-[580px] shadow-inner">
+                
+                {/* Phone Status Bar */}
+                <div className="flex items-center justify-between px-2 mb-2 text-[10px] font-extrabold text-slate-800">
+                  <span>9:41</span>
+                  <div className="flex items-center gap-1.5 text-slate-700">
+                    <Wifi size={11} />
+                    <Battery size={12} />
                   </div>
                 </div>
 
-                {/* Time Window */}
-                <div>
-                  <label className={FIELD_LABEL_CLASS}>Preferred Time</label>
-                  <div className="grid grid-cols-3 gap-1">
-                    {['Morning', 'Afternoon', 'Flexible'].map((slot) => {
-                      const isSelected = slot === timeWindow;
-                      return (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => setTimeWindow(slot)}
-                          className="px-1 py-1 rounded-md text-[10px] font-bold border transition-all"
-                          style={
-                            isSelected
-                              ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
-                              : { backgroundColor: theme.lightBg, borderColor: theme.lightBorder, color: '#475569' }
-                          }
-                        >
-                          {slot}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                {/* Inside Screen Content */}
+                {phoneScreen === 'form' ? (
+                  <div className="flex-1 flex flex-col justify-between animate-in fade-in duration-300">
+                    
+                    {/* Form Header */}
+                    <div>
+                      <div
+                        className="rounded-xl p-2.5 flex items-center gap-2 mb-3 shadow-sm text-white transition-colors duration-500"
+                        style={{ backgroundColor: theme.accent }}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                          {current.company?.logo_url ? (
+                            <img src={current.company.logo_url} alt="Logo" className="w-full h-full object-contain" />
+                          ) : (
+                            <span className="text-xs font-black" style={{ color: theme.accent }}>
+                              {current.company?.name?.charAt(0) ?? 'P'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <h4 className="font-black text-xs truncate leading-tight">
+                            {current.company?.name ?? `${current.trade} Pros`}
+                          </h4>
+                          <p className="text-[8px] font-extrabold uppercase tracking-widest text-white/80">
+                            Mobile Request Form
+                          </p>
+                        </div>
+                      </div>
 
-                {/* Address & Notes static preview */}
-                <div className="space-y-1.5 pt-0.5">
-                  <div>
-                    <label className={FIELD_LABEL_CLASS}>Service Address</label>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs text-slate-600 bg-slate-50 border-slate-200">
-                      <MapPin size={12} className="text-slate-400 shrink-0" />
-                      <span className="truncate">{prefill.address}</span>
+                      {/* Compact Input Fields */}
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-1.5">
+                          <div className="bg-white p-1.5 rounded-lg border border-slate-200">
+                            <label className="text-[8px] font-black uppercase text-slate-400 block">Name</label>
+                            <p className="text-[11px] font-bold text-slate-800 truncate">{DEMO_CUSTOMER}</p>
+                          </div>
+                          <div className="bg-white p-1.5 rounded-lg border border-slate-200">
+                            <label className="text-[8px] font-black uppercase text-slate-400 block">Phone</label>
+                            <p className="text-[11px] font-bold text-slate-800 truncate">(555) 382-9102</p>
+                          </div>
+                        </div>
+
+                        {/* Interactive Service Buttons */}
+                        <div>
+                          <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">
+                            Service Needed
+                          </label>
+                          <div className="grid grid-cols-2 gap-1">
+                            {serviceOptions.map((opt) => {
+                              const isSelected = opt === activeService;
+                              return (
+                                <button
+                                  key={opt}
+                                  type="button"
+                                  onClick={() => setSelectedService(opt)}
+                                  className="px-2 py-1 rounded-md text-[10px] font-extrabold border transition-all truncate text-left"
+                                  style={
+                                    isSelected
+                                      ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
+                                      : { backgroundColor: '#fff', borderColor: '#e2e8f0', color: '#475569' }
+                                  }
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Preferred Time Slot */}
+                        <div>
+                          <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">
+                            Preferred Time
+                          </label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {['Morning', 'Afternoon', 'Flexible'].map((slot) => {
+                              const isSelected = slot === timeWindow;
+                              return (
+                                <button
+                                  key={slot}
+                                  type="button"
+                                  onClick={() => setTimeWindow(slot)}
+                                  className="py-1 rounded-md text-[9px] font-bold border text-center transition-all"
+                                  style={
+                                    isSelected
+                                      ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
+                                      : { backgroundColor: '#fff', borderColor: '#e2e8f0', color: '#475569' }
+                                  }
+                                >
+                                  {slot}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="bg-white p-1.5 rounded-lg border border-slate-200">
+                          <label className="text-[8px] font-black uppercase text-slate-400 block">Address</label>
+                          <p className="text-[10px] font-bold text-slate-700 truncate">{prefill.address}</p>
+                        </div>
+
+                        {/* Attachments */}
+                        <div className="bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <Camera size={12} style={{ color: theme.accent }} />
+                            <span className="text-[10px] font-bold text-slate-700">{photoCount} Photo attached</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => setPhotoCount((n) => Math.max(0, n - 1))}
+                              className="w-4 h-4 rounded border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600"
+                            >
+                              -
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setPhotoCount((n) => Math.min(4, n + 1))}
+                              className="w-4 h-4 rounded border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600"
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className={FIELD_LABEL_CLASS}>Job Notes</label>
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs text-slate-600 bg-slate-50 border-slate-200">
-                      <FileText size={12} className="text-slate-400 shrink-0" />
-                      <span className="truncate">{prefill.notes}</span>
+                    {/* Primary Mobile Action Button */}
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={handleSimulatedSubmit}
+                        disabled={isSubmitting}
+                        style={{ backgroundColor: theme.textAccent }}
+                        className="w-full text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-[0.98] transition-all"
+                      >
+                        {isSubmitting ? (
+                          <span>Sending to Board...</span>
+                        ) : (
+                          <>
+                            <span>Submit Request</span>
+                            <ChevronRight size={14} />
+                          </>
+                        )}
+                      </button>
                     </div>
-                  </div>
-                </div>
 
-                {/* Photos attachment */}
-                <div
-                  className="flex items-center justify-between rounded-lg px-2.5 py-1.5 border"
-                  style={{ backgroundColor: theme.lightBg, borderColor: theme.lightBorder }}
-                >
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <Camera className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
-                    <span className="text-[11px] font-bold text-slate-800 truncate">
-                      Attach Photos ({photoCount})
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => setPhotoCount((n) => Math.max(0, n - 1))}
-                      disabled={photoCount === 0}
-                      className="w-5 h-5 rounded border border-slate-300 bg-white text-slate-600 font-black text-xs leading-none flex items-center justify-center disabled:opacity-30 hover:bg-slate-100"
-                    >
-                      -
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPhotoCount((n) => Math.min(4, n + 1))}
-                      disabled={photoCount === 4}
-                      className="w-5 h-5 rounded border border-slate-300 bg-white text-slate-600 font-black text-xs leading-none flex items-center justify-center disabled:opacity-30 hover:bg-slate-100"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Submit Action */}
-                {!hasSubmitted ? (
-                  <div className="pt-2 mt-1 border-t border-slate-100">
-                    <p className="text-[9px] font-black uppercase text-center text-slate-400 mb-1 flex items-center justify-center gap-1">
-                      <Sparkles size={10} className="text-amber-500" /> Test real-time dispatch flow
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleSimulatedSubmit}
-                      disabled={isSubmitting}
-                      style={{ backgroundColor: theme.textAccent }}
-                      className="w-full flex items-center justify-center gap-2 text-white py-2.5 rounded-xl font-black text-xs tracking-tight transition-all hover:brightness-110 active:scale-[0.98] shadow-md hover:shadow-lg disabled:opacity-70"
-                    >
-                      {isSubmitting ? (
-                        <span className="flex items-center gap-1.5">
-                          <Send className="w-3.5 h-3.5 animate-bounce" /> Dispatching...
-                        </span>
-                      ) : (
-                        <span className="flex items-center gap-1.5">
-                          Submit Job Request <ChevronRight className="w-4 h-4" />
-                        </span>
-                      )}
-                    </button>
                   </div>
                 ) : (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center space-y-1">
-                    <p className="flex items-center justify-center gap-1 text-emerald-700 font-black text-xs">
-                      <Sparkles className="w-3.5 h-3.5" /> Dispatched to Live Board!
+                  /* Success Screen inside Phone */
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-4 animate-in zoom-in-95 duration-300">
+                    <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
+                      <CheckCircle2 size={28} />
+                    </div>
+                    <h4 className="font-black text-slate-900 text-sm">Lead Dispatched!</h4>
+                    <p className="text-[11px] font-semibold text-slate-500 mt-1 leading-relaxed">
+                      Your request has been delivered directly to the contractor’s live dashboard.
                     </p>
+
                     <button
                       type="button"
                       onClick={() => {
                         setHasSubmitted(false);
                         setExtraLeads([]);
-                        setShowToast(false);
+                        setPhoneScreen('form');
                       }}
-                      className="text-[10px] font-bold text-slate-500 hover:text-slate-800 underline uppercase"
+                      className="mt-6 flex items-center gap-1.5 text-xs font-black text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-xl hover:bg-slate-50"
                     >
-                      Test Another Job
+                      <RotateCcw size={12} /> Test Again
                     </button>
                   </div>
                 )}
+
+                {/* Phone Bottom Home Bar */}
+                <div className="w-20 h-1 bg-slate-300 rounded-full mx-auto mt-3" />
               </div>
             </div>
+
           </div>
 
-          {/* RIGHT: DASHBOARD PANEL */}
-          <div className={`lg:col-span-7 ${mobileTab === 'dashboard' ? 'block' : 'hidden lg:block'}`}>
-            <ColumnHeader
-              step="2"
-              title="Live Dispatch Board"
-              subtitle={hasSubmitted ? 'New lead arrived!' : 'Real-time sync'}
-              accent={theme.textAccent}
-              trailing={
-                <span
-                  className={`w-2.5 h-2.5 rounded-full ${hasSubmitted ? 'bg-emerald-500 animate-ping' : 'bg-slate-300'}`}
-                />
-              }
-            />
+          {/* RIGHT: DESKTOP DISPATCH DASHBOARD */}
+          <div className="lg:col-span-7">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                  Live Dispatch Board
+                </h3>
+              </div>
+              {hasSubmitted && (
+                <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full animate-bounce">
+                  ⚡ New lead received!
+                </span>
+              )}
+            </div>
 
-            <div className={`p-2.5 sm:p-4 rounded-2xl border bg-slate-950/90 backdrop-blur-md shadow-2xl space-y-3 transition-colors ${theme.cardBorder}`}>
+            <div className={`p-3.5 sm:p-5 rounded-2xl border bg-slate-950/90 backdrop-blur-md shadow-2xl space-y-4 transition-colors ${theme.cardBorder}`}>
               <DashboardHeader
                 company={current.company}
                 isDark={true}
@@ -626,44 +504,6 @@ export default function FormAndDashboardSection() {
 
         </div>
       </div>
-
-      {/* FLOATING MOBILE TOAST NOTIFICATION */}
-      {showToast && mobileTab === 'form' && (
-        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-5 duration-300">
-          <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                <CheckCircle2 size={18} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold truncate">Lead Dispatched!</p>
-                <p className="text-[10px] text-slate-400 truncate">{customerName} added to board</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileTab('dashboard');
-                  setShowToast(false);
-                }}
-                className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-sm transition-all"
-              >
-                View <ArrowRight size={12} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowToast(false)}
-                className="text-slate-400 hover:text-white p-1"
-                aria-label="Close notification"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 }
