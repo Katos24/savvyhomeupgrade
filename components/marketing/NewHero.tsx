@@ -6,6 +6,7 @@ import { ArrowRight, CheckCircle2, QrCode, Link2, Check, CalendarDays } from 'lu
 import Link from 'next/link';
 
 const font = "'Nunito', sans-serif";
+
 const ACCENT_TEAL = '#0F766E';
 
 const TRADE_IMAGES = [
@@ -26,10 +27,11 @@ const QUICK_FEATURES = [
 
 export default function Hero() {
   const [currentTradeIndex, setCurrentTradeIndex] = useState(0);
+
+  // Once someone scrolls the strip themselves, stop moving it under them.
   const [userScrolled, setUserScrolled] = useState(false);
   const stripRef = useRef<HTMLDivElement>(null);
 
-  // Auto-cycle background for desktop
   useEffect(() => {
     const reduced =
       typeof window !== 'undefined' &&
@@ -42,7 +44,7 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, []);
 
-  // Sync mobile horizontal scroll strip with active index unless scrolled
+  // Keep the mobile strip in step with the cycling background.
   useEffect(() => {
     if (userScrolled) return;
     const strip = stripRef.current;
@@ -60,10 +62,10 @@ export default function Hero() {
   return (
     <section
       style={{ fontFamily: font }}
-      className="relative overflow-hidden bg-slate-950 pt-32 pb-16 sm:pt-40 sm:pb-24 lg:pt-48 lg:pb-28 px-4 sm:px-8 text-left"
+      className="relative overflow-hidden bg-slate-950 pt-28 pb-16 sm:pt-40 sm:pb-24 lg:pt-48 lg:pb-28 px-4 sm:px-8 text-left"
     >
-      {/* Desktop Background trade imagery (Hidden on small mobile screens to save space) */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0 hidden md:block">
+      {/* Background trade imagery */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentTradeIndex}
@@ -82,19 +84,20 @@ export default function Hero() {
           </motion.div>
         </AnimatePresence>
 
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/40 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/50" />
+        {/* Left-weighted scrim keeps the headline readable over any photo. */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950/85 via-slate-950/35 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-slate-950/40" />
       </div>
 
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
 
-          {/* Left: Headline & CTAs */}
-          <div className="lg:col-span-7 rounded-3xl border border-white/10 bg-slate-950/70 backdrop-blur-xl shadow-2xl p-6 sm:p-10 lg:p-12">
+          {/* Left: the pitch */}
+          <div className="lg:col-span-7 rounded-3xl border border-white/10 bg-slate-950/70 backdrop-blur-xl shadow-2xl p-7 sm:p-10 lg:p-12">
             <motion.div
               initial={{ opacity: 0, y: -6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-slate-950/80 px-3.5 py-1 mb-6 backdrop-blur-md"
+              className="inline-flex items-center gap-2 rounded-full border border-teal-500/30 bg-slate-950/80 px-3.5 py-1 mb-7 backdrop-blur-md"
             >
               <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse" />
               <span className="text-[11px] sm:text-xs font-black text-teal-300 uppercase tracking-wide">
@@ -102,24 +105,25 @@ export default function Hero() {
               </span>
             </motion.div>
 
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.08] mb-6">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.06] mb-7">
               One link.{' '}
               <span className="text-teal-400 block sm:inline">
                 Every lead on one board.
               </span>
             </h1>
 
-            <p className="text-slate-200 sm:text-white font-medium text-sm sm:text-lg mb-8 leading-relaxed max-w-xl">
+            <p className="text-white font-medium text-base sm:text-lg mb-10 leading-relaxed max-w-xl">
               Share a booking form built in your colors, by link or QR code. Leads come
               straight to your board with photos and job details attached.
             </p>
 
-            {/* Action Buttons */}
+            {/* Primary is filled, demo is outlined — one obvious next step,
+                with a lower-commitment option beside it. */}
             <div className="flex flex-col sm:flex-row items-stretch gap-3.5">
               <Link href="/signup" className="sm:flex-initial">
                 <button
                   style={{ backgroundColor: ACCENT_TEAL }}
-                  className="w-full text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300"
+                  className="w-full text-white font-black text-sm uppercase tracking-wider px-8 py-4 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
                   Get started free
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -127,7 +131,7 @@ export default function Hero() {
               </Link>
 
               <Link href="/book-demo" className="sm:flex-initial">
-                <button className="w-full text-white font-black text-sm uppercase tracking-wider px-7 py-4 rounded-xl border border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
+                <button className="w-full text-white font-black text-sm uppercase tracking-wider px-7 py-4 rounded-xl border border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950">
                   <CalendarDays size={16} className="shrink-0" />
                   Book a demo
                 </button>
@@ -138,44 +142,9 @@ export default function Hero() {
               <CheckCircle2 size={16} className="text-teal-400 shrink-0" />
               No credit card required
             </div>
-
-            {/* ── MOBILE TRADE CAROUSEL (Show images under CTAs on mobile) ── */}
-            <div className="mt-8 pt-6 border-t border-white/10 md:hidden">
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-                Top-rated software across 50+ trades
-              </p>
-              
-              <div
-                ref={stripRef}
-                onScroll={() => setUserScrolled(true)}
-                className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none snap-x snap-mandatory"
-              >
-                {TRADE_IMAGES.map((trade, idx) => (
-                  <div
-                    key={trade.name}
-                    onClick={() => setCurrentTradeIndex(idx)}
-                    className={`relative min-w-[150px] h-[110px] rounded-2xl overflow-hidden border transition-all shrink-0 snap-start cursor-pointer ${
-                      currentTradeIndex === idx
-                        ? 'border-teal-400 ring-2 ring-teal-400/50 scale-[1.02]'
-                        : 'border-white/15 opacity-70'
-                    }`}
-                  >
-                    <img
-                      src={trade.src}
-                      alt={trade.name}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
-                    <span className="absolute bottom-2.5 left-3 text-xs font-black text-white drop-shadow-md">
-                      {trade.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* Right: The Two Links Box */}
+          {/* Right: the two URLs every account gets */}
           <div className="lg:col-span-5">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -228,12 +197,12 @@ export default function Hero() {
 
         </div>
 
-        {/* Feature banner */}
+        {/* ── Feature banner ───────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, scale: 0.96, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
-          className="mt-12 sm:mt-16 rounded-[2.5rem] bg-gradient-to-b from-white via-slate-50 to-slate-100 p-6 sm:p-8 shadow-2xl border-4 border-white/80"
+          className="mt-12 sm:mt-16 rounded-[2.5rem] bg-gradient-to-b from-white via-slate-50 to-slate-100 p-6 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-4 border-white/80 ring-1 ring-slate-200/50"
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-slate-200/80">
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
@@ -249,9 +218,9 @@ export default function Hero() {
             {QUICK_FEATURES.map((feat) => (
               <div
                 key={feat}
-                className="flex items-center gap-3 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-sm hover:border-teal-400 transition-all group"
+                className="flex items-center gap-3 bg-white border border-slate-200/80 p-3.5 rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_rgba(15,118,110,0.12)] hover:border-teal-400 hover:-translate-y-0.5 transition-all group"
               >
-                <div className="w-7 h-7 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shrink-0 group-hover:scale-110 transition-transform">
+                <div className="w-7 h-7 rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0 group-hover:scale-110 transition-transform">
                   <Check size={16} strokeWidth={3} />
                 </div>
                 <span className="text-sm sm:text-base font-black text-slate-800 leading-snug">
