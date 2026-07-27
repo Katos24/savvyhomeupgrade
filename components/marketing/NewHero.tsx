@@ -2,12 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, QrCode, Link2, Check, CalendarDays } from 'lucide-react';
+import { ArrowRight, CheckCircle2, QrCode, Link2, Check, CalendarDays, LayoutDashboard, FileText, CreditCard, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 const font = "'Nunito', sans-serif";
-
-const ACCENT_TEAL = '#0F766E';
 
 const TRADES = [
   { name: 'Roofing', src: '/images/roofing.webp' },
@@ -42,7 +40,6 @@ export default function Hero() {
     return () => clearInterval(timer);
   }, []);
 
-  // Carry the strip along with the cycle until the user takes over.
   useEffect(() => {
     if (userScrolled) return;
     const strip = stripRef.current;
@@ -58,19 +55,17 @@ export default function Hero() {
   return (
     <section
       style={{ fontFamily: font }}
-      /* Reduced top padding for mobile to account for navbar height above */
-      className="relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 pt-12 pb-12 sm:pt-24 sm:pb-20 lg:pt-28 lg:pb-24 px-4 sm:px-8 text-left"
+      /* Increased pt to pt-24 on mobile so fixed Nav doesn't cover your title */
+      className="relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 pt-24 pb-12 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24 px-4 sm:px-8 text-left"
     >
-      {/* Background glow restrained on mobile to prevent overflow bounds */}
+      {/* Background glow restrained on mobile to prevent horizontal overflow */}
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 lg:left-1/4 lg:translate-x-0 h-[350px] w-[350px] sm:h-[500px] sm:w-[500px] rounded-full bg-teal-500/10 blur-[100px] sm:blur-[140px]" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 items-center">
 
-          {/* Left: the pitch */}
+          {/* Left: main pitch */}
           <div className="lg:col-span-7">
-            
-            {/* Headline sized specifically for narrow mobile viewports */}
             <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.1] sm:leading-[1.06] mb-4 sm:mb-6">
               One link.{' '}
               <span className="text-teal-400 block sm:inline">Every lead on one board.</span>
@@ -84,8 +79,7 @@ export default function Hero() {
             <div className="flex flex-col sm:flex-row items-stretch gap-3">
               <Link href="/signup" className="w-full sm:w-auto sm:flex-initial">
                 <button
-                  style={{ backgroundColor: ACCENT_TEAL }}
-                  className="w-full text-white font-black text-sm uppercase tracking-wider px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm uppercase tracking-wider px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
                 >
                   Get started free
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
@@ -101,7 +95,7 @@ export default function Hero() {
             </div>
 
             <div className="flex items-center gap-2 text-slate-400 text-xs font-bold mt-4">
-              <CheckCircle2 size={16} className="text-teal-400 shrink-0" />
+              <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
               No credit card required
             </div>
           </div>
@@ -214,39 +208,62 @@ export default function Hero() {
           </div>
         </div>
 
-        {/* Feature banner */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
-          className="mt-10 sm:mt-16 rounded-2xl sm:rounded-[2rem] bg-gradient-to-b from-white via-slate-50 to-slate-100 p-4 sm:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.3)] border-2 sm:border-4 border-white/80"
-        >
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-4 sm:mb-6 pb-4 sm:pb-5 border-b border-slate-200/80">
-            <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Everything you need to run your business
-            </h2>
+       {/* ── Feature section: Dark theme, richer cards, interactive hover ── */}
+<motion.div
+  initial={{ opacity: 0, scale: 0.96, y: 20 }}
+  animate={{ opacity: 1, scale: 1, y: 0 }}
+  transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
+  className="mt-12 sm:mt-16 rounded-3xl bg-slate-900/80 border border-white/10 p-6 sm:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden"
+>
+  {/* Ambient background glow inside card */}
+  <div className="pointer-events-none absolute -right-10 -bottom-10 h-64 w-64 rounded-full bg-emerald-500/10 blur-[90px]" />
 
-            <span className="text-[11px] sm:text-xs font-black text-teal-800 bg-teal-100/80 border border-teal-200/60 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full self-start md:self-auto shrink-0">
-              Zero extra apps needed
-            </span>
-          </div>
+  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/10 relative z-10">
+    <div>
+      <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+        Everything you need to run your business
+      </h2>
+      <p className="text-xs sm:text-sm font-bold text-slate-400 mt-1">
+        Built specifically to handle job flow, estimates, and customer payments in one place.
+      </p>
+    </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3">
-            {QUICK_FEATURES.map((feat) => (
-              <div
-                key={feat}
-                className="flex items-center gap-3 bg-white border border-slate-200/80 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.03)] hover:shadow-[0_8px_20px_rgba(15,118,110,0.12)] hover:border-teal-400 transition-all group"
-              >
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-lg sm:rounded-xl bg-emerald-500 text-white flex items-center justify-center shadow-md shadow-emerald-500/30 shrink-0 group-hover:scale-110 transition-transform">
-                  <Check size={15} strokeWidth={3} />
-                </div>
-                <span className="text-sm sm:text-base font-black text-slate-800 leading-snug">
-                  {feat}
-                </span>
-              </div>
-            ))}
+    <span className="text-xs font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full self-start md:self-auto shrink-0 uppercase tracking-wider">
+      Zero extra apps needed
+    </span>
+  </div>
+
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 relative z-10">
+    {[
+      { title: 'Track jobs', desc: 'Real-time board overview', icon: <LayoutDashboard size={18} /> },
+      { title: 'Schedule jobs', desc: 'Automatic calendar sync', icon: <CalendarDays size={18} /> },
+      { title: 'Instant estimates', desc: 'Send & approve in seconds', icon: <FileText size={18} /> },
+      { title: 'Branded invoices', desc: 'Get paid faster online', icon: <CreditCard size={18} /> },
+      { title: 'Google reviews', desc: 'Automate review invites', icon: <Sparkles size={18} /> },
+    ].map((feat) => (
+      <div
+        key={feat.title}
+        className="flex flex-col justify-between bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 hover:bg-white/[0.06] p-4 rounded-2xl transition-all group duration-200"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-md">
+            {feat.icon}
           </div>
-        </motion.div>
+          <Check size={16} className="text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+        </div>
+
+        <div>
+          <span className="block text-sm font-black text-white leading-tight group-hover:text-emerald-300 transition-colors">
+            {feat.title}
+          </span>
+          <span className="block text-[11px] font-bold text-slate-400 mt-1">
+            {feat.desc}
+          </span>
+        </div>
+      </div>
+    ))}
+  </div>
+</motion.div>
 
       </div>
     </section>
