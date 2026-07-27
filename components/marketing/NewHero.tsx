@@ -2,7 +2,18 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, CheckCircle2, QrCode, Link2, Check, CalendarDays, LayoutDashboard, FileText, CreditCard, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  QrCode,
+  Link2,
+  Check,
+  CalendarDays,
+  LayoutDashboard,
+  FileText,
+  CreditCard,
+  Sparkles,
+} from 'lucide-react';
 import Link from 'next/link';
 
 const font = "'Nunito', sans-serif";
@@ -13,14 +24,6 @@ const TRADES = [
   { name: 'Plumbing', src: '/images/plumbing.webp' },
   { name: 'Electrical', src: '/images/electrical.webp' },
   { name: 'Solar', src: '/images/solar.webp' },
-];
-
-const QUICK_FEATURES = [
-  'Track jobs',
-  'Schedule jobs',
-  'Send estimates in seconds',
-  'Generate branded invoices',
-  'Collect Google reviews',
 ];
 
 export default function Hero() {
@@ -55,18 +58,20 @@ export default function Hero() {
   return (
     <section
       style={{ fontFamily: font }}
-      /* Increased pt to pt-24 on mobile so fixed Nav doesn't cover your title */
-      className="relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 pt-24 pb-12 sm:pt-28 sm:pb-20 lg:pt-32 lg:pb-24 px-4 sm:px-8 text-left"
+      /* Increased top padding (pt-32) so fixed nav on mobile doesn't overlap header */
+      className="relative overflow-hidden bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 pt-32 pb-16 sm:pt-36 sm:pb-20 lg:pt-40 lg:pb-24 px-4 sm:px-8 text-left"
     >
-      {/* Background glow restrained on mobile to prevent horizontal overflow */}
+      {/* Background ambient glow */}
       <div className="pointer-events-none absolute -top-40 left-1/2 -translate-x-1/2 lg:left-1/4 lg:translate-x-0 h-[350px] w-[350px] sm:h-[500px] sm:w-[500px] rounded-full bg-teal-500/10 blur-[100px] sm:blur-[140px]" />
 
       <div className="max-w-6xl mx-auto relative z-10">
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-14 items-center">
+        
+        {/* Main Flex/Grid Wrapper: Handles mobile order vs desktop columns */}
+        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 lg:gap-14 items-start">
 
-          {/* Left: main pitch */}
-          <div className="lg:col-span-7">
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.1] sm:leading-[1.06] mb-4 sm:mb-6">
+          {/* 1. HEADLINE & CTAS (Mobile: 1st | Desktop: Left Column) */}
+          <div className="order-1 lg:col-span-7 w-full">
+            <h1 className="text-3.5xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.1] sm:leading-[1.06] mb-4 sm:mb-6">
               One link.{' '}
               <span className="text-teal-400 block sm:inline">Every lead on one board.</span>
             </h1>
@@ -78,16 +83,14 @@ export default function Hero() {
 
             <div className="flex flex-col sm:flex-row items-stretch gap-3">
               <Link href="/signup" className="w-full sm:w-auto sm:flex-initial">
-                <button
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm uppercase tracking-wider px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
-                >
+                <button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black text-sm uppercase tracking-wider px-6 sm:px-8 py-4 rounded-xl shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2 group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300">
                   Get started free
                   <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                 </button>
               </Link>
 
               <Link href="/book-demo" className="w-full sm:w-auto sm:flex-initial">
-                <button className="w-full text-white font-black text-sm uppercase tracking-wider px-6 sm:px-7 py-3.5 sm:py-4 rounded-xl border border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900">
+                <button className="w-full text-white font-black text-sm uppercase tracking-wider px-6 sm:px-7 py-4 rounded-xl border border-white/25 bg-white/5 hover:bg-white/10 hover:border-white/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
                   <CalendarDays size={16} className="shrink-0" />
                   Book a demo
                 </button>
@@ -100,8 +103,64 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right: two URLs component */}
-          <div className="lg:col-span-5 mt-2 lg:mt-0">
+          {/* 2. SLIDESHOW (Mobile: 2nd | Desktop: Full width bottom row) */}
+          <div className="order-2 lg:order-3 lg:col-span-12 w-full mt-2 lg:mt-6">
+            <div className="flex items-center justify-between gap-4 mb-3">
+              <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                Trusted across the trades
+              </p>
+              <div className="flex items-center gap-1.5">
+                {TRADES.map((t, i) => (
+                  <button
+                    key={t.name}
+                    type="button"
+                    onClick={() => {
+                      setUserScrolled(false);
+                      setCurrentTradeIndex(i);
+                    }}
+                    aria-label={`Show ${t.name}`}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === currentTradeIndex ? 'w-5 bg-teal-400' : 'w-1.5 bg-white/25'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div
+              ref={stripRef}
+              onTouchStart={() => setUserScrolled(true)}
+              onWheel={() => setUserScrolled(true)}
+              className="-mx-4 sm:-mx-8 px-4 sm:px-8 flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-1"
+              style={{ scrollbarWidth: 'none' }}
+            >
+              {TRADES.map((trade, i) => {
+                const isActive = i === currentTradeIndex && !userScrolled;
+                return (
+                  <div
+                    key={trade.name}
+                    className={`relative shrink-0 snap-start overflow-hidden rounded-2xl border transition-all duration-500 w-[140px] h-[170px] sm:w-[210px] sm:h-[240px] lg:w-[230px] lg:h-[260px] ${
+                      isActive ? 'border-teal-400/70 ring-2 ring-teal-400/40' : 'border-white/10'
+                    }`}
+                  >
+                    <img
+                      src={trade.src}
+                      alt={`${trade.name} crew at work`}
+                      loading="lazy"
+                      className="h-full w-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
+                    <span className="absolute bottom-3 left-3 right-3 text-sm sm:text-lg font-black text-white tracking-tight drop-shadow">
+                      {trade.name}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. TWO LINKS CARD (Mobile: 3rd | Desktop: Right Column) */}
+          <div className="order-3 lg:order-2 lg:col-span-5 w-full">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -150,121 +209,67 @@ export default function Hero() {
               </p>
             </motion.div>
           </div>
-        </div>
 
-        {/* Trade slideshow */}
-        <div className="mt-10 sm:mt-14">
-          <div className="flex items-center justify-between gap-4 mb-3">
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
-              Trusted across the trades
-            </p>
-            <div className="flex items-center gap-1.5">
-              {TRADES.map((t, i) => (
-                <button
-                  key={t.name}
-                  type="button"
-                  onClick={() => {
-                    setUserScrolled(false);
-                    setCurrentTradeIndex(i);
-                  }}
-                  aria-label={`Show ${t.name}`}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === currentTradeIndex ? 'w-5 bg-teal-400' : 'w-1.5 bg-white/25'
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div
-            ref={stripRef}
-            onTouchStart={() => setUserScrolled(true)}
-            onWheel={() => setUserScrolled(true)}
-            className="-mx-4 sm:-mx-8 px-4 sm:px-8 flex gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-1"
-            style={{ scrollbarWidth: 'none' }}
-          >
-            {TRADES.map((trade, i) => {
-              const isActive = i === currentTradeIndex && !userScrolled;
-              return (
-                <div
-                  key={trade.name}
-                  className={`relative shrink-0 snap-start overflow-hidden rounded-2xl border transition-all duration-500 w-[150px] h-[180px] sm:w-[210px] sm:h-[240px] lg:w-[230px] lg:h-[260px] ${
-                    isActive ? 'border-teal-400/70 ring-2 ring-teal-400/40' : 'border-white/10'
-                  }`}
-                >
-                  <img
-                    src={trade.src}
-                    alt={`${trade.name} crew at work`}
-                    loading="lazy"
-                    className="h-full w-full object-cover"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
-                  <span className="absolute bottom-3 left-3 right-3 text-sm sm:text-lg font-black text-white tracking-tight drop-shadow">
-                    {trade.name}
-                  </span>
+          {/* 4. COMPACT FEATURE GRID (Mobile: 2 Columns | Desktop: 5 Columns) */}
+          <div className="order-4 lg:col-span-12 w-full mt-2 lg:mt-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
+              className="rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 p-5 sm:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden"
+            >
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-8 pb-4 sm:pb-6 border-b border-white/10 relative z-10">
+                <div>
+                  <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
+                    Everything you need to run your business
+                  </h2>
+                  <p className="text-xs sm:text-sm font-bold text-slate-400 mt-0.5 sm:mt-1">
+                    Built specifically to handle job flow, estimates, and customer payments in one place.
+                  </p>
                 </div>
-              );
-            })}
+
+                <span className="text-[10px] sm:text-xs font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full self-start md:self-auto shrink-0 uppercase tracking-wider">
+                  Zero extra apps needed
+                </span>
+              </div>
+
+              {/* 2 columns on mobile (grid-cols-2), 3 on tablet, 5 on desktop */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3.5 relative z-10">
+                {[
+                  { title: 'Track jobs', desc: 'Real-time board overview', icon: <LayoutDashboard size={16} /> },
+                  { title: 'Schedule jobs', desc: 'Automatic calendar sync', icon: <CalendarDays size={16} /> },
+                  { title: 'Instant estimates', desc: 'Send & approve in seconds', icon: <FileText size={16} /> },
+                  { title: 'Branded invoices', desc: 'Get paid faster online', icon: <CreditCard size={16} /> },
+                  { title: 'Google reviews', desc: 'Automate review invites', icon: <Sparkles size={16} />, fullMobile: true },
+                ].map((feat) => (
+                  <div
+                    key={feat.title}
+                    className={`flex flex-col justify-between bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 hover:bg-white/[0.06] p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all group duration-200 ${
+                      feat.fullMobile ? 'col-span-2 sm:col-span-1' : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-md">
+                        {feat.icon}
+                      </div>
+                      <Check size={14} className="text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
+                    <div>
+                      <span className="block text-xs sm:text-sm font-black text-white leading-tight group-hover:text-emerald-300 transition-colors">
+                        {feat.title}
+                      </span>
+                      <span className="block text-[10px] sm:text-[11px] font-bold text-slate-400 mt-0.5 sm:mt-1">
+                        {feat.desc}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
           </div>
+
         </div>
-
-       {/* ── Feature section: Dark theme, richer cards, interactive hover ── */}
-<motion.div
-  initial={{ opacity: 0, scale: 0.96, y: 20 }}
-  animate={{ opacity: 1, scale: 1, y: 0 }}
-  transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
-  className="mt-12 sm:mt-16 rounded-3xl bg-slate-900/80 border border-white/10 p-6 sm:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden"
->
-  {/* Ambient background glow inside card */}
-  <div className="pointer-events-none absolute -right-10 -bottom-10 h-64 w-64 rounded-full bg-emerald-500/10 blur-[90px]" />
-
-  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-white/10 relative z-10">
-    <div>
-      <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-        Everything you need to run your business
-      </h2>
-      <p className="text-xs sm:text-sm font-bold text-slate-400 mt-1">
-        Built specifically to handle job flow, estimates, and customer payments in one place.
-      </p>
-    </div>
-
-    <span className="text-xs font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-4 py-2 rounded-full self-start md:self-auto shrink-0 uppercase tracking-wider">
-      Zero extra apps needed
-    </span>
-  </div>
-
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5 relative z-10">
-    {[
-      { title: 'Track jobs', desc: 'Real-time board overview', icon: <LayoutDashboard size={18} /> },
-      { title: 'Schedule jobs', desc: 'Automatic calendar sync', icon: <CalendarDays size={18} /> },
-      { title: 'Instant estimates', desc: 'Send & approve in seconds', icon: <FileText size={18} /> },
-      { title: 'Branded invoices', desc: 'Get paid faster online', icon: <CreditCard size={18} /> },
-      { title: 'Google reviews', desc: 'Automate review invites', icon: <Sparkles size={18} /> },
-    ].map((feat) => (
-      <div
-        key={feat.title}
-        className="flex flex-col justify-between bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 hover:bg-white/[0.06] p-4 rounded-2xl transition-all group duration-200"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-md">
-            {feat.icon}
-          </div>
-          <Check size={16} className="text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity" />
-        </div>
-
-        <div>
-          <span className="block text-sm font-black text-white leading-tight group-hover:text-emerald-300 transition-colors">
-            {feat.title}
-          </span>
-          <span className="block text-[11px] font-bold text-slate-400 mt-1">
-            {feat.desc}
-          </span>
-        </div>
-      </div>
-    ))}
-  </div>
-</motion.div>
-
       </div>
     </section>
   );
