@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   MapPin,
   User,
@@ -18,6 +18,11 @@ import {
   Send,
   Sparkles,
   Camera,
+  LayoutDashboard,
+  FileEdit,
+  ArrowRight,
+  X,
+  MousePointerClick,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -44,20 +49,20 @@ const TOP_TRADES = [
 ] as const;
 
 const SERVICE_OPTIONS: Record<string, string[]> = {
-  Roofing: ['Roof Inspection', 'Roof Replacement', 'Leak Repair', 'Gutter Work'],
-  HVAC: ['AC Tune-Up', 'System Install', 'Duct Cleaning', 'Furnace Repair'],
-  Plumbing: ['Drain Cleaning', 'Pipe Repair', 'Water Heater', 'Leak Detection'],
-  Electrical: ['Panel Upgrade', 'Rewiring', 'Outlet Install', 'Lighting'],
-  Solar: ['System Check', 'Panel Install', 'Inverter Repair', 'Battery Backup'],
+  Roofing: ['Inspection', 'Replace', 'Leak Repair', 'Gutters'],
+  HVAC: ['AC Tune-Up', 'Install', 'Duct Clean', 'Furnace'],
+  Plumbing: ['Drain Clean', 'Pipe Repair', 'Water Heater', 'Leaks'],
+  Electrical: ['Panel Upgrade', 'Rewiring', 'Outlet', 'Lighting'],
+  Solar: ['System Check', 'Panels', 'Inverter', 'Battery'],
 };
 
-const DEMO_CUSTOMER = 'Jennifer L.';
-const COLLISION_FALLBACKS = ['Marcus T.', 'Dana R.', 'Priya S.'];
+const DEMO_CUSTOMERS = ['Jennifer L.', 'Marcus T.', 'Dana R.', 'Priya S.'];
+const COLLISION_FALLBACKS = ['Alex K.', 'Taylor B.', 'Sam V.'];
 
 const DEMO_PREFILLS: Record<string, { service: string; notes: string; address: string }> = {
-  Roofing: { service: 'Roof Inspection', notes: 'Missing shingles on south ridge', address: '42 Maple Ave, Brooklyn NY' },
+  Roofing: { service: 'Inspection', notes: 'Missing shingles on south ridge', address: '42 Maple Ave, Brooklyn NY' },
   HVAC: { service: 'AC Tune-Up', notes: 'Central AC blowing warm air', address: '128 Highland Rd, Austin TX' },
-  Plumbing: { service: 'Drain Cleaning', notes: 'Main bathroom drain backing up', address: '88 Ocean Blvd, Miami FL' },
+  Plumbing: { service: 'Drain Clean', notes: 'Main bathroom drain backing up', address: '88 Ocean Blvd, Miami FL' },
   Electrical: { service: 'Panel Upgrade', notes: 'Breaker box tripping frequently', address: '154 Pinecrest St, Denver CO' },
   Solar: { service: 'System Check', notes: 'Inverter error light on', address: '910 Sun Valley Way, Phoenix AZ' },
 };
@@ -120,37 +125,36 @@ const TRADE_THEMES: Record<string, Theme> = {
   },
 };
 
-const FIELD_LABEL_CLASS = 'text-[10px] sm:text-[9px] font-black text-slate-500 uppercase tracking-[0.1em] block mb-1 sm:mb-0.5';
+const FIELD_LABEL_CLASS = 'text-[9px] font-black text-slate-500 uppercase tracking-wider block mb-0.5';
 
-function DisplayField({
+function InteractiveInput({
   icon: Icon,
   label,
   value,
+  onChange,
   theme,
-  multiline = false,
 }: {
   icon: LucideIcon;
   label: string;
   value: string;
+  onChange: (val: string) => void;
   theme: Theme;
-  multiline?: boolean;
 }) {
   return (
     <div>
       <label className={FIELD_LABEL_CLASS}>{label}</label>
-      <div className="relative">
-        <Icon className={`absolute left-3 sm:left-2.5 ${multiline ? 'top-3 sm:top-2.5' : 'top-1/2 -translate-y-1/2'} w-3.5 h-3.5 sm:w-3 sm:h-3 text-slate-400`} />
-        <div
-          className={`w-full pl-9 sm:pl-8 pr-3 sm:pr-2.5 py-2.5 sm:py-1.5 rounded-lg text-[13px] sm:text-xs font-semibold text-slate-800 select-none border transition-colors duration-500 ${
-            multiline ? 'leading-snug min-h-[48px] sm:min-h-[38px]' : ''
-          }`}
+      <div className="relative group">
+        <Icon className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 group-focus-within:text-slate-700 transition-colors" />
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full pl-8 pr-2 py-1.5 rounded-lg text-xs font-bold text-slate-800 border transition-all focus:outline-none focus:ring-2 focus:ring-slate-900/10 cursor-pointer focus:cursor-text hover:brightness-95"
           style={{
             backgroundColor: theme.lightBg,
             borderColor: theme.lightBorder,
           }}
-        >
-          {value}
-        </div>
+        />
       </div>
     </div>
   );
@@ -170,10 +174,10 @@ function ColumnHeader({
   trailing?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between gap-4 mb-5 min-h-[3.25rem]">
-      <div className="flex items-start gap-3 min-w-0">
+    <div className="flex items-center justify-between gap-2 mb-3 lg:mb-5">
+      <div className="flex items-center gap-2 min-w-0">
         <span
-          className="mt-0.5 w-7 h-7 rounded-full border flex items-center justify-center text-[11px] font-black shrink-0 transition-colors duration-500"
+          className="w-6 h-6 rounded-full border flex items-center justify-center text-[10px] font-black shrink-0"
           style={{
             color: accent,
             borderColor: `${accent}66`,
@@ -183,15 +187,15 @@ function ColumnHeader({
           {step}
         </span>
         <div className="min-w-0">
-          <h3 className="text-base sm:text-lg font-black tracking-tight text-slate-900 leading-tight">
+          <h3 className="text-sm sm:text-base lg:text-lg font-black tracking-tight text-slate-900 leading-tight truncate">
             {title}
           </h3>
-          <p className="text-slate-500 font-semibold text-xs mt-1 leading-relaxed">
+          <p className="text-slate-500 font-semibold text-[11px] sm:text-xs leading-none truncate">
             {subtitle}
           </p>
         </div>
       </div>
-      {trailing ? <div className="shrink-0 pb-0.5">{trailing}</div> : null}
+      {trailing ? <div className="shrink-0">{trailing}</div> : null}
     </div>
   );
 }
@@ -201,11 +205,17 @@ export default function FormAndDashboardSection() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [extraLeads, setExtraLeads] = useState<any[]>([]);
-  const boardRef = useRef<HTMLDivElement>(null);
-
+  
+  // Interactive Form State
+  const [customerName, setCustomerName] = useState(DEMO_CUSTOMERS[0]);
+  const [customerPhone, setCustomerPhone] = useState('(555) 382-9102');
   const [selectedService, setSelectedService] = useState<string | null>(null);
   const [timeWindow, setTimeWindow] = useState<string>('Morning');
   const [photoCount, setPhotoCount] = useState(1);
+
+  // Mobile navigation
+  const [mobileTab, setMobileTab] = useState<'form' | 'dashboard'>('form');
+  const [showToast, setShowToast] = useState(false);
 
   const current = TRADE_EXAMPLES[activeExample] || TRADE_EXAMPLES[0];
   const theme = TRADE_THEMES[current.trade] || TRADE_THEMES.Roofing;
@@ -222,6 +232,8 @@ export default function FormAndDashboardSection() {
     setSelectedService(null);
     setTimeWindow('Morning');
     setPhotoCount(1);
+    setShowToast(false);
+    setCustomerName(DEMO_CUSTOMERS[Math.floor(Math.random() * DEMO_CUSTOMERS.length)]);
   }, [activeExample]);
 
   const handleSimulatedSubmit = () => {
@@ -231,9 +243,9 @@ export default function FormAndDashboardSection() {
     setTimeout(() => {
       const newLiveLead = {
         id: `demo-live-${Date.now()}`,
-        name: DEMO_CUSTOMER,
-        phone: '(555) 382-9102',
-        email: 'jennifer@example.com',
+        name: customerName,
+        phone: customerPhone,
+        email: `${customerName.toLowerCase().replace(/[^a-z]/g, '')}@example.com`,
         category: activeService,
         address: prefill.address,
         notes: `${prefill.notes} — prefers ${timeWindow.toLowerCase()}`,
@@ -248,144 +260,181 @@ export default function FormAndDashboardSection() {
       setExtraLeads([newLiveLead]);
       setIsSubmitting(false);
       setHasSubmitted(true);
-
-      if (typeof window !== 'undefined' && window.matchMedia('(max-width: 1023px)').matches) {
-        const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        boardRef.current?.scrollIntoView({
-          behavior: reduced ? 'auto' : 'smooth',
-          block: 'start',
-        });
-      }
+      setShowToast(true);
     }, 800);
   };
 
   const combinedLeads = useMemo(() => {
     const BASE_LEAD_COUNT = 3;
     const baseLeads = current.leads.slice(0, BASE_LEAD_COUNT).map((lead, i) =>
-      lead.name?.trim().toLowerCase() === DEMO_CUSTOMER.toLowerCase()
+      lead.name?.trim().toLowerCase() === customerName.toLowerCase()
         ? { ...lead, name: COLLISION_FALLBACKS[i % COLLISION_FALLBACKS.length] }
         : lead
     );
     return [...extraLeads, ...baseLeads];
-  }, [current.leads, extraLeads]);
+  }, [current.leads, extraLeads, customerName]);
 
   return (
     <section
       style={{ fontFamily: font }}
-      className={`relative py-20 sm:py-28 lg:py-32 transition-colors duration-700 ease-in-out overflow-hidden border-t border-b border-slate-200 ${theme.sectionBg}`}
+      className={`relative py-12 sm:py-20 lg:py-28 transition-colors duration-700 ease-in-out overflow-hidden border-t border-b border-slate-200 ${theme.sectionBg}`}
     >
       <div className="absolute top-0 right-0 translate-x-1/3 -translate-y-1/3 pointer-events-none opacity-[0.045] transition-all duration-700">
-        <BackgroundTradeIcon className="w-[340px] h-[340px] lg:w-[420px] lg:h-[420px] text-slate-900" strokeWidth={1} />
+        <BackgroundTradeIcon className="w-[280px] h-[280px] lg:w-[420px] lg:h-[420px] text-slate-900" strokeWidth={1} />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 mx-auto max-w-7xl px-3 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto">
-          <p className="text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase mb-4">
+        <div className="text-center max-w-2xl mx-auto px-2">
+          <p className="text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase mb-2">
             See your brand in action
           </p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-[1.1]">
+          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
             Get your form and dashboard today.
-            <span className="block mt-2 transition-colors duration-500" style={{ color: theme.textAccent }}>
+            <span className="block mt-1 sm:mt-2 transition-colors duration-500" style={{ color: theme.textAccent }}>
               Your branding. Your way.
             </span>
           </h2>
-          <p className="mt-5 text-slate-600 font-semibold text-sm sm:text-base leading-relaxed">
-            Pick a trade below, then send the form on the left and watch the lead land on the board.
+          <p className="mt-3 text-slate-600 font-semibold text-xs sm:text-base leading-relaxed">
+            Pick a trade, customize the form fields below, and submit to test real-time sync with the dispatch board.
           </p>
         </div>
 
-       {/* ── Trade selector: Inline Segmented Bar ──────────────────────── */}
-<div className="mt-8 mb-10 flex justify-center">
-  <div className="inline-flex items-center gap-1 p-1.5 rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-md shadow-sm max-w-full overflow-x-auto">
-    {TOP_TRADES.map((item) => {
-      const Icon = item.icon;
-      const isSelected = current.trade.toLowerCase() === item.tradeKey.toLowerCase();
-      const tradeIndex = TRADE_EXAMPLES.findIndex((t) => t.trade.toLowerCase() === item.tradeKey.toLowerCase());
+        {/* Trade Selector */}
+        <div className="mt-6 mb-6 lg:mb-10 flex justify-center">
+          <div className="inline-flex items-center gap-1 p-1 rounded-xl border border-slate-200 bg-white/80 backdrop-blur-md shadow-sm max-w-full overflow-x-auto no-scrollbar">
+            {TOP_TRADES.map((item) => {
+              const Icon = item.icon;
+              const isSelected = current.trade.toLowerCase() === item.tradeKey.toLowerCase();
+              const tradeIndex = TRADE_EXAMPLES.findIndex((t) => t.trade.toLowerCase() === item.tradeKey.toLowerCase());
 
-      return (
-        <button
-          key={item.label}
-          type="button"
-          onClick={() => setActiveExample(tradeIndex !== -1 ? tradeIndex : 0)}
-          aria-pressed={isSelected}
-          className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-black tracking-wide transition-all duration-200 shrink-0 ${
-            isSelected
-              ? 'bg-slate-900 text-white shadow-sm'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-          }`}
-        >
-          <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
-          <span>{item.label}</span>
-        </button>
-      );
-    })}
-  </div>
-</div>
+              return (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={() => setActiveExample(tradeIndex !== -1 ? tradeIndex : 0)}
+                  aria-pressed={isSelected}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-black tracking-wide transition-all duration-200 shrink-0 ${
+                    isSelected
+                      ? 'bg-slate-900 text-white shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        {/* Form and Board Grid */}
-        <div className="mt-14 sm:mt-20 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-start">
-          {/* LEFT: BRANDED FORM */}
-          <div className="lg:col-span-4">
+        {/* MOBILE VIEW TOGGLE SWITCH (Hidden on Desktop) */}
+        <div className="flex lg:hidden justify-center mb-6">
+          <div className="grid grid-cols-2 p-1 bg-slate-200/80 rounded-xl w-full max-w-xs font-bold text-xs">
+            <button
+              type="button"
+              onClick={() => setMobileTab('form')}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all ${
+                mobileTab === 'form' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              }`}
+            >
+              <FileEdit size={14} /> 1. Customer Form
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileTab('dashboard');
+                setShowToast(false);
+              }}
+              className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition-all relative ${
+                mobileTab === 'dashboard' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600'
+              }`}
+            >
+              <LayoutDashboard size={14} /> 2. Live Board
+              {hasSubmitted && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping absolute top-1.5 right-2" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Grid Container */}
+        <div className="mt-4 lg:mt-12 grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+          
+          {/* LEFT: BRANDED FORM CARD */}
+          <div className={`lg:col-span-5 ${mobileTab === 'form' ? 'block' : 'hidden lg:block'}`}>
             <ColumnHeader
               step="1"
-              title="What your customer fills out"
-              subtitle={hasSubmitted ? 'Sent — check the board' : 'Change the answers, then press Submit'}
+              title="Test Form"
+              subtitle={hasSubmitted ? 'Submitted! Click board tab' : 'Try editing fields & press Submit'}
               accent={theme.textAccent}
               trailing={
-                <span
-                  className="inline-block px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider border"
-                  style={{
-                    color: theme.textAccent,
-                    backgroundColor: `${theme.textAccent}14`,
-                    borderColor: `${theme.textAccent}33`,
-                  }}
-                >
-                  {current.trade}
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300 animate-pulse">
+                  <MousePointerClick size={10} /> Live Demo
                 </span>
               }
             />
 
             <div
-              className="w-full rounded-2xl sm:rounded-3xl border overflow-hidden shadow-2xl transition-colors duration-500 bg-white"
+              className="w-full rounded-2xl border overflow-hidden shadow-xl bg-white transition-all relative"
               style={{ borderColor: `${theme.accent}40` }}
             >
-              {/* Card Header */}
+              {/* Header */}
               <div
-                className="px-3.5 py-2.5 sm:px-4 sm:py-3 flex items-center gap-2.5 transition-colors duration-500"
+                className="px-3 py-2 flex items-center justify-between transition-colors"
                 style={{ backgroundColor: theme.accent }}
               >
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-white flex items-center justify-center shrink-0 p-1 shadow-sm overflow-hidden">
-                  {current.company?.logo_url ? (
-                    <img src={current.company.logo_url} alt={current.company.name} className="w-full h-full object-contain" />
-                  ) : (
-                    <span className="text-sm font-black" style={{ color: theme.accent }}>
-                      {current.company?.name?.charAt(0) ?? current.trade.charAt(0)}
-                    </span>
-                  )}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-md bg-white flex items-center justify-center shrink-0 p-0.5 shadow-sm overflow-hidden">
+                    {current.company?.logo_url ? (
+                      <img src={current.company.logo_url} alt={current.company.name} className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-xs font-black" style={{ color: theme.accent }}>
+                        {current.company?.name?.charAt(0) ?? current.trade.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h4 className="text-white font-black text-xs sm:text-sm leading-tight truncate">
+                      {current.company?.name ?? `${current.trade} Pros`}
+                    </h4>
+                    <p className="text-white/80 uppercase tracking-widest font-extrabold text-[8px] mt-0.5">
+                      Work Request Form
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h4 className="text-white font-black text-sm sm:text-base leading-tight truncate">
-                    {current.company?.name ?? `${current.trade} Pros`}
-                  </h4>
-                  <p className="text-white/85 uppercase tracking-widest font-extrabold text-[9px] mt-0.5">
-                    Work Request Form
-                  </p>
-                </div>
+
+                <span className="text-[9px] bg-white/20 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-widest shrink-0">
+                  Interactive
+                </span>
               </div>
 
-              <div className="p-3.5 sm:p-4 space-y-2.5">
-                <DisplayField icon={User} label="Full Name" value={DEMO_CUSTOMER} theme={theme} />
-
+              <div className="p-3 space-y-2.5">
+                {/* Editable Inputs */}
                 <div className="grid grid-cols-2 gap-2">
-                  <DisplayField icon={Phone} label="Phone" value="(555) 382-9102" theme={theme} />
-                  <DisplayField icon={Mail} label="Email" value="jennifer@example.com" theme={theme} />
+                  <InteractiveInput
+                    icon={User}
+                    label="Customer Name"
+                    value={customerName}
+                    onChange={setCustomerName}
+                    theme={theme}
+                  />
+                  <InteractiveInput
+                    icon={Phone}
+                    label="Phone"
+                    value={customerPhone}
+                    onChange={setCustomerPhone}
+                    theme={theme}
+                  />
                 </div>
 
                 {/* Service Selection */}
                 <div>
-                  <label className={FIELD_LABEL_CLASS}>Service Needed</label>
-                  <div className="flex flex-wrap gap-1.5 sm:gap-1">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <label className={FIELD_LABEL_CLASS}>Select Service</label>
+                    <span className="text-[8px] font-bold text-slate-400 uppercase">Click to pick</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
                     {serviceOptions.map((opt) => {
                       const isSelected = opt === activeService;
                       return (
@@ -393,25 +442,27 @@ export default function FormAndDashboardSection() {
                           key={opt}
                           type="button"
                           onClick={() => setSelectedService(opt)}
-                          aria-pressed={isSelected}
-                          className="px-3 py-2.5 sm:px-2 sm:py-1 rounded-lg sm:rounded-md text-xs sm:text-[10px] font-bold border transition-all duration-200 hover:brightness-95 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                          className={`px-2 py-1.5 rounded-lg text-[10px] font-bold border truncate transition-all text-left flex items-center justify-between ${
+                            isSelected ? 'ring-2 ring-slate-900/20 shadow-sm' : 'hover:border-slate-400'
+                          }`}
                           style={
                             isSelected
                               ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
                               : { backgroundColor: theme.lightBg, borderColor: theme.lightBorder, color: '#475569' }
                           }
                         >
-                          {opt}
+                          <span className="truncate">{opt}</span>
+                          {isSelected && <CheckCircle2 size={12} className="shrink-0 ml-1" />}
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Time Preference */}
+                {/* Time Window */}
                 <div>
                   <label className={FIELD_LABEL_CLASS}>Preferred Time</label>
-                  <div className="grid grid-cols-3 gap-1.5 sm:gap-1">
+                  <div className="grid grid-cols-3 gap-1">
                     {['Morning', 'Afternoon', 'Flexible'].map((slot) => {
                       const isSelected = slot === timeWindow;
                       return (
@@ -419,8 +470,7 @@ export default function FormAndDashboardSection() {
                           key={slot}
                           type="button"
                           onClick={() => setTimeWindow(slot)}
-                          aria-pressed={isSelected}
-                          className="px-2 py-2.5 sm:py-1.5 rounded-lg sm:rounded-md text-xs sm:text-[10px] font-bold border transition-all duration-200 hover:brightness-95 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+                          className="px-1 py-1 rounded-md text-[10px] font-bold border transition-all"
                           style={
                             isSelected
                               ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
@@ -434,129 +484,117 @@ export default function FormAndDashboardSection() {
                   </div>
                 </div>
 
-                <DisplayField icon={MapPin} label="Service Address" value={prefill.address} theme={theme} />
-                <DisplayField icon={FileText} label="Project Details" value={prefill.notes} theme={theme} multiline />
+                {/* Address & Notes static preview */}
+                <div className="space-y-1.5 pt-0.5">
+                  <div>
+                    <label className={FIELD_LABEL_CLASS}>Service Address</label>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs text-slate-600 bg-slate-50 border-slate-200">
+                      <MapPin size={12} className="text-slate-400 shrink-0" />
+                      <span className="truncate">{prefill.address}</span>
+                    </div>
+                  </div>
 
-                {/* Site Photos */}
-                <div>
-                  <label className={FIELD_LABEL_CLASS}>Site Photos</label>
-                  <div
-                    className="flex items-center gap-2 rounded-lg px-2.5 py-2 sm:py-1.5 border transition-colors duration-500"
-                    style={{ backgroundColor: theme.lightBg, borderColor: theme.lightBorder }}
-                  >
-                    <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ backgroundColor: `${theme.accent}20` }}>
-                      <Camera className="w-3.5 h-3.5" style={{ color: theme.accent }} />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-bold text-slate-800 truncate">
-                        {photoCount} photo{photoCount === 1 ? '' : 's'} attached
-                      </p>
-                      <p className="text-[10px] font-black uppercase tracking-wider text-emerald-600 flex items-center gap-1 mt-0.5">
-                        <CheckCircle2 className="w-3 h-3" /> Sent with the lead
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      <button
-                        type="button"
-                        onClick={() => setPhotoCount((n) => Math.max(0, n - 1))}
-                        disabled={photoCount === 0}
-                        aria-label="Remove photo"
-                        className="w-9 h-9 sm:w-6 sm:h-6 rounded-lg sm:rounded-md border border-slate-300 bg-white text-slate-600 font-black text-base sm:text-sm leading-none flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 active:scale-95 transition"
-                      >
-                        &minus;
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPhotoCount((n) => Math.min(4, n + 1))}
-                        disabled={photoCount === 4}
-                        aria-label="Add photo"
-                        className="w-9 h-9 sm:w-6 sm:h-6 rounded-lg sm:rounded-md border border-slate-300 bg-white text-slate-600 font-black text-base sm:text-sm leading-none flex items-center justify-center disabled:opacity-40 hover:bg-slate-50 active:scale-95 transition"
-                      >
-                        +
-                      </button>
+                  <div>
+                    <label className={FIELD_LABEL_CLASS}>Job Notes</label>
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs text-slate-600 bg-slate-50 border-slate-200">
+                      <FileText size={12} className="text-slate-400 shrink-0" />
+                      <span className="truncate">{prefill.notes}</span>
                     </div>
                   </div>
                 </div>
 
+                {/* Photos attachment */}
+                <div
+                  className="flex items-center justify-between rounded-lg px-2.5 py-1.5 border"
+                  style={{ backgroundColor: theme.lightBg, borderColor: theme.lightBorder }}
+                >
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <Camera className="w-3.5 h-3.5 shrink-0" style={{ color: theme.accent }} />
+                    <span className="text-[11px] font-bold text-slate-800 truncate">
+                      Attach Photos ({photoCount})
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setPhotoCount((n) => Math.max(0, n - 1))}
+                      disabled={photoCount === 0}
+                      className="w-5 h-5 rounded border border-slate-300 bg-white text-slate-600 font-black text-xs leading-none flex items-center justify-center disabled:opacity-30 hover:bg-slate-100"
+                    >
+                      -
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoCount((n) => Math.min(4, n + 1))}
+                      disabled={photoCount === 4}
+                      className="w-5 h-5 rounded border border-slate-300 bg-white text-slate-600 font-black text-xs leading-none flex items-center justify-center disabled:opacity-30 hover:bg-slate-100"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Action */}
                 {!hasSubmitted ? (
-                  <div className="pt-3.5 mt-1 border-t border-slate-900/10">
-                    <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400 text-center mb-2.5">
-                      Try it — this button works
+                  <div className="pt-2 mt-1 border-t border-slate-100">
+                    <p className="text-[9px] font-black uppercase text-center text-slate-400 mb-1 flex items-center justify-center gap-1">
+                      <Sparkles size={10} className="text-amber-500" /> Test real-time dispatch flow
                     </p>
-                    <div className="relative">
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute -inset-1.5 rounded-2xl blur-md opacity-60 motion-safe:animate-pulse"
-                        style={{ backgroundColor: theme.textAccent }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleSimulatedSubmit}
-                        disabled={isSubmitting}
-                        style={{
-                          backgroundColor: theme.textAccent,
-                          boxShadow: `0 10px 24px -6px ${theme.textAccent}90`,
-                        }}
-                        className="relative w-full flex items-center justify-center gap-2.5 text-white py-3.5 sm:py-4 rounded-xl font-black text-sm sm:text-base tracking-tight ring-2 ring-white/70 transition-transform hover:brightness-110 active:scale-[0.98] disabled:opacity-70 focus:outline-none focus-visible:ring-4 focus-visible:ring-slate-900"
-                      >
-                        {isSubmitting ? (
-                          <span className="flex items-center gap-2.5">
-                            <Send className="w-5 h-5 animate-bounce" /> Sending...
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-2.5">
-                            Submit job request
-                            <ChevronRight className="w-5 h-5" />
-                          </span>
-                        )}
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={handleSimulatedSubmit}
+                      disabled={isSubmitting}
+                      style={{ backgroundColor: theme.textAccent }}
+                      className="w-full flex items-center justify-center gap-2 text-white py-2.5 rounded-xl font-black text-xs tracking-tight transition-all hover:brightness-110 active:scale-[0.98] shadow-md hover:shadow-lg disabled:opacity-70"
+                    >
+                      {isSubmitting ? (
+                        <span className="flex items-center gap-1.5">
+                          <Send className="w-3.5 h-3.5 animate-bounce" /> Dispatching...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          Submit Job Request <ChevronRight className="w-4 h-4" />
+                        </span>
+                      )}
+                    </button>
                   </div>
                 ) : (
-                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-center space-y-1">
-                    <div className="flex items-center justify-center gap-1.5 text-emerald-700 font-black text-xs">
-                      <Sparkles className="w-4 h-4" /> On the board &rarr;
-                    </div>
-                    <p className="text-[11px] font-bold text-slate-600 leading-relaxed px-1">
-                      {activeService} · {timeWindow.toLowerCase()} · {photoCount} photo
-                      {photoCount === 1 ? '' : 's'}
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 text-center space-y-1">
+                    <p className="flex items-center justify-center gap-1 text-emerald-700 font-black text-xs">
+                      <Sparkles className="w-3.5 h-3.5" /> Dispatched to Live Board!
                     </p>
                     <button
                       type="button"
                       onClick={() => {
                         setHasSubmitted(false);
                         setExtraLeads([]);
+                        setShowToast(false);
                       }}
                       className="text-[10px] font-bold text-slate-500 hover:text-slate-800 underline uppercase"
                     >
-                      Reset &amp; Test Again
+                      Test Another Job
                     </button>
                   </div>
                 )}
-
-                <div className="flex items-center gap-1.5 text-slate-500 text-[11px] font-semibold pt-1">
-                  <ShieldCheck size={13} className="text-emerald-600 shrink-0" />
-                </div>
               </div>
             </div>
           </div>
 
           {/* RIGHT: DASHBOARD PANEL */}
-          <div ref={boardRef} className="lg:col-span-8 scroll-mt-6">
+          <div className={`lg:col-span-7 ${mobileTab === 'dashboard' ? 'block' : 'hidden lg:block'}`}>
             <ColumnHeader
               step="2"
-              title="Where it lands on your board"
-              subtitle={hasSubmitted ? 'New lead just arrived' : 'Live status, updated as work moves'}
+              title="Live Dispatch Board"
+              subtitle={hasSubmitted ? 'New lead arrived!' : 'Real-time sync'}
               accent={theme.textAccent}
               trailing={
                 <span
                   className={`w-2.5 h-2.5 rounded-full ${hasSubmitted ? 'bg-emerald-500 animate-ping' : 'bg-slate-300'}`}
-                  aria-hidden="true"
                 />
               }
             />
 
-            <div className={`p-4 sm:p-5 rounded-2xl border bg-slate-950/80 backdrop-blur-md shadow-2xl space-y-4 transition-colors ${theme.cardBorder}`}>
+            <div className={`p-2.5 sm:p-4 rounded-2xl border bg-slate-950/90 backdrop-blur-md shadow-2xl space-y-3 transition-colors ${theme.cardBorder}`}>
               <DashboardHeader
                 company={current.company}
                 isDark={true}
@@ -585,8 +623,47 @@ export default function FormAndDashboardSection() {
               />
             </div>
           </div>
+
         </div>
       </div>
+
+      {/* FLOATING MOBILE TOAST NOTIFICATION */}
+      {showToast && mobileTab === 'form' && (
+        <div className="lg:hidden fixed bottom-4 left-4 right-4 z-50 animate-in slide-in-from-bottom-5 duration-300">
+          <div className="bg-slate-900 text-white p-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 size={18} />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-bold truncate">Lead Dispatched!</p>
+                <p className="text-[10px] text-slate-400 truncate">{customerName} added to board</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileTab('dashboard');
+                  setShowToast(false);
+                }}
+                className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-sm transition-all"
+              >
+                View <ArrowRight size={12} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowToast(false)}
+                className="text-slate-400 hover:text-white p-1"
+                aria-label="Close notification"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
