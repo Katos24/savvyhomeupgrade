@@ -131,7 +131,10 @@ export default function FormAndDashboardSection() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [extraLeads, setExtraLeads] = useState<any[]>([]);
 
-  // Device screen state
+  // Mobile View Switcher: 'form' vs 'board'
+  const [mobileTab, setMobileTab] = useState<'form' | 'board'>('form');
+
+  // Device screen state inside phone
   const [phoneScreen, setPhoneScreen] = useState<'form' | 'success'>('form');
 
   const [selectedService, setSelectedService] = useState<string | null>(null);
@@ -154,6 +157,7 @@ export default function FormAndDashboardSection() {
     setTimeWindow('Morning');
     setPhotoCount(1);
     setPhoneScreen('form');
+    setMobileTab('form');
   }, [activeExample]);
 
   const handleSimulatedSubmit = () => {
@@ -181,6 +185,9 @@ export default function FormAndDashboardSection() {
       setIsSubmitting(false);
       setHasSubmitted(true);
       setPhoneScreen('success');
+
+      // Auto-switch mobile view to the Live Dispatch Board on submit!
+      setMobileTab('board');
     }, 700);
   };
 
@@ -222,7 +229,7 @@ export default function FormAndDashboardSection() {
         </div>
 
         {/* ── Trade Selector Bar ──────────────────────── */}
-        <div className="mt-6 sm:mt-8 mb-8 sm:mb-12 flex justify-center">
+        <div className="mt-6 sm:mt-8 mb-6 sm:mb-10 flex justify-center">
           <div className="inline-flex items-center gap-1 p-1.5 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-sm max-w-full overflow-x-auto no-scrollbar">
             {TOP_TRADES.map((item) => {
               const Icon = item.icon;
@@ -249,11 +256,42 @@ export default function FormAndDashboardSection() {
           </div>
         </div>
 
+        {/* ── MOBILE TABS TOGGLE (Only visible on screens smaller than lg) ──────────────────────── */}
+        <div className="flex lg:hidden justify-center mb-6">
+          <div className="bg-slate-900/90 p-1 rounded-2xl border border-slate-800 flex items-center gap-1 w-full max-w-[340px] shadow-lg">
+            <button
+              type="button"
+              onClick={() => setMobileTab('form')}
+              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                mobileTab === 'form'
+                  ? 'bg-white text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Smartphone size={14} />
+              <span>1. Mobile Form</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('board')}
+              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+                mobileTab === 'board'
+                  ? 'bg-emerald-400 text-slate-950 shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <LayoutDashboard size={14} />
+              <span>2. Live Board</span>
+              {hasSubmitted && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />}
+            </button>
+          </div>
+        </div>
+
         {/* ── Interactive Grid: Phone Mockup (Left) + Desktop Dashboard (Right) ──────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           
           {/* LEFT: PHONE FRAME MOCKUP */}
-          <div className="lg:col-span-5 flex flex-col items-center justify-center">
+          <div className={`lg:col-span-5 flex-col items-center justify-center ${mobileTab === 'form' ? 'flex' : 'hidden lg:flex'}`}>
             
             {/* Phone Shell */}
             <div className="relative w-full max-w-[340px] sm:max-w-[360px] rounded-[42px] p-3.5 bg-slate-900 ring-1 ring-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] transition-all">
@@ -441,6 +479,7 @@ export default function FormAndDashboardSection() {
                         setHasSubmitted(false);
                         setExtraLeads([]);
                         setPhoneScreen('form');
+                        setMobileTab('form');
                       }}
                       className="mt-6 flex items-center gap-1.5 text-xs font-black text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-xl hover:bg-slate-50"
                     >
@@ -457,7 +496,7 @@ export default function FormAndDashboardSection() {
           </div>
 
           {/* RIGHT: DESKTOP DISPATCH DASHBOARD */}
-          <div className="lg:col-span-7">
+          <div className={`lg:col-span-7 ${mobileTab === 'board' ? 'block' : 'hidden lg:block'}`}>
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
