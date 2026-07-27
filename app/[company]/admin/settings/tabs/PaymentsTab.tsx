@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowUpRight,
+  ArrowLeft,
   ExternalLink,
   Zap,
   X,
@@ -14,7 +15,8 @@ import {
   Send,
   HelpCircle,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  CreditCard,
 } from 'lucide-react';
 import StripePaymentInfo from '@/components/dashboard/StripePaymentInfo';
 import { describeRequirementReason } from '@/lib/stripe/requirementCopy';
@@ -25,6 +27,14 @@ const PAYMENT_COLORS: Record<string, string> = {
   cashapp: '#00D632',
   paypal: '#003087',
   other: '#44403c',
+};
+
+const PAYMENT_LABELS: Record<string, string> = {
+  venmo: 'Venmo',
+  zelle: 'Zelle',
+  cashapp: 'Cash App',
+  paypal: 'PayPal',
+  other: 'your payment link',
 };
 
 const CARD_NETWORKS = ['visa', 'mastercard', 'amex', 'discover', 'applepay', 'googlepay'];
@@ -40,9 +50,9 @@ function describeBlockingReasons(
   return Array.from(new Set(messages)).join(' ');
 }
 
-function StripeWordmark() {
+function StripeWordmark({ className = 'text-lg' }: { className?: string }) {
   return (
-    <span className="text-lg font-extrabold tracking-tight" style={{ color: '#4B45D6' }}>
+    <span className={`font-extrabold tracking-tight ${className}`} style={{ color: '#4B45D6' }}>
       stripe
     </span>
   );
@@ -193,6 +203,111 @@ function HowThisWorks() {
   );
 }
 
+/* ══════════════ The chooser ══════════════
+   Two options, deliberately unequal. Stripe is the recommendation; manual is
+   the way out for people who won't use a processor. Both described honestly —
+   the manual downside sells Stripe better than hype would.               */
+
+function MethodChooser({
+  onPick,
+  hasManualLink,
+  manualType,
+}: {
+  onPick: (m: 'stripe' | 'manual') => void;
+  hasManualLink: boolean;
+  manualType?: string;
+}) {
+  return (
+    <div className="space-y-4">
+      {/* Stripe — the recommendation */}
+      <button
+        type="button"
+        onClick={() => onPick('stripe')}
+        className="group block w-full rounded-2xl border-2 border-stone-900 bg-white p-6 text-left shadow-sm transition hover:shadow-md sm:p-8"
+      >
+        <div className="flex flex-wrap items-center gap-3">
+          <StripeWordmark className="text-2xl" />
+          <span className="inline-flex items-center gap-1 rounded-full bg-stone-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
+            <Zap className="h-3 w-3" /> Recommended
+          </span>
+        </div>
+
+        <p className="mt-3 text-lg font-bold text-stone-900">
+          Take card payments, tracked automatically
+        </p>
+
+        <ul className="mt-4 space-y-2.5">
+          {[
+            'Customer taps Pay in the invoice email and pays by card.',
+            'The invoice marks itself paid the moment it clears — nothing for you to check.',
+            'Payment link appears in the email and on the PDF.',
+          ].map((line) => (
+            <li key={line} className="flex items-start gap-2.5">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={2.5} />
+              <span className="text-[15px] font-medium leading-relaxed text-stone-700">{line}</span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-5 flex flex-wrap gap-1.5">
+          {CARD_NETWORKS.map((n) => (
+            <CardBadge key={n} network={n} />
+          ))}
+        </div>
+
+        <span
+          className="mt-6 inline-flex items-center gap-2 rounded-lg px-5 py-3 text-sm font-bold text-white transition-colors"
+          style={{ backgroundColor: '#4B45D6' }}
+        >
+          Set up Stripe <ArrowUpRight className="h-4 w-4" />
+        </span>
+      </button>
+
+      {/* Manual — the fallback. Plainer on purpose. */}
+      <button
+        type="button"
+        onClick={() => onPick('manual')}
+        className="block w-full rounded-2xl border border-stone-300 bg-white p-5 text-left transition hover:border-stone-400 sm:p-6"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-base font-bold text-stone-900">
+            Or use your own payment link
+          </p>
+          {hasManualLink && manualType && (
+            <span
+              className="rounded-full px-2.5 py-1 text-[11px] font-bold text-white"
+              style={{ backgroundColor: PAYMENT_COLORS[manualType] || '#44403c' }}
+            >
+              {PAYMENT_LABELS[manualType] || manualType} saved
+            </span>
+          )}
+        </div>
+
+        <p className="mt-2 text-[15px] font-medium leading-relaxed text-stone-600">
+          Venmo, Zelle, Cash App, or PayPal. Fine if you&apos;d rather not use a card
+          processor — but worth knowing what changes:
+        </p>
+
+        <ul className="mt-3 space-y-2">
+          {[
+            'The customer types the amount in themselves.',
+            'Nothing tells you when they pay — you check, then mark the invoice paid by hand.',
+          ].map((line) => (
+            <li key={line} className="flex items-start gap-2.5">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              <span className="text-sm font-medium leading-relaxed text-stone-600">{line}</span>
+            </li>
+          ))}
+        </ul>
+
+        <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-bold text-stone-900 underline underline-offset-2">
+          Set up a manual link <ArrowUpRight className="h-3.5 w-3.5" />
+        </span>
+      </button>
+    </div>
+  );
+}
+
 function StripeConnectSection({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
   const [redirectStatus, setRedirectStatus] = useState<'idle' | 'error' | 'denied' | 'already_linked'>('idle');
@@ -276,14 +391,14 @@ function StripeConnectSection({ company }: { company: any }) {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <StripeWordmark />
+          <StripeWordmark className="text-xl" />
           <span className="inline-flex items-center gap-1 rounded-full bg-stone-900 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">
             <Zap className="h-3 w-3" /> Recommended
           </span>
         </div>
         <div className="flex items-center gap-2">
           {checkingStatus && (
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-stone-400">
+            <span className="inline-flex items-center gap-1.5 text-[12px] font-bold text-stone-500">
               <Loader2 className="h-3 w-3 animate-spin" /> Checking with Stripe
             </span>
           )}
@@ -295,7 +410,7 @@ function StripeConnectSection({ company }: { company: any }) {
         <button
           type="button"
           onClick={refreshLiveStatus}
-          className="mt-2 text-[12px] font-bold text-stone-500 underline hover:text-stone-800"
+          className="mt-2 text-[13px] font-bold text-stone-600 underline hover:text-stone-900"
         >
           Refresh status
         </button>
@@ -310,14 +425,14 @@ function StripeConnectSection({ company }: { company: any }) {
       {isConnected && paymentStatus === 'restricted' && (
         <div className="mt-4 rounded-lg border-2 border-rose-300 bg-rose-50 px-4 py-3">
           <p className="text-sm font-bold text-rose-900">Payments paused</p>
-          <p className="mt-0.5 text-[13.5px] font-medium leading-relaxed text-rose-800">
+          <p className="mt-0.5 text-[14px] font-medium leading-relaxed text-rose-800">
             {describeBlockingReasons(blockingReasons)}
           </p>
           <a
             href="https://dashboard.stripe.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-2 inline-block text-[12.5px] font-bold text-rose-800 underline"
+            className="mt-2 inline-block text-[13px] font-bold text-rose-800 underline"
           >
             Go to Stripe
           </a>
@@ -366,7 +481,7 @@ function StripeConnectSection({ company }: { company: any }) {
                 Manage on Stripe
                 <ArrowUpRight className="h-3.5 w-3.5" />
               </a>
-              <p className="mt-2.5 text-[13px] font-semibold text-stone-600">
+              <p className="mt-2.5 text-[14px] font-medium leading-relaxed text-stone-600">
                 You&apos;re connected — card payments are live. Issue refunds, see payouts, and view full account details on Stripe.
               </p>
             </div>
@@ -382,7 +497,7 @@ function StripeConnectSection({ company }: { company: any }) {
                 {loading ? 'Redirecting' : 'Finish setup on Stripe'}
                 {!loading && <ArrowUpRight className="h-3.5 w-3.5" />}
               </button>
-              <p className="mt-2.5 text-[13px] font-semibold text-stone-600">
+              <p className="mt-2.5 text-[14px] font-medium leading-relaxed text-stone-600">
                 {paymentStatus === 'restricted'
                   ? "You're connected, but Stripe needs more information before payments can resume — see the details above."
                   : "You're connected, but setup isn't finished yet. Pick up where you left off on Stripe."}
@@ -392,7 +507,7 @@ function StripeConnectSection({ company }: { company: any }) {
         </div>
       ) : (
         <div className="mt-5">
-          <div className="mb-4 space-y-3 rounded-lg border-2 border-stone-200 bg-stone-50 p-4 text-[13px] font-medium leading-relaxed text-stone-800">
+          <div className="mb-4 space-y-3 rounded-lg border-2 border-stone-200 bg-stone-50 p-4 text-[14px] font-medium leading-relaxed text-stone-700">
             <p>
               <span className="font-bold text-stone-900">Already have a Stripe account? </span>
               Log in and you&apos;re linked in under a minute — no new paperwork needed.
@@ -432,7 +547,14 @@ function StripeConnectSection({ company }: { company: any }) {
   );
 }
 
-function ManualPaymentLinkSection({ company }: { company: any }) {
+function ManualPaymentLinkSection({
+  company,
+  supersededByStripe,
+}: {
+  company: any;
+  /** Stripe is live, so anything saved here won't reach customers. */
+  supersededByStripe?: boolean;
+}) {
   const [type, setType] = useState(company.payment_link_type || '');
   const [url, setUrl] = useState(company.payment_link_url || '');
   const [saving, setSaving] = useState(false);
@@ -464,12 +586,23 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
 
   return (
     <div>
-      <div className="flex items-start gap-2.5 rounded-lg border-2 border-amber-200 bg-amber-50 px-4 py-3">
-        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
-        <p className="text-[13px] font-semibold leading-relaxed text-amber-900">
-          Reminder: the customer types in the amount themselves, and there&apos;s no automatic confirmation. Mark the invoice paid yourself once you see it come through.
-        </p>
-      </div>
+      {supersededByStripe ? (
+        <div className="flex items-start gap-2.5 rounded-lg border-2 border-stone-300 bg-stone-100 px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-stone-600" />
+          <p className="text-[14px] font-semibold leading-relaxed text-stone-700">
+            Stripe is active, so this link isn&apos;t going out to customers. Invoices use
+            the Stripe pay button instead. Disconnect Stripe if you want to use this again.
+          </p>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2.5 rounded-lg border-2 border-amber-200 bg-amber-50 px-4 py-3">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+          <p className="text-[14px] font-semibold leading-relaxed text-amber-900">
+            The customer types in the amount themselves, and there&apos;s no automatic
+            confirmation. Mark the invoice paid yourself once you see it come through.
+          </p>
+        </div>
+      )}
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <select
@@ -498,10 +631,10 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
 
       {type && (
         <span
-          className="mt-3 inline-block rounded-full px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white"
+          className="mt-3 inline-block rounded-full px-2.5 py-1 text-[12px] font-bold text-white"
           style={{ backgroundColor: PAYMENT_COLORS[type] || '#44403c' }}
         >
-          {type}
+          {PAYMENT_LABELS[type] || type}
         </span>
       )}
 
@@ -515,43 +648,6 @@ function ManualPaymentLinkSection({ company }: { company: any }) {
         {saving ? 'Saving' : saved ? 'Saved' : 'Save link'}
         {saved && !saving && <CheckCircle2 className="h-4 w-4" />}
       </button>
-    </div>
-  );
-}
-
-function MethodTabs({
-  method,
-  onChange,
-  hasManualLink,
-}: {
-  method: 'stripe' | 'manual';
-  onChange: (m: 'stripe' | 'manual') => void;
-  hasManualLink: boolean;
-}) {
-  const tabs: { id: 'stripe' | 'manual'; label: string }[] = [
-    { id: 'stripe', label: 'Stripe' },
-    { id: 'manual', label: 'Manual link' },
-  ];
-  return (
-    <div className="flex items-center gap-1 border-b-2 border-stone-300">
-      {tabs.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          onClick={() => onChange(tab.id)}
-          className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-bold transition-colors ${
-            method === tab.id ? 'text-stone-900' : 'text-stone-500 hover:text-stone-800'
-          }`}
-        >
-          {tab.label}
-          {tab.id === 'manual' && hasManualLink && (
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
-          )}
-          {method === tab.id && (
-            <span className="absolute inset-x-0 -bottom-[2px] h-[3px] bg-stone-900" />
-          )}
-        </button>
-      ))}
     </div>
   );
 }
@@ -589,7 +685,7 @@ function MockEmailPreview({ company }: { company: any }) {
         <span className="ml-2 text-[15px] font-extrabold text-stone-900">Inbox preview</span>
       </div>
 
-      <div className="space-y-1 border-b-2 border-stone-200 px-4 py-3 text-[12px] font-semibold text-stone-500 sm:px-5">
+      <div className="space-y-1 border-b-2 border-stone-200 px-4 py-3 text-[13px] font-semibold text-stone-500 sm:px-5">
         <p className="truncate">
           <span className="font-bold text-stone-700">From </span>
           {companyName} &lt;hello@lead2project.com&gt;
@@ -629,7 +725,7 @@ function MockEmailPreview({ company }: { company: any }) {
               <div className="rounded-lg bg-stone-900 px-4 py-3 text-center text-[14px] font-extrabold text-white">
                 Download invoice PDF
               </div>
-              <p className="text-center text-[11px] font-semibold text-stone-400">
+              <p className="text-center text-[12px] font-semibold text-stone-500">
                 {SAMPLE_INVOICE_NUMBER} · ${SAMPLE_TOTAL.toFixed(2)}
               </p>
             </div>
@@ -641,13 +737,13 @@ function MockEmailPreview({ company }: { company: any }) {
             </div>
 
             {!payLabel && (
-              <p className="mt-4 rounded-lg border-2 border-stone-200 bg-stone-50 px-3 py-2 text-[12px] font-semibold text-stone-600">
+              <p className="mt-4 rounded-lg border-2 border-stone-200 bg-stone-50 px-3 py-2 text-[13px] font-semibold text-stone-600">
                 No payment method connected yet — this email only includes the PDF download until Stripe or a manual link is set up.
               </p>
             )}
           </div>
 
-          <div className="border-t-2 border-stone-100 px-5 py-4 text-center text-[11px] font-semibold text-stone-400 sm:px-6">
+          <div className="border-t-2 border-stone-100 px-5 py-4 text-center text-[12px] font-semibold text-stone-500 sm:px-6">
             {companyName}
             {company.phone ? ` · ${company.phone}` : ''}
             {company.website ? ` · ${company.website}` : ''}
@@ -690,7 +786,7 @@ function SampleInvoicePreview({ company }: { company: any }) {
             href={previewUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-[12px] font-bold text-stone-900 hover:underline"
+            className="inline-flex items-center gap-1 text-[13px] font-bold text-stone-900 hover:underline"
           >
             Open <ExternalLink className="h-3 w-3" />
           </a>
@@ -707,7 +803,7 @@ function SampleInvoicePreview({ company }: { company: any }) {
             {!thumbLoaded && (
               <div className="absolute inset-0 flex items-center justify-center bg-white">
                 {thumbTimedOut ? (
-                  <p className="px-4 text-center text-[11px] font-bold text-stone-500">
+                  <p className="px-4 text-center text-[13px] font-bold text-stone-600">
                     Preview didn&apos;t load — try &quot;Open&quot; above.
                   </p>
                 ) : (
@@ -722,7 +818,7 @@ function SampleInvoicePreview({ company }: { company: any }) {
               style={{ width: '100%', height: '100%', border: 0, pointerEvents: 'none' }}
             />
           </div>
-          <p className="mt-2 text-center text-[12px] font-bold text-stone-600">
+          <p className="mt-2 text-center text-[13px] font-bold text-stone-600">
             Tap to view larger
           </p>
         </button>
@@ -784,89 +880,118 @@ function SampleInvoicePreview({ company }: { company: any }) {
   );
 }
 
+/* ══════════════ Page ══════════════ */
+
+type View = 'choose' | 'stripe' | 'manual';
+
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
-  const [method, setMethod] = useState<'stripe' | 'manual'>('stripe');
+  const stripeConnected = !!company.stripe_connect_onboarded;
+  const stripeActive = stripeConnected && company.stripe_payment_status === 'active';
   const hasManualLink = !!company.payment_link_url;
+
+  // Open on whatever they actually have, rather than always defaulting to
+  // Stripe and showing a manual-link user "Not connected".
+  const [view, setView] = useState<View>(() => {
+    if (stripeConnected) return 'stripe';
+    if (hasManualLink) return 'manual';
+    return 'choose';
+  });
 
   return (
     <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-4xl pb-16">
         <div className="mb-6">
           <h2 className="text-2xl font-bold tracking-tight text-stone-900">Get paid</h2>
-          <p className="mt-1 text-[15px] font-semibold text-stone-700">
-            Choose how customers pay the invoices you send.
+          <p className="mt-1 text-[15px] font-medium text-stone-600">
+            {view === 'choose'
+              ? 'How would you like customers to pay your invoices?'
+              : 'How customers pay the invoices you send.'}
           </p>
         </div>
 
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
-          {/* Main Action Block — Stripe / Manual config placed first */}
-          <div className="border-b-2 border-stone-200 bg-stone-50 p-6 sm:p-10">
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_260px]">
-              <div>
-                <MethodTabs method={method} onChange={setMethod} hasManualLink={hasManualLink} />
-                <div className="mt-6">
-                  {method === 'stripe' ? (
-                    <StripeConnectSection company={company} />
-                  ) : (
-                    <ManualPaymentLinkSection company={company} />
-                  )}
-                </div>
-              </div>
-
-              <div className="lg:pt-1">
-                <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-white">
-                  <img
-                    src="/images/invoice_thumbnail.webp"
-                    alt="Pay now button on the invoice"
-                    className="w-full object-contain"
-                  />
-                </div>
-                <p className="mt-2 text-center text-[11px] font-bold text-stone-500">
-                  What your customer sees on the invoice
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Secondary Informational Blocks */}
-          <div className="p-6 sm:p-10 border-b-2 border-stone-100">
-            <HowThisWorks />
-          </div>
-
-          <div className="p-6 sm:p-10">
-            <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700">
-              Sending invoices
+        {/* Stripe wins whenever it's live — say so rather than letting a saved
+            manual link quietly stop working. */}
+        {stripeActive && hasManualLink && (
+          <div className="mb-6 flex items-start gap-2.5 rounded-xl border-2 border-stone-300 bg-white px-4 py-3">
+            <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-stone-600" />
+            <p className="text-[14px] font-semibold leading-relaxed text-stone-700">
+              You have a{' '}
+              <span className="font-bold text-stone-900">
+                {PAYMENT_LABELS[company.payment_link_type] || 'manual'}
+              </span>{' '}
+              link saved, but Stripe is active — invoices use the Stripe pay button.
             </p>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-10">
-              <div className="flex h-full flex-col items-center justify-center rounded-xl border-2 border-emerald-200 bg-emerald-50/60 p-8 text-center">
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-emerald-300 bg-white">
-                  <Send className="h-6 w-6 text-emerald-700" />
+          </div>
+        )}
+
+        {view === 'choose' ? (
+          <MethodChooser
+            onPick={setView}
+            hasManualLink={hasManualLink}
+            manualType={company.payment_link_type}
+          />
+        ) : (
+          <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div className="border-b-2 border-stone-200 bg-stone-50 p-6 sm:p-8">
+              {/* Always a way back to the decision */}
+              <button
+                type="button"
+                onClick={() => setView('choose')}
+                className="mb-5 inline-flex items-center gap-1.5 text-[13px] font-bold text-stone-600 transition hover:text-stone-900"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                {view === 'stripe' ? 'Rather use Venmo, Zelle, or PayPal?' : 'Rather take card payments?'}
+              </button>
+
+              {view === 'stripe' ? (
+                <StripeConnectSection company={company} />
+              ) : (
+                <ManualPaymentLinkSection company={company} supersededByStripe={stripeActive} />
+              )}
+            </div>
+
+            <div className="border-b-2 border-stone-100 p-6 sm:p-8">
+              <HowThisWorks />
+            </div>
+
+            {/* Text first, image under it. Side by side forced the copy to
+                stretch to the image's height and left it floating in space. */}
+            <div className="border-b-2 border-stone-100 p-6 sm:p-8">
+              <div className="mb-5 flex items-start gap-3.5">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-emerald-300 bg-emerald-50">
+                  <Send className="h-5 w-5 text-emerald-700" />
                 </div>
-                <p className="text-xl leading-relaxed text-stone-800">
-                  When your invoice is ready, click the <span className="font-bold text-stone-900">Send</span> button on the invoice card. The invoice will be emailed to your customer&apos;s primary email address along with a payment link (if enabled).
-                </p>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-stone-900">Sending invoices</p>
+                  <p className="mt-1.5 max-w-2xl text-base font-medium leading-relaxed text-stone-700">
+                    When your invoice is ready, hit{' '}
+                    <span className="font-bold text-stone-900">Send</span> on the invoice
+                    card. It goes to your customer&apos;s primary email with a payment link
+                    attached, if you have one set up.
+                  </p>
+                </div>
               </div>
 
-              <div className="overflow-hidden rounded-xl border-2 border-stone-200 bg-stone-50">
+              {/* Constrained and centred on a tinted mat — the screenshot is a
+                  reference, not the subject of the section. */}
+              <div className="rounded-xl border border-stone-200 bg-stone-100 p-4 sm:p-6">
                 <img
                   src="/images/invoice_send.webp"
-                  alt="Invoice send button"
-                  className="w-full object-contain"
+                  alt="An invoice card showing the PDF and Send buttons"
+                  className="mx-auto w-full max-w-[340px] rounded-lg border border-stone-200 bg-white object-contain shadow-sm"
                 />
               </div>
             </div>
-          </div>
 
-          <div className="border-t-2 border-stone-100 p-6 sm:p-10">
-            <p className="mb-3 text-[13px] font-bold uppercase tracking-wide text-stone-700">
-              What the customer receives
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <MockEmailPreview company={company} />
-              <SampleInvoicePreview company={company} />
+            <div className="p-6 sm:p-8">
+              <p className="mb-3 text-base font-bold text-stone-900">What the customer receives</p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <MockEmailPreview company={company} />
+                <SampleInvoicePreview company={company} />
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
