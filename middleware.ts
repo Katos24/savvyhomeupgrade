@@ -18,7 +18,8 @@ const isPublicApiRoute =
     pathname.startsWith('/api/quotes/respond') ||
     pathname.startsWith('/api/leads/preview-email') ||
     pathname.startsWith('/api/subscription/status') ||
-    pathname.startsWith('/api/upload') ||
+pathname === '/api/upload' ||
+pathname.startsWith('/api/upload/') ||
     pathname.startsWith('/api/blob-upload') ||
     pathname.startsWith('/api/get-upload-url') ||
     pathname.startsWith('/api/onboarding') ||

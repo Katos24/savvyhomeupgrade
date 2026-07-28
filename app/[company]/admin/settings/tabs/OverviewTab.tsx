@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ReactNode, ChangeEvent } from 'react';
 import {
   Copy,
   Check,
@@ -18,14 +18,13 @@ import {
   MessageSquare,
   Truck,
   FileImage,
-  Sparkles,
   Receipt,
 } from 'lucide-react';
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 
-function Eyebrow({ children }: { children: React.ReactNode }) {
+function Eyebrow({ children }: { children: ReactNode }) {
   return (
     <span className="text-[11px] font-extrabold uppercase tracking-widest text-stone-500">
       {children}
@@ -110,7 +109,7 @@ type LabeledFieldProps = {
   value?: string;
   onChange?: (v: string) => void;
   placeholder?: string;
-  display: React.ReactNode;
+  display: ReactNode;
   caption?: string;
   className?: string;
   maxLength?: number;
@@ -131,7 +130,7 @@ function LabeledField({
   highlight = false,
 }: LabeledFieldProps) {
   return (
-    <div className="flex flex-col gap-1.5">
+    <div className={`flex flex-col gap-1.5 ${className}`}>
       <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-stone-700">
         <Icon className="h-4 w-4 text-stone-500 shrink-0" />
         <span>{label}</span>
@@ -192,6 +191,7 @@ type OverviewTabProps = {
   setColor2: (v: string) => void;
   brandSaving: boolean;
   brandSaved: boolean;
+  brandError?: string | null;
   onSaveBranding: () => void;
   qrCodeUrl: string;
   onShowQrModal: () => void;
@@ -211,19 +211,18 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
   const canSendInvoices = can(planTier, 'send_invoice_email');
   const previewUrl = `/api/company/${company.slug}/preview-invoice?v=${refreshToken}`;
 
-useEffect(() => {
-  if (!expanded) return;
-  setModalLoaded(false);
-  setModalTimedOut(false);
-  const t = setTimeout(() => {
-    setModalLoaded((loaded) => {
-      if (!loaded) setModalTimedOut(true);
-      return loaded;
-    });
-  }, 8000);
-  return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [expanded, refreshToken]);
+  useEffect(() => {
+    if (!expanded) return;
+    setModalLoaded(false);
+    setModalTimedOut(false);
+    const t = setTimeout(() => {
+      setModalLoaded((loaded) => {
+        if (!loaded) setModalTimedOut(true);
+        return loaded;
+      });
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [expanded, refreshToken]);
 
   return (
     <>
@@ -314,8 +313,9 @@ export default function OverviewTab({
   setLogoPreview,
   setColor1,
   setColor2,
-  brandSaving,
+ brandSaving,
   brandSaved,
+  brandError,
   onSaveBranding,
   qrCodeUrl,
   onShowQrModal,
@@ -325,12 +325,11 @@ export default function OverviewTab({
   checklistSteps,
   onNavigateSection,
 }: OverviewTabProps) {
-    const [emailError, setEmailError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [invoicePreviewRefreshToken, setInvoicePreviewRefreshToken] = useState(0);
 
   const doneCount = checklistSteps.filter((s) => s.done).length;
   const isFreePlan = (company.plan_tier || 'free') === 'free';
-  const [invoicePreviewRefreshToken, setInvoicePreviewRefreshToken] = useState(0);
-
   const missingLogo = !company.logo_url && !logoPreview;
 
   useEffect(() => {
@@ -352,24 +351,43 @@ export default function OverviewTab({
     setLogoFile(null);
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 4 * 1024 * 1024) {
-      alert('Logo size must be under 4MB.');
+  const handleSaveEdit = () => {
+    const trimmed = companyEmail.trim();
+    if (!trimmed) {
+      setEmailError('An email address is required so customers and notifications can reach you.');
       return;
     }
-    setLogoFile(file);
-    const reader = new FileReader();
-    reader.onloadend = () => setLogoPreview(reader.result as string);
-    reader.readAsDataURL(file);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      setEmailError('Enter a valid email address.');
+      return;
+    }
+    setEmailError('');
+    onSaveBranding();
   };
+
+  const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+
+  const MAX_SIZE_MB = 10;
+  if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+    alert(`Logo size must be under ${MAX_SIZE_MB}MB.`);
+    // Reset file input value so user can re-select
+    e.target.value = '';
+    return;
+  }
+
+  setLogoFile(file);
+  const reader = new FileReader();
+  reader.onloadend = () => setLogoPreview(reader.result as string);
+  reader.readAsDataURL(file);
+};
+
 
   return (
     <div className="bg-stone-50/60 min-h-screen px-4 py-6 sm:px-8">
       <div className="relative mx-auto max-w-4xl pb-16">
-        
-        {/* ── HEADER & BRAND BADGE ── */}
+        {/* Header & Brand Badge */}
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-stone-200/60 pb-5">
           <div className="flex items-center gap-3">
             <div
@@ -395,7 +413,7 @@ export default function OverviewTab({
           </Link>
         </div>
 
-        {/* ── 1. SETUP CHECKLIST (TOP PRIORITY ONBOARDING) ── */}
+        {/* 1. Setup Checklist */}
         {doneCount < checklistSteps.length && (
           <div className="mb-8">
             <div className="mb-2.5 flex items-center justify-between">
@@ -417,7 +435,7 @@ export default function OverviewTab({
               </div>
 
               <div className="divide-y divide-stone-100">
-                {checklistSteps.map((step, i) => {
+                {checklistSteps.map((step) => {
                   const inner = (
                     <div className="flex items-start gap-3.5 p-4 sm:px-6 transition hover:bg-stone-50/80">
                       <div
@@ -461,15 +479,13 @@ export default function OverviewTab({
           </div>
         )}
 
-        {/* ── 2. BRANDING PROFILE CARD ── */}
+        {/* 2. Branding Profile Card */}
         <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm mb-8">
-          {/* Header Banner */}
           <div
             className="flex flex-col gap-4 border-b border-stone-200/80 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"
             style={{ background: `linear-gradient(135deg, ${tint(color1, 0.94)}, ${tint(color2, 0.94)})` }}
           >
             <div className="flex items-center gap-4 min-w-0">
-              {/* Logo Frame */}
               <div className="relative shrink-0 group">
                 <div
                   className={`flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center overflow-hidden rounded-2xl border bg-white shadow-sm transition ${
@@ -525,7 +541,6 @@ export default function OverviewTab({
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex items-center gap-2 self-start sm:self-center">
               {!isEditingBrand ? (
                 <button
@@ -543,19 +558,7 @@ export default function OverviewTab({
                     <X className="h-3.5 w-3.5" /> Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      const trimmed = companyEmail.trim();
-                      if (!trimmed) {
-                        setEmailError('An email address is required so customers and notifications can reach you.');
-                        return;
-                      }
-                      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
-                        setEmailError('Enter a valid email address.');
-                        return;
-                      }
-                      setEmailError('');
-                      onSaveBranding();
-                    }}
+                    onClick={handleSaveEdit}
                     disabled={brandSaving}
                     className="inline-flex items-center gap-1.5 rounded-lg bg-stone-900 px-3 py-1.5 text-[13px] font-semibold text-white transition hover:bg-stone-800 disabled:opacity-60"
                   >
@@ -573,17 +576,25 @@ export default function OverviewTab({
             </div>
           </div>
 
+          {brandError && (
+            <div className="border-b border-rose-200 bg-rose-50 px-5 py-3 sm:px-6">
+              <p className="text-sm font-semibold text-rose-700">{brandError}</p>
+            </div>
+          )}
+
           <div className="p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-              {/* Fields List */}
               <div className="lg:col-span-2 flex flex-col gap-4">
-               <div>
+                <div>
                   <LabeledField
                     icon={Mail}
                     label="Company Email"
                     editing={isEditingBrand}
                     value={companyEmail}
-                    onChange={(v) => { setCompanyEmail(v); setEmailError(''); }}
+                    onChange={(v) => {
+                      setCompanyEmail(v);
+                      setEmailError('');
+                    }}
                     placeholder="you@company.com"
                     display={company.email || 'No email added'}
                     caption="This is your Reply‑To inbox. Customer responses land here, and you can BCC yourself on outgoing emails by enabling it in Settings."
@@ -632,7 +643,6 @@ export default function OverviewTab({
                 />
               </div>
 
-              {/* Brand Colors Sidebar */}
               <div className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4 sm:p-5 flex flex-col justify-between">
                 <div>
                   <p className="mb-3 flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-stone-700">
@@ -722,7 +732,7 @@ export default function OverviewTab({
           </div>
         </div>
 
-        {/* ── 3. SHARE IDEAS ── */}
+        {/* 3. Promote Ideas */}
         <div className="mb-8">
           <div className="mb-2.5">
             <Eyebrow>Promote Your Link</Eyebrow>
@@ -772,7 +782,6 @@ export default function OverviewTab({
             <Trash2 className="h-3.5 w-3.5" /> Lead Recovery Center
           </a>
         </div>
-
       </div>
     </div>
   );

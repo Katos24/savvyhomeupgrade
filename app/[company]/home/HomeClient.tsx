@@ -83,15 +83,49 @@ function formatPhone(value: string) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-function normalizeUrl(raw: string) {
-  const trimmed = raw.trim();
-  if (!trimmed) return trimmed;
-  if (/^http:\/\//i.test(trimmed)) return trimmed.replace(/^http:\/\//i, 'https://');
-  if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
-  return trimmed;
-}
-
-function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
+ function normalizeUrl(raw: string) {
+      const trimmed = raw.trim();
+      if (!trimmed) return trimmed;
+      if (/^http:\/\//i.test(trimmed)) return trimmed.replace(/^http:\/\//i, 'https://');
+      if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
+      return trimmed;
+    }
+ 
+    // iPhone photos are 3-5MB and often HEIC. Vercel caps request bodies near
+    // 4.5MB, and a truncated multipart body is what produces:
+    //   "expected a value starting with -- and the boundary"
+    // Re-encoding in the browser fixes the size and the format in one pass.
+    const LOGO_MAX_DIMENSION = 512;
+ 
+    async function prepareLogo(file: File): Promise<Blob> {
+      let bitmap: ImageBitmap;
+      try {
+        bitmap = await createImageBitmap(file);
+      } catch {
+        throw new Error("Couldn't read that image. Try saving it as a JPG or PNG first.");
+      }
+ 
+      const scale = Math.min(1, LOGO_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+ 
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(bitmap.width * scale);
+      canvas.height = Math.round(bitmap.height * scale);
+ 
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Could not process that image.');
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      bitmap.close();
+ 
+      return new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Could not process that image.'))),
+          'image/png'
+        )
+      );
+    }
+ 
+    function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
+ 
   icon?: any; imageUrl?: string; label: string; active: boolean; locked?: boolean; onClick: () => void;
 }) {
   return (
@@ -125,10 +159,12 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
 const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [isEditingBrand, setIsEditingBrand] = useState(false);
-  const [brandSaving, setBrandSaving] = useState(false);
+ const [brandSaving, setBrandSaving] = useState(false);
   const [brandSaved, setBrandSaved] = useState(false);
+  const [brandError, setBrandError] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
+
   const [companyName, setCompanyName] = useState(company.name || '');
 const [companyEmail, setCompanyEmail] = useState(company.email || '');
 const [companyPhone, setCompanyPhone] = useState(
@@ -157,61 +193,94 @@ const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
     generate();
   }, [publicLink, qrStyle, color1]);
 
+
+
 const handleSaveBranding = async () => {
-    setBrandSaving(true);
-    const normalizedWebsite = normalizeUrl(companyWebsite);
-    try {
-      let finalLogoUrl = company.logo_url;
-      if (logoFile) {
-        const fd = new FormData();
-        fd.append('logo', logoFile);
-        fd.append('companySlug', company.slug);
-        const uploadRes = await fetch('/api/upload-logo', { method: 'POST', body: fd });
-        const uploadData = await uploadRes.json();
-        if (uploadRes.ok && uploadData.success) finalLogoUrl = uploadData.logoUrl;
+  setBrandSaving(true);
+  setBrandError(null);
+  const normalizedWebsite = normalizeUrl(companyWebsite);
+ 
+  try {
+    let finalLogoUrl = company.logo_url;
+ 
+    if (logoFile) {
+      // Shrink and convert before it ever hits the wire.
+      const processed = await prepareLogo(logoFile);
+ 
+      const fd = new FormData();
+      fd.append('logo', processed, 'logo.png');
+      fd.append('companySlug', company.slug);
+ 
+      // No headers — the browser must set the multipart boundary itself.
+      const uploadRes = await fetch('/api/upload-logo', {
+        method: 'POST',
+        body: fd,
+      });
+ 
+      // A non-JSON body here means the route crashed; don't let .json() throw
+      // an unhelpful parse error over the real one.
+      const uploadData = await uploadRes.json().catch(() => ({}));
+ 
+      if (!uploadRes.ok || !uploadData.success) {
+        // Stop here. Continuing would save "Saved" with no logo attached.
+        throw new Error(uploadData.error || 'Logo upload failed. Try again.');
       }
-      await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          action: 'update-general',
-          data: {
-            name: companyName,
-            email: companyEmail,
-            phone: companyPhone,
-            website: normalizedWebsite
-          }
-        }),
-      });
-      await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-branding', data: { logo_url: finalLogoUrl, email_brand_color_1: color1, email_brand_color_2: color2 } }),
-      });
-      if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
-      setCompanyWebsite(normalizedWebsite);
-      setCompany(prev => ({
-        ...prev,
-        name: companyName,
-        email: companyEmail,
-        phone: companyPhone,
-        website: normalizedWebsite,
-        logo_url: finalLogoUrl ?? prev.logo_url,
-        email_brand_color_1: color1,
-        email_brand_color_2: color2,
-      }));
-      setLogoFile(null);
-      setIsEditingBrand(false);
-      setBrandSaved(true);
-      setTimeout(() => setBrandSaved(false), 2000);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setBrandSaving(false);
+ 
+      finalLogoUrl = uploadData.logoUrl;
     }
-  };
+ 
+    await fetch(`/api/company/${company.slug}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update-general',
+        data: {
+          name: companyName,
+          email: companyEmail,
+          phone: companyPhone,
+          website: normalizedWebsite,
+        },
+      }),
+    });
+ 
+    await fetch(`/api/company/${company.slug}/settings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'update-branding',
+        data: {
+          logo_url: finalLogoUrl,
+          email_brand_color_1: color1,
+          email_brand_color_2: color2,
+        },
+      }),
+    });
+ 
+    if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
+    setCompanyWebsite(normalizedWebsite);
+    setCompany((prev) => ({
+      ...prev,
+      name: companyName,
+      email: companyEmail,
+      phone: companyPhone,
+      website: normalizedWebsite,
+      logo_url: finalLogoUrl ?? prev.logo_url,
+      email_brand_color_1: color1,
+      email_brand_color_2: color2,
+    }));
+    setLogoFile(null);
+    setIsEditingBrand(false);
+    setBrandSaved(true);
+    setTimeout(() => setBrandSaved(false), 2000);
+  } catch (err) {
+    console.error(err);
+    setBrandError(
+      err instanceof Error ? err.message : 'Something went wrong. Try again.'
+    );
+  } finally {
+    setBrandSaving(false);
+  }
+};
 
 const planTier = (company.plan_tier || 'free') as PlanTier;
   const paymentsLocked = !can(planTier, 'stripe_connect');
@@ -440,8 +509,9 @@ const checklistSteps: ChecklistStep[] = [
     setLogoPreview={setLogoPreview}
     setColor1={setColor1}
     setColor2={setColor2}
-    brandSaving={brandSaving}
+  brandSaving={brandSaving}
     brandSaved={brandSaved}
+    brandError={brandError}
     onSaveBranding={handleSaveBranding}
     qrCodeUrl={qrCodeUrl}
     onShowQrModal={() => setShowQrModal(true)}

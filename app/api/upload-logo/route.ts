@@ -20,6 +20,8 @@ export async function POST(request: Request) {
     try { jwt.verify(token, process.env.JWT_SECRET!); }
     catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
 
+    console.log("Content-Type:", request.headers.get("content-type"));
+
     const formData = await request.formData();
     const file = formData.get('logo') as File;
     const companySlug = formData.get('companySlug') as string;
@@ -53,7 +55,11 @@ const blob = await put(`logos/${companySlug}-logo-${Date.now()}.png`, pngBuffer,
       logoUrl: blob.url,
     });
   } catch (error) {
-    console.error('Logo upload error:', error);
+    if (error instanceof Error) {
+  console.error(error);
+  console.error(error.message);
+  console.error(error.stack);
+}
     return NextResponse.json(
       { success: false, error: 'Failed to upload logo' },
       { status: 500 }
