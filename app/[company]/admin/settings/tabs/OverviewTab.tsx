@@ -732,35 +732,7 @@ export default function OverviewTab({
           </div>
         </div>
 
-        {/* 3. Promote Ideas */}
-        <div className="mb-8">
-          <div className="mb-2.5">
-            <Eyebrow>Promote Your Link</Eyebrow>
-          </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <ShareIdeaCard
-              icon={Globe}
-              title="Google Business Profile"
-              description="Add your booking link to your website field on Google."
-            />
-            <ShareIdeaCard
-              icon={MessageSquare}
-              title="Social Media Bios"
-              description="Drop the link directly in your Instagram, TikTok, or Facebook bio."
-            />
-            <ShareIdeaCard
-              icon={FileImage}
-              title="Flyers & Yard Signs"
-              description="Print the QR code onto door hangers and promotional signs."
-            />
-            <ShareIdeaCard
-              icon={Truck}
-              title="Vehicle Magnets"
-              description="Put a QR code on your work truck to collect leads on job sites."
-            />
-          </div>
-        </div>
-
+     
         {/* Upgrade Banner (If Free) */}
         {isFreePlan && (
           <div className="mb-8">

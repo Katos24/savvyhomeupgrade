@@ -71,12 +71,12 @@ export default function Hero() {
 
           {/* 1. HEADLINE & CTAS (Mobile: 1st | Desktop: Left Column) */}
           <div className="order-1 lg:col-span-7 w-full">
-            <h1 className="text-3.5xl sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.1] sm:leading-[1.06] mb-4 sm:mb-6">
+            <h1 className="text-[2rem] sm:text-5xl lg:text-6xl text-white font-black tracking-tight leading-[1.1] sm:leading-[1.06] mb-4 sm:mb-6">
               One link.{' '}
               <span className="text-teal-400 block sm:inline">Every lead on one board.</span>
             </h1>
 
-            <p className="text-slate-300 font-medium text-sm sm:text-lg mb-6 sm:mb-8 leading-relaxed max-w-xl">
+            <p className="text-slate-300 font-medium text-base sm:text-lg mb-6 sm:mb-8 leading-relaxed max-w-xl">
               Share a booking form built in your colors, by link or QR code. Leads come
               straight to your board with photos and job details attached.
             </p>
