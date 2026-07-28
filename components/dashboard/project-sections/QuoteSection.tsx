@@ -364,8 +364,10 @@ export default function QuoteSection({
             >
               <div className="m-3 flex items-center justify-between gap-3 bg-blue-50/80 border border-blue-100 rounded-xl px-4 py-3">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-blue-900 truncate">Preset Template: {categoryTemplate.name}</p>
-                  <p className="text-[11px] text-blue-600">
+<p className="text-xs font-semibold text-blue-900 truncate">
+                    Pricing template for {lead?.category || categoryTemplate.category}
+                  </p>
+                                    <p className="text-[11px] text-blue-600">
                     {categoryTemplate.items?.length || 0} standard items available
                   </p>
                 </div>

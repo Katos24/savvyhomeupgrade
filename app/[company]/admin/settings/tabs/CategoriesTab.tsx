@@ -118,26 +118,69 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     finally { setTaxRateSaving(false); }
   };
 
-  const applyRateToAllTemplates = async () => {
+const applyRateToAllTemplates = async () => {
     setApplyingToAll(true);
+    setSaveError('');
+ 
     try {
-      const updated = await Promise.all(
-        quoteTemplates.map(async (t) => {
-          const subtotal = t.items.reduce((s, i) => s + i.amount, 0);
-          const newTemplate = { ...t, tax_rate: taxRate, total: subtotal + subtotal * (taxRate / 100) };
-          await fetch(`/api/company/${company.slug}/quote-templates`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update', template: newTemplate }),
-          });
-          return newTemplate;
-        })
-      );
-      setQuoteTemplates(updated);
+      // Normalize items the way openQuoteEditor does. Stored items don't
+      // reliably carry `amount`, so summing it directly yields NaN totals.
+      const updatedTemplates = quoteTemplates.map((t) => {
+        const normalizedItems = t.items.map((item: any, i: number) => {
+          const qty = clean(item.quantity ?? item.qty ?? 1) || 1;
+          const price = clean(
+            item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.unit_cost ?? 0
+          );
+          return {
+            id: item.id || `item_${Date.now() + i}`,
+            description: String(item.description || item.label || ''),
+            quantity: qty,
+            unitPrice: price,
+            amount: qty * price,
+          };
+        });
+ 
+        const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
+        return {
+          ...t,
+          items: normalizedItems,
+          tax_rate: taxRate,
+          total: subtotal + subtotal * (taxRate / 100),
+        };
+      });
+ 
+      // One request, one statement server-side. The old version fired N
+      // parallel updates that overwrote each other.
+      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-many', templates: updatedTemplates }),
+      });
+      const data = await res.json().catch(() => ({}));
+ 
+      if (!res.ok || !data.success) {
+        setSaveError(data.error || 'Could not apply the tax rate. Try again.');
+        return;
+      }
+ 
+      if (data.updated !== data.requested) {
+        setSaveError(
+          `Only ${data.updated} of ${data.requested} templates updated. Refresh and try again.`
+        );
+      }
+ 
+      setQuoteTemplates(data.templates || updatedTemplates);
       setShowApplyToAll(false);
-    } catch {}
-    finally { setApplyingToAll(false); }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err) {
+      console.error('Apply tax rate to all failed:', err);
+      setSaveError('Network error applying the tax rate. Try again.');
+    } finally {
+      setApplyingToAll(false);
+    }
   };
+
 
   const markDirty = useCallback(() => setIsDirty(true), []);
 
@@ -282,9 +325,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
       });
       const result = await res.json();
       if (result.success) {
-        const r = await fetch(`/api/company/${company.slug}/quote-templates`);
-        const d = await r.json();
-        if (d.success) setQuoteTemplates(d.templates || []);
+        setQuoteTemplates(result.templates || []);
         setQuoteEditorOpen(false);
       } else setQuoteError(result.error || 'Failed to save.');
     } catch { setQuoteError('Network error.'); }
@@ -300,7 +341,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         body: JSON.stringify({ action: 'delete', templateId: editingQuoteId }),
       });
       const result = await res.json();
-      if (result.success) { setQuoteTemplates(prev => prev.filter(t => t.id !== editingQuoteId)); setQuoteEditorOpen(false); }
+      if (result.success) { setQuoteTemplates(result.templates || []); setQuoteEditorOpen(false); }
     } catch {}
   };
 

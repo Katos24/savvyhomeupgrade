@@ -82,55 +82,23 @@ function InstagramLogo({ className }: { className?: string }) {
   );
 }
 
-/* ═══════════════ Share cards ═══════════════ */
+/* ═══════════════ Share spots ═══════════════ */
 
 type ShareSpot = {
   id: string;
   icon: React.ElementType;
-  /** Use the company's own logo here instead of a generic icon. */
   useCompanyLogo?: boolean;
   title: string;
   line: string;
 };
 
 const SHARE_SPOTS: ShareSpot[] = [
-  {
-    id: 'google',
-    icon: GoogleLogo,
-    title: 'Google Business Profile',
-    line: 'Paste it in the "Booking" or "Quote" link field.',
-  },
-  {
-    id: 'website',
-    icon: Link2,
-    useCompanyLogo: true,
-    title: 'Your website',
-    line: 'Point your "Get a Quote" button at it.',
-  },
-  {
-    id: 'facebook',
-    icon: FacebookLogo,
-    title: 'Facebook',
-    line: 'Pin it to your Page and drop it in job posts.',
-  },
-  {
-    id: 'instagram',
-    icon: InstagramLogo,
-    title: 'Instagram',
-    line: 'Put it in your bio, then say "link in bio".',
-  },
-  {
-    id: 'vehicle',
-    icon: Truck,
-    title: 'Truck & business cards',
-    line: 'Print the QR code — they scan it on the spot.',
-  },
-  {
-    id: 'flyers',
-    icon: ImageIcon,
-    title: 'Flyers & yard signs',
-    line: 'QR code on every sign you leave behind.',
-  },
+  { id: 'google', icon: GoogleLogo, title: 'Google Business Profile', line: 'Paste it in the "Booking" or "Quote" link field.' },
+  { id: 'website', icon: Link2, useCompanyLogo: true, title: 'Your website', line: 'Point your "Get a Quote" button at it.' },
+  { id: 'facebook', icon: FacebookLogo, title: 'Facebook', line: 'Pin it to your Page and drop it in job posts.' },
+  { id: 'instagram', icon: InstagramLogo, title: 'Instagram', line: 'Put it in your bio, then say "link in bio".' },
+  { id: 'vehicle', icon: Truck, title: 'Truck & business cards', line: 'Print the QR code — they scan it on the spot.' },
+  { id: 'flyers', icon: ImageIcon, title: 'Flyers & yard signs', line: 'QR code on every sign you leave behind.' },
 ];
 
 /* ═══════════════ Upgrade ═══════════════ */
@@ -166,8 +134,6 @@ function UpgradeNotice({ companySlug, feature }: { companySlug: string; feature:
   );
 }
 
-/* ═══════════════ Toggle ═══════════════ */
-
 function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onToggle: () => void; ariaLabel: string }) {
   return (
     <button
@@ -188,112 +154,98 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
   );
 }
 
-/** Required fields are collapsed to one line each — five separate cards was
- *  ~450px of scroll for things you can never change. */
-function LockedRow({
-  icon: Icon,
-  label,
-  sample,
-  children,
-  first,
-}: {
-  icon: React.ElementType;
-  label: string;
-  sample?: string;
-  /** Use instead of `sample` when the value needs to wrap, e.g. service pills. */
-  children?: React.ReactNode;
-  first?: boolean;
-}) {
-  const border = first ? '' : 'border-t border-stone-200';
+/* ═══════════════ Phone shell ═══════════════
+   Fixed size at every breakpoint so the two previews always match. Content
+   scrolls inside rather than stretching the frame.                        */
 
-  // Wrapping content gets its own line so it isn't squeezed into ~170px on a
-  // phone. Simple text values stay inline to keep the block short.
-  if (children) {
-    return (
-      <div className={`px-3.5 py-2.5 sm:px-4 ${border}`}>
-        <div className="mb-1.5 flex items-center gap-2.5">
-          <Icon className="h-3.5 w-3.5 shrink-0 text-stone-400" />
-          <p className="text-[13px] font-bold text-stone-700">{label}</p>
-        </div>
-        <div className="pl-6">{children}</div>
-      </div>
-    );
-  }
-
+function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`flex items-center gap-2.5 px-3.5 py-2.5 sm:gap-3 sm:px-4 ${border}`}>
-      <Icon className="h-3.5 w-3.5 shrink-0 text-stone-400" />
-      <p className="w-[88px] shrink-0 truncate text-[13px] font-bold text-stone-700 sm:w-[124px]">
-        {label}
-      </p>
-      <p className="min-w-0 flex-1 truncate text-[13px] font-semibold text-stone-600 sm:text-sm">
-        {sample}
-      </p>
+    <div className="mx-auto w-full max-w-[320px]">
+      <div className="relative h-[560px] rounded-[2.25rem] border-[8px] border-stone-800 bg-stone-800 shadow-xl">
+        <div className="absolute left-1/2 top-1.5 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-stone-800" />
+        <div className="h-full overflow-y-auto rounded-[1.6rem] bg-white">{children}</div>
+      </div>
     </div>
   );
 }
 
-/* ═══════════════ The editable field ═══════════════
-   This is the whole idea: the form field and its control are the same row.
-   Nothing to map between panels.                                          */
+function PhoneHeader({
+  logoUrl,
+  heading,
+  brandColor1,
+  brandColor2,
+}: {
+  logoUrl?: string | null;
+  heading: string;
+  brandColor1: string;
+  brandColor2: string;
+}) {
+  return (
+    <div
+      className="px-5 pb-5 pt-8 text-white"
+      style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+    >
+      {logoUrl && <img src={logoUrl} alt="" className="mb-3 h-7 w-auto object-contain" />}
+      <h3 className="text-base font-bold tracking-tight text-white">{heading}</h3>
+    </div>
+  );
+}
 
-function FormField({
+const fieldBox =
+  'flex min-h-[42px] w-full items-center gap-2.5 overflow-hidden rounded-lg border border-stone-200 bg-stone-50 px-3 text-[13px] font-semibold text-stone-700';
+
+function PhoneField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="mb-1 text-[12px] font-bold text-stone-600">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+/* ═══════════════ Editable control row ═══════════════ */
+
+function ControlRow({
   icon: Icon,
   label,
-  children,
-  locked,
-  enabled = true,
+  hint,
+  enabled,
   onToggle,
   planLocked,
   companySlug,
 }: {
   icon: React.ElementType;
   label: string;
-  children: React.ReactNode;
-  /** Required field — can never be turned off. */
-  locked?: boolean;
-  enabled?: boolean;
-  onToggle?: () => void;
-  /** Gated behind a paid plan. */
+  hint?: string;
+  enabled: boolean;
+  onToggle: () => void;
   planLocked?: boolean;
   companySlug?: string;
 }) {
-  const off = !locked && !enabled;
-
   return (
     <div
-      className={`rounded-xl border px-3 py-3 transition-colors sm:px-4 ${
+      className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition-colors ${
         planLocked
-          ? 'border-amber-200 bg-amber-50/40'
-          : off
-          ? 'border-stone-200 bg-stone-50'
-          : 'border-stone-200 bg-white'
+          ? 'border-amber-200 bg-amber-50/50'
+          : enabled
+          ? 'border-stone-200 bg-white'
+          : 'border-stone-200 bg-stone-50'
       }`}
     >
-      <div className="mb-2 flex items-center gap-2 sm:gap-2.5">
-        <Icon className={`h-3.5 w-3.5 shrink-0 ${off || planLocked ? 'text-stone-400' : 'text-stone-500'}`} />
+      <Icon className={`h-4 w-4 shrink-0 ${enabled && !planLocked ? 'text-stone-600' : 'text-stone-400'}`} />
 
-        <p className={`min-w-0 flex-1 truncate text-[13px] font-bold ${
-          off || planLocked ? 'text-stone-400' : 'text-stone-700'
-        }`}>
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-sm font-bold ${enabled && !planLocked ? 'text-stone-900' : 'text-stone-500'}`}>
           {label}
         </p>
-
-        {locked ? (
-          <span
-            className="inline-flex shrink-0 items-center gap-1 rounded-md border border-stone-200 bg-stone-100 px-2 py-1 text-[11px] font-bold text-stone-600"
-            title="Required — this field is always on your form"
-          >
-            <Lock className="h-3 w-3" /> Required
-          </span>
-        ) : planLocked && companySlug ? (
-          <UpgradePill companySlug={companySlug} />
-        ) : (
-          <ToggleSwitch enabled={enabled} onToggle={onToggle!} ariaLabel={`Show ${label} on your form`} />
-        )}
+        {hint && <p className="mt-0.5 truncate text-[12px] font-medium text-stone-500">{hint}</p>}
       </div>
 
-      <div className={off || planLocked ? 'pointer-events-none opacity-45 grayscale' : ''}>{children}</div>
+      {planLocked && companySlug ? (
+        <UpgradePill companySlug={companySlug} />
+      ) : (
+        <ToggleSwitch enabled={enabled} onToggle={onToggle} ariaLabel={`Show ${label} on your form`} />
+      )}
     </div>
   );
 }
@@ -309,6 +261,9 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [ctaSuccessMessage] = useState(company.cta_success_message || '');
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(company.custom_questions || []);
+
+  // Mobile only — desktop shows both phones side by side.
+  const [mobileTab, setMobileTab] = useState<'optional' | 'required'>('optional');
 
   const existingConfig = company.form_field_config;
   const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
@@ -433,7 +388,127 @@ export default function FormTab({ company, currentUser }: { company: any; curren
     setEditingQuestionId(null);
   };
 
-  const box = 'flex h-11 w-full items-center gap-2.5 overflow-hidden rounded-xl border border-stone-200 bg-stone-50 px-3 text-[13px] font-semibold text-stone-700 sm:gap-3 sm:px-4 sm:text-sm';
+  /* ── Phone 1: the locked half ── */
+  const RequiredPhone = (
+    <PhoneFrame>
+      <PhoneHeader logoUrl={company.logo_url} heading={getCtaHeading()} brandColor1={brandColor1} brandColor2={brandColor2} />
+      <div className="space-y-4 p-4">
+        <PhoneField label="Full name">
+          <div className={fieldBox}><User className="h-3.5 w-3.5 shrink-0 text-stone-400" />John Smith</div>
+        </PhoneField>
+        <PhoneField label="Email address">
+          <div className={fieldBox}><Mail className="h-3.5 w-3.5 shrink-0 text-stone-400" /><span className="truncate">john@example.com</span></div>
+        </PhoneField>
+        <PhoneField label="Phone number">
+          <div className={fieldBox}><Phone className="h-3.5 w-3.5 shrink-0 text-stone-400" />(555) 123-4567</div>
+        </PhoneField>
+        <PhoneField label="Service needed">
+          <div className="flex flex-wrap gap-1.5">
+            {categories.map((cat, i) => (
+              <span
+                key={i}
+                className={`rounded-md border px-2.5 py-1 text-[12px] font-bold ${
+                  i === 0 ? 'border-transparent text-white' : 'border-stone-200 bg-stone-50 text-stone-600'
+                }`}
+                style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
+              >
+                {cat.label}
+              </span>
+            ))}
+          </div>
+        </PhoneField>
+        <PhoneField label="Project description">
+          <div className="h-20 w-full rounded-lg border border-stone-200 bg-stone-50 p-3 text-[13px] font-semibold text-stone-400">
+            Describe your project here...
+          </div>
+        </PhoneField>
+      </div>
+    </PhoneFrame>
+  );
+
+  /* ── Phone 2: whatever they've switched on ── */
+  const enabledCount =
+    Number(fieldConfig.address.enabled) +
+    Number(fieldConfig.preferred_date.enabled) +
+    Number(fieldConfig.preferred_time.enabled) +
+    Number(fieldConfig.lead_source.enabled) +
+    Number(fieldConfig.file_upload.enabled) +
+    (canUseCustomQuestions ? customQuestions.length : 0);
+
+  const OptionalPhone = (
+    <PhoneFrame>
+      <PhoneHeader logoUrl={company.logo_url} heading={getCtaHeading()} brandColor1={brandColor1} brandColor2={brandColor2} />
+      <div className="space-y-4 p-4">
+        {enabledCount === 0 && (
+          <div className="rounded-lg border border-dashed border-stone-300 bg-stone-50 px-4 py-10 text-center">
+            <p className="text-[13px] font-bold text-stone-600">Nothing switched on</p>
+            <p className="mt-1 text-[12px] font-medium text-stone-500">
+              Customers will only see the five required fields.
+            </p>
+          </div>
+        )}
+
+        {fieldConfig.address.enabled && (
+          <PhoneField label="Address">
+            <div className={fieldBox}><MapPin className="h-3.5 w-3.5 shrink-0 text-stone-400" /><span className="truncate">123 Main St, New York 12345</span></div>
+          </PhoneField>
+        )}
+        {fieldConfig.preferred_date.enabled && (
+          <PhoneField label="Preferred date">
+            <div className={fieldBox}><Calendar className="h-3.5 w-3.5 shrink-0 text-stone-400" />MM / DD / YYYY</div>
+          </PhoneField>
+        )}
+        {fieldConfig.preferred_time.enabled && (
+          <PhoneField label="Preferred time">
+            <div className={fieldBox}><Clock className="h-3.5 w-3.5 shrink-0 text-stone-400" />Morning</div>
+          </PhoneField>
+        )}
+        {fieldConfig.lead_source.enabled && (
+          <PhoneField label="How did you hear about us?">
+            <div className={fieldBox}><Megaphone className="h-3.5 w-3.5 shrink-0 text-stone-400" /><span className="truncate">Google, referral, saw your truck...</span></div>
+          </PhoneField>
+        )}
+        {fieldConfig.file_upload.enabled && (
+          <PhoneField label="Site photos">
+            <div className="flex flex-col items-center justify-center gap-1.5 rounded-lg border-2 border-dashed border-stone-300 bg-stone-50 py-5">
+              <ImageIcon className="h-5 w-5 text-stone-400" />
+              <p className="text-[12px] font-bold text-stone-600">Drag or click to upload</p>
+            </div>
+          </PhoneField>
+        )}
+
+        {canUseCustomQuestions &&
+          customQuestions.map((q) => (
+            <PhoneField key={q.id} label={q.label}>
+              {q.type === 'text' && <div className={`${fieldBox} text-stone-400`}>Their answer...</div>}
+              {q.type === 'select' && (
+                <div className={`${fieldBox} justify-between`}>
+                  <span className="truncate">{q.options?.[0] || 'Select an option...'}</span>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-stone-400" />
+                </div>
+              )}
+              {q.type === 'checkbox' && (
+                <div className="flex gap-5 py-1">
+                  <span className="flex items-center gap-2 text-[13px] font-bold text-stone-600">
+                    <span className="h-4 w-4 rounded border border-stone-300 bg-white" /> Yes
+                  </span>
+                  <span className="flex items-center gap-2 text-[13px] font-bold text-stone-600">
+                    <span className="h-4 w-4 rounded border border-stone-300 bg-white" /> No
+                  </span>
+                </div>
+              )}
+            </PhoneField>
+          ))}
+
+        <div
+          className="flex h-11 w-full items-center justify-center rounded-lg text-[13px] font-bold text-white"
+          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+        >
+          Submit request
+        </div>
+      </div>
+    </PhoneFrame>
+  );
 
   return (
     <div className="bg-stone-50 px-4 py-8 sm:px-8">
@@ -462,7 +537,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               )}
             </div>
             <p className="mt-1 text-sm font-medium text-stone-500">
-              Edit it right here. Toggle a field off and customers won&apos;t see it.
+              This is exactly what your customer sees on their phone.
             </p>
           </div>
 
@@ -504,299 +579,302 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           )}
         </AnimatePresence>
 
-        {/* ══ Rail (sharing) | Form (editing) ══ */}
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+        {/* ══════════ The link, in their colors, above everything ══════════
+            This is the thing they came here to get. It shouldn't be tucked in
+            a sidebar next to six other cards. */}
+        <div
+          className="mb-8 overflow-hidden rounded-2xl shadow-lg"
+          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+        >
+          <div className="p-5 sm:p-7">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <Link2 className="h-5 w-5 shrink-0 text-white" />
+              <p className="text-lg font-bold tracking-tight text-white sm:text-xl">
+                This is your booking form link
+              </p>
+            </div>
+            <p className="mt-1.5 max-w-2xl text-sm font-medium leading-relaxed text-white/85">
+              Anyone who opens it sees the form below, in your colors. Every submission
+              lands straight on your board.
+            </p>
 
-          {/* Rail — everything that isn't editing the form */}
-          <aside className="space-y-4 lg:col-span-5">
-            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-              <p className="text-sm font-bold text-stone-900">Your public form link</p>
-              <div className="mt-3 flex flex-col gap-2.5">
-                <div className="truncate rounded-xl border border-stone-200 bg-stone-50 px-4 py-2.5">
-                  <code className="truncate font-mono text-sm font-semibold text-stone-700">{publicUrl}</code>
-                </div>
+            <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
+              <div className="min-w-0 flex-1 overflow-x-auto rounded-xl border border-white/25 bg-white/15 px-4 py-3 backdrop-blur-sm">
+                <code className="whitespace-nowrap font-mono text-sm font-bold text-white sm:text-base">
+                  {publicUrl}
+                </code>
+              </div>
+
+              <div className="flex shrink-0 gap-2">
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(publicUrl);
                     setLinkCopied(true);
                     setTimeout(() => setLinkCopied(false), 1800);
                   }}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-800 transition hover:bg-stone-50"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-white px-5 py-3 text-sm font-bold text-stone-900 shadow-sm transition hover:bg-white/90 sm:flex-none"
                 >
-                  {linkCopied ? (<><Check className="h-3.5 w-3.5 text-emerald-600" /> Copied</>) : 'Copy link'}
+                  {linkCopied ? (
+                    <><Check className="h-4 w-4 text-emerald-600" /> Copied</>
+                  ) : (
+                    'Copy link'
+                  )}
                 </button>
-              </div>
-            </div>
 
-            <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
-              <p className="text-base font-bold text-stone-900">Capture more jobs</p>
-              <p className="mt-1 text-sm font-medium leading-relaxed text-stone-600">
-                Every place your link or QR code sits is another way someone books you
-                without picking up the phone. Put it everywhere.
-              </p>
-
-              <div className="mt-4 overflow-hidden rounded-xl border border-stone-200">
-                {SHARE_SPOTS.map((spot, i) => (
-                  <div
-                    key={spot.id}
-                    className={`flex items-center gap-3 px-3.5 py-3 ${i === 0 ? '' : 'border-t border-stone-200'}`}
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-stone-200 bg-white">
-                      {spot.useCompanyLogo && company.logo_url ? (
-                        <img src={company.logo_url} alt="" className="h-full w-full object-contain p-1" />
-                      ) : (
-                        <spot.icon className="h-4 w-4 text-stone-700" />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold text-stone-900">{spot.title}</p>
-                      <p className="mt-0.5 text-[13px] font-medium leading-snug text-stone-600">{spot.line}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <p className="mt-3 text-[13px] font-medium leading-relaxed text-stone-600">
-                Your QR code is on the Overview tab — download it and print it on anything.
-              </p>
-            </div>
-
-            <a
-              href={`/${company.slug}/categories`}
-              className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm transition hover:border-stone-400"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50">
-                <Tag className="h-4 w-4 text-stone-700" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-stone-900">Change your services</p>
-                <p className="mt-0.5 text-[13px] font-medium leading-relaxed text-stone-600">
-                  Service options come from Categories &amp; Pricing.
-                </p>
-              </div>
-              <ArrowUpRight className="h-4 w-4 shrink-0 text-stone-400" />
-            </a>
-          </aside>
-
-          {/* The form — edited in place */}
-          <div className="lg:col-span-7">
-            <div className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-
-              <div className="p-6 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
-                {company.logo_url && <img src={company.logo_url} alt="" className="mb-4 h-8 w-auto object-contain" />}
-                <h3 className="text-lg font-bold tracking-tight text-white">{getCtaHeading()}</h3>
-              </div>
-
-              <div className="space-y-5 bg-stone-50/60 p-3 sm:p-4">
-
-                {/* ── Part 1 · always captured ── */}
-                <section>
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
-                    <p className="text-[15px] font-bold text-stone-900">
-                      Part 1 · Always captured
-                    </p>
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-md border border-stone-300 bg-stone-100 px-2 py-1 text-[11px] font-bold text-stone-600">
-                      <Lock className="h-3 w-3" /> Required
-                    </span>
-                  </div>
-
-                  <div className="overflow-hidden rounded-xl border border-stone-200 bg-white">
-                    <LockedRow first icon={User} label="Full name" sample="John Smith" />
-                    <LockedRow icon={Mail} label="Email" sample="john@example.com" />
-                    <LockedRow icon={Phone} label="Phone" sample="(555) 123-4567" />
-                    <LockedRow icon={Tag} label="Service needed">
-                      <div className="flex flex-wrap gap-1.5">
-                        {categories.map((cat, i) => (
-                          <span
-                            key={i}
-                            className={`rounded-md border px-2.5 py-1 text-[12px] font-bold ${
-                              i === 0 ? 'border-transparent text-white' : 'border-stone-200 bg-stone-50 text-stone-600'
-                            }`}
-                            style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
-                          >
-                            {cat.label}
-                          </span>
-                        ))}
-                      </div>
-                    </LockedRow>
-                    <LockedRow icon={FileText} label="Description" sample="Describe your project here..." />
-                  </div>
-
-                  <p className="mt-2 px-1 text-[13px] font-medium leading-relaxed text-stone-600">
-                    You always get these five, even if the customer skips everything below.
-                  </p>
-                </section>
-
-                {/* ── Part 2 · optional ── */}
-                <section>
-                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
-                    <p className="text-[15px] font-bold text-stone-900">
-                      Part 2 · Optional
-                    </p>
-                    <span className="shrink-0 text-[13px] font-medium text-stone-500">Toggle what you want</span>
-                  </div>
-
-                  <div className="space-y-2.5">
-                    <FormField
-                      icon={MapPin}
-                      label="Address"
-                      enabled={fieldConfig.address.enabled}
-                      onToggle={() => toggleField('address')}
-                    >
-                      <div className={box}><MapPin className="h-3.5 w-3.5 shrink-0 text-stone-400" /><span className="truncate">123 Main St, New York 12345</span></div>
-                    </FormField>
-
-                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      <FormField
-                        icon={Calendar}
-                        label="Preferred date"
-                        enabled={fieldConfig.preferred_date.enabled}
-                        onToggle={() => toggleField('preferred_date')}
-                      >
-                        <div className={box}><Calendar className="h-3.5 w-3.5 shrink-0 text-stone-400" />MM / DD / YYYY</div>
-                      </FormField>
-
-                      <FormField
-                        icon={Clock}
-                        label="Preferred time"
-                        enabled={fieldConfig.preferred_time.enabled}
-                        onToggle={() => toggleField('preferred_time')}
-                      >
-                        <div className={box}><Clock className="h-3.5 w-3.5 shrink-0 text-stone-400" />Morning</div>
-                      </FormField>
-                    </div>
-
-                    <FormField
-                      icon={Megaphone}
-                      label="How did you hear about us?"
-                      enabled={fieldConfig.lead_source.enabled}
-                      onToggle={() => toggleField('lead_source')}
-                    >
-                      <div className={box}><Megaphone className="h-3.5 w-3.5 shrink-0 text-stone-400" /><span className="truncate">Google, referral, saw your truck...</span></div>
-                    </FormField>
-
-                    <FormField
-                      icon={ImageIcon}
-                      label="Site photos"
-                      enabled={fieldConfig.file_upload.enabled}
-                      onToggle={() => toggleField('file_upload')}
-                      planLocked={!canUsePhotoUpload}
-                      companySlug={company.slug}
-                    >
-                      <div className="flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-stone-300 bg-stone-50 py-4">
-                        <ImageIcon className="h-5 w-5 text-stone-500" />
-                        <p className="text-[13px] font-bold text-stone-700">Drag or click to upload</p>
-                      </div>
-                    </FormField>
-
-                    {!canUsePhotoUpload && <UpgradeNotice companySlug={company.slug} feature="Photo upload" />}
-                  </div>
-
-                  <p className="mt-2 px-1 text-[13px] font-medium leading-relaxed text-stone-600">
-                    Optional for the customer — they can leave any of these blank and still submit.
-                  </p>
-                </section>
-
-                {/* ── Part 3 · your own questions. Violet so it reads as yours,
-                       not part of the standard form. ── */}
-                <section className="rounded-xl border border-violet-200 bg-violet-50/60 p-3">
-                  <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 px-1">
-                    <p className="flex items-center gap-1.5 text-[15px] font-bold text-violet-900">
-                      <HelpCircle className="h-3.5 w-3.5" /> Part 3 · Your own questions
-                    </p>
-                    {!canUseCustomQuestions && <UpgradePill companySlug={company.slug} />}
-                  </div>
-
-                  <div className="space-y-2.5">
-                    {canUseCustomQuestions &&
-                      customQuestions.map((q) => (
-                        <div key={q.id} className="rounded-xl border border-violet-200 bg-white px-3 py-3 sm:px-4">
-                          <div className="mb-2 flex items-center gap-2.5">
-                            <HelpCircle className="h-3.5 w-3.5 shrink-0 text-violet-500" />
-                            <p className="min-w-0 flex-1 truncate text-[13px] font-bold text-violet-900">
-                              {q.label}
-                            </p>
-                            <button
-                              onClick={() => {
-                                setNewQuestion(q);
-                                setEditingQuestionId(q.id);
-                                setShowAddQuestion(true);
-                              }}
-                              className="rounded-lg border border-violet-200 bg-white p-2 text-violet-700 shadow-sm transition hover:bg-violet-50"
-                              aria-label={`Edit ${q.label}`}
-                            >
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setCustomQuestions(customQuestions.filter((x) => x.id !== q.id))}
-                              className="rounded-lg border border-violet-200 bg-white p-2 text-rose-600 shadow-sm transition hover:bg-rose-50"
-                              aria-label={`Delete ${q.label}`}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </button>
-                          </div>
-
-                          {q.type === 'text' && <div className={`${box} text-stone-400`}>Their answer...</div>}
-                          {q.type === 'select' && (
-                            <div className={`${box} justify-between`}>
-                              <span className="truncate">{q.options?.[0] || 'Select an option...'}</span>
-                              <ChevronDown className="h-4 w-4 shrink-0 text-stone-400" />
-                            </div>
-                          )}
-                          {q.type === 'checkbox' && (
-                            <div className="flex gap-5 py-2">
-                              <span className="flex items-center gap-2.5 text-xs font-bold text-stone-600">
-                                <span className="h-4 w-4 rounded border border-stone-300 bg-white" /> Yes
-                              </span>
-                              <span className="flex items-center gap-2.5 text-xs font-bold text-stone-600">
-                                <span className="h-4 w-4 rounded border border-stone-300 bg-white" /> No
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-
-                    {canUseCustomQuestions ? (
-                      <button
-                        onClick={() => setShowAddQuestion(true)}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-violet-300 bg-white px-4 py-3 text-sm font-bold text-violet-800 transition hover:border-violet-400 hover:bg-violet-50"
-                      >
-                        <Plus className="h-4 w-4" /> Add your own question
-                      </button>
-                    ) : (
-                      <UpgradeNotice companySlug={company.slug} feature="Custom questions" />
-                    )}
-                  </div>
-                </section>
-              </div>
-
-              <div className="border-t border-stone-200 bg-white p-4 sm:p-5">
-                <div
-                  className="flex h-12 w-full items-center justify-center rounded-xl text-sm font-bold text-white"
-                  style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-white/40 bg-white/10 px-5 py-3 text-sm font-bold text-white transition hover:bg-white/20 sm:flex-none"
                 >
-                  Submit request
-                </div>
-
-                <div className="mt-3 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" strokeWidth={3} />
-                  <p className="text-[13px] font-semibold leading-relaxed text-emerald-900">
-                    When they hit submit, the lead lands on your board straight away — with
-                    everything they filled in attached.
-                  </p>
-                </div>
+                  Open <ArrowUpRight className="h-4 w-4" />
+                </a>
               </div>
             </div>
-
-            <p className="mt-3 px-1 text-[13px] font-medium leading-relaxed text-stone-600">
-              Greyed fields are off and won&apos;t show on your live form.
-            </p>
           </div>
         </div>
 
-        {/* Save bar — sticky inside the content column, not fixed to the
-            viewport, so it can't run underneath the sidebar. The negative
-            margins let it bleed to the edges of the content area. */}
+        {/* ══════════ MOBILE: tabbed single phone ══════════ */}
+        <div className="lg:hidden">
+          <div className="mb-3 grid grid-cols-2 gap-1 rounded-xl border border-stone-200 bg-white p-1">
+            <button
+              type="button"
+              onClick={() => setMobileTab('optional')}
+              className={`rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                mobileTab === 'optional' ? 'bg-stone-900 text-white' : 'text-stone-600'
+              }`}
+            >
+              Extra details
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobileTab('required')}
+              className={`inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-2.5 text-sm font-bold transition ${
+                mobileTab === 'required' ? 'bg-stone-900 text-white' : 'text-stone-600'
+              }`}
+            >
+              <Lock className="h-3.5 w-3.5" /> Required
+            </button>
+          </div>
+
+          {mobileTab === 'required' ? (
+            <>
+              <div className="mb-3 flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2.5">
+                <Lock className="h-4 w-4 shrink-0 text-stone-500" />
+                <p className="text-[13px] font-semibold text-stone-700">
+                  These five are locked — you always get them.
+                </p>
+              </div>
+              {RequiredPhone}
+            </>
+          ) : (
+            <>
+              <div className="mb-3 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2.5">
+                <Eye className="h-4 w-4 shrink-0 text-emerald-700" />
+                <p className="text-[13px] font-semibold text-emerald-900">
+                  Live preview — toggle fields below to change it.
+                </p>
+              </div>
+              {OptionalPhone}
+            </>
+          )}
+        </div>
+
+        {/* ══════════ DESKTOP: both phones ══════════ */}
+        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8">
+          <div>
+            <div className="mb-3 flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-4 py-3">
+              <Lock className="h-4 w-4 shrink-0 text-stone-500" />
+              <div>
+                <p className="text-sm font-bold text-stone-900">Required — locked</p>
+                <p className="text-[13px] font-medium text-stone-600">
+                  Every customer fills these in. They can&apos;t be removed.
+                </p>
+              </div>
+            </div>
+            {RequiredPhone}
+          </div>
+
+          <div>
+            <div className="mb-3 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
+              <Eye className="h-4 w-4 shrink-0 text-emerald-700" />
+              <div>
+                <p className="text-sm font-bold text-emerald-900">Extra details — your choice</p>
+                <p className="text-[13px] font-medium text-emerald-800">
+                  Updates as you toggle the fields below.
+                </p>
+              </div>
+            </div>
+            {OptionalPhone}
+          </div>
+        </div>
+
+        {/* ══════════ Controls — full width ══════════ */}
+        <div className="mt-8 space-y-6">
+
+          <div>
+            <p className="mb-1 text-lg font-bold text-stone-900">Extra details to collect</p>
+            <p className="mb-4 text-sm font-medium text-stone-600">
+              Optional for the customer — they can leave any of these blank and still submit.
+            </p>
+
+            {/* Two columns of toggles on wide screens; the rows are short, so a
+                single column wasted most of the width. */}
+            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+              <ControlRow
+                icon={MapPin}
+                label="Address"
+                enabled={fieldConfig.address.enabled}
+                onToggle={() => toggleField('address')}
+              />
+              <ControlRow
+                icon={Calendar}
+                label="Preferred date"
+                enabled={fieldConfig.preferred_date.enabled}
+                onToggle={() => toggleField('preferred_date')}
+              />
+              <ControlRow
+                icon={Clock}
+                label="Preferred time"
+                enabled={fieldConfig.preferred_time.enabled}
+                onToggle={() => toggleField('preferred_time')}
+              />
+              <ControlRow
+                icon={Megaphone}
+                label="Lead source"
+                hint="How did you hear about us?"
+                enabled={fieldConfig.lead_source.enabled}
+                onToggle={() => toggleField('lead_source')}
+              />
+              <ControlRow
+                icon={ImageIcon}
+                label="Site photos"
+                hint={canUsePhotoUpload ? 'Customers attach job photos' : `${REQUIRED_PLAN.label} plan`}
+                enabled={fieldConfig.file_upload.enabled}
+                onToggle={() => toggleField('file_upload')}
+                planLocked={!canUsePhotoUpload}
+                companySlug={company.slug}
+              />
+            </div>
+
+            {!canUsePhotoUpload && (
+              <div className="mt-2.5">
+                <UpgradeNotice companySlug={company.slug} feature="Photo upload" />
+              </div>
+            )}
+          </div>
+
+          {/* Custom questions */}
+          <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-4 sm:p-5">
+            <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+              <p className="flex items-center gap-2 text-lg font-bold text-violet-900">
+                <HelpCircle className="h-5 w-5" /> Your own questions
+              </p>
+              {!canUseCustomQuestions && <UpgradePill companySlug={company.slug} />}
+            </div>
+            <p className="mb-4 text-sm font-medium text-violet-800">
+              Anything else you want to know before you quote.
+            </p>
+
+            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+              {canUseCustomQuestions &&
+                customQuestions.map((q) => (
+                  <div key={q.id} className="flex items-center gap-3 rounded-xl border border-violet-200 bg-white px-4 py-3">
+                    <HelpCircle className="h-4 w-4 shrink-0 text-violet-500" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold text-violet-900">{q.label}</p>
+                      <p className="mt-0.5 text-[12px] font-medium text-stone-500">
+                        {q.type === 'text' && 'Text answer'}
+                        {q.type === 'checkbox' && 'Yes / No'}
+                        {q.type === 'select' && `Dropdown · ${q.options?.length || 0} option${q.options?.length === 1 ? '' : 's'}`}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setNewQuestion(q);
+                        setEditingQuestionId(q.id);
+                        setShowAddQuestion(true);
+                      }}
+                      className="rounded-lg border border-violet-200 bg-white p-2 text-violet-700 shadow-sm transition hover:bg-violet-50"
+                      aria-label={`Edit ${q.label}`}
+                    >
+                      <Edit2 className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => setCustomQuestions(customQuestions.filter((x) => x.id !== q.id))}
+                      className="rounded-lg border border-violet-200 bg-white p-2 text-rose-600 shadow-sm transition hover:bg-rose-50"
+                      aria-label={`Delete ${q.label}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+
+              {canUseCustomQuestions && (
+                <button
+                  onClick={() => setShowAddQuestion(true)}
+                  className="flex items-center justify-center gap-1.5 rounded-xl border-2 border-dashed border-violet-300 bg-white px-4 py-3 text-sm font-bold text-violet-800 transition hover:border-violet-400 hover:bg-violet-50"
+                >
+                  <Plus className="h-4 w-4" /> Add your own question
+                </button>
+              )}
+            </div>
+
+            {!canUseCustomQuestions && (
+              <UpgradeNotice companySlug={company.slug} feature="Custom questions" />
+            )}
+          </div>
+
+          {/* Services live elsewhere — pointer only, no link. */}
+          <div className="flex items-start gap-3 rounded-2xl border border-stone-200 bg-white p-4">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-stone-200 bg-stone-50">
+              <Tag className="h-4 w-4 text-stone-700" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold text-stone-900">Changing your services?</p>
+              <p className="mt-0.5 text-[13px] font-medium leading-relaxed text-stone-600">
+                The service options customers pick from are managed under{' '}
+                <span className="font-bold text-stone-900">Categories &amp; Pricing</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* ══════════ Where to put the link — full width, last ══════════ */}
+        <div className="mt-8 rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-lg font-bold text-stone-900">Capture more jobs</p>
+          <p className="mt-1 max-w-2xl text-sm font-medium leading-relaxed text-stone-600">
+            Every place your link or QR code sits is another way someone books you
+            without picking up the phone. Put it everywhere.
+          </p>
+
+          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+            {SHARE_SPOTS.map((spot) => (
+              <div
+                key={spot.id}
+                className="flex items-center gap-3 rounded-xl border border-stone-200 bg-white px-3.5 py-3"
+              >
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-stone-200 bg-white">
+                  {spot.useCompanyLogo && company.logo_url ? (
+                    <img src={company.logo_url} alt="" className="h-full w-full object-contain p-1" />
+                  ) : (
+                    <spot.icon className="h-4 w-4 text-stone-700" />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-bold text-stone-900">{spot.title}</p>
+                  <p className="mt-0.5 text-[13px] font-medium leading-snug text-stone-600">{spot.line}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-4 text-[13px] font-medium leading-relaxed text-stone-600">
+            Your QR code is on the Overview tab — download it and print it on anything.
+          </p>
+        </div>
+
+        {/* Save bar */}
         <AnimatePresence>
           {isDirty && (
             <motion.div
