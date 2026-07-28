@@ -237,10 +237,10 @@ export default function Hero() {
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3.5 relative z-10">
       {[
         { title: 'Track jobs', desc: 'Real-time board overview', icon: <LayoutDashboard size={16} /> },
-        { title: 'Schedule jobs', desc: 'Automatic calendar sync', icon: <CalendarDays size={16} /> },
+        { title: 'Schedule jobs', desc: 'One‑click calendar scheduling', icon: <CalendarDays size={16} /> },
         { title: 'Instant estimates', desc: 'Send & approve in seconds', icon: <FileText size={16} /> },
         { title: 'Branded invoices', desc: 'Get paid faster online', icon: <CreditCard size={16} /> },
-        { title: 'Google reviews', desc: 'Automate review invites', icon: <Sparkles size={16} />, fullMobile: true },
+        { title: 'Google reviews', desc: 'Automate review requests', icon: <Sparkles size={16} />, fullMobile: true },
       ].map((feat) => (
         <div
           key={feat.title}

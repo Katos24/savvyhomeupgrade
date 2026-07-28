@@ -12,6 +12,8 @@ export async function GET(
     const { slug } = await params;
     const { searchParams } = new URL(request.url);
     const projectId = searchParams.get('project_id');
+    // ?preview=1 renders in an iframe instead of triggering a download.
+    const isPreview = searchParams.get('preview') === '1';
 
     if (!projectId) {
       return NextResponse.json({ error: 'project_id required' }, { status: 400 });
@@ -184,7 +186,7 @@ if (company.stripe_payment_status === 'active' && project.payment_status !== 'pa
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Disposition': `${isPreview ? 'inline' : 'attachment'}; filename="${filename}"`,
       },
     });
 

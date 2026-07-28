@@ -727,86 +727,183 @@ export default function BillingSection({
         </div>
       </div>
 
-      {/* ── MODALS SECTION ── */}
+    {/* ── MODALS SECTION ── */}
 
-      {/* SEND INVOICE MODAL */}
-      <AnimatePresence>
-        {showSendConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+{/* SEND INVOICE MODAL */}
+<AnimatePresence>
+  {showSendConfirm && (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={() => !sending && setShowSendConfirm(false)}
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        onClick={(e) => e.stopPropagation()} // Prevent modal click from closing backdrop
+        className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200 overflow-hidden"
+      >
+        {/* Header */}
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+              <Send className="w-4 h-4" aria-hidden="true" />
+            </div>
+            <h3 className="text-base font-bold text-slate-900">
+              {invoiceSent ? 'Resend Invoice' : 'Send Invoice'}
+            </h3>
+          </div>
+          <button
+            type="button"
+            onClick={() => !sending && setShowSendConfirm(false)}
+            disabled={sending}
+            aria-label="Close modal"
+            className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors disabled:opacity-50"
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200 overflow-hidden"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                    <Send className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-base font-bold text-slate-900">
-                    {invoiceSent ? 'Resend Invoice' : 'Send Invoice'}
-                  </h3>
-                </div>
-                <button
-                  onClick={() => !sending && setShowSendConfirm(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+            <X className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Content Body */}
+        <div className="space-y-3 mb-5">
+          {/* Summary Box */}
+          <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[11px] text-slate-500 font-medium">To</p>
+                <p className="text-sm font-semibold text-slate-900 truncate">
+                  {lead?.name || 'Unnamed Client'}
+                </p>
+                <p className="text-[11px] text-slate-500 truncate">
+                  {lead?.email || 'No email on file'}
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-[11px] text-slate-500 font-medium">Amount</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {fmt ? fmt(total || 0) : `$${total || 0}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200/70 text-[11px]">
+              <span className="text-slate-500 font-medium">
+                {invoiceNumber || 'INV'} · {lineItems?.length || 0} line item
+                {(lineItems?.length || 0) === 1 ? '' : 's'}
+              </span>
+              {lead?.project_id && company?.slug && (
+                <a
+                  href={`/api/company/${company.slug}/generate-invoice-pdf?project_id=${lead.project_id}&preview=1`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="shrink-0 font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-colors"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+                  Preview PDF
+                </a>
+              )}
+            </div>
+          </div>
 
-              <div className="space-y-3 mb-5">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                  <p className="text-xs text-slate-500">Recipient</p>
-                  <p className="text-sm font-semibold text-slate-900">{lead?.name}</p>
-                  <p className="text-xs font-bold text-slate-800 mt-1">{fmt(total)}</p>
-                </div>
+          {/* Payment Link Notice */}
+          <div
+            className={`flex items-start gap-2 p-2.5 rounded-lg border text-xs ${
+              hasPayLink
+                ? 'bg-emerald-50 border-emerald-200/60 text-emerald-800'
+                : 'bg-amber-50 border-amber-200/60 text-amber-800'
+            }`}
+          >
+            {hasPayLink ? (
+              <>
+                <CreditCard className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+                <span>
+                  Includes a <span className="font-semibold">{activeMethodLabel || 'online'}</span> pay link and the PDF.
+                </span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" aria-hidden="true" />
+                <span>
+                  PDF only — no payment method connected, so they can&apos;t pay online.{' '}
+                  <a
+                    href={`/${company?.slug || ''}/admin/settings#billing`}
+                    className="font-semibold underline hover:opacity-80 transition-opacity"
+                  >
+                    Set one up
+                  </a>
+                </span>
+              </>
+            )}
+          </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">
-                    Due Date
-                  </label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white outline-none focus:border-blue-500 transition-colors"
-                  />
-                </div>
-
-                {isPartial && (
-                  <div className="p-2.5 bg-emerald-50 border border-emerald-200/60 rounded-lg text-xs text-emerald-800">
-                    {fmt(paidAmount)} collected. Balance due: {fmt(total - paidAmount)}.
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
+          {/* Due Date Input */}
+          <div>
+            <label htmlFor="modal-due-date" className="block text-xs font-medium text-slate-600 mb-1">
+              Due date <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                id="modal-due-date"
+                type="date"
+                value={dueDate || ''}
+                disabled={sending}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium focus:bg-white focus:ring-2 focus:ring-blue-500/20 outline-none focus:border-blue-500 transition-all disabled:opacity-50"
+              />
+              {dueDate && (
                 <button
-                  onClick={() => setShowSendConfirm(false)}
+                  type="button"
+                  onClick={() => setDueDate('')}
                   disabled={sending}
-                  className="flex-1 py-2 px-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                  className="px-2.5 py-2 text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-50"
                 >
-                  Cancel
+                  Clear
                 </button>
-                <button
-                  onClick={handleSendInvoice}
-                  disabled={sending}
-                  className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  {sending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Confirm & Send'}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              )}
+            </div>
+          </div>
+
+          {/* Partial Payment Notice */}
+          {isPartial && (
+            <div className="p-2.5 bg-emerald-50 border border-emerald-200/60 rounded-lg text-xs text-emerald-800 font-medium">
+              {fmt ? fmt(paidAmount || 0) : `$${paidAmount || 0}`} collected. Balance due:{' '}
+              {fmt ? fmt((total || 0) - (paidAmount || 0)) : `$${(total || 0) - (paidAmount || 0)}`}.
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setShowSendConfirm(false)}
+            disabled={sending}
+            className="flex-1 py-2 px-3 border border-slate-200 text-slate-600 font-semibold text-xs rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={handleSendInvoice}
+            disabled={sending}
+            className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white font-semibold text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            {sending ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                <span>Sending...</span>
+              </>
+            ) : (
+              'Confirm & Send'
+            )}
+          </button>
+        </div>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* RECORD PAYMENT MODAL */}
       <AnimatePresence>

@@ -1,5 +1,26 @@
 'use client';
 
+/** True if the color is so dark that text set in it disappears on a dark background. */
+function isColorTooDark(hex: string): boolean {
+  let c = hex.trim().replace('#', '');
+  if (c.length === 3) c = c.split('').map((ch) => ch + ch).join('');
+
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return false;
+
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.25;
+}
+
+const fmtCompact = (n: number) =>
+  new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 0,
+  }).format(n);
+
 export default function DashboardStats({
   globalStats,
   allLeads,
@@ -11,126 +32,93 @@ export default function DashboardStats({
   isDark: boolean;
   accentColor?: string;
 }) {
-  const fmtCompact = (n: number) =>
-    new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      notation: 'compact',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(n);
-
-  const leadsCount = globalStats?.total_leads ?? allLeads.length;
-  const activeCount =
-    globalStats?.active_jobs ??
-    allLeads.filter((l) => !['completed', 'cancelled', 'lost'].includes(l.status)).length;
   const revenue = globalStats?.revenue ?? 0;
   const pending = globalStats?.pending ?? 0;
 
-  // Check if hex is too dark to render text over a dark mode background
-  const isColorTooDark = (hex: string): boolean => {
-    let c = hex.trim().replace('#', '');
-    if (c.length === 3) {
-      c = c.split('').map((ch) => ch + ch).join('');
-    }
-    const r = parseInt(c.substring(0, 2), 16);
-    const g = parseInt(c.substring(2, 4), 16);
-    const b = parseInt(c.substring(4, 6), 16);
-    if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return false;
-    const luma = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luma < 0.25; // Returns true if color is black or very dark
-  };
-
-  const colorIsDark = isColorTooDark(accentColor);
-
-  // Safe fallback color logic
-  const getHighlightTextColor = () => {
-    if (isDark && colorIsDark) return '#ffffff'; // Fallback to white text on dark mode if accent is black
-    if (!isDark && !colorIsDark) return accentColor;
-    return accentColor;
-  };
-
-  const getHighlightAccentBg = () => {
-    if (isDark && colorIsDark) return '#ffffff'; // Top bar & dot fallback in dark mode
-    return accentColor;
-  };
-
-  const highlightTextColor = getHighlightTextColor();
-  const highlightAccentBg = getHighlightAccentBg();
-
   const stats = [
-    { label: 'LEADS', value: leadsCount, highlight: false, isRevenue: false },
-    { label: 'ACTIVE', value: activeCount, highlight: false, isRevenue: false },
-    { label: 'REVENUE', value: fmtCompact(revenue), highlight: false, isRevenue: true },
-    { label: 'PENDING', value: fmtCompact(pending), highlight: pending > 0, isRevenue: false },
+    {
+      label: 'Leads',
+      value: globalStats?.total_leads ?? allLeads.length,
+      tone: 'default' as const,
+    },
+    {
+      label: 'Active',
+      value:
+        globalStats?.active_jobs ??
+        allLeads.filter((l) => !['completed', 'cancelled', 'lost'].includes(l.status)).length,
+      tone: 'default' as const,
+    },
+    { label: 'Revenue', value: fmtCompact(revenue), tone: 'revenue' as const },
+    {
+      label: 'Pending',
+      value: fmtCompact(pending),
+      tone: pending > 0 ? ('highlight' as const) : ('default' as const),
+    },
   ];
 
+  // A near-black accent is invisible on the dark theme, so fall back to white.
+  const accent = isDark && isColorTooDark(accentColor) ? '#ffffff' : accentColor;
+
+  const cardBase =
+    'relative overflow-hidden rounded-xl border px-3.5 py-2.5 backdrop-blur-md min-w-0 flex-1 lg:flex-none lg:min-w-[150px]';
+  const cardTone = isDark
+    ? 'bg-[#0A0C14]/60 border-white/5'
+    : 'bg-white/80 border-slate-200/80 shadow-xs';
+  const cardHighlight = isDark
+    ? 'bg-[#0A0C14]/80 shadow-[0_4px_20px_rgba(0,0,0,0.2)]'
+    : 'bg-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.03)]';
+
   return (
-    <section className="relative grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-5 w-full">
-      {stats.map((s, i) => (
-        <div
-          key={i}
-          className={`relative overflow-hidden rounded-2xl px-3.5 py-3 sm:px-4 sm:py-3.5 transition-all backdrop-blur-md min-w-0 border ${
-            s.highlight
-              ? isDark
-                ? 'bg-[#0A0C14]/80 shadow-[0_4px_20px_rgba(0,0,0,0.2)]'
-                : 'bg-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.03)]'
-              : isDark
-              ? 'bg-[#0A0C14]/60 border-white/5'
-              : 'bg-white/80 border-slate-200/80 shadow-xs'
-          }`}
-          style={{
-            borderColor: s.highlight ? `${highlightAccentBg}60` : undefined,
-          }}
-        >
-          {/* Subtle Top Accent Bar for Pending/Highlighted Card */}
-          {s.highlight && (
-            <div
-              className="absolute top-0 inset-x-0 h-0.5"
-              style={{ backgroundColor: highlightAccentBg }}
-            />
-          )}
+    // 2-up on mobile, natural-width row from lg so it doesn't stretch across
+    // a wide screen.
+    <section className="mb-4 grid w-full grid-cols-2 gap-2 sm:mb-5 sm:gap-2.5 lg:flex lg:w-auto lg:items-center">
+      {stats.map((s) => {
+        const isHighlight = s.tone === 'highlight';
 
-          <div className="flex items-center justify-between gap-1 mb-1">
-            <p
-              className={`text-[10px] font-extrabold uppercase tracking-wider truncate ${
-                s.highlight
-                  ? isDark
-                    ? 'text-white'
-                    : 'text-slate-900'
-                  : isDark
-                  ? 'text-slate-400'
-                  : 'text-slate-500'
-              }`}
-            >
-              {s.label}
-            </p>
-
-            {s.highlight && (
+        return (
+          <div
+            key={s.label}
+            className={`${cardBase} ${isHighlight ? cardHighlight : cardTone}`}
+            style={isHighlight ? { borderColor: `${accent}60` } : undefined}
+          >
+            {isHighlight && (
               <span
-                className="w-1.5 h-1.5 rounded-full shrink-0 animate-pulse"
-                style={{ backgroundColor: highlightAccentBg }}
+                className="absolute inset-x-0 top-0 h-0.5"
+                style={{ backgroundColor: accent }}
               />
             )}
-          </div>
 
-          <p
-            className={`font-black tracking-tight tabular-nums leading-none truncate ${
-              s.isRevenue
-                ? 'text-emerald-500'
-                : isDark
-                ? 'text-white'
-                : 'text-slate-900'
-            }`}
-            style={{
-              fontSize: 'clamp(1.125rem, 2.5vw, 1.5rem)',
-              color: s.highlight ? highlightTextColor : undefined,
-            }}
-          >
-            {s.value}
-          </p>
-        </div>
-      ))}
+            <div className="flex min-w-0 items-center gap-1.5">
+              <p
+                className={`truncate text-[10px] font-extrabold uppercase tracking-wider ${
+                  isHighlight
+                    ? isDark ? 'text-white' : 'text-slate-900'
+                    : isDark ? 'text-slate-400' : 'text-slate-500'
+                }`}
+              >
+                {s.label}
+              </p>
+              {isHighlight && (
+                <span
+                  className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full"
+                  style={{ backgroundColor: accent }}
+                />
+              )}
+            </div>
+
+            <p
+              className={`mt-0.5 truncate text-base font-black leading-snug tracking-tight tabular-nums sm:text-lg ${
+                s.tone === 'revenue'
+                  ? 'text-emerald-500'
+                  : isDark ? 'text-white' : 'text-slate-900'
+              }`}
+              style={isHighlight ? { color: accent } : undefined}
+            >
+              {s.value}
+            </p>
+          </div>
+        );
+      })}
     </section>
   );
 }
