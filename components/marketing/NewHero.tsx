@@ -212,62 +212,62 @@ export default function Hero() {
 
           {/* 4. COMPACT FEATURE GRID (Mobile: 2 Columns | Desktop: 5 Columns) */}
           <div className="order-4 lg:col-span-12 w-full mt-2 lg:mt-6">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
-              className="rounded-2xl sm:rounded-3xl bg-slate-900/80 border border-white/10 p-5 sm:p-8 backdrop-blur-md shadow-2xl relative overflow-hidden"
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-8 pb-4 sm:pb-6 border-b border-white/10 relative z-10">
-                <div>
-                  <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
-                    Everything you need to run your business
-                  </h2>
-                  <p className="text-xs sm:text-sm font-bold text-slate-400 mt-0.5 sm:mt-1">
-                    Built specifically to handle job flow, estimates, and customer payments in one place.
-                  </p>
-                </div>
+  <motion.div
+    initial={{ opacity: 0, scale: 0.96, y: 20 }}
+    animate={{ opacity: 1, scale: 1, y: 0 }}
+    transition={{ delay: 0.3, type: 'spring', stiffness: 120 }}
+    className="rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 p-5 sm:p-8 shadow-xl shadow-slate-200/50 relative overflow-hidden text-left"
+  >
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 mb-5 sm:mb-8 pb-4 sm:pb-6 border-b border-slate-100 relative z-10">
+      <div>
+        <h2 className="text-xl sm:text-3xl font-black text-slate-900 tracking-tight">
+          Everything you need to run your business
+        </h2>
+        <p className="text-xs sm:text-sm font-bold text-slate-500 mt-0.5 sm:mt-1">
+          Built specifically to handle job flow, estimates, and customer payments in one place.
+        </p>
+      </div>
 
-                <span className="text-[10px] sm:text-xs font-black text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full self-start md:self-auto shrink-0 uppercase tracking-wider">
-                  Zero extra apps needed
-                </span>
-              </div>
+      <span className="text-[10px] sm:text-xs font-black text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full self-start md:self-auto shrink-0 uppercase tracking-wider">
+        Zero extra apps needed
+      </span>
+    </div>
 
-              {/* 2 columns on mobile (grid-cols-2), 3 on tablet, 5 on desktop */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3.5 relative z-10">
-                {[
-                  { title: 'Track jobs', desc: 'Real-time board overview', icon: <LayoutDashboard size={16} /> },
-                  { title: 'Schedule jobs', desc: 'Automatic calendar sync', icon: <CalendarDays size={16} /> },
-                  { title: 'Instant estimates', desc: 'Send & approve in seconds', icon: <FileText size={16} /> },
-                  { title: 'Branded invoices', desc: 'Get paid faster online', icon: <CreditCard size={16} /> },
-                  { title: 'Google reviews', desc: 'Automate review invites', icon: <Sparkles size={16} />, fullMobile: true },
-                ].map((feat) => (
-                  <div
-                    key={feat.title}
-                    className={`flex flex-col justify-between bg-white/[0.03] border border-white/10 hover:border-emerald-500/40 hover:bg-white/[0.06] p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all group duration-200 ${
-                      feat.fullMobile ? 'col-span-2 sm:col-span-1' : ''
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2 sm:mb-3">
-                      <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-500 group-hover:text-white transition-all shadow-md">
-                        {feat.icon}
-                      </div>
-                      <Check size={14} className="text-emerald-400 opacity-60 group-hover:opacity-100 transition-opacity" />
-                    </div>
-
-                    <div>
-                      <span className="block text-xs sm:text-sm font-black text-white leading-tight group-hover:text-emerald-300 transition-colors">
-                        {feat.title}
-                      </span>
-                      <span className="block text-[10px] sm:text-[11px] font-bold text-slate-400 mt-0.5 sm:mt-1">
-                        {feat.desc}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
+    {/* 2 columns on mobile (grid-cols-2), 3 on tablet, 5 on desktop */}
+    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-2.5 sm:gap-3.5 relative z-10">
+      {[
+        { title: 'Track jobs', desc: 'Real-time board overview', icon: <LayoutDashboard size={16} /> },
+        { title: 'Schedule jobs', desc: 'Automatic calendar sync', icon: <CalendarDays size={16} /> },
+        { title: 'Instant estimates', desc: 'Send & approve in seconds', icon: <FileText size={16} /> },
+        { title: 'Branded invoices', desc: 'Get paid faster online', icon: <CreditCard size={16} /> },
+        { title: 'Google reviews', desc: 'Automate review invites', icon: <Sparkles size={16} />, fullMobile: true },
+      ].map((feat) => (
+        <div
+          key={feat.title}
+          className={`flex flex-col justify-between bg-slate-50/70 border border-slate-200/60 hover:border-emerald-500/50 hover:bg-slate-50 p-3 sm:p-4 rounded-xl sm:rounded-2xl transition-all group duration-200 ${
+            feat.fullMobile ? 'col-span-2 sm:col-span-1' : ''
+          }`}
+        >
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-emerald-100/70 border border-emerald-200 text-emerald-700 flex items-center justify-center group-hover:scale-110 group-hover:bg-emerald-600 group-hover:text-white transition-all shadow-sm">
+              {feat.icon}
+            </div>
+            <Check size={14} className="text-emerald-600 opacity-60 group-hover:opacity-100 transition-opacity" />
           </div>
+
+          <div>
+            <span className="block text-xs sm:text-sm font-black text-slate-900 leading-tight group-hover:text-emerald-700 transition-colors">
+              {feat.title}
+            </span>
+            <span className="block text-[10px] sm:text-[11px] font-bold text-slate-500 mt-0.5 sm:mt-1">
+              {feat.desc}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  </motion.div>
+</div>
 
         </div>
       </div>

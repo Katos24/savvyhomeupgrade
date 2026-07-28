@@ -12,7 +12,6 @@ const TABS: { key: FaqTabKey; label: string; icon: React.ElementType }[] = [
   { key: 'pipeline', label: 'Leads & Board', icon: Kanban },
   { key: 'categories', label: 'Categories & Quotes', icon: Tags },
   { key: 'emails', label: 'Emails & Outbox', icon: Mail },
-  { key: 'ai', label: 'AI Tools', icon: Sparkles },
   { key: 'data', label: 'Data & Export', icon: Download },
 ];
 
