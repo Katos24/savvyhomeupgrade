@@ -75,6 +75,7 @@ export default function DashboardFilters({
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const isScheduledTodayActive = timeFilter === 'scheduled_today';
+  const isUnpaidActive = filterPayment === 'unpaid';
   const buttonTextColor = getContrastTextColor(accentColor);
 
   return (
@@ -204,22 +205,22 @@ export default function DashboardFilters({
               : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50 shadow-xs'
           }`}
         >
-          <Clock className="w-3.5 h-3.5 text-emerald-500" />
+          <Clock className={`w-3.5 h-3.5 ${isScheduledTodayActive ? 'text-white' : 'text-emerald-500'}`} />
           <span className="hidden sm:inline">Scheduled Today</span>
           <span className="sm:hidden">Today</span>
         </button>
 
         <button
-          onClick={() => setFilterPayment(filterPayment === 'unpaid' ? 'all' : 'unpaid')}
+          onClick={() => setFilterPayment(isUnpaidActive ? 'all' : 'unpaid')}
           className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
-            filterPayment === 'unpaid'
+            isUnpaidActive
               ? 'bg-rose-500 text-white border-rose-500 shadow-xs'
               : isDark
               ? 'bg-[#0A0C14]/60 border-white/10 text-slate-300 hover:bg-white/10'
               : 'bg-white border-slate-200/90 text-slate-700 hover:bg-slate-50 shadow-xs'
           }`}
         >
-          <DollarSign className="w-3.5 h-3.5 text-rose-500" />
+          <DollarSign className={`w-3.5 h-3.5 ${isUnpaidActive ? 'text-white' : 'text-rose-500'}`} />
           Unpaid
         </button>
 

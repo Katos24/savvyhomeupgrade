@@ -66,6 +66,17 @@ function getContrastTextColor(inputHex: string): string {
   return luma > 0.6 ? '#0f172a' : '#ffffff';
 }
 
+// Helper: Format created_at date cleanly
+function formatCreatedDate(dateString?: string | Date): string {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+}
+
 // Helper state resolution
 function getQuoteStep(lead: any): Step {
   const amount =
@@ -74,13 +85,13 @@ function getQuoteStep(lead: any): Step {
       : undefined;
 
   if (lead.project_quote_accepted_at || lead.quote_accepted_at) {
-    return { state: 'success', label: 'Accepted', sublabel: amount };
+    return { state: 'success', label: 'Accepted' };
   }
   if (lead.project_quote_declined_at || lead.quote_declined_at) {
-    return { state: 'error', label: 'Declined', sublabel: amount };
+    return { state: 'error', label: 'Declined' };
   }
   if (lead.project_quote_sent_at || lead.quote_sent_at) {
-    return { state: 'active', label: 'Sent', sublabel: amount };
+    return { state: 'active', label: 'Sent'};
   }
   return { state: 'empty', label: 'Not sent' };
 }
@@ -309,6 +320,7 @@ export default function CardsView({
           const badgeTextColor = getContrastTextColor(statusHex);
           const isCompleted = lead.status === 'completed';
           const hasPhotos = Array.isArray(lead.file_urls) && lead.file_urls.length > 0;
+          const createdDate = formatCreatedDate(lead.created_at);
           const quoteAmount =
             lead.quote_total && parseFloat(lead.quote_total) > 0
               ? parseFloat(lead.quote_total).toLocaleString()
@@ -332,6 +344,19 @@ export default function CardsView({
               />
 
               <div className="pl-4 pr-3.5 py-3.5">
+                {/* Created Date Top Right */}
+                {createdDate && (
+                  <div className="flex justify-end mb-1">
+                    <span
+                      className={`text-[10px] font-semibold tracking-tight ${
+                        isDark ? 'text-slate-400' : 'text-slate-500'
+                      }`}
+                    >
+                      {createdDate}
+                    </span>
+                  </div>
+                )}
+
                 {/* Header: Name + Follow up + Price */}
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <div className="min-w-0 flex-1">
@@ -412,6 +437,7 @@ export default function CardsView({
           const statusHex = getStatusColorHex(statusConfig.color);
           const isCompleted = lead.status === 'completed';
           const hasPhotos = Array.isArray(lead.file_urls) && lead.file_urls.length > 0;
+          const createdDate = formatCreatedDate(lead.created_at);
           const quoteAmount =
             lead.quote_total && parseFloat(lead.quote_total) > 0
               ? parseFloat(lead.quote_total).toLocaleString()
@@ -433,7 +459,7 @@ export default function CardsView({
               <div className="w-full h-1 shrink-0" style={{ backgroundColor: statusHex }} />
 
               <div className="flex flex-1 flex-col p-5">
-                {/* Status Bar */}
+                {/* Status Bar + Created Date */}
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-1.5">
                     <span
@@ -449,11 +475,23 @@ export default function CardsView({
                     </span>
                   </div>
 
-                  {lead.follow_up_date && (
-                    <span className="flex items-center gap-1 text-[10px] font-black text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full">
-                      <Bell className="w-3 h-3 fill-rose-500/30" /> Follow Up
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {lead.follow_up_date && (
+                      <span className="flex items-center gap-1 text-[10px] font-black text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-full">
+                        <Bell className="w-3 h-3 fill-rose-500/30" /> Follow Up
+                      </span>
+                    )}
+
+                    {createdDate && (
+                      <span
+                        className={`text-[10px] font-semibold tracking-tight ${
+                          isDark ? 'text-slate-400' : 'text-slate-500'
+                        }`}
+                      >
+                        {createdDate}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Lead Name & Value */}

@@ -427,21 +427,122 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || filterAssignee !== 'all'
     || filterPayment !== 'all' || timeFilter !== 'all' || !!startDate || !!endDate || !!searchQuery;
 
+ 
+
   // -------------------------------------------------------------------------
-  // Loading screen
+  // Modern Branded Loading Screen with Contrast-Aware Text & Logo
   // -------------------------------------------------------------------------
+
+  const brandColor1 = company.email_brand_color_1 || '#2563eb';
+  const brandColor2 = company.email_brand_color_2 || '#4f46e5';
+
+  // Helper to determine if a hex color is dark (returns true if dark, false if light)
+  const isColorDark = (hex: string) => {
+    const cleanHex = hex.replace('#', '');
+    if (cleanHex.length !== 6) return true; // fallback safe
+    const r = parseInt(cleanHex.substring(0, 2), 16);
+    const g = parseInt(cleanHex.substring(2, 4), 16);
+    const b = parseInt(cleanHex.substring(4, 6), 16);
+    // Standard relative luminance formula
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    return luminance < 0.5;
+  };
+
+  const isBrand1Dark = isColorDark(brandColor1);
+  const isBrand2Dark = isColorDark(brandColor2);
 
   if (isInitialLoad) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center"
-        style={{ background: isDark ? 'linear-gradient(to bottom right, #1e293b, #0f172a, #020617)' : '#f8fafc' }}
+        className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-colors ${
+          isDark ? 'bg-[#0b0f17]' : 'bg-slate-50'
+        }`}
         role="status"
         aria-label="Loading dashboard"
       >
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-500 mx-auto mb-4" aria-hidden />
-          <p className="text-white text-lg font-semibold tracking-tight">Loading dashboard...</p>
+        {/* Ambient Glow Orbs */}
+        <div
+          className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-35 animate-pulse"
+          style={{ background: brandColor1 }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-25 animate-pulse"
+          style={{ background: brandColor2, animationDelay: '1s' }}
+          aria-hidden="true"
+        />
+
+        {/* Glassmorphic Loading Card */}
+        <div
+          className={`relative z-10 flex flex-col items-center p-8 sm:p-10 rounded-3xl border backdrop-blur-xl transition-all shadow-2xl ${
+            isDark
+              ? 'bg-slate-900/70 border-slate-800/80 shadow-black/50'
+              : 'bg-white/80 border-slate-200/80 shadow-slate-200/60'
+          }`}
+        >
+          {/* Logo Container with Orbit Spinner */}
+          <div className="relative flex items-center justify-center mb-6">
+            {/* Ambient Logo Glow */}
+            <div
+              className="absolute w-20 h-20 rounded-full blur-xl opacity-40 animate-pulse"
+              style={{ background: `radial-gradient(circle, ${brandColor1}, ${brandColor2})` }}
+            />
+
+            {/* Orbiting Spinner Ring around Logo */}
+            <div className="absolute inset-0 -m-3.5 flex items-center justify-center">
+              <Loader2
+                className="w-20 h-20 animate-spin opacity-85"
+                style={{ color: brandColor1 }}
+                aria-hidden
+              />
+            </div>
+
+            {/* Company Logo / Fallback Avatar */}
+            <div
+              className={`relative z-10 w-14 h-14 rounded-2xl p-2 flex items-center justify-center overflow-hidden border shadow-inner ${
+                isDark ? 'bg-slate-900/90 border-slate-700/60' : 'bg-white border-slate-200'
+              }`}
+            >
+              {company.logo_url ? (
+                <img
+                  src={company.logo_url}
+                  alt={company.name}
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              ) : (
+                /* Fallback initial with dynamic high-contrast text color */
+                <div
+                  className="w-full h-full rounded-xl flex items-center justify-center font-bold text-xl uppercase tracking-wider shadow-sm"
+                  style={{
+                    background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})`,
+                    color: isBrand1Dark && isBrand2Dark ? '#ffffff' : '#0f172a',
+                  }}
+                >
+                  {company.name?.charAt(0) || 'C'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Typography */}
+          <p
+            className={`text-base font-semibold tracking-wide ${
+              isDark ? 'text-slate-100' : 'text-slate-900'
+            }`}
+          >
+            Loading dashboard
+          </p>
+
+          {/* Contrast-Aware Brand Subtitle Pill */}
+          <div
+            className="mt-2.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase shadow-xs transition-colors"
+            style={{
+              backgroundColor: brandColor1,
+              color: isBrand1Dark ? '#ffffff' : '#0f172a',
+            }}
+          >
+            {company.name}
+          </div>
         </div>
       </div>
     );
