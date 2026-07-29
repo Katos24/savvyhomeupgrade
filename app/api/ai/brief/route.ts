@@ -93,7 +93,7 @@ const teamRes = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/team/members
     async function callClaude(params: Omit<Anthropic.MessageCreateParamsNonStreaming, 'model'>): Promise<Anthropic.Message> {
       try {
         return await callWithTimeout(() =>
-          anthropic.messages.create({ ...params, model: 'claude-sonnet-4-20250514' })
+          anthropic.messages.create({ ...params,    model: 'claude-sonnet-5' })
         );
       } catch (err: any) {
         const isRetryable = err?.status === 529 || err?.status === 429 || err?.message?.includes('529') || err?.message?.includes('overloaded') || err?.message?.includes('rate_limit');

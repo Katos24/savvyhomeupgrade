@@ -138,7 +138,7 @@ async function callClaudeWithRetry(
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
       return await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+           model: 'claude-sonnet-5',
         max_tokens: 1000,
         messages: [{ role: 'user', content: messageContent }],
       });
@@ -275,11 +275,20 @@ async function processQuoteJob(jobId: string, sql: any, anthropic: Anthropic) {
 
     const message = await callClaudeWithRetry(anthropic, messageContent);
 
-    const content = message.content[0];
-    if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
+    // Filter by type rather than assuming index 0 — models can return a
+    // thinking block ahead of the text block.
+    const text = message.content
+      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .map(b => b.text)
+      .join('');
+
+    if (!text) {
+      console.error('No text block in response. Blocks:', message.content.map(b => b.type));
+      throw new Error('Unexpected response type from Claude');
+    }
 
     // Parse and validate
-    const clean = content.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const clean = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     let items: any[];
     try {
       items = JSON.parse(clean);
