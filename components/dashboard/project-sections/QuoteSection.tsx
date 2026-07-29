@@ -683,7 +683,7 @@ export default function QuoteSection({
         {/* ── TOTALS + ACTIONS ──
              Light instead of near-black: the dark bar paired visually with the
              modal header and made the item list look like a gap between them. */}
-        <div className="sticky bottom-0 z-20 border-t border-gray-200 bg-white/95 backdrop-blur-sm md:relative">
+        <div className="sticky bottom-0 z-20 border-t border-gray-200 bg-gray-50/95 backdrop-blur-sm md:relative">
           <div className="px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <div className="flex items-center gap-5 min-w-0">
               <div className="min-w-0">
@@ -716,7 +716,7 @@ export default function QuoteSection({
                   key={total}
                   initial={{ opacity: 0, y: -3 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="text-2xl font-semibold text-gray-900 tabular-nums leading-tight whitespace-nowrap"
+                  className="text-2xl font-semibold text-emerald-600 tabular-nums leading-tight whitespace-nowrap"
                 >
                   {fmt(total)}
                 </motion.p>
