@@ -169,10 +169,17 @@ ${leadsContext}`;
         messages,
       });
 
-      const replyContent = chatResponse.content[0];
-      if (replyContent.type !== 'text') throw new Error('Unexpected response type');
+      const replyText = chatResponse.content
+        .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+        .map(b => b.text)
+        .join('');
 
-      return NextResponse.json({ success: true, reply: replyContent.text });
+      if (!replyText) {
+        console.error('No text block. Blocks:', chatResponse.content.map(b => b.type));
+        throw new Error('Unexpected response type');
+      }
+
+      return NextResponse.json({ success: true, reply: replyText });
     }
 
     // ── Build text context ──
@@ -334,13 +341,22 @@ CRITICAL: Respond with ONLY the raw JSON object below. No markdown. No code fenc
       messages: [{ role: 'user', content: messageContent }],
     });
 
-    const content = message.content[0];
-    if (content.type !== 'text') throw new Error('Unexpected response type');
+    // Filter by type rather than assuming index 0 — models can return a
+    // thinking block ahead of the text block.
+    const responseText = message.content
+      .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+      .map(b => b.text)
+      .join('');
+
+    if (!responseText) {
+      console.error('No text block. Blocks:', message.content.map(b => b.type));
+      throw new Error('Unexpected response type');
+    }
 
     let brief;
    try {
   // Extract only the JSON object — ignore any markdown or prose before/after
-  const raw = content.text;
+  const raw = responseText;
   const start = raw.indexOf('{');
   const end = raw.lastIndexOf('}');
   if (start === -1 || end === -1) throw new Error('No JSON object found in response');
@@ -352,7 +368,7 @@ CRITICAL: Respond with ONLY the raw JSON object below. No markdown. No code fenc
       brief.has_photos = validPhotos.length > 0;
       if (scheduled_date) brief.scheduled = { date: scheduled_date, time: scheduled_time };
     } catch {
-      brief = { headline: "Error", summary: content.text };
+      brief = { headline: "Error", summary: responseText };
     }
 
     return NextResponse.json({ success: true, brief });
