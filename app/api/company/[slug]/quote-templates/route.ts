@@ -136,33 +136,37 @@ export async function POST(
     /* ── create ──
        Upsert on (company_id, category): the UI allows one template per
        category, so a double-submit should update rather than 409. */
-    if (action === 'create') {
-      if (!template?.id || !template?.category) {
-        return NextResponse.json({ success: false, error: 'Missing template id or category' }, { status: 400 });
-      }
+  if (action === 'create') {
+  if (!template?.id || !template?.category) {
+    return NextResponse.json({ success: false, error: 'Missing template id or category' }, { status: 400 });
+  }
 
-      await sql`
-        INSERT INTO quote_templates (id, company_id, category, items, tax_rate, total)
-        VALUES (
-          ${template.id},
-          ${companyId},
-          ${template.category},
-          ${JSON.stringify(template.items ?? [])}::jsonb,
-          ${Number(template.tax_rate) || 0},
-          ${Number(template.total) || 0}
-        )
-        ON CONFLICT (company_id, category) DO UPDATE SET
-          items    = EXCLUDED.items,
-          tax_rate = EXCLUDED.tax_rate,
-          total    = EXCLUDED.total
-      `;
+  await sql`
+    INSERT INTO quote_templates (id, company_id, category, items, tax_rate, total, deposit_type, deposit_value)
+    VALUES (
+      ${template.id},
+      ${companyId},
+      ${template.category},
+      ${JSON.stringify(template.items ?? [])}::jsonb,
+      ${Number(template.tax_rate) || 0},
+      ${Number(template.total) || 0},
+      ${template.deposit_type || null},
+      ${template.deposit_value ?? null}
+    )
+    ON CONFLICT (company_id, category) DO UPDATE SET
+      items         = EXCLUDED.items,
+      tax_rate      = EXCLUDED.tax_rate,
+      total         = EXCLUDED.total,
+      deposit_type  = EXCLUDED.deposit_type,
+      deposit_value = EXCLUDED.deposit_value
+  `;
 
-      return NextResponse.json({
-        success: true,
-        message: 'Template created',
-        templates: await loadTemplates(companyId),
-      });
-    }
+  return NextResponse.json({
+    success: true,
+    message: 'Template created',
+    templates: await loadTemplates(companyId),
+  });
+}
 
     /* ── update ──
        Scoped by company_id so an id from another tenant can't be touched. */

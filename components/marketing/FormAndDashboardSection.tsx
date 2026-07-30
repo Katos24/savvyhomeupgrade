@@ -79,7 +79,7 @@ type Theme = {
 
 const TRADE_THEMES: Record<string, Theme> = {
   Roofing: {
-    sectionBg: 'bg-gradient-to-br from-orange-50/50 via-white to-slate-100/80 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-orange-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
     accent: '#f97316',
     textAccent: '#c2410c',
     cardBorder: 'border-orange-500/20',
@@ -88,7 +88,7 @@ const TRADE_THEMES: Record<string, Theme> = {
     icon: Home,
   },
   HVAC: {
-    sectionBg: 'bg-gradient-to-br from-sky-50/50 via-white to-slate-100/80 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-sky-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
     accent: '#0284c7',
     textAccent: '#0369a1',
     cardBorder: 'border-sky-500/20',
@@ -97,7 +97,7 @@ const TRADE_THEMES: Record<string, Theme> = {
     icon: Flame,
   },
   Plumbing: {
-    sectionBg: 'bg-gradient-to-br from-emerald-50/50 via-white to-slate-100/80 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-emerald-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
     accent: '#059669',
     textAccent: '#047857',
     cardBorder: 'border-emerald-500/20',
@@ -106,7 +106,7 @@ const TRADE_THEMES: Record<string, Theme> = {
     icon: Droplet,
   },
   Electrical: {
-    sectionBg: 'bg-gradient-to-br from-amber-50/50 via-white to-slate-100/80 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-amber-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
     accent: '#d97706',
     textAccent: '#b45309',
     cardBorder: 'border-amber-500/20',
@@ -115,7 +115,7 @@ const TRADE_THEMES: Record<string, Theme> = {
     icon: Zap,
   },
   Solar: {
-    sectionBg: 'bg-gradient-to-br from-teal-50/50 via-white to-slate-100/80 text-slate-900',
+    sectionBg: 'bg-gradient-to-br from-teal-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
     accent: '#0d9488',
     textAccent: '#0f766e',
     cardBorder: 'border-teal-500/20',
@@ -204,33 +204,18 @@ export default function FormAndDashboardSection() {
   return (
     <section
       style={{ fontFamily: font }}
-      className={`relative py-12 sm:py-20 lg:py-24 transition-colors duration-700 ease-in-out overflow-hidden border-t border-b border-slate-200 ${theme.sectionBg}`}
+      className={`relative py-20 sm:py-28 lg:py-36 transition-colors duration-700 ease-in-out overflow-hidden border-t border-b border-slate-200/80 ${theme.sectionBg}`}
     >
       {/* Dynamic Background Watermark */}
-      <div className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 pointer-events-none opacity-[0.035] transition-all duration-700">
-        <BackgroundTradeIcon className="w-[380px] h-[380px] lg:w-[520px] lg:h-[520px] text-slate-900" strokeWidth={1} />
+      <div className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 pointer-events-none opacity-[0.03] transition-all duration-700">
+        <BackgroundTradeIcon className="w-[450px] h-[450px] lg:w-[600px] lg:h-[600px] text-slate-900" strokeWidth={1} />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        {/* Section Title */}
-        <div className="text-center max-w-2xl mx-auto">
-          <p className="text-[10px] font-black tracking-[0.2em] text-slate-500 uppercase mb-2.5">
-            Interactive Product Demo
-          </p>
-          <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-            See your brand on mobile.
-            <span className="block mt-1 sm:mt-2 transition-colors duration-500" style={{ color: theme.textAccent }}>
-              Watch leads land live on board.
-            </span>
-          </h2>
-          <p className="mt-3 text-slate-600 font-semibold text-xs sm:text-base leading-relaxed">
-            Select a trade below, submit the form inside the phone mockup, and watch the lead appear instantly on the dispatch dashboard.
-          </p>
-        </div>
+      <div className="relative z-10 mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
 
         {/* ── Trade Selector Bar ──────────────────────── */}
-        <div className="mt-6 sm:mt-8 mb-6 sm:mb-10 flex justify-center">
-          <div className="inline-flex items-center gap-1 p-1.5 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur-md shadow-sm max-w-full overflow-x-auto no-scrollbar">
+        <div className="mb-12 sm:mb-16 flex justify-center">
+          <div className="inline-flex items-center gap-2 p-2 rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-md shadow-sm max-w-full overflow-x-auto no-scrollbar">
             {TOP_TRADES.map((item) => {
               const Icon = item.icon;
               const isSelected = current.trade.toLowerCase() === item.tradeKey.toLowerCase();
@@ -242,13 +227,13 @@ export default function FormAndDashboardSection() {
                   type="button"
                   onClick={() => setActiveExample(tradeIndex !== -1 ? tradeIndex : 0)}
                   aria-pressed={isSelected}
-                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-black tracking-wide transition-all duration-200 shrink-0 ${
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 shrink-0 ${
                     isSelected
                       ? 'bg-slate-900 text-white shadow-md scale-[1.02]'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
                   }`}
                 >
-                  <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
+                  <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </button>
               );
@@ -256,45 +241,55 @@ export default function FormAndDashboardSection() {
           </div>
         </div>
 
-        {/* ── MOBILE TABS TOGGLE (Only visible on screens smaller than lg) ──────────────────────── */}
-        <div className="flex lg:hidden justify-center mb-6">
-          <div className="bg-slate-900/90 p-1 rounded-2xl border border-slate-800 flex items-center gap-1 w-full max-w-[340px] shadow-lg">
+        {/* ── MOBILE TABS TOGGLE (Visible on small screens) ──────────────────────── */}
+        <div className="flex lg:hidden justify-center mb-10">
+          <div className="bg-slate-900/95 p-1.5 rounded-2xl border border-slate-800 flex items-center gap-1.5 w-full max-w-[360px] shadow-xl">
             <button
               type="button"
               onClick={() => setMobileTab('form')}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                 mobileTab === 'form'
                   ? 'bg-white text-slate-950 shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Smartphone size={14} />
+              <Smartphone size={15} />
               <span>1. Mobile Form</span>
             </button>
             <button
               type="button"
               onClick={() => setMobileTab('board')}
-              className={`flex-1 py-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
                 mobileTab === 'board'
                   ? 'bg-emerald-400 text-slate-950 shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <LayoutDashboard size={14} />
+              <LayoutDashboard size={15} />
               <span>2. Live Board</span>
-              {hasSubmitted && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />}
+              {hasSubmitted && <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping" />}
             </button>
           </div>
         </div>
 
-        {/* ── Interactive Grid: Phone Mockup (Left) + Desktop Dashboard (Right) ──────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+        {/* ── Interactive Grid: Form Column (Left) + Desktop Dashboard Column (Right) ──────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           
-          {/* LEFT: PHONE FRAME MOCKUP */}
+          {/* LEFT COLUMN: Header + Phone Frame Mockup */}
           <div className={`lg:col-span-5 flex-col items-center justify-center ${mobileTab === 'form' ? 'flex' : 'hidden lg:flex'}`}>
             
+            {/* Header above Phone Form */}
+            <div className="text-center mb-8">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
+                Customize your form.
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 font-medium mt-2">
+                Brand it with your colors, services, and logo.
+              </p>
+            </div>
+
             {/* Phone Shell */}
-            <div className="relative w-full max-w-[340px] sm:max-w-[360px] rounded-[42px] p-3.5 bg-slate-900 ring-1 ring-slate-800 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.35)] transition-all">
+            <div className="relative w-full max-w-[340px] sm:max-w-[370px] rounded-[48px] p-4 bg-slate-900 ring-1 ring-slate-800 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.3)] transition-all">
               
               {/* Dynamic Notch / Island */}
               <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-950 rounded-full z-30 flex items-center justify-between px-2">
@@ -303,14 +298,14 @@ export default function FormAndDashboardSection() {
               </div>
 
               {/* Phone Screen Container */}
-              <div className="relative w-full rounded-[32px] overflow-hidden bg-slate-50 border border-slate-200 pt-8 pb-4 px-3 flex flex-col min-h-[560px] sm:min-h-[580px] shadow-inner">
+              <div className="relative w-full rounded-[36px] overflow-hidden bg-slate-50 border border-slate-200/80 pt-8 pb-5 px-3.5 flex flex-col min-h-[570px] sm:min-h-[590px] shadow-inner">
                 
                 {/* Phone Status Bar */}
-                <div className="flex items-center justify-between px-2 mb-2 text-[10px] font-extrabold text-slate-800">
+                <div className="flex items-center justify-between px-2 mb-3 text-[10px] font-extrabold text-slate-800">
                   <span>9:41</span>
                   <div className="flex items-center gap-1.5 text-slate-700">
-                    <Wifi size={11} />
-                    <Battery size={12} />
+                    <Wifi size={12} />
+                    <Battery size={13} />
                   </div>
                 </div>
 
@@ -321,23 +316,23 @@ export default function FormAndDashboardSection() {
                     {/* Form Header */}
                     <div>
                       <div
-                        className="rounded-xl p-2.5 flex items-center gap-2 mb-3 shadow-sm text-white transition-colors duration-500"
+                        className="rounded-2xl p-3 flex items-center gap-2.5 mb-3.5 shadow-sm text-white transition-colors duration-500"
                         style={{ backgroundColor: theme.accent }}
                       >
-                        <div className="w-8 h-8 rounded-lg bg-white p-0.5 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
+                        <div className="w-9 h-9 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
                           {current.company?.logo_url ? (
                             <img src={current.company.logo_url} alt="Logo" className="w-full h-full object-contain" />
                           ) : (
-                            <span className="text-xs font-black" style={{ color: theme.accent }}>
+                            <span className="text-sm font-black" style={{ color: theme.accent }}>
                               {current.company?.name?.charAt(0) ?? 'P'}
                             </span>
                           )}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="font-black text-xs truncate leading-tight">
+                          <h4 className="font-black text-xs sm:text-sm truncate leading-tight">
                             {current.company?.name ?? `${current.trade} Pros`}
                           </h4>
-                          <p className="text-[8px] font-extrabold uppercase tracking-widest text-white/80">
+                          <p className="text-[9px] font-extrabold uppercase tracking-widest text-white/80 mt-0.5">
                             Mobile Request Form
                           </p>
                         </div>
@@ -346,11 +341,11 @@ export default function FormAndDashboardSection() {
                       {/* Compact Input Fields */}
                       <div className="space-y-2">
                         <div className="grid grid-cols-2 gap-1.5">
-                          <div className="bg-white p-1.5 rounded-lg border border-slate-200">
+                          <div className="bg-white p-2 rounded-xl border border-slate-200">
                             <label className="text-[8px] font-black uppercase text-slate-400 block">Name</label>
                             <p className="text-[11px] font-bold text-slate-800 truncate">{DEMO_CUSTOMER}</p>
                           </div>
-                          <div className="bg-white p-1.5 rounded-lg border border-slate-200">
+                          <div className="bg-white p-2 rounded-xl border border-slate-200">
                             <label className="text-[8px] font-black uppercase text-slate-400 block">Phone</label>
                             <p className="text-[11px] font-bold text-slate-800 truncate">(555) 382-9102</p>
                           </div>
@@ -361,7 +356,7 @@ export default function FormAndDashboardSection() {
                           <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">
                             Service Needed
                           </label>
-                          <div className="grid grid-cols-2 gap-1">
+                          <div className="grid grid-cols-2 gap-1.5">
                             {serviceOptions.map((opt) => {
                               const isSelected = opt === activeService;
                               return (
@@ -369,7 +364,7 @@ export default function FormAndDashboardSection() {
                                   key={opt}
                                   type="button"
                                   onClick={() => setSelectedService(opt)}
-                                  className="px-2 py-1 rounded-md text-[10px] font-extrabold border transition-all truncate text-left"
+                                  className="px-2 py-1.5 rounded-lg text-[10px] font-extrabold border transition-all truncate text-left"
                                   style={
                                     isSelected
                                       ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
@@ -396,7 +391,7 @@ export default function FormAndDashboardSection() {
                                   key={slot}
                                   type="button"
                                   onClick={() => setTimeWindow(slot)}
-                                  className="py-1 rounded-md text-[9px] font-bold border text-center transition-all"
+                                  className="py-1.5 rounded-lg text-[9px] font-bold border text-center transition-all"
                                   style={
                                     isSelected
                                       ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
@@ -410,29 +405,29 @@ export default function FormAndDashboardSection() {
                           </div>
                         </div>
 
-                        <div className="bg-white p-1.5 rounded-lg border border-slate-200">
+                        <div className="bg-white p-2 rounded-xl border border-slate-200">
                           <label className="text-[8px] font-black uppercase text-slate-400 block">Address</label>
                           <p className="text-[10px] font-bold text-slate-700 truncate">{prefill.address}</p>
                         </div>
 
                         {/* Attachments */}
-                        <div className="bg-white p-1.5 rounded-lg border border-slate-200 flex items-center justify-between">
-                          <div className="flex items-center gap-1.5">
-                            <Camera size={12} style={{ color: theme.accent }} />
+                        <div className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Camera size={13} style={{ color: theme.accent }} />
                             <span className="text-[10px] font-bold text-slate-700">{photoCount} Photo attached</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <button
                               type="button"
                               onClick={() => setPhotoCount((n) => Math.max(0, n - 1))}
-                              className="w-4 h-4 rounded border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600"
+                              className="w-5 h-5 rounded-md border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600 hover:bg-slate-100"
                             >
                               -
                             </button>
                             <button
                               type="button"
                               onClick={() => setPhotoCount((n) => Math.min(4, n + 1))}
-                              className="w-4 h-4 rounded border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600"
+                              className="w-5 h-5 rounded-md border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600 hover:bg-slate-100"
                             >
                               +
                             </button>
@@ -442,20 +437,20 @@ export default function FormAndDashboardSection() {
                     </div>
 
                     {/* Primary Mobile Action Button */}
-                    <div className="pt-2">
+                    <div className="pt-3">
                       <button
                         type="button"
                         onClick={handleSimulatedSubmit}
                         disabled={isSubmitting}
                         style={{ backgroundColor: theme.textAccent }}
-                        className="w-full text-white py-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-[0.98] transition-all"
+                        className="w-full text-white py-3.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-[0.98] transition-all"
                       >
                         {isSubmitting ? (
                           <span>Sending to Board...</span>
                         ) : (
                           <>
                             <span>Submit Request</span>
-                            <ChevronRight size={14} />
+                            <ChevronRight size={15} />
                           </>
                         )}
                       </button>
@@ -465,11 +460,11 @@ export default function FormAndDashboardSection() {
                 ) : (
                   /* Success Screen inside Phone */
                   <div className="flex-1 flex flex-col items-center justify-center text-center p-4 animate-in zoom-in-95 duration-300">
-                    <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-3">
-                      <CheckCircle2 size={28} />
+                    <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
+                      <CheckCircle2 size={32} />
                     </div>
-                    <h4 className="font-black text-slate-900 text-sm">Lead Dispatched!</h4>
-                    <p className="text-[11px] font-semibold text-slate-500 mt-1 leading-relaxed">
+                    <h4 className="font-black text-slate-900 text-base">Lead Dispatched!</h4>
+                    <p className="text-xs font-semibold text-slate-500 mt-1.5 leading-relaxed max-w-[220px]">
                       Your request has been delivered directly to the contractor’s live dashboard.
                     </p>
 
@@ -481,37 +476,49 @@ export default function FormAndDashboardSection() {
                         setPhoneScreen('form');
                         setMobileTab('form');
                       }}
-                      className="mt-6 flex items-center gap-1.5 text-xs font-black text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-xl hover:bg-slate-50"
+                      className="mt-8 flex items-center gap-2 text-xs font-black text-slate-700 bg-white border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 shadow-sm transition-all"
                     >
-                      <RotateCcw size={12} /> Test Again
+                      <RotateCcw size={14} /> Test Again
                     </button>
                   </div>
                 )}
 
                 {/* Phone Bottom Home Bar */}
-                <div className="w-20 h-1 bg-slate-300 rounded-full mx-auto mt-3" />
+                <div className="w-24 h-1 bg-slate-300 rounded-full mx-auto mt-4" />
               </div>
             </div>
 
           </div>
 
-          {/* RIGHT: DESKTOP DISPATCH DASHBOARD */}
+          {/* RIGHT COLUMN: Header + Desktop Dispatch Dashboard */}
           <div className={`lg:col-span-7 ${mobileTab === 'board' ? 'block' : 'hidden lg:block'}`}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
+            
+            {/* Header above Live Board */}
+            <div className="mb-8 text-left">
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight" style={{ color: theme.textAccent }}>
+                Collect leads with zero back-and-forth messaging.
+              </h2>
+              <p className="text-sm sm:text-base text-slate-600 font-medium mt-2">
+                Job details and photos flow straight onto your live dispatch board.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between mb-4 px-1">
+              <div className="flex items-center gap-2.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
                   Live Dispatch Board
                 </h3>
               </div>
               {hasSubmitted && (
-                <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full animate-bounce">
+                <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-full animate-bounce">
                   ⚡ New lead received!
                 </span>
               )}
             </div>
 
-            <div className={`p-3.5 sm:p-5 rounded-2xl border bg-slate-950/90 backdrop-blur-md shadow-2xl space-y-4 transition-colors ${theme.cardBorder}`}>
+            {/* Dashboard Workspace Window */}
+            <div className={`p-6 sm:p-8 rounded-3xl border bg-slate-950/95 backdrop-blur-md shadow-2xl space-y-6 transition-colors ${theme.cardBorder}`}>
               <DashboardHeader
                 company={current.company}
                 isDark={true}

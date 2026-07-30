@@ -61,14 +61,23 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
         break;
       }
 
-      // Idempotency guard — Stripe may redeliver this event (timeouts, retries).
-      // If we already marked this project paid, skip re-processing entirely
-      // so we don't double-send confirmation emails to the customer/contractor.
-      const alreadyPaidCheck = await sql`
-        SELECT payment_status FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
+    // Idempotency now comes from the UNIQUE constraint on
+      // payments.stripe_payment_intent_id — the insert below returns nothing
+      // on a redelivered event. Guarding on payment_status was wrong once a
+      // project can legitimately receive a deposit and then a balance.
+      // company_id is NOT NULL on payments and drives RLS, so read it here.
+      const projectRows = await sql`
+        SELECT company_id, quote_total, payment_amount
+        FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
       `;
-      if (alreadyPaidCheck[0]?.payment_status === 'paid') {
-        console.log(`Project ${projectId} already marked paid — skipping duplicate webhook event ${event.id}`);
+      const projectRow = projectRows[0];
+
+      if (!projectRow) {
+        console.error(`Webhook ${event.id}: project ${projectId} not found`);
+        break;
+      }
+      if (!projectRow.company_id) {
+        console.error(`Webhook ${event.id}: project ${projectId} has no company_id`);
         break;
       }
 
@@ -95,21 +104,53 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
         // Non-fatal — payment still gets marked paid even if this fails
       }
 
-      await sql`
-        UPDATE projects
-        SET
-          payment_status = 'paid',
-          payment_amount = ${amountPaid},
-          payment_method = 'stripe',
-          paid_at = NOW(),
-          payment_date = CURRENT_DATE,
-          stripe_payment_intent_id = ${session.payment_intent as string},
-          card_brand = ${cardBrand},
-          card_last4 = ${cardLast4}
-        WHERE id = ${parseInt(projectId)}
+      // A session created for a balance is smaller than quote_total, so
+      // classify rather than assuming this settles the job.
+      const alreadyPaidAmount = parseFloat(projectRow.payment_amount || '0');
+      const projectQuoteTotal = parseFloat(projectRow.quote_total || '0');
+      const thisAmount = amountPaid ?? 0;
+      // First partial is a deposit, the one that settles it is the balance,
+      // anything in between is just a payment.
+      const paymentKind =
+        alreadyPaidAmount === 0 && projectQuoteTotal > 0 && thisAmount < projectQuoteTotal
+          ? 'deposit'
+          : projectQuoteTotal > 0 && alreadyPaidAmount + thisAmount >= projectQuoteTotal
+          ? 'balance'
+          : 'payment';
+
+      const insertedPayment = await sql`
+        INSERT INTO payments (
+          project_id, company_id, amount, method, kind, paid_on,
+          stripe_payment_intent_id, stripe_checkout_session_id,
+          card_brand, card_last4, recorded_by
+        ) VALUES (
+          ${parseInt(projectId)},
+          ${projectRow.company_id},
+          ${amountPaid},
+          'stripe',
+          ${paymentKind},
+          CURRENT_DATE,
+          ${session.payment_intent as string},
+          ${session.id},
+          ${cardBrand},
+          ${cardLast4},
+          'Stripe'
+        )
+        ON CONFLICT (stripe_payment_intent_id) DO NOTHING
+        RETURNING id
       `;
 
-      console.log(`✅ Project ${projectId} marked paid via Stripe Connect, amount: ${amountPaid}`);
+      if (insertedPayment.length === 0) {
+        console.log(`Webhook ${event.id}: intent ${session.payment_intent} already recorded — skipping`);
+        break;
+      }
+
+      // payments_sync_project recomputes projects.payment_amount,
+      // payment_status, payment_method, payment_date, card_brand, card_last4
+      // and paid_at from SUM(payments.amount). Nothing else to write.
+      console.log(
+        `✅ Project ${projectId}: ${paymentKind} of ${amountPaid} recorded via Stripe Connect`
+      );
 
       // ── Send confirmation emails to customer and contractor ──
       const emailData = await sql`
@@ -171,27 +212,73 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
 
       if (!paymentIntentId) break;
 
-      const projectCheck = await sql`
-        SELECT id FROM projects WHERE stripe_payment_intent_id = ${paymentIntentId} LIMIT 1
+     // Look up via the payment row this refund reverses, not via
+      // projects.stripe_payment_intent_id — that column now only holds the
+      // most recent payment, so a refund of an earlier one would miss.
+      const refundTarget = await sql`
+        SELECT project_id, company_id, amount, invoiced_total
+        FROM payments
+        WHERE stripe_payment_intent_id = ${paymentIntentId}
+        LIMIT 1
       `;
 
-      if (!projectCheck[0]) {
-        console.error('No matching project for refunded charge:', charge.id, paymentIntentId);
+      if (!refundTarget[0]) {
+        console.error('No matching payment for refunded charge:', charge.id, paymentIntentId);
         break;
       }
 
-      const refundedAmount = charge.amount_refunded ? charge.amount_refunded / 100 : null;
-      const isFullRefund = charge.amount_refunded === charge.amount;
+      const refundProjectId = refundTarget[0].project_id;
+      const refundCompanyId = refundTarget[0].company_id;
+      const originalAmount = parseFloat(refundTarget[0].amount || '0');
+      // Carry the total from the payment being reversed, not the current
+      // quote_total — the refund belongs to the job as it was then.
+      const refundInvoicedTotal = refundTarget[0].invoiced_total;
 
-    await sql`
-        UPDATE projects
-        SET payment_status = ${isFullRefund ? 'refunded' : 'partially_refunded'},
-            refunded_amount = ${refundedAmount},
-            refunded_at = NOW()
-        WHERE id = ${projectCheck[0].id}
+      const refundedAmount = charge.amount_refunded ? charge.amount_refunded / 100 : 0;
+
+      // Was the whole PROJECT refunded, or just this one charge? The old
+      // code compared the charge against itself, so refunding one of two
+      // payments in full marked the entire project 'refunded'.
+      const isFullChargeRefund = charge.amount_refunded === charge.amount;
+
+      // Negative row so SUM(amount) reflects what was actually kept.
+      await sql`
+        INSERT INTO payments (
+          project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+          note, recorded_by
+        ) VALUES (
+          ${refundProjectId},
+          ${refundCompanyId},
+          ${-Math.abs(refundedAmount)},
+          ${refundInvoicedTotal},
+          'stripe',
+          'refund',
+          CURRENT_DATE,
+          ${`Refund of ${refundedAmount} against intent ${paymentIntentId}`},
+          'Stripe'
+        )
       `;
 
-      console.log(`Project ${projectCheck[0].id} marked ${isFullRefund ? 'refunded' : 'partially refunded'}, amount: ${refundedAmount}`);
+      // The trigger has recomputed payment_amount from the sum. Read it back
+      // to decide the status, rather than inferring from one charge.
+      const afterRefund = await sql`
+        SELECT COALESCE(payment_amount, 0) AS net_paid, COALESCE(quote_total, 0) AS total
+        FROM projects WHERE id = ${refundProjectId} LIMIT 1
+      `;
+      const netPaid = parseFloat(afterRefund[0]?.net_paid || '0');
+
+      await sql`
+        UPDATE projects
+        SET payment_status = ${netPaid <= 0 ? 'refunded' : 'partially_refunded'},
+            refunded_amount = COALESCE(refunded_amount, 0) + ${Math.abs(refundedAmount)},
+            refunded_at = NOW()
+        WHERE id = ${refundProjectId}
+      `;
+
+      console.log(
+        `Project ${refundProjectId}: refund of ${refundedAmount} recorded ` +
+        `(original charge ${originalAmount}, full charge refund: ${isFullChargeRefund}, net paid now ${netPaid})`
+      );
 
       break;
     }
@@ -203,10 +290,12 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
       if (!connectedAccountId) break;
 
       await sql`
-        UPDATE companies
+       UPDATE companies
         SET
           stripe_connect_account_id = NULL,
-          stripe_connect_onboarded = FALSE
+          stripe_connect_onboarded = FALSE,
+          stripe_payment_status = NULL,
+          stripe_requirements_summary = NULL
         WHERE stripe_connect_account_id = ${connectedAccountId}
       `;
       console.log('Stripe Connect: account deauthorized, cleared for', connectedAccountId);

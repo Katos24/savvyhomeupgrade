@@ -4,8 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, CheckSquare, Trash2, Save, AlertTriangle, Layers, DollarSign,
-  AlertCircle, Lock, Tag, ClipboardList, Send, SlidersHorizontal, Check, Calculator,
-  Percent,
+  AlertCircle, Lock, Check, Percent, HandCoins,
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -14,7 +13,16 @@ import { can, type PlanTier } from '@/lib/permissions';
 
 type TaskTemplate = { id: string; label: string; order: number };
 type LineItem = { id: string; description: string; quantity: number; unitPrice: number; amount: number };
-type QuoteTemplate = { id: string; category: string; items: LineItem[]; total: number; tax_rate?: number };
+type DepositType = 'percent' | 'fixed';
+type QuoteTemplate = {
+  id: string;
+  category: string;
+  items: LineItem[];
+  total: number;
+  tax_rate?: number;
+  deposit_type?: DepositType | null;
+  deposit_value?: number | null;
+};
 type Category = { value: string; label: string; task_templates?: TaskTemplate[] };
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -25,6 +33,22 @@ const fmt = (n: number) =>
 const clean = (v: any): number => {
   const n = parseFloat(String(v).replace(/[^0-9.]/g, ''));
   return isNaN(n) ? 0 : n;
+};
+
+// Deposit is calculated on the grand total, tax included — that's what the
+// customer is actually being asked to put down. Capped at the total so a
+// fixed $500 deposit on a $300 job can't exceed the job.
+const depositFor = (total: number, type: DepositType | null | undefined, value: number | null | undefined): number => {
+  const v = Number(value) || 0;
+  if (!type || v <= 0 || total <= 0) return 0;
+  const raw = type === 'percent' ? (total * v) / 100 : v;
+  return Math.min(Math.round(raw * 100) / 100, total);
+};
+
+const depositLabel = (type: DepositType | null | undefined, value: number | null | undefined) => {
+  const v = Number(value) || 0;
+  if (!type || v <= 0) return 'No deposit';
+  return type === 'percent' ? `${v}% deposit` : `${fmt(v)} deposit`;
 };
 
 const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
@@ -90,13 +114,29 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [quoteError, setQuoteError] = useState('');
   const [showQuotePreview, setShowQuotePreview] = useState(false);
 
+  // Per-template values being edited in the pricing modal. Moved up here with
+  // the rest of the state — it was previously declared mid-component.
+  const [editingTaxRateValue, setEditingTaxRateValue] = useState<number>(0);
+  const [editingDepositType, setEditingDepositType] = useState<DepositType | null>(null);
+  const [editingDepositValue, setEditingDepositValue] = useState<number>(0);
+
+  // Company-wide defaults.
   const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
   const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState(String(company.default_tax_rate ?? 0));
   const [taxRateSaving, setTaxRateSaving] = useState(false);
-  const [showApplyToAll, setShowApplyToAll] = useState(false);
-  const [applyingToAll, setApplyingToAll] = useState(false);
 
+  const [depositType, setDepositType] = useState<DepositType | null>(company.default_deposit_type ?? null);
+  const [depositValue, setDepositValue] = useState<number>(company.default_deposit_value ?? 0);
+  const [editingDepositDefault, setEditingDepositDefault] = useState(false);
+  const [depositTypeDraft, setDepositTypeDraft] = useState<DepositType>(company.default_deposit_type ?? 'percent');
+  const [depositValueDraft, setDepositValueDraft] = useState(String(company.default_deposit_value ?? ''));
+  const [depositSaving, setDepositSaving] = useState(false);
+  const [depositError, setDepositError] = useState('');
+
+  // Which default is being offered for backfill onto existing templates.
+  const [applyTarget, setApplyTarget] = useState<'tax' | 'deposit' | null>(null);
+  const [applyingToAll, setApplyingToAll] = useState(false);
 
   const saveTaxRate = async () => {
     const parsed = parseFloat(taxRateDraft);
@@ -112,16 +152,54 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
       if (result.success) {
         setTaxRate(parsed);
         setEditingTaxRate(false);
-        if (quoteTemplates.length > 0) setShowApplyToAll(true);
+        if (quoteTemplates.length > 0) setApplyTarget('tax');
       }
     } catch {}
     finally { setTaxRateSaving(false); }
   };
 
-const applyRateToAllTemplates = async () => {
+  const saveDepositDefault = async (clearIt = false) => {
+    const parsed = clearIt ? 0 : parseFloat(depositValueDraft);
+    const nextType: DepositType | null = clearIt ? null : depositTypeDraft;
+
+    if (!clearIt) {
+      if (isNaN(parsed) || parsed <= 0) { setDepositError('Enter an amount above zero.'); return; }
+      if (depositTypeDraft === 'percent' && parsed > 100) { setDepositError('A percent deposit can\'t exceed 100.'); return; }
+    }
+
+    setDepositSaving(true);
+    setDepositError('');
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-deposit-default',
+          data: { default_deposit_type: nextType, default_deposit_value: clearIt ? null : parsed },
+        }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setDepositType(nextType);
+        setDepositValue(clearIt ? 0 : parsed);
+        setEditingDepositDefault(false);
+        if (quoteTemplates.length > 0) setApplyTarget('deposit');
+      } else {
+        setDepositError(result.error || 'Could not save the deposit default.');
+      }
+    } catch {
+      setDepositError('Network error. Try again.');
+    } finally {
+      setDepositSaving(false);
+    }
+  };
+
+  // Pushes one company default onto every saved template. Deliberately touches
+  // a single field so applying a deposit can't quietly reset tax rates.
+  const applyDefaultToAllTemplates = async (target: 'tax' | 'deposit') => {
     setApplyingToAll(true);
     setSaveError('');
- 
+
     try {
       // Normalize items the way openQuoteEditor does. Stored items don't
       // reliably carry `amount`, so summing it directly yields NaN totals.
@@ -139,16 +217,20 @@ const applyRateToAllTemplates = async () => {
             amount: qty * price,
           };
         });
- 
+
         const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
+        const nextTaxRate = target === 'tax' ? taxRate : (t.tax_rate ?? 0);
+
         return {
           ...t,
           items: normalizedItems,
-          tax_rate: taxRate,
-          total: subtotal + subtotal * (taxRate / 100),
+          tax_rate: nextTaxRate,
+          deposit_type: target === 'deposit' ? depositType : (t.deposit_type ?? null),
+          deposit_value: target === 'deposit' ? depositValue : (t.deposit_value ?? null),
+          total: subtotal + subtotal * (nextTaxRate / 100),
         };
       });
- 
+
       // One request, one statement server-side. The old version fired N
       // parallel updates that overwrote each other.
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
@@ -157,30 +239,29 @@ const applyRateToAllTemplates = async () => {
         body: JSON.stringify({ action: 'update-many', templates: updatedTemplates }),
       });
       const data = await res.json().catch(() => ({}));
- 
+
       if (!res.ok || !data.success) {
-        setSaveError(data.error || 'Could not apply the tax rate. Try again.');
+        setSaveError(data.error || 'Could not apply the change. Try again.');
         return;
       }
- 
+
       if (data.updated !== data.requested) {
         setSaveError(
           `Only ${data.updated} of ${data.requested} templates updated. Refresh and try again.`
         );
       }
- 
+
       setQuoteTemplates(data.templates || updatedTemplates);
-      setShowApplyToAll(false);
+      setApplyTarget(null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      console.error('Apply tax rate to all failed:', err);
-      setSaveError('Network error applying the tax rate. Try again.');
+      console.error('Apply default to all failed:', err);
+      setSaveError('Network error applying the change. Try again.');
     } finally {
       setApplyingToAll(false);
     }
   };
-
 
   const markDirty = useCallback(() => setIsDirty(true), []);
 
@@ -271,10 +352,12 @@ const applyRateToAllTemplates = async () => {
       : [];
     setEditingLineItems(mapped);
     setEditingQuoteId(existing?.id || null);
-    // New templates inherit the company's current tax rate. Existing
-    // templates keep whatever rate they were saved with — changing the
+    // New templates inherit the company's current tax rate and deposit terms.
+    // Existing templates keep whatever they were saved with — changing a
     // company default later doesn't retroactively touch saved templates.
     setEditingTaxRateValue(existing ? (existing.tax_rate ?? 0) : taxRate);
+    setEditingDepositType(existing ? (existing.deposit_type ?? null) : depositType);
+    setEditingDepositValue(existing ? (existing.deposit_value ?? 0) : depositValue);
     setNewDesc(''); setNewPrice(''); setNewQty('1');
     setAddingItem(false); setLineItemError(''); setQuoteError('');
     setQuoteEditorCatValue(catValue);
@@ -290,9 +373,6 @@ const applyRateToAllTemplates = async () => {
     setNewDesc(''); setNewPrice(''); setNewQty('1'); setLineItemError(''); setAddingItem(false);
   };
 
-    const [editingTaxRateValue, setEditingTaxRateValue] = useState<number>(0);
-
-
   const updateLineItem = (id: string, field: 'description' | 'quantity' | 'unitPrice', value: string) => {
     setEditingLineItems(prev => prev.map(item => {
       if (item.id !== id) return item;
@@ -307,6 +387,9 @@ const applyRateToAllTemplates = async () => {
   const saveQuoteTemplate = async () => {
     if (newDesc.trim() || newPrice) { setLineItemError('Click + to add this item first.'); return; }
     if (editingLineItems.length === 0) { setQuoteError('Add at least one line item.'); return; }
+    if (editingDepositType === 'percent' && editingDepositValue > 100) {
+      setQuoteError('A percent deposit can\'t exceed 100.'); return;
+    }
     setQuoteSaving(true); setQuoteError('');
     const subtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
     const total = subtotal + subtotal * (editingTaxRateValue / 100);
@@ -316,6 +399,8 @@ const applyRateToAllTemplates = async () => {
       items: editingLineItems,
       total,
       tax_rate: editingTaxRateValue,
+      deposit_type: editingDepositValue > 0 ? editingDepositType : null,
+      deposit_value: editingDepositValue > 0 ? editingDepositValue : null,
     };
     try {
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
@@ -349,6 +434,8 @@ const applyRateToAllTemplates = async () => {
   const quoteEditorSubtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
   const quoteEditorTaxAmount = quoteEditorSubtotal * (editingTaxRateValue / 100);
   const quoteEditorTotal = quoteEditorSubtotal + quoteEditorTaxAmount;
+  const quoteEditorDeposit = depositFor(quoteEditorTotal, editingDepositType, editingDepositValue);
+  const quoteEditorBalance = quoteEditorTotal - quoteEditorDeposit;
 
   // Plan gate lives after every hook above, so hook order never changes
   // between renders regardless of plan_tier.
@@ -389,6 +476,7 @@ const applyRateToAllTemplates = async () => {
           <ul className="mt-3 space-y-1.5 text-[14px] font-medium leading-relaxed text-stone-600">
             <li>Adjust quantity and price per job — templates are just a starting point.</li>
             <li>Add or remove line items whenever a job needs it.</li>
+            <li>Set a deposit and the quote splits into an amount due on signing and a balance.</li>
           </ul>
           <button
             onClick={() => setShowQuotePreview(true)}
@@ -398,22 +486,23 @@ const applyRateToAllTemplates = async () => {
           </button>
         </div>
 
-        {/* ── APPLY TAX RATE TO EXISTING TEMPLATES ── */}
-        {showApplyToAll && (
+        {/* ── APPLY A CHANGED DEFAULT TO EXISTING TEMPLATES ── */}
+        {applyTarget && (
           <div className="mb-4 flex flex-col gap-3 rounded-lg border-2 border-emerald-300 bg-emerald-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm font-bold text-emerald-800">
-              Apply {taxRate}% to your {quoteTemplates.length} existing pricing template{quoteTemplates.length !== 1 ? 's' : ''} too?
+              Apply {applyTarget === 'tax' ? `${taxRate}% tax` : depositLabel(depositType, depositValue).toLowerCase()} to your{' '}
+              {quoteTemplates.length} existing pricing template{quoteTemplates.length !== 1 ? 's' : ''} too?
             </p>
             <div className="flex items-center gap-2 shrink-0">
               <button
-                onClick={applyRateToAllTemplates}
+                onClick={() => applyDefaultToAllTemplates(applyTarget)}
                 disabled={applyingToAll}
                 className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
               >
                 {applyingToAll ? 'Applying...' : 'Apply to all'}
               </button>
               <button
-                onClick={() => setShowApplyToAll(false)}
+                onClick={() => setApplyTarget(null)}
                 className="text-xs font-bold text-emerald-700 hover:underline"
               >
                 No, just new ones
@@ -434,7 +523,7 @@ const applyRateToAllTemplates = async () => {
           </div>
         )}
 
-       {/* ── ADD CATEGORY + TAX RATE ── */}
+       {/* ── ADD CATEGORY + COMPANY DEFAULTS ── */}
         <div className="mb-6">
           <AnimatePresence mode="wait">
             {showAddForm ? (
@@ -515,12 +604,81 @@ const applyRateToAllTemplates = async () => {
                     Tax rate: {taxRate}%
                   </button>
                 )}
+
+                {editingDepositDefault ? (
+                  <div className="flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-2 py-1">
+                    <div className="flex overflow-hidden rounded-md border border-stone-300">
+                      {(['percent', 'fixed'] as DepositType[]).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setDepositTypeDraft(t)}
+                          className={`px-2 py-1 text-[11px] font-bold transition-colors ${
+                            depositTypeDraft === t ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'
+                          }`}
+                        >
+                          {t === 'percent' ? '%' : '$'}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max={depositTypeDraft === 'percent' ? 100 : undefined}
+                      value={depositValueDraft}
+                      onChange={(e) => { setDepositValueDraft(e.target.value); setDepositError(''); }}
+                      placeholder={depositTypeDraft === 'percent' ? '50' : '500'}
+                      autoFocus
+                      className={`w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none ${noSpinners}`}
+                    />
+                    <button
+                      onClick={() => saveDepositDefault(false)}
+                      disabled={depositSaving}
+                      className="rounded-md bg-stone-900 px-2 py-1 text-[11px] font-bold text-white hover:bg-stone-800 disabled:opacity-60"
+                    >
+                      {depositSaving ? '...' : 'Save'}
+                    </button>
+                    {depositType && (
+                      <button
+                        onClick={() => saveDepositDefault(true)}
+                        disabled={depositSaving}
+                        className="text-[11px] font-bold text-rose-500 hover:text-rose-700"
+                      >
+                        Clear
+                      </button>
+                    )}
+                    <button
+                      onClick={() => {
+                        setEditingDepositDefault(false);
+                        setDepositTypeDraft(depositType ?? 'percent');
+                        setDepositValueDraft(String(depositValue || ''));
+                        setDepositError('');
+                      }}
+                      className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingDepositDefault(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2 text-[12px] font-bold text-stone-700 hover:border-stone-400"
+                  >
+                    <HandCoins className="h-3.5 w-3.5" />
+                    {depositType ? `Deposit: ${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}` : 'Deposit: none'}
+                  </button>
+                )}
               </div>
             )}
           </AnimatePresence>
           {newCatError && (
             <p className="mt-2 flex items-center gap-1 text-xs font-bold text-rose-600">
               <AlertCircle className="h-3 w-3" /> {newCatError}
+            </p>
+          )}
+          {depositError && (
+            <p className="mt-2 flex items-center gap-1 text-xs font-bold text-rose-600">
+              <AlertCircle className="h-3 w-3" /> {depositError}
             </p>
           )}
         </div>
@@ -533,6 +691,7 @@ const applyRateToAllTemplates = async () => {
           {categories.map((cat, index) => {
             const taskCount = cat.task_templates?.length || 0;
             const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
+            const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate.deposit_value ?? 0) > 0;
             return (
               <motion.div
                 key={cat.value}
@@ -568,6 +727,14 @@ const applyRateToAllTemplates = async () => {
                     <DollarSign className="h-3 w-3" />
                     {quoteTemplate ? `${quoteTemplate.items.length} Item${quoteTemplate.items.length !== 1 ? 's' : ''}` : 'No Pricing'}
                   </span>
+                  {hasDeposit && (
+                    <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-400">
+                      <HandCoins className="h-3 w-3" />
+                      {quoteTemplate!.deposit_type === 'percent'
+                        ? `${quoteTemplate!.deposit_value}% Down`
+                        : `${fmt(quoteTemplate!.deposit_value ?? 0)} Down`}
+                    </span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-2">
@@ -893,6 +1060,80 @@ const applyRateToAllTemplates = async () => {
                   </div>
                 </div>
 
+                {/* ── DEPOSIT TERMS ── */}
+                <div className="mb-4 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-300">
+                      <HandCoins className="h-3.5 w-3.5 text-amber-400" />
+                      Deposit
+                    </label>
+                    <div className="flex items-center gap-1.5">
+                      <div className="flex overflow-hidden rounded-lg border border-white/10">
+                        {(['percent', 'fixed'] as DepositType[]).map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setEditingDepositType(t)}
+                            className={`px-2.5 py-1 text-[11px] font-black transition-colors ${
+                              editingDepositType === t
+                                ? 'bg-amber-500 text-black'
+                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            }`}
+                          >
+                            {t === 'percent' ? '%' : '$'}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        max={editingDepositType === 'percent' ? 100 : undefined}
+                        value={editingDepositValue || ''}
+                        placeholder="0"
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value) || 0;
+                          setEditingDepositValue(v);
+                          // Picking a value before a type is the common slip.
+                          if (v > 0 && !editingDepositType) setEditingDepositType('percent');
+                        }}
+                        className={`w-20 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-amber-500 ${noSpinners}`}
+                      />
+                      {editingDepositValue > 0 && (
+                        <button
+                          onClick={() => { setEditingDepositValue(0); setEditingDepositType(null); }}
+                          className="text-[11px] font-bold text-gray-500 hover:text-red-400"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {quoteEditorDeposit > 0 ? (
+                    <div className="space-y-1 border-t border-white/5 pt-2">
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-gray-400">Due on signing</span>
+                        <span className="text-amber-400">{fmt(quoteEditorDeposit)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs font-bold">
+                        <span className="text-gray-400">Balance on completion</span>
+                        <span className="text-gray-300">{fmt(quoteEditorBalance)}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="border-t border-white/5 pt-2 text-[11px] font-semibold text-gray-500">
+                      No deposit — the full amount is due on the invoice.
+                    </p>
+                  )}
+
+                  {editingDepositType === 'fixed' && editingDepositValue > quoteEditorTotal && quoteEditorTotal > 0 && (
+                    <p className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
+                      <AlertCircle className="h-3 w-3 shrink-0" />
+                      Deposit is more than the estimate. It will be capped at the total.
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   {editingQuoteId ? (
                     <button
@@ -956,6 +1197,11 @@ const applyRateToAllTemplates = async () => {
                   load in automatically here. Everything stays editable, and
                   sending the invoice is a separate step once the quote is
                   approved.
+                </p>
+                <p className="mt-2 text-[13px] font-semibold leading-relaxed text-stone-600">
+                  A deposit on the template carries over as the amount due on
+                  signing, with the rest as the balance. You can change it per
+                  job before the quote goes out.
                 </p>
               </div>
             </div>

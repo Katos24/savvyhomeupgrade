@@ -1,7 +1,19 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Check, Zap, Trash2, Download, Paperclip, Mail, Sparkles, FileText, Send, Database } from 'lucide-react';
+import {
+  Check,
+  Zap,
+  Trash2,
+  Download,
+  FileSpreadsheet,
+  Mail,
+  FileText,
+  Database,
+  ArrowUpRight,
+  Star,
+  Plus,
+} from 'lucide-react';
 import Image from 'next/image';
 
 const font = "'Nunito', sans-serif";
@@ -17,379 +29,308 @@ function StripeWordmark({ className = '' }: { className?: string }) {
 function GoogleLogo({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05"/>
-      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335"/>
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" fill="#FBBC05" />
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" fill="#EA4335" />
     </svg>
   );
 }
 
-const TEMPLATE_ITEMS = [
-  { label: 'Tear-off & Disposal (per sq.)', price: 85 },
-  { label: 'Architectural Shingles', price: 165 },
-  { label: 'Synthetic Underlayment', price: 88 },
-  { label: 'Ice & Water Shield (Rolls)', price: 120 },
-  { label: 'Drip Edge (10ft Sections)', price: 18 },
-];
+/* ── Reusable Feature Container ─────────────────────────────────────────── */
 
-/* ── Section Block Container ─────────────────────────────────────────────── */
-
-function FeatureBlock({
-  badgeIcon,
-  badgeText,
+function FeatureSection({
+  tag,
   title,
-  subtitle,
+  description,
   children,
 }: {
-  badgeIcon?: React.ReactNode;
-  badgeText: string;
+  tag: string;
   title: React.ReactNode;
-  subtitle: string;
+  description: string;
   children: React.ReactNode;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
+      initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
-      transition={{ duration: 0.55 }}
-      className="border-t border-white/10 pt-14 sm:pt-16 first:border-t-0 first:pt-0"
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.45 }}
+      className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-xl"
     >
-      <div className="text-center max-w-2xl mx-auto mb-10">
-        <div className="inline-flex items-center gap-2 bg-slate-900 border border-white/10 px-3.5 py-1.5 rounded-full mb-3.5 shadow-sm">
-          {badgeIcon}
-          <span className="text-xs font-black uppercase tracking-widest text-teal-300">
-            {badgeText}
-          </span>
-        </div>
+      <div className="max-w-2xl mb-8">
+        <span className="text-teal-400 font-mono text-[11px] font-black uppercase tracking-widest bg-teal-950/80 border border-teal-800/50 px-3 py-1 rounded-md inline-block mb-3">
+          {tag}
+        </span>
         <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight mb-3">
           {title}
         </h3>
-        <p className="text-slate-300 font-semibold text-sm sm:text-base leading-relaxed">
-          {subtitle}
+        <p className="text-slate-400 font-medium text-sm sm:text-base leading-relaxed">
+          {description}
         </p>
       </div>
 
-      <div className="bg-slate-900/80 border border-white/10 rounded-3xl p-5 sm:p-8 shadow-2xl">
-        {children}
-      </div>
+      {children}
     </motion.div>
   );
 }
 
-/* ── Visual Sub-Components ────────────────────────────────────────────────── */
+/* ── Sub-Components ───────────────────────────────────────────────────────── */
 
-const QuoteCollage = () => (
-  <div className="relative w-full py-4">
-    <div className="relative ml-auto w-[78%] sm:w-[68%] rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-white">
-      <Image
-        src="/images/invoice_full.webp"
-        alt="A finished branded estimate ready to send"
-        width={800}
-        height={1040}
-        className="w-full h-auto object-cover object-top"
-      />
-      <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-slate-900/70 to-transparent pointer-events-none" />
-    </div>
-
-    <div className="absolute left-0 bottom-2 sm:bottom-6 w-[62%] sm:w-[54%] rounded-xl border border-slate-700 bg-slate-900 shadow-2xl overflow-hidden -rotate-2">
-      <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-teal-400">
-          <Zap className="w-3 h-3 fill-teal-400" />
-          <span className="text-[9px] font-black uppercase tracking-widest">Saved template</span>
-        </div>
-      </div>
-      <div className="divide-y divide-white/5">
-        {TEMPLATE_ITEMS.slice(0, 4).map((item) => (
-          <div key={item.label} className="flex items-center gap-2 px-3 py-1.5">
-            <span className="text-white text-[10px] font-bold truncate flex-1">{item.label}</span>
-            <span className="text-teal-400 text-[10px] font-black shrink-0">${item.price}</span>
-            <Trash2 className="w-2.5 h-2.5 text-slate-600 shrink-0" />
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
-const OutboxStrip = () => {
-  const rows = [
-    { t: 'Estimate EST-019 sent', to: 'jennifer@example.com', time: '9:14a' },
-    { t: 'Appointment confirmed', to: 'jennifer@example.com', time: '9:15a' },
-    { t: 'Payment reminder', to: 'marcus@example.com', time: '2:02p' },
-    { t: 'Review request', to: 'dana@example.com', time: '4:48p' },
+const TemplateBuilder = () => {
+  const items = [
+    { label: 'Tear-off & Disposal', qty: '25 sq', price: '$2,125' },
+    { label: 'Architectural Shingles', qty: '25 sq', price: '$4,125' },
+    { label: 'Synthetic Underlayment', qty: '5 rolls', price: '$440' },
   ];
+
   return (
-    <div className="w-full rounded-2xl border border-white/10 overflow-hidden bg-slate-950/70 shadow-xl">
-      <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 bg-slate-900/90">
-        <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Outbox History</span>
-        <span className="text-[10px] font-black uppercase tracking-widest text-teal-300">Today</span>
+    <div className="bg-slate-950 rounded-2xl border border-slate-800 p-4 sm:p-5 shadow-inner">
+      <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <Zap className="w-4 h-4 text-teal-400 fill-teal-400" />
+          <span className="text-xs font-black uppercase tracking-wider text-slate-200">
+            Roof Replacement Template
+          </span>
+        </div>
+        <span className="text-[10px] font-bold text-teal-400 bg-teal-950 border border-teal-800 px-2 py-0.5 rounded">
+          Active
+        </span>
       </div>
-      <div className="divide-y divide-white/5">
-        {rows.map((r) => (
-          <div key={r.t} className="flex items-center gap-3 px-4 sm:px-5 py-3">
-            <span className="w-5 h-5 rounded-full bg-teal-500/20 border border-teal-500/40 flex items-center justify-center shrink-0">
-              <Check className="w-3 h-3 text-teal-300" strokeWidth={4} />
-            </span>
-            <span className="text-xs sm:text-sm font-bold text-white flex-1 truncate">{r.t}</span>
-            <span className="hidden sm:block text-[11px] font-medium text-slate-400 truncate max-w-[160px]">
-              {r.to}
-            </span>
-            <span className="text-[11px] font-bold text-slate-500 shrink-0">{r.time}</span>
+
+      <div className="space-y-2 mb-4">
+        {items.map((i) => (
+          <div
+            key={i.label}
+            className="flex items-center justify-between bg-slate-900/90 border border-slate-800/80 px-3 py-2 rounded-xl text-xs"
+          >
+            <div className="min-w-0 pr-2">
+              <p className="text-slate-200 font-bold truncate">{i.label}</p>
+              <p className="text-[10px] text-slate-500 font-mono">{i.qty}</p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <span className="text-teal-400 font-black font-mono">{i.price}</span>
+              <button type="button" aria-label="Remove item" className="text-slate-600 hover:text-rose-400 transition-colors">
+                <Trash2 size={13} />
+              </button>
+            </div>
           </div>
         ))}
+      </div>
+
+      <div className="flex items-center justify-between pt-2">
+        <button
+          type="button"
+          className="text-xs font-bold text-slate-400 hover:text-slate-200 flex items-center gap-1 transition-colors"
+        >
+          <Plus size={14} /> Add Line Item
+        </button>
+        <button
+          type="button"
+          className="bg-teal-600 hover:bg-teal-500 text-white font-black text-xs px-3.5 py-1.5 rounded-lg transition-colors shadow-sm"
+        >
+          Save
+        </button>
       </div>
     </div>
   );
 };
 
-const ExportStrip = () => {
-  const cols = ['Customer', 'Job', 'Status', 'Total'];
+const ExportPreview = () => {
+  const rows = [
+    { name: 'Jennifer L.', type: 'Roof Repair', status: 'Paid', total: '$9,290.00' },
+    { name: 'Marcus K.', type: 'Gutter Guard', status: 'Pending', total: '$1,450.00' },
+    { name: 'Dana R.', type: 'Shingle Patch', status: 'Draft', total: '$620.00' },
+  ];
+
   return (
-    <div className="w-full space-y-4">
-      <div className="rounded-2xl overflow-hidden border border-white/10 bg-slate-950/70 shadow-xl">
-        <div className="grid grid-cols-4 bg-slate-900/90 px-4 sm:px-5 py-2.5 gap-4 border-b border-white/5">
-          {cols.map((c) => (
-            <span key={c} className="text-[10px] font-black uppercase tracking-widest text-slate-400 truncate">
-              {c}
-            </span>
+    <div className="space-y-4">
+      <div className="bg-slate-950 rounded-2xl border border-slate-800 overflow-hidden shadow-inner">
+        <div className="grid grid-cols-12 bg-slate-900 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-400 border-b border-slate-800">
+          <span className="col-span-4">Client</span>
+          <span className="col-span-3">Job Type</span>
+          <span className="col-span-2 text-center">Status</span>
+          <span className="col-span-3 text-right">Amount</span>
+        </div>
+        <div className="divide-y divide-slate-800/60">
+          {rows.map((r) => (
+            <div key={r.name} className="grid grid-cols-12 px-4 py-3 text-xs items-center">
+              <span className="col-span-4 font-bold text-slate-200 truncate">{r.name}</span>
+              <span className="col-span-3 text-slate-400 truncate">{r.type}</span>
+              <div className="col-span-2 text-center">
+                <span
+                  className={`text-[9px] font-black px-1.5 py-0.5 rounded ${
+                    r.status === 'Paid'
+                      ? 'bg-teal-950 text-teal-400 border border-teal-800/60'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {r.status}
+                </span>
+              </div>
+              <span className="col-span-3 text-right font-mono font-bold text-slate-200">
+                {r.total}
+              </span>
+            </div>
           ))}
         </div>
-        {[0, 1, 2, 3].map((r) => (
-          <div key={r} className="grid grid-cols-4 px-4 sm:px-5 py-3 gap-4 border-t border-white/5 first:border-t-0">
-            {cols.map((c, ci) => (
-              <span
-                key={c}
-                className={`h-2 rounded-full ${r === 0 ? 'bg-slate-400' : 'bg-slate-600'}`}
-                style={{ width: `${55 + ((r + ci) % 4) * 12}%` }}
-              />
-            ))}
-          </div>
-        ))}
       </div>
-      <div className="flex flex-wrap gap-2.5 justify-center sm:justify-start">
-        <span className="inline-flex items-center gap-2 rounded-xl bg-slate-950 border border-white/10 px-3.5 py-2 text-[11px] font-black text-slate-200 shadow-md">
-          <Download className="w-3.5 h-3.5 text-teal-400" /> Export CSV
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-xl bg-slate-950 border border-white/10 px-3.5 py-2 text-[11px] font-black text-slate-200 shadow-md">
-          <Paperclip className="w-3.5 h-3.5 text-teal-400" /> QuickBooks Format
-        </span>
+
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          className="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs px-4 py-2.5 rounded-xl border border-slate-700 transition-colors"
+        >
+          <Download size={14} className="text-teal-400" /> Export CSV
+        </button>
+      
       </div>
     </div>
   );
 };
 
-/* ── Main Features Section ───────────────────────────────────────────────── */
+/* ── Main Export Component ────────────────────────────────────────────────── */
 
 export default function FeaturesSection() {
   return (
     <section
       style={{ fontFamily: font }}
-      className="bg-gradient-to-b from-slate-800 via-slate-800 to-slate-900 py-20 sm:py-28 px-4 sm:px-8 border-t border-white/10"
+      className="bg-slate-950 py-20 sm:py-28 px-4 sm:px-6 lg:px-8 text-white border-t border-slate-800"
     >
-      <div className="max-w-5xl mx-auto space-y-12 sm:space-y-16">
-        
+      <div className="max-w-6xl mx-auto space-y-12 sm:space-y-16">
         {/* Section Header */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-white leading-[1.08]">
+        <div className="max-w-3xl">
+          <span className="text-teal-400 font-mono text-xs font-black uppercase tracking-widest block mb-3">
+            Workflow & Automation
+          </span>
+          <h2 className="text-3xl sm:text-5xl font-black tracking-tight leading-[1.08] mb-4">
             You saw the lead land.{' '}
-            <span className="text-teal-300">Here&apos;s the rest of the job.</span>
+            <span className="text-teal-400">Here is how you close it.</span>
           </h2>
+          <p className="text-slate-400 text-base sm:text-lg font-medium leading-relaxed">
+            From field estimate to bank deposit—no duplicate data entry, no missing attachments, and zero manual spreadsheet updates.
+          </p>
         </div>
 
-      {/* 1. Instant Quotes */}
-<FeatureBlock
-  badgeIcon={<FileText className="w-3.5 h-3.5 text-teal-400" />}
-  badgeText="Instant Quotes"
-  title="Build the quote once. Reuse it forever."
-  subtitle="Save standard line items per job category, adjust quantities on site, and calculate totals automatically into branded estimates."
->
-  <div className="grid md:grid-cols-12 gap-8 items-start pt-2">
-    {/* Left Side: Top-Aligned Bullet Points & Interactive Saved Template Builder */}
-    <div className="md:col-span-5 space-y-6 pt-1">
-      <ul className="space-y-4">
-        <li className="flex items-start gap-3 text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
-          <Check size={18} className="text-teal-400 stroke-[3] shrink-0 mt-0.5" />
-          <span>Customer accepts or declines directly in email</span>
-        </li>
-        <li className="flex items-start gap-3 text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
-          <Check size={18} className="text-teal-400 stroke-[3] shrink-0 mt-0.5" />
-          <span>Collect deposits instantly with <StripeWordmark className="text-xs" /></span>
-        </li>
-        <li className="flex items-start gap-3 text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
-          <Check size={18} className="text-teal-400 stroke-[3] shrink-0 mt-0.5" />
-          <span>Automatic follow-ups for unpaid balances</span>
-        </li>
-      </ul>
-
-      {/* Saved Template Card with Action Buttons & Quantity Column */}
-      <div className="w-full rounded-xl border border-slate-700 bg-slate-950/90 shadow-xl overflow-hidden mt-4">
-        <div className="px-3.5 py-2.5 border-b border-white/10 flex items-center justify-between bg-slate-900/80">
-          <div className="flex items-center gap-1.5 text-teal-400">
-            <Zap className="w-3.5 h-3.5 fill-teal-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Build Template</span>
-          </div>
-        </div>
-
-        {/* Table Header */}
-        <div className="grid grid-cols-12 px-3.5 py-1.5 bg-slate-900/40 text-[10px] font-bold text-slate-400 border-b border-white/5 uppercase tracking-wider">
-          <span className="col-span-6">Item</span>
-          <span className="col-span-2 text-center">Qty</span>
-          <span className="col-span-3 text-right">Price</span>
-          <span className="col-span-1"></span>
-        </div>
-
-        {/* Items List */}
-        <div className="divide-y divide-white/5">
-          {[
-            { label: 'Tear-off & Disposal', qty: 25, price: 85 },
-            { label: 'Architectural Shingles', qty: 25, price: 165 },
-            { label: 'Synthetic Underlayment', qty: 5, price: 88 },
-            { label: 'Ice & Water Shield', qty: 4, price: 120 },
-          ].map((item) => (
-            <div key={item.label} className="grid grid-cols-12 items-center px-3.5 py-2 text-xs">
-              <span className="col-span-6 text-slate-200 font-semibold truncate">{item.label}</span>
-              <div className="col-span-2 flex justify-center">
-                <span className="bg-slate-900 border border-white/10 text-slate-300 font-bold px-1.5 py-0.5 rounded text-[11px]">
-                  {item.qty}
-                </span>
-              </div>
-              <span className="col-span-3 text-right text-teal-400 font-black">${item.price}</span>
-              <div className="col-span-1 flex justify-end">
-                <Trash2 className="w-3 h-3 text-slate-600 hover:text-rose-400 cursor-pointer transition-colors" />
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Action Controls: Save & Close */}
-        <div className="px-3.5 py-2.5 bg-slate-900/60 border-t border-white/10 flex items-center justify-between gap-3">
-          <button className="text-xs font-bold text-slate-400 hover:text-white transition-colors">
-            Close
-          </button>
-          <button className="inline-flex items-center gap-1.5 bg-teal-400 hover:bg-teal-300 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg shadow transition-colors">
-            <Check className="w-3.5 h-3.5 stroke-[3]" /> Save Template
-          </button>
-        </div>
-      </div>
-    </div>
-
-    {/* Right Side: Full-Sized Invoice Image */}
-    <div className="md:col-span-7 relative w-full">
-      <div className="relative w-full rounded-2xl overflow-hidden border border-white/15 shadow-2xl bg-white">
-        <Image
-          src="/images/invoice_full.webp"
-          alt="A finished branded estimate ready to send"
-          width={1000}
-          height={1300}
-          className="w-full h-auto object-cover object-top"
-        />
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-900/80 to-transparent pointer-events-none" />
-      </div>
-    </div>
-  </div>
-</FeatureBlock>
-
-
-
-        {/* 2. Automated Messaging */}
-        <FeatureBlock
-          badgeIcon={<Send className="w-3.5 h-3.5 text-teal-400" />}
-          badgeText="Automated Messaging"
-          title="One click to send. A receipt for every message."
-          subtitle="Schedule confirmations, estimates, and payment reminders go out straight from the job card with full tracking in your outbox."
+        {/* Feature 1: Estimates */}
+        <FeatureSection
+          tag="01 · ESTIMATES & INVOICING"
+          title={
+            <>
+              Build the quote once.{' '}
+              <span className="text-teal-400">Reuse standard templates in seconds.</span>
+            </>
+          }
+          description="Save line items for roof replacements, tear-offs, or repairs. Select quantities in the field and generate a clean customer estimate on the spot."
         >
-          <div className="grid md:grid-cols-12 gap-6 items-center">
-            <div className="md:col-span-5 space-y-2">
-              <p className="text-xs sm:text-sm font-semibold text-slate-300 leading-relaxed">
-                Keep clients informed throughout every step of the project automatically while maintaining an exact audit trail of communications.
-              </p>
-              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold text-teal-400 pt-2">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Pre-built email templates included</span>
-              </div>
+          <div className="grid lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-5 space-y-6">
+              <TemplateBuilder />
+              <ul className="space-y-3 pt-2">
+                <li className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-300">
+                  <Check size={16} className="text-teal-400 shrink-0" strokeWidth={3} />
+                  <span>Clients approve quotes digitally with one click</span>
+                </li>
+                <li className="flex items-center gap-2.5 text-xs sm:text-sm font-semibold text-slate-300">
+                  <Check size={16} className="text-teal-400 shrink-0" strokeWidth={3} />
+                  <span>
+                    Collect job deposits directly via <StripeWordmark className="text-xs" />
+                  </span>
+                </li>
+              </ul>
             </div>
-            <div className="md:col-span-7">
-              <OutboxStrip />
+
+            <div className="lg:col-span-7">
+              <div className="rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 shadow-2xl relative">
+                <Image
+                  src="/images/invoice_full.webp"
+                  alt="A branded PDF estimate ready to send to a homeowner"
+                  width={900}
+                  height={1150}
+                  className="w-full h-auto object-cover object-top max-h-[480px]"
+                />
+                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-950 to-transparent pointer-events-none" />
+              </div>
             </div>
           </div>
-        </FeatureBlock>
+        </FeatureSection>
 
-        {/* 3. Grow with Google */}
-        <FeatureBlock
-          badgeIcon={<GoogleLogo className="w-3.5 h-3.5" />}
-          badgeText="Grow with Google"
-          title="Turn every completed job into 5-star reviews"
-          subtitle="Mark a job complete and an automated review request sends straight to your customer, directing top feedback right to your profile."
+        {/* Feature 2: Google Reviews */}
+        <FeatureSection
+          tag="02 · REPUTATION ENGINE"
+          title={
+            <>
+              Turn every completed job into{' '}
+              <span className="text-teal-400">5-star Google reviews.</span>
+            </>
+          }
+          description="Mark a job complete on your phone and an automated SMS or email review prompt goes directly to the homeowner before you leave the driveway."
         >
-          <div className="grid md:grid-cols-12 gap-6 sm:gap-8 items-center">
-            <div className="md:col-span-7 space-y-4">
-              <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-300">
-                  <Mail className="w-4 h-4 text-teal-400" />
-                  <span>Automated Review Email Preview</span>
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-teal-400 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-md">
-                  Auto-sent on completion
-                </span>
-              </div>
-
-              <div className="rounded-2xl bg-white p-4 sm:p-5 shadow-xl text-slate-900 space-y-3">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+          <div className="grid lg:grid-cols-12 gap-8 items-center">
+            <div className="lg:col-span-6 space-y-4">
+              <div className="bg-slate-950 rounded-2xl border border-slate-800 p-5 space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
-                    <GoogleLogo className="w-4 h-4" />
-                    <span className="font-bold text-xs text-slate-800">Ridge Line Roofing</span>
+                    <Mail size={16} className="text-teal-400" />
+                    <span className="text-xs font-bold text-slate-300">Automated Review Request</span>
                   </div>
+                  <span className="text-[10px] font-black text-teal-400 bg-teal-950 border border-teal-800/80 px-2 py-0.5 rounded">
+                    Trigger: Job Completed
+                  </span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <p className="text-xs font-black text-slate-900">How did we do?</p>
-                  <p className="text-[11px] text-slate-600 font-medium leading-relaxed">
-                    Hi Jennifer, thanks for choosing us! Could you leave us a quick review on Google?
+                <div className="bg-white rounded-xl p-4 text-slate-900 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <div className="flex items-center gap-1.5">
+                      <GoogleLogo className="w-4 h-4" />
+                      <span className="font-bold text-xs">Ridge Line Roofing</span>
+                    </div>
+                    <div className="flex text-amber-400">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={11} fill="currentColor" />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium leading-relaxed">
+                    Hi Jennifer, thanks for trusting us with your roof repair! Would you mind leaving us a 30-second review on Google?
                   </p>
-                </div>
-
-                <div className="pt-1">
-                  <div className="inline-flex items-center justify-center gap-2 bg-slate-900 text-white font-black text-[11px] px-4 py-2.5 rounded-lg shadow-md">
-                    <GoogleLogo className="w-3.5 h-3.5" />
-                    Leave a Google Review
+                  <div className="pt-1">
+                    <span className="inline-flex items-center gap-2 bg-slate-900 text-white font-black text-[11px] px-3.5 py-2 rounded-lg shadow-sm">
+                      <GoogleLogo className="w-3.5 h-3.5" /> Leave Review
+                      <ArrowUpRight size={12} className="text-slate-400" />
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="md:col-span-5 flex justify-center">
-              <div className="relative rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-slate-950 group hover:scale-[1.02] transition-transform duration-300">
+            <div className="lg:col-span-6 flex justify-center">
+              <div className="rounded-2xl border border-slate-800 overflow-hidden bg-slate-950 max-w-[320px] shadow-2xl">
                 <img
                   src="/images/GoogleReview.png"
-                  alt="Google Automated Review Requests on Mobile"
-                  className="w-full h-auto max-w-[280px] object-contain block"
+                  alt="Google Automated Review Requests interface preview"
+                  className="w-full h-auto object-cover"
                 />
               </div>
             </div>
           </div>
-        </FeatureBlock>
+        </FeatureSection>
 
-        {/* 4. Data Control */}
-        <FeatureBlock
-          badgeIcon={<Database className="w-3.5 h-3.5 text-teal-400" />}
-          badgeText="Data Control"
-          title="It's your business data. Take it whenever."
-          subtitle="Export leads, jobs, and payments to CSV at any time, formatted for quick bulk edits or seamless QuickBooks import."
+        {/* Feature 3: Data Export */}
+        <FeatureSection
+          tag="03 · DATA CONTROL"
+          title={
+            <>
+              Your customer data belongs to you.{' '}
+              <span className="text-teal-400">Export anytime.</span>
+            </>
+          }
+          description="Export full records of leads, jobs, estimates, and payment statuses to standard formats whenever you need to sync with your accountant or CRM."
         >
-          <div className="grid md:grid-cols-12 gap-6 items-center">
-            <div className="md:col-span-5 space-y-2">
-              <p className="text-xs sm:text-sm font-semibold text-slate-300 leading-relaxed">
-                Never lock your information away. Access full export options anytime and stay completely flexible across your accounting workflow.
-              </p>
-            </div>
-            <div className="md:col-span-7">
-              <ExportStrip />
-            </div>
+          <div className="max-w-3xl">
+            <ExportPreview />
           </div>
-        </FeatureBlock>
-
+        </FeatureSection>
       </div>
     </section>
   );

@@ -248,52 +248,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
    
 
-        {/* ── AUTOMATIONS ── */}
-        <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="px-5 py-3.5 border-b border-gray-100">
-            <h2 className="text-[14px] font-semibold text-gray-900">Automations</h2>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {can(planTier, 'daily_digest') ? (
-              <button onClick={() => setShowDigestConfirm(true)}
-                className="w-full flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-gray-50 transition text-left">
-                <div>
-                  <p className="text-[13px] font-medium text-gray-900">Daily digest</p>
-                  <p className="text-[12px] text-gray-600 mt-0.5">6AM summary of leads, jobs, and payments</p>
-                </div>
-                <div className={`w-10 h-5 rounded-full relative transition-colors shrink-0 ${digestEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}>
-                  <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${digestEnabled ? 'left-5' : 'left-0.5'}`} />
-                </div>
-              </button>
-            ) : (
-              <button onClick={() => openTab('billing')}
-                className="w-full flex items-center justify-between gap-3 px-5 py-3.5 hover:bg-blue-50/40 transition text-left group">
-                <div>
-                  <p className="text-[13px] font-medium text-gray-400 group-hover:text-blue-600 transition-colors">Daily digest</p>
-                  <p className="text-[12px] text-gray-500 mt-0.5">6AM summary of leads, jobs, and payments</p>
-                </div>
-                <span className="text-[10px] font-semibold text-blue-500 bg-blue-50 px-2 py-1 rounded-full shrink-0">Pro</span>
-              </button>
-            )}
-
-            <div className="flex items-center justify-between gap-3 px-5 py-3.5">
-      <div>
-  <p className="text-[13px] font-medium text-gray-900">BCC me on customer emails</p>
-  <p className="text-[12px] text-gray-600 mt-0.5">
-    Sends a copy of every <strong className="font-semibold text-gray-900">quote</strong>, <strong className="font-semibold text-gray-900">schedule</strong>, and <strong className="font-semibold text-gray-900">invoice</strong> email to your <strong className="font-semibold text-gray-900 underline">company email</strong>
-  </p>
-</div>
-              <button
-                onClick={handleToggleBcc}
-                disabled={bccSaving}
-                className={`w-10 h-5 rounded-full relative transition-colors shrink-0 disabled:opacity-50 ${bccEnabled ? 'bg-blue-600' : 'bg-gray-300'}`}
-                style={{ minWidth: '2.5rem', minHeight: '1.25rem', maxWidth: '2.5rem' }}
-              >
-                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${bccEnabled ? 'left-5' : 'left-0.5'}`} />
-              </button>
-            </div>
-          </div>
-        </section>
+   
 
         {/* ── SYSTEM CONFIGURATION ── */}
         <div>

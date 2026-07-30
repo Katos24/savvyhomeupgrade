@@ -100,8 +100,13 @@ export default function BillingSection({
   const [paymentDate, setPaymentDate] = useState('');
 
   // ── LOGS ──
+  // ── LOGS ──
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [invoiceLog, setInvoiceLog] = useState<any[]>([]);
+
+  // ── PAYMENTS ──
+  const [payments, setPayments] = useState<any[]>([]);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<number | null>(null);
 
   // ── PERMISSIONS ──
   const planTier = (company?.plan_tier || 'free') as PlanTier;
@@ -178,6 +183,21 @@ export default function BillingSection({
       num > 0 ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
     );
   }, [lead?.id]);
+
+  const fetchPayments = async () => {
+    if (!lead?.project_id || !companySlug) return;
+    try {
+      const res = await fetch(`/api/company/${companySlug}/payments?project_id=${lead.project_id}`);
+      const data = await res.json();
+      if (data.success) setPayments(data.payments || []);
+    } catch {
+      // Non-fatal — the summary above still renders from the project row.
+    }
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, [lead?.project_id, companySlug]);
 
   useEffect(() => {
     if (!lead?.id || !companySlug) return;
@@ -291,43 +311,70 @@ export default function BillingSection({
     }
   };
 
-  const handleSavePayment = async () => {
+const handleSavePayment = async () => {
     if (!hasProject) {
       toast.error('Convert to project first');
       return;
     }
     const amount = parseFloat(rawAmount || '0');
-    if (isNaN(amount)) {
-      toast.error('Enter a valid amount');
+    if (isNaN(amount) || amount <= 0) {
+      toast.error('Enter an amount greater than zero');
       return;
     }
+
     setSavingPayment(true);
     try {
-      const res = await fetch('/api/leads/update', {
+      // Inserts a row rather than overwriting the project total, so a deposit
+      // followed by a balance keeps both.
+      const res = await fetch(`/api/company/${companySlug}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id,
-          action: 'update_payment',
-          payment_status: amount >= total ? 'paid' : amount > 0 ? 'partial' : 'unpaid',
-          payment_amount: amount,
-          payment_method: paymentMethod || null,
-          payment_date: paymentDate || null,
-          payment_due_date: dueDate || null,
-          user_name: currentUser?.name || 'Unknown',
-          user_email: currentUser?.email || '',
+          project_id: lead.project_id,
+          amount,
+          method: paymentMethod || 'other',
+          paid_on: paymentDate || null,
         }),
       });
       const result = await res.json();
-      if (result.success) {
-        toast.success('Payment recorded!');
+
+      if (res.ok && result.success) {
+        toast.success('Payment recorded');
         setShowRecordPayment(false);
+        setRawAmount('');
+        setPaymentAmount('');
+        setPaymentMethod('');
+        setPayments(result.payments || []);
         await onRefresh();
-      } else toast.error(result.error || 'Failed to save payment');
+      } else {
+        toast.error(result.error || 'Failed to record payment');
+      }
     } catch {
-      toast.error('Failed to save payment');
+      toast.error('Failed to record payment');
     } finally {
       setSavingPayment(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: number) => {
+    setDeletingPaymentId(paymentId);
+    try {
+      const res = await fetch(
+        `/api/company/${companySlug}/payments?payment_id=${paymentId}`,
+        { method: 'DELETE' }
+      );
+      const result = await res.json();
+      if (res.ok && result.success) {
+        toast.success('Payment removed');
+        setPayments(result.payments || []);
+        await onRefresh();
+      } else {
+        toast.error(result.error || 'Could not remove payment');
+      }
+    } catch {
+      toast.error('Could not remove payment');
+    } finally {
+      setDeletingPaymentId(null);
     }
   };
 
@@ -590,6 +637,63 @@ export default function BillingSection({
           )}
         </div>
 
+        {/* ── PAYMENTS RECEIVED ──
+             A deposit and a balance are two transactions; showing one number
+             hid that. */}
+        {payments.length > 0 && (
+          <div className="border-t border-slate-100">
+            <p className="px-5 pt-3 pb-1 text-[13px] text-slate-500">
+              Payments received
+            </p>
+            {payments.map((p) => (
+              <div
+                key={p.id}
+                className="flex items-center justify-between gap-3 px-5 py-2.5 border-t border-slate-50 first:border-t-0"
+              >
+                <div className="min-w-0">
+                  <p className="text-[13px] font-medium text-slate-900 tabular-nums">
+                    {p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}
+                    <span className="ml-2 font-normal text-slate-400 capitalize">
+                      {p.kind === 'refund'
+                        ? 'refund'
+                        : p.kind === 'deposit'
+                        ? 'deposit'
+                        : p.kind === 'balance'
+                        ? 'balance'
+                        : 'payment'}
+                    </span>
+                  </p>
+                  <p className="text-[11px] text-slate-400 capitalize">
+                    {p.is_stripe && p.card_brand
+                      ? `${p.card_brand} ····${p.card_last4}`
+                      : p.method.replace('_', ' ')}
+                    {p.paid_on && ` · ${fmtDate(p.paid_on)}`}
+                    {p.recorded_by && ` · ${p.recorded_by}`}
+                  </p>
+                </div>
+
+                {/* Stripe rows are locked — deleting one would show the job
+                    unpaid while Stripe still holds the money. */}
+                {!p.is_stripe && p.kind !== 'refund' && (
+                  <button
+                    onClick={() => handleDeletePayment(p.id)}
+                    disabled={deletingPaymentId === p.id}
+                    className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-50"
+                    aria-label="Remove payment"
+                  >
+                    {deletingPaymentId === p.id ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <X className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+
         {/* ── SECONDARY ACTIONS — quiet text buttons, not competing tiles ── */}
         <div className="flex items-center gap-1 border-t border-slate-100 px-3 py-2">
           <button
@@ -613,11 +717,25 @@ export default function BillingSection({
 
           {!isClosed && !isStripeVerified && (
             <button
-              onClick={() => setShowRecordPayment(true)}
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-            >
-              <CreditCard className="w-3.5 h-3.5" />
-              {isPaid ? 'Edit payment' : isPartial ? 'Update payment' : 'Record payment'}
+             onClick={() => {
+              // Pre-fill what's actually still owed — the common case is
+              // recording exactly the balance.
+              if (remaining > 0) {
+                setRawAmount(remaining.toString());
+                setPaymentAmount(
+                  remaining.toLocaleString('en-US', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })
+                );
+              }
+              if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
+              setShowRecordPayment(true);
+            }}
+            className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          >
+            <CreditCard className="w-3.5 h-3.5" />
+            {isPaid ? 'Record another' : isPartial ? 'Record balance' : 'Record payment'}
             </button>
           )}
         </div>
@@ -925,18 +1043,20 @@ export default function BillingSection({
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold tabular-nums outline-none focus:bg-white focus:border-slate-900 focus:ring-2 focus:ring-slate-100 transition-colors"
                   />
 
-                  {total > 0 && (
+                  {remaining > 0 && (
                     <button
                       type="button"
                       onClick={() => {
-                        const isFullAmount = rawAmount === total.toString();
+                        // Fills what's still owed, not the full quote total —
+                        // after a $500 deposit on a $3,000 job this is $2,500.
+                        const isFullAmount = rawAmount === remaining.toString();
                         if (isFullAmount) {
                           setRawAmount('');
                           setPaymentAmount('');
                         } else {
-                          setRawAmount(total.toString());
+                          setRawAmount(remaining.toString());
                           setPaymentAmount(
-                            total.toLocaleString('en-US', {
+                            remaining.toLocaleString('en-US', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })
@@ -945,15 +1065,16 @@ export default function BillingSection({
                         }
                       }}
                       className={`mt-2 w-full p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between transition-colors ${
-                        rawAmount === total.toString()
+                        rawAmount === remaining.toString()
                           ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
                           : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                       }`}
                     >
                       <span className="flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5" /> Paid in full
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        {paidAmount > 0 ? 'Pay off balance' : 'Paid in full'}
                       </span>
-                      <span className="tabular-nums">{fmt(total)}</span>
+                      <span className="tabular-nums">{fmt(remaining)}</span>
                     </button>
                   )}
                 </div>
