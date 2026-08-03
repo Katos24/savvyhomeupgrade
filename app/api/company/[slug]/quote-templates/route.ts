@@ -12,6 +12,8 @@ type TemplateRow = {
   items: any;
   tax_rate: string | number;
   total: string | number;
+  deposit_type: string | null;
+  deposit_value: string | number | null;
 };
 
 /**
@@ -24,14 +26,17 @@ function shape(row: TemplateRow) {
     id: row.id,
     category: row.category,
     items: Array.isArray(row.items) ? row.items : [],
-    tax_rate: Number(row.tax_rate) || 0,
+  tax_rate: Number(row.tax_rate) || 0,
     total: Number(row.total) || 0,
+    // Null means no deposit — don't coerce to 0, the UI distinguishes them.
+    deposit_type: row.deposit_type ?? null,
+    deposit_value: row.deposit_value === null ? null : Number(row.deposit_value),
   };
 }
 
 async function loadTemplates(companyId: number) {
   const rows = (await sql`
-    SELECT id, category, items, tax_rate, total
+    SELECT id, category, items, tax_rate, total, deposit_type, deposit_value
     FROM quote_templates
     WHERE company_id = ${companyId}
     ORDER BY category
@@ -177,10 +182,12 @@ export async function POST(
 
       const updated = await sql`
         UPDATE quote_templates
-        SET items    = ${JSON.stringify(template.items ?? [])}::jsonb,
-            tax_rate = ${Number(template.tax_rate) || 0},
-            total    = ${Number(template.total) || 0},
-            category = ${template.category}
+        SET items         = ${JSON.stringify(template.items ?? [])}::jsonb,
+            tax_rate      = ${Number(template.tax_rate) || 0},
+            total         = ${Number(template.total) || 0},
+            category      = ${template.category},
+            deposit_type  = ${template.deposit_type || null},
+            deposit_value = ${template.deposit_value ?? null}
         WHERE id = ${template.id} AND company_id = ${companyId}
         RETURNING id
       `;
@@ -205,20 +212,25 @@ export async function POST(
         return NextResponse.json({ success: false, error: 'templates must be a non-empty array' }, { status: 400 });
       }
 
-      const payload = templates.map((t: any) => ({
+     const payload = templates.map((t: any) => ({
         id: String(t.id),
         items: t.items ?? [],
         tax_rate: Number(t.tax_rate) || 0,
         total: Number(t.total) || 0,
+        deposit_type: t.deposit_type || null,
+        deposit_value: t.deposit_value ?? null,
       }));
 
       const updated = await sql`
         UPDATE quote_templates qt
-        SET items    = v.items,
-            tax_rate = v.tax_rate,
-            total    = v.total
+       SET items         = v.items,
+            tax_rate      = v.tax_rate,
+            total         = v.total,
+            deposit_type  = v.deposit_type,
+            deposit_value = v.deposit_value
         FROM jsonb_to_recordset(${JSON.stringify(payload)}::jsonb)
-          AS v(id text, items jsonb, tax_rate numeric, total numeric)
+          AS v(id text, items jsonb, tax_rate numeric, total numeric,
+               deposit_type text, deposit_value numeric)
         WHERE qt.id = v.id AND qt.company_id = ${companyId}
         RETURNING qt.id
       `;

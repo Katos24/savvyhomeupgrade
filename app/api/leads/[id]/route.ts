@@ -31,6 +31,8 @@ export async function GET(
         p.ai_brief,
         p.quote_total,
         p.quote_tax_rate,
+        p.deposit_type,
+        p.deposit_value,
         p.quote_sent_at as project_quote_sent_at,
         p.quote_accepted_at as project_quote_accepted_at,
         p.quote_declined_at as project_quote_declined_at,

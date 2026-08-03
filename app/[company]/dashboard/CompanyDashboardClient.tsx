@@ -554,8 +554,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 const accentColor = company.email_brand_color_1 || '#2563eb';
 
   return (
-<div className={`min-h-screen relative selection:bg-blue-500/30 ${isDark ? 'bg-[#334155]' : 'bg-gray-50'}`}>
-      <div
+<div className="min-h-screen relative selection:bg-blue-500/30 bg-[#334155]">
+   <div
         className="pointer-events-none fixed inset-x-0 top-0 h-[480px] z-0"
         style={{
           background: `radial-gradient(ellipse at top, ${accentColor}1f, transparent 70%)`,

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
+
 import { stripe } from '@/lib/stripe';
 
 export async function GET(
@@ -90,63 +92,32 @@ export async function GET(
       : undefined;
 
     // Determine payment link: prefer a live Stripe Checkout session if Connect is set up
-    let paymentLinkUrl: string | null = company.payment_link_url;
+  let paymentLinkUrl: string | null = company.payment_link_url;
     let paymentLinkType: string | null = company.payment_link_type;
+    // What the link actually charges. Without this the PDF showed the full
+    // total next to a QR code that collects only the deposit.
+    let pdfDepositAmount: number | undefined;
 
-if (company.stripe_payment_status === 'active' && project.payment_status !== 'paid' && project.quote_total > 0) {
-      let checkoutUrl: string | null = null;
+const contractTotal = parseFloat(project.quote_total || '0');
 
-      if (project.stripe_checkout_session_id) {
-        try {
-          const existing = await stripe.checkout.sessions.retrieve(
-            project.stripe_checkout_session_id,
-            { stripeAccount: company.stripe_connect_account_id }
-          );
-          if (existing.status === 'open' && existing.url) {
-            checkoutUrl = existing.url;
-          }
-        } catch {
-          // session expired/invalid/not found — fall through and create a new one
+    if (company.stripe_payment_status === 'active' && contractTotal > 0) {
+      try {
+        const checkout = await getOrCreateCheckoutSession({
+          projectId: project.id,
+          connectedAccountId: company.stripe_connect_account_id,
+          customerName: project.customer_name,
+          customerEmail: project.customer_email,
+          companySlug: slug,
+          contractTotal,
+        });
+       if (checkout.url) {
+          paymentLinkUrl = checkout.url;
+          paymentLinkType = 'stripe';
+          if (checkout.kind === 'deposit') pdfDepositAmount = checkout.amount;
         }
-      }
-
-    if (!checkoutUrl) {
-        try {
-          const newSession = await stripe.checkout.sessions.create(
-            {
-              mode: 'payment',
-              payment_method_types: ['card'],
-              line_items: [{
-                price_data: {
-                  currency: 'usd',
-                  product_data: { name: `Invoice for ${project.customer_name}` },
-                  unit_amount: Math.round(parseFloat(project.quote_total) * 100),
-                },
-                quantity: 1,
-              }],
-              customer_email: project.customer_email || undefined,
-              success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${project.id}`,
-              cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${slug}/dashboard?payment=cancelled`,
-              metadata: { projectId: project.id.toString(), companySlug: slug },
-            },
-            { stripeAccount: company.stripe_connect_account_id }
-          );
-          checkoutUrl = newSession.url;
-
-          await sql`
-            UPDATE projects
-            SET stripe_checkout_session_id = ${newSession.id}
-            WHERE id = ${project.id}
-          `;
-        } catch (stripeErr: any) {
-          console.error('Failed to create Stripe Checkout session for PDF:', stripeErr.message);
-          // fall through — PDF will just show the fallback payment_link_url, if any, instead of a Stripe link
-        }
-      }
-
-      if (checkoutUrl) {
-        paymentLinkUrl = checkoutUrl;
-        paymentLinkType = 'stripe';
+      } catch (stripeErr: any) {
+        console.error('Failed to create Stripe Checkout session for PDF:', stripeErr.message);
+        // fall through — PDF shows the fallback payment_link_url, if any
       }
     }
     
@@ -172,9 +143,10 @@ if (company.stripe_payment_status === 'active' && project.payment_status !== 'pa
         unitPrice: item.unitPrice ?? undefined,
         amount: item.amount ?? 0,
       })),
-     total: parseFloat(project.quote_total || '0'),
+   total: contractTotal,
       taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
       amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
+      depositAmount: pdfDepositAmount,
       paymentLinkUrl: paymentLinkUrl || undefined,
       paymentLinkType: paymentLinkType || undefined,
       brandColor1: company.email_brand_color_1 || undefined,

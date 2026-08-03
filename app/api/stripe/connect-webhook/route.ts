@@ -67,7 +67,8 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
       // project can legitimately receive a deposit and then a balance.
       // company_id is NOT NULL on payments and drives RLS, so read it here.
       const projectRows = await sql`
-        SELECT company_id, quote_total, payment_amount
+        SELECT company_id, quote_total, payment_amount,
+               deposit_type, deposit_value
         FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
       `;
       const projectRow = projectRows[0];
@@ -81,8 +82,14 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
         break;
       }
 
-       const amountPaid = session.amount_total ? session.amount_total / 100 : null;
-
+const amountPaid = session.amount_total ? session.amount_total / 100 : null;
+      if (amountPaid === null) {
+        // payments.amount is NOT NULL; inserting would throw and Stripe would
+        // retry forever on an event that can never succeed.
+        console.error(`Webhook ${event.id}: session ${session.id} has no amount_total`);
+        break;
+      }
+      
       // Fetch card brand/last4 once at payment time so BillingSection can
       // display it without a live Stripe call on every page load.
       let cardBrand: string | null = null;
@@ -106,27 +113,27 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
 
       // A session created for a balance is smaller than quote_total, so
       // classify rather than assuming this settles the job.
+     // The job's deposit terms decide this, not the amount. Inferring from
+      // amount labelled any first partial a 'deposit' even when the contractor
+      // never set deposit terms. Derived here rather than read from
+      // session.metadata so a replayed session can't mislabel the row.
       const alreadyPaidAmount = parseFloat(projectRow.payment_amount || '0');
       const projectQuoteTotal = parseFloat(projectRow.quote_total || '0');
-      const thisAmount = amountPaid ?? 0;
-      // First partial is a deposit, the one that settles it is the balance,
-      // anything in between is just a payment.
+      const hasDepositTerms =
+        !!projectRow.deposit_type && Number(projectRow.deposit_value) > 0;
       const paymentKind =
-        alreadyPaidAmount === 0 && projectQuoteTotal > 0 && thisAmount < projectQuoteTotal
-          ? 'deposit'
-          : projectQuoteTotal > 0 && alreadyPaidAmount + thisAmount >= projectQuoteTotal
-          ? 'balance'
-          : 'payment';
+        hasDepositTerms && alreadyPaidAmount === 0 ? 'deposit' : 'balance';
 
       const insertedPayment = await sql`
-        INSERT INTO payments (
-          project_id, company_id, amount, method, kind, paid_on,
+       INSERT INTO payments (
+          project_id, company_id, amount, invoiced_total, method, kind, paid_on,
           stripe_payment_intent_id, stripe_checkout_session_id,
           card_brand, card_last4, recorded_by
         ) VALUES (
           ${parseInt(projectId)},
           ${projectRow.company_id},
           ${amountPaid},
+          ${projectQuoteTotal || null},
           'stripe',
           ${paymentKind},
           CURRENT_DATE,
@@ -209,77 +216,134 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
     case 'charge.refunded': {
       const charge = event.data.object as any;
       const paymentIntentId = charge.payment_intent;
-
-      if (!paymentIntentId) break;
-
-     // Look up via the payment row this refund reverses, not via
-      // projects.stripe_payment_intent_id — that column now only holds the
-      // most recent payment, so a refund of an earlier one would miss.
-      const refundTarget = await sql`
+      const eventAccountId = (event as any).account;
+ 
+      if (!paymentIntentId) {
+        console.error('charge.refunded with no payment_intent:', charge.id);
+        break;
+      }
+ 
+      // Find the payment this refund reverses. Not via
+      // projects.stripe_payment_intent_id — that column holds only the most
+      // recent payment, so refunding an earlier one would miss.
+      const refundTargetRows = await sql`
         SELECT project_id, company_id, amount, invoiced_total
         FROM payments
         WHERE stripe_payment_intent_id = ${paymentIntentId}
+          AND kind <> 'refund'
         LIMIT 1
       `;
-
-      if (!refundTarget[0]) {
+      const refundTarget = refundTargetRows[0];
+ 
+      if (!refundTarget) {
         console.error('No matching payment for refunded charge:', charge.id, paymentIntentId);
         break;
       }
-
-      const refundProjectId = refundTarget[0].project_id;
-      const refundCompanyId = refundTarget[0].company_id;
-      const originalAmount = parseFloat(refundTarget[0].amount || '0');
+ 
+      const refundProjectId = refundTarget.project_id;
+      const refundCompanyId = refundTarget.company_id;
       // Carry the total from the payment being reversed, not the current
-      // quote_total — the refund belongs to the job as it was then.
-      const refundInvoicedTotal = refundTarget[0].invoiced_total;
-
-      const refundedAmount = charge.amount_refunded ? charge.amount_refunded / 100 : 0;
-
-      // Was the whole PROJECT refunded, or just this one charge? The old
-      // code compared the charge against itself, so refunding one of two
-      // payments in full marked the entire project 'refunded'.
-      const isFullChargeRefund = charge.amount_refunded === charge.amount;
-
-      // Negative row so SUM(amount) reflects what was actually kept.
-      await sql`
-        INSERT INTO payments (
-          project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-          note, recorded_by
-        ) VALUES (
-          ${refundProjectId},
-          ${refundCompanyId},
-          ${-Math.abs(refundedAmount)},
-          ${refundInvoicedTotal},
-          'stripe',
-          'refund',
-          CURRENT_DATE,
-          ${`Refund of ${refundedAmount} against intent ${paymentIntentId}`},
-          'Stripe'
-        )
+      // quote_total — the refund belongs to the job as it was invoiced then.
+      const refundInvoicedTotal = refundTarget.invoiced_total;
+ 
+      // Pull the authoritative refund list from the API rather than trusting
+      // charge.refunds on the event payload, which Stripe truncates past ~10.
+      let refunds: any[] = [];
+      try {
+        const refundList = await stripe.refunds.list(
+          { charge: charge.id, limit: 100 },
+          { stripeAccount: eventAccountId }
+        );
+        refunds = refundList.data || [];
+      } catch (err: any) {
+        console.error('Failed to list refunds for charge', charge.id, err.message);
+        // Return 500 so Stripe retries — better than silently losing the refund.
+        return NextResponse.json({ error: 'refund_list_failed' }, { status: 500 });
+      }
+ 
+      // Only refunds that actually moved money. Stripe can report 'pending',
+      // 'failed', or 'canceled'; recording those would understate collections.
+      const settledRefunds = refunds.filter((r) => r.status === 'succeeded');
+ 
+      if (settledRefunds.length === 0) {
+        console.log(`charge.refunded ${charge.id}: no succeeded refunds yet, nothing to record`);
+        break;
+      }
+ 
+      const refundIds = settledRefunds.map((r) => r.id);
+      const existingRows = await sql`
+        SELECT stripe_refund_id
+        FROM payments
+        WHERE stripe_refund_id = ANY(${refundIds})
       `;
-
-      // The trigger has recomputed payment_amount from the sum. Read it back
-      // to decide the status, rather than inferring from one charge.
+      const alreadyRecorded = new Set(existingRows.map((r: any) => r.stripe_refund_id));
+ 
+      const newRefunds = settledRefunds.filter((r) => !alreadyRecorded.has(r.id));
+ 
+      if (newRefunds.length === 0) {
+        console.log(`charge.refunded ${charge.id}: all ${settledRefunds.length} refund(s) already recorded`);
+        break;
+      }
+ 
+      let recordedTotal = 0;
+      for (const refund of newRefunds) {
+        const refundAmount = (refund.amount || 0) / 100;
+        if (refundAmount <= 0) continue;
+ 
+        // Negative row so SUM(amount) reflects what was actually kept.
+        // ON CONFLICT covers the race where two events for the same charge
+        // arrive concurrently and both pass the check above.
+        const inserted = await sql`
+          INSERT INTO payments (
+            project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+            stripe_refund_id, stripe_payment_intent_id, note, recorded_by
+          ) VALUES (
+            ${refundProjectId},
+            ${refundCompanyId},
+            ${-Math.abs(refundAmount)},
+            ${refundInvoicedTotal},
+            'stripe',
+            'refund',
+            CURRENT_DATE,
+            ${refund.id},
+            ${paymentIntentId},
+            ${`Refund ${refund.id} against intent ${paymentIntentId}`},
+            'Stripe'
+          )
+          ON CONFLICT (stripe_refund_id) DO NOTHING
+          RETURNING id
+        `;
+ 
+        if (inserted.length > 0) recordedTotal += refundAmount;
+      }
+ 
+      if (recordedTotal === 0) {
+        console.log(`charge.refunded ${charge.id}: nothing new inserted after conflict check`);
+        break;
+      }
+ 
+      // payments_sync_project has recomputed projects.payment_amount from the
+      // sum, negatives included. Read it back rather than inferring status
+      // from a single charge.
       const afterRefund = await sql`
-        SELECT COALESCE(payment_amount, 0) AS net_paid, COALESCE(quote_total, 0) AS total
+        SELECT COALESCE(payment_amount, 0) AS net_paid
         FROM projects WHERE id = ${refundProjectId} LIMIT 1
       `;
       const netPaid = parseFloat(afterRefund[0]?.net_paid || '0');
-
+ 
       await sql`
         UPDATE projects
-        SET payment_status = ${netPaid <= 0 ? 'refunded' : 'partially_refunded'},
-            refunded_amount = COALESCE(refunded_amount, 0) + ${Math.abs(refundedAmount)},
-            refunded_at = NOW()
+        SET payment_status  = ${netPaid <= 0 ? 'refunded' : 'partially_refunded'},
+            refunded_amount = COALESCE(refunded_amount, 0) + ${recordedTotal},
+            refunded_at     = NOW()
         WHERE id = ${refundProjectId}
       `;
-
+ 
       console.log(
-        `Project ${refundProjectId}: refund of ${refundedAmount} recorded ` +
-        `(original charge ${originalAmount}, full charge refund: ${isFullChargeRefund}, net paid now ${netPaid})`
+        `Project ${refundProjectId}: recorded ${newRefunds.length} refund(s) ` +
+        `totalling ${recordedTotal}, net paid now ${netPaid}`
       );
-
+ 
       break;
     }
 

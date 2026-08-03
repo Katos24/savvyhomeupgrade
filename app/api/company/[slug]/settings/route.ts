@@ -203,6 +203,42 @@ case 'update-tax-rate': {
   return NextResponse.json({ success: true, company: result[0] });
 }
 
+// ── Default deposit terms ──
+case 'update-deposit-default': {
+  const type = data.default_deposit_type ?? null;
+  const rawValue = data.default_deposit_value;
+  // Both null together, or both set — the CHECK constraint pairs them.
+  const clearing = !type || rawValue === null || rawValue === undefined;
+
+  if (!clearing) {
+    if (!['percent', 'fixed'].includes(type)) {
+      return NextResponse.json({ success: false, error: 'Deposit type must be percent or fixed.' }, { status: 400 });
+    }
+    const val = parseFloat(rawValue);
+    if (isNaN(val) || val <= 0) {
+      return NextResponse.json({ success: false, error: 'Deposit must be greater than zero.' }, { status: 400 });
+    }
+    if (type === 'percent' && val > 100) {
+      return NextResponse.json({ success: false, error: 'A percent deposit can\u2019t exceed 100.' }, { status: 400 });
+    }
+    const result = await sql`
+      UPDATE companies
+      SET default_deposit_type = ${type}, default_deposit_value = ${val}
+      WHERE id = ${company.id}
+      RETURNING *
+    `;
+    return NextResponse.json({ success: true, company: result[0] });
+  }
+
+  const result = await sql`
+    UPDATE companies
+    SET default_deposit_type = NULL, default_deposit_value = NULL
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
       case 'update-pipeline':
         await sql`
           UPDATE companies

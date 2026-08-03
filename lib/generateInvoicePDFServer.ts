@@ -26,7 +26,11 @@ type InvoicePDFData = {
   notes?: string;
   paymentLinkUrl?: string;
   paymentLinkType?: string;
-  amountPaid?: number;
+amountPaid?: number;
+  /** What the pay link actually charges when a deposit is due. The PDF still
+   *  shows the full contract — the customer needs to see what they're
+   *  agreeing to — but the amount-due figures reflect what's owed now. */
+  depositAmount?: number;
   brandColor1?: string;
   brandColor2?: string;
 };
@@ -172,8 +176,15 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
 
   const margin   = 48;
   const contentW = width - margin * 2;
-  const hasPartialPayment = !!(data.amountPaid && data.amountPaid > 0 && data.amountPaid < data.total);
+ const hasPartialPayment = !!(data.amountPaid && data.amountPaid > 0 && data.amountPaid < data.total);
+  // Deposit only applies before anything is collected — once a payment lands,
+  // the partial-payment path takes over and shows the real balance.
+  const hasDepositDue = !hasPartialPayment
+    && !!(data.depositAmount && data.depositAmount > 0 && data.depositAmount < data.total);
+  const depositDue = data.depositAmount ?? 0;
   const balanceDue = hasPartialPayment ? data.total - (data.amountPaid ?? 0) : data.total;
+  // What the customer is actually being asked to pay right now.
+  const amountDueNow = hasDepositDue ? depositDue : balanceDue;
 
   let y = height;
 
@@ -335,6 +346,16 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
     page.drawText(`of ${fmt(data.total)} total`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
     boxY -= 12;
     page.drawText(`Paid: ${fmt(data.amountPaid ?? 0)}`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
+  } else if (hasDepositDue) {
+    page.drawText('DEPOSIT DUE', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: gray });
+    boxY -= 24;
+    page.drawText(fmt(depositDue), { x: boxX + 14, y: boxY, size: 28, font: fontBold, color: accentColor });
+    boxY -= 18;
+    page.drawText(`of ${fmt(data.total)} total`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
+    boxY -= 12;
+    page.drawText(`Balance on completion: ${fmt(data.total - depositDue)}`, {
+      x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray,
+    });
   } else {
     page.drawText('AMOUNT DUE', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: gray });
     boxY -= 26;
@@ -376,7 +397,7 @@ y -= 6;
 
 // ── TOTALS ──
   // Reserve the whole block so it can't straddle a page break.
-  ensureSpace(hasPartialPayment ? 150 : 120);
+  ensureSpace(hasPartialPayment || hasDepositDue ? 150 : 120);
 
   const totalsX = margin + contentW * 0.55;
   const totalsW = contentW * 0.45;
@@ -403,24 +424,26 @@ y -= 6;
     y -= 14;
   }
 
+  if (hasDepositDue) {
+    page.drawText('Project Total', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+    drawRightAligned(page, fmt(data.total), totalsRight, y, 9, fontRegular, gray);
+    y -= 14;
+    page.drawText('Balance on Completion', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+    drawRightAligned(page, fmt(data.total - depositDue), totalsRight, y, 9, fontRegular, gray);
+    y -= 14;
+  }
+
   y -= 6;
   page.drawRectangle({ x: totalsX, y, width: totalsW, height: 0.5, color: mutedGray });
   y -= 56;
 
   page.drawRectangle({ x: totalsX, y: y - 10, width: totalsW, height: 48, color: offWhite });
   page.drawRectangle({ x: totalsX, y: y + 38, width: totalsW, height: 3, color: accentColor });
-  page.drawText(hasPartialPayment ? 'BALANCE DUE' : 'TOTAL DUE', {
-    x: totalsX + 10, y: y + 18, size: 8, font: fontBold, color: gray,
-  });
-  drawRightAligned(
-    page,
-    fmt(hasPartialPayment ? balanceDue : data.total),
-    totalsRight,
-    y + 6,
-    18,
-    fontBold,
-    darkGray
+ page.drawText(
+    hasPartialPayment ? 'BALANCE DUE' : hasDepositDue ? 'DEPOSIT DUE NOW' : 'TOTAL DUE',
+    { x: totalsX + 10, y: y + 18, size: 8, font: fontBold, color: gray }
   );
+  drawRightAligned(page, fmt(amountDueNow), totalsRight, y + 6, 18, fontBold, darkGray);
   y -= 24;
 
   // ── NOTES ──
@@ -469,7 +492,7 @@ y -= 6;
       page.drawText('Scan QR to Pay', {
         x: qrX + qrSize + 10, y: qrY + 48, size: 10, font: fontBold, color: black,
       });
-      page.drawText(hasPartialPayment ? fmt(balanceDue) : fmt(data.total), {
+      page.drawText(fmt(amountDueNow), {
         x: qrX + qrSize + 10, y: qrY + 32, size: 14, font: fontBold, color: accentColor,
       });
       

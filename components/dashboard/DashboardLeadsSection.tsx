@@ -180,7 +180,6 @@ export default function DashboardLeadsSection({
                       onSelectLead={onSelectLead}
                       statusOptions={statusOptions}
                       isDark={isDark}
-                      planTier={planTier}
                       accentColor={accentColor}
                     />
                   </section>

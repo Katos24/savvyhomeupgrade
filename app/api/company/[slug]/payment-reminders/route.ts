@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { sendPaymentReminderEmail } from '@/lib/email';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
+
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
 
 type Props = { params: Promise<{ slug: string }> };
@@ -101,10 +103,15 @@ export async function POST(req: Request, { params }: Props) {
     p.payment_due_date::text as payment_due_date,
     p.payment_amount,
     p.quote_total,
-    c.id as company_id,
+  c.id as company_id,
     c.name as company_name,
     c.phone as company_phone,
-    c.plan_tier
+    c.plan_tier,
+    c.slug as company_slug,
+    c.stripe_connect_account_id,
+    c.stripe_payment_status,
+    c.payment_link_url,
+    c.payment_link_type
   FROM projects p
   JOIN leads l ON p.lead_id = l.id
   JOIN companies c ON l.company_id = c.id
@@ -156,6 +163,34 @@ const daysOverdue = isOverdue && r.payment_due_date
   ? Math.floor((Date.now() - new Date(r.payment_due_date).getTime()) / 86400000)
   : 0;
 
+
+   // ── Payment link ──────────────────────────────────────────────────────────
+    // Without one the reminder is just a nag: the customer is told they owe
+    // money and given no way to settle it. The helper derives the amount from
+    // the ledger, so a reminder after a deposit charges only the balance.
+    let paymentLinkUrl: string | undefined = r.payment_link_url || undefined;
+    let paymentLinkType: string | undefined = r.payment_link_type || undefined;
+
+    if (r.stripe_payment_status === 'active' && quoteTotal > 0) {
+      try {
+        const checkout = await getOrCreateCheckoutSession({
+          projectId: project_id,
+          connectedAccountId: r.stripe_connect_account_id,
+          customerName: r.customer_name,
+          customerEmail: r.customer_email,
+          companySlug: r.company_slug,
+          contractTotal: quoteTotal,
+        });
+        if (checkout.url) {
+          paymentLinkUrl = checkout.url;
+          paymentLinkType = 'stripe';
+        }
+      } catch (stripeErr: any) {
+        console.error('Reminder checkout session failed:', stripeErr.message);
+        // Non-fatal — reminder still sends, falling back to the static link.
+      }
+    }
+
     // ── Send the email ────────────────────────────────────────────────────────
     let emailResult: any = null;
     try {
@@ -166,7 +201,7 @@ const daysOverdue = isOverdue && r.payment_due_date
         companyPhone:  r.company_phone,
         companyId: r.company_id,
         amountDue,
-        dueDate:       r.payment_due_date,
+       dueDate:       r.payment_due_date,
         isOverdue,
       });
     } catch (emailError: any) {

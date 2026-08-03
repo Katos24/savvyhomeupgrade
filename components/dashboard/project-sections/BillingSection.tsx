@@ -8,10 +8,8 @@ import {
   Download,
   Loader2,
   Send,
-  Lock,
   Mail,
   Eye,
-  BellRing,
   X,
   ChevronDown,
   CreditCard,
@@ -59,7 +57,7 @@ function DetailRow({
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-3 px-5 py-3 ${
+      className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ${
         first ? '' : 'border-t border-slate-100'
       }`}
     >
@@ -93,6 +91,12 @@ export default function BillingSection({
   // ── INVOICE FIELDS ──
   const [dueDate, setDueDate] = useState('');
 
+  // ── DEPOSIT TERMS ──
+  const [showDepositEditor, setShowDepositEditor] = useState(false);
+  const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
+  const [depositValueDraft, setDepositValueDraft] = useState('');
+  const [savingDeposit, setSavingDeposit] = useState(false);
+
   // ── PAYMENT FIELDS ──
   const [paymentAmount, setPaymentAmount] = useState('');
   const [rawAmount, setRawAmount] = useState('');
@@ -100,9 +104,12 @@ export default function BillingSection({
   const [paymentDate, setPaymentDate] = useState('');
 
   // ── LOGS ──
-  // ── LOGS ──
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [invoiceLog, setInvoiceLog] = useState<any[]>([]);
+  // Gates only the things that are actively WRONG while loading — the
+  // activity count and the primary button. The money comes from the `lead`
+  // prop and paints immediately.
+  const [logsLoaded, setLogsLoaded] = useState(false);
 
   // ── PAYMENTS ──
   const [payments, setPayments] = useState<any[]>([]);
@@ -130,9 +137,26 @@ export default function BillingSection({
 
   const invoiceTaxRate = parseFloat(lead?.quote_tax_rate || '0');
   const invoiceSubtotal = invoiceTaxRate > 0 ? total / (1 + invoiceTaxRate / 100) : total;
-  const invoiceTaxAmount = total - invoiceSubtotal;
   const paidAmount = parseFloat(lead?.payment_amount || '0');
   const remaining = Math.max(total - paidAmount, 0);
+
+  // Deposit on the tax-inclusive total, capped at it. Mirrors depositFor() in
+  // getOrCreateCheckoutSession so the panel and the customer's link agree.
+  const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;
+  const depositValue = parseFloat(lead?.deposit_value || '0');
+  const hasDepositTerms = !!depositType && depositValue > 0;
+  const depositAmount = hasDepositTerms
+    ? Math.min(
+        Math.round(
+          (depositType === 'percent' ? (total * depositValue) / 100 : depositValue) * 100
+        ) / 100,
+        total
+      )
+    : 0;
+  // Terms lock once money lands — refund to change them.
+  const depositLocked = paidAmount > 0;
+  // Terms set, nothing collected: the deposit is what's being asked for now.
+  const awaitingDeposit = hasDepositTerms && paidAmount === 0 && depositAmount > 0;
 
   const isRefunded = lead?.payment_status === 'refunded';
   const isStripeVerified = !!lead?.stripe_payment_intent_id;
@@ -166,7 +190,22 @@ export default function BillingSection({
   const daysSinceReminder = lastReminderSent
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
     : null;
-  const progressPct = total > 0 ? Math.min((paidAmount / total) * 100, 100) : 0;
+
+  // The deposit row from the ledger, so we can tell whether the balance has
+  // been asked for since it landed.
+  const depositPayment = payments.find((p) => p.kind === 'deposit');
+  const depositPaid = !!depositPayment;
+  // If the last invoice send predates the deposit, the customer was asked for
+  // the deposit — not the balance. Reminding them about a balance they were
+  // never sent is the wrong next step.
+  const balanceNotYetRequested =
+    !!depositPayment &&
+    !isPaid &&
+    !isClosed &&
+    remaining > 0 &&
+    (!lead?.invoice_sent_at ||
+      new Date(lead.invoice_sent_at).getTime() <
+        new Date(depositPayment.paid_on).getTime());
 
   const activityLog = [...invoiceLog, ...outboxLog].sort(
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -199,31 +238,35 @@ export default function BillingSection({
     fetchPayments();
   }, [lead?.project_id, companySlug]);
 
+  // Both types on mount. The old version loaded invoices on mount but
+  // reminders only when Activity was expanded, so the count read "1" until
+  // you opened it and then jumped to "2".
   useEffect(() => {
     if (!lead?.id || !companySlug) return;
-    fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=invoice`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.entries) setInvoiceLog(d.entries);
-      })
-      .catch(() => {});
-  }, [lead?.id, companySlug]);
+    let cancelled = false;
+    setLogsLoaded(false);
 
-  useEffect(() => {
-    if (!lead?.id || !companySlug || !showActivity) return;
-    fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.entries) setOutboxLog(d.entries);
+    const load = (type: string) =>
+      fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=${type}`)
+        .then((r) => r.json())
+        .then((d) => d?.entries || []);
+
+    // allSettled + finally: one dead endpoint can't leave the panel stuck
+    // behind a permanent skeleton.
+    Promise.allSettled([load('invoice'), load('payment_reminder')])
+      .then(([inv, rem]) => {
+        if (cancelled) return;
+        if (inv.status === 'fulfilled') setInvoiceLog(inv.value);
+        if (rem.status === 'fulfilled') setOutboxLog(rem.value);
       })
-      .catch(() => {});
-    fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=invoice`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.entries) setInvoiceLog(d.entries);
-      })
-      .catch(() => {});
-  }, [lead?.id, companySlug, showActivity]);
+      .finally(() => {
+        if (!cancelled) setLogsLoaded(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [lead?.id, companySlug]);
 
   // ── HANDLERS ──
   const handleDownload = async () => {
@@ -272,7 +315,7 @@ export default function BillingSection({
       });
       const result = await res.json();
       if (result.success) {
-        toast.success('Invoice sent!');
+        toast.success('Invoice sent');
         setShowSendConfirm(false);
         await onRefresh();
         fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=invoice`)
@@ -311,7 +354,37 @@ export default function BillingSection({
     }
   };
 
-const handleSavePayment = async () => {
+  const handleSaveDepositTerms = async (clear = false) => {
+    setSavingDeposit(true);
+    try {
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'save_deposit_terms',
+          deposit_type: clear ? null : depositTypeDraft,
+          deposit_value: clear ? null : parseFloat(depositValueDraft || '0'),
+          user_name: currentUser?.name || 'Unknown',
+          user_email: currentUser?.email || '',
+        }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        toast.success(clear ? 'Deposit removed' : 'Deposit saved');
+        setShowDepositEditor(false);
+        await onRefresh();
+      } else {
+        toast.error(result.error || 'Could not save deposit');
+      }
+    } catch {
+      toast.error('Could not save deposit');
+    } finally {
+      setSavingDeposit(false);
+    }
+  };
+
+  const handleSavePayment = async () => {
     if (!hasProject) {
       toast.error('Convert to project first');
       return;
@@ -388,7 +461,7 @@ const handleSavePayment = async () => {
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Reminder sent!');
+        toast.success('Reminder sent');
         setShowReminderConfirm(false);
         await onRefresh();
         fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`)
@@ -405,6 +478,12 @@ const handleSavePayment = async () => {
     }
   };
 
+  const openDepositEditor = () => {
+    setDepositTypeDraft(depositType ?? 'percent');
+    setDepositValueDraft(depositValue > 0 ? String(depositValue) : '');
+    setShowDepositEditor(true);
+  };
+
   if (!hasQuote) {
     return (
       <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
@@ -418,29 +497,38 @@ const handleSavePayment = async () => {
   }
 
   /* ── The one thing to do next ──────────────────────────────────────────
-     There's exactly one obvious action at any point, and it's derivable
-     from state. Making the user work that out from two tiles of equal
-     weight was the core problem with the old layout.                     */
+     Sending never disables — resending is legitimate when a customer loses
+     the email. Only the reminder greys out, because the server genuinely
+     blocks it for 24 hours.                                              */
   const nextAction: {
     label: string;
-    hint: string;
+    sub: string;
     onClick: () => void;
     tone: 'primary' | 'muted';
-  } | null = isClosed
+  } | null = !logsLoaded
     ? null
-    : isPaid
+    : isClosed || isPaid
     ? null
     : !canSendInvoice
     ? {
         label: 'Upgrade to send invoices',
-        hint: 'Emailing invoices is on the Basic plan.',
+        sub: 'Emailing invoices is on the Basic plan.',
         onClick: () => (window.location.href = `/${company?.slug}/admin/settings#billing`),
+        tone: 'primary',
+      }
+    : balanceNotYetRequested
+    ? {
+        label: `Send remaining balance — ${fmt(remaining)}`,
+        sub: 'Bills what\u2019s left after the deposit.',
+        onClick: () => setShowSendConfirm(true),
         tone: 'primary',
       }
     : !invoiceSent
     ? {
-        label: 'Send invoice',
-        hint: hasPayLink
+        label: awaitingDeposit
+          ? `Send deposit request — ${fmt(depositAmount)}`
+          : `Send invoice — ${fmt(remaining)}`,
+        sub: hasPayLink
           ? `Emails the PDF with a ${activeMethodLabel} pay link.`
           : 'Emails the PDF. No payment method connected yet.',
         onClick: () => setShowSendConfirm(true),
@@ -449,52 +537,48 @@ const handleSavePayment = async () => {
     : daysSinceReminder === 0
     ? {
         label: 'Reminder sent today',
-        hint: 'Give it a day before nudging again.',
+        sub: 'Available again tomorrow.',
         onClick: () => {},
         tone: 'muted',
       }
     : {
         label: 'Send payment reminder',
-        hint: lastReminderSent
-          ? `Last reminder ${fmtDate(lastReminderSent)}. ${fmt(remaining)} still outstanding.`
-          : `Invoice sent, ${fmt(remaining)} still outstanding.`,
+        sub: lastReminderSent
+          ? `Last reminder ${fmtDate(lastReminderSent)}. ${fmt(remaining)} outstanding.`
+          : `Invoice sent. ${fmt(remaining)} outstanding.`,
         onClick: () => setShowReminderConfirm(true),
         tone: 'primary',
       };
+
+  // Resending is a secondary action once something has already gone out —
+  // it sits under the primary rather than replacing it.
+  const showResend = logsLoaded && invoiceSent && !isPaid && !isClosed && canSendInvoice && !balanceNotYetRequested;
 
   return (
     <>
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
 
-        {/* ── THE MONEY ──
-             Light, not near-black — the dark treatment belongs to the modal
-             header, and stacking two dark bands buried the content. */}
-        <div className="px-5 pt-5 pb-4">
-          <div className="flex items-baseline justify-between gap-3 flex-wrap">
-            <p className="text-[13px] text-slate-500">
-              {isClosed ? 'Refunded' : isPaid ? 'Paid in full' : 'Balance due'}
-            </p>
-            {isPartial && (
-              <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                Partial payment
-              </span>
-            )}
-          </div>
-
+        {/* ── TOTAL + GRID ──
+             Total on top is the contract price and doesn't move as money
+             comes in. The two boxes below split it into what's due now and
+             what's left. Both always render, so the layout doesn't jump
+             when a deposit is added or cleared. */}
+        <div className="px-4 sm:px-5 pt-5 pb-4">
+          <p className="text-[13px] text-slate-500">
+            {isClosed ? 'Refunded' : isPaid ? 'Paid in full' : 'Total due'}
+          </p>
           <p
-            className={`mt-1 text-4xl font-semibold tracking-tight tabular-nums ${
+            className={`mt-1 text-[32px] sm:text-4xl font-semibold tracking-tight tabular-nums leading-tight ${
               isClosed ? 'text-slate-500' : isPaid ? 'text-emerald-600' : 'text-slate-900'
             }`}
           >
-            {isClosed ? fmt(refundedAmount) : isPaid ? fmt(total) : fmt(remaining)}
+            {isClosed ? fmt(refundedAmount) : fmt(total)}
           </p>
-
-          {!isClosed && !isPaid && total > 0 && (
-            <p className="mt-1 text-[13px] text-slate-500 tabular-nums">
-              of {fmt(total)} total
+          {invoiceTaxRate > 0 && !isClosed && (
+            <p className="mt-0.5 text-[12px] text-slate-400 tabular-nums">
+              {fmt(invoiceSubtotal)} + {invoiceTaxRate}% tax
             </p>
           )}
-
           {isClosed && lead?.refunded_at && (
             <p className="mt-1 text-[13px] text-slate-500">
               Refund processed {fmtDate(lead.refunded_at)}
@@ -502,47 +586,185 @@ const handleSavePayment = async () => {
           )}
 
           {!isClosed && (
-            <div className="mt-4">
-              <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                <motion.div
-                  className={`h-full rounded-full ${isPaid ? 'bg-emerald-500' : 'bg-emerald-500'}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPct}%` }}
-                  transition={{ duration: 0.6, ease: 'easeInOut' }}
-                />
-              </div>
-              <p className="mt-1.5 text-[12px] text-slate-500 tabular-nums">
-                {fmt(paidAmount)} collected · {Math.round(progressPct)}%
-              </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              {/* DEPOSIT BOX */}
+              {showDepositEditor ? (
+                <div className="col-span-2 rounded-xl border-2 border-brand-700 bg-white p-3">
+                  <p className="text-[11px] text-slate-500 mb-2">Deposit</p>
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
+                      {(['percent', 'fixed'] as const).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => setDepositTypeDraft(t)}
+                          className={`px-3 py-2 text-[13px] font-semibold transition-colors ${
+                            depositTypeDraft === t
+                              ? 'bg-brand-700 text-white'
+                              : 'bg-white text-slate-500 hover:bg-slate-50'
+                          }`}
+                        >
+                          {t === 'percent' ? '%' : '$'}
+                        </button>
+                      ))}
+                    </span>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      max={depositTypeDraft === 'percent' ? 100 : undefined}
+                      value={depositValueDraft}
+                      onChange={(e) => setDepositValueDraft(e.target.value)}
+                      placeholder={depositTypeDraft === 'percent' ? '35' : '500'}
+                      autoFocus
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-[15px] font-semibold tabular-nums outline-none focus:border-brand-700"
+                    />
+                  </div>
+                  {parseFloat(depositValueDraft || '0') > 0 && (
+                    <p className="mt-2 text-[12px] text-slate-500 tabular-nums">
+                      {fmt(
+                        Math.min(
+                          depositTypeDraft === 'percent'
+                            ? (total * parseFloat(depositValueDraft)) / 100
+                            : parseFloat(depositValueDraft),
+                          total
+                        )
+                      )}{' '}
+                      due now
+                    </p>
+                  )}
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      onClick={() => handleSaveDepositTerms(false)}
+                      disabled={savingDeposit}
+                      className="flex-1 h-10 rounded-lg bg-brand-700 hover:bg-brand-800 text-white text-[13px] font-semibold disabled:opacity-50"
+                    >
+                      {savingDeposit ? 'Saving...' : 'Save'}
+                    </button>
+                    {hasDepositTerms && (
+                      <button
+                        onClick={() => handleSaveDepositTerms(true)}
+                        disabled={savingDeposit}
+                        className="h-10 px-3 rounded-lg border border-slate-200 text-[13px] font-semibold text-rose-600 hover:bg-rose-50"
+                      >
+                        Remove
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setShowDepositEditor(false)}
+                      className="h-10 px-3 rounded-lg border border-slate-200 text-[13px] font-semibold text-slate-500 hover:bg-slate-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={depositLocked ? undefined : openDepositEditor}
+                  disabled={depositLocked}
+                  className={`text-left rounded-xl p-3 transition-colors ${
+                    depositPaid
+                      ? 'bg-emerald-50 border border-emerald-200'
+                      : hasDepositTerms
+                      ? 'bg-slate-50 border border-slate-200 hover:bg-slate-100'
+                      : 'border border-dashed border-slate-300 hover:bg-slate-50'
+                  } ${depositLocked ? 'cursor-default' : ''}`}
+                >
+                  <p
+                    className={`text-[11px] mb-0.5 ${
+                      depositPaid ? 'text-emerald-700' : 'text-slate-500'
+                    }`}
+                  >
+                    Deposit
+                  </p>
+                  <p
+                    className={`text-[17px] font-semibold tabular-nums ${
+                      depositPaid
+                        ? 'text-emerald-800'
+                        : hasDepositTerms
+                        ? 'text-slate-900'
+                        : 'text-slate-300'
+                    }`}
+                  >
+                    {hasDepositTerms ? fmt(depositAmount) : '—'}
+                  </p>
+                  <p
+                    className={`text-[12px] mt-0.5 ${
+                      depositPaid
+                        ? 'text-emerald-700'
+                        : hasDepositTerms
+                        ? 'text-slate-500'
+                        : 'text-slate-500 font-medium underline underline-offset-2'
+                    }`}
+                  >
+                    {depositPaid ? (
+                      <span className="inline-flex items-center gap-1">
+                        <CheckCircle className="w-3 h-3 shrink-0" />
+                        Paid {fmtDate(depositPayment.paid_on)}
+                      </span>
+                    ) : hasDepositTerms ? (
+                      <>
+                        {depositType === 'percent' ? `${depositValue}%` : 'fixed'}
+                        {!depositLocked && ' · edit'}
+                      </>
+                    ) : (
+                      'Set one'
+                    )}
+                  </p>
+                </button>
+              )}
+
+              {/* REMAINING BOX — always the full amount when no deposit. */}
+              {!showDepositEditor && (
+                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
+                  <p className="text-[11px] text-slate-500 mb-0.5">Remaining</p>
+                  <p className="text-[17px] font-semibold tabular-nums text-slate-900">
+                    {fmt(hasDepositTerms && !depositPaid ? total - depositAmount : remaining)}
+                  </p>
+                  <p className="text-[12px] text-slate-500 mt-0.5">
+                    {depositPaid
+                      ? 'still owed'
+                      : hasDepositTerms
+                      ? 'on completion'
+                      : 'full amount'}
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </div>
 
         {/* ── THE NEXT ACTION ── */}
         {nextAction && (
-          <div className="px-5 pb-5">
+          <div className="px-4 sm:px-5 pb-4">
             <button
               onClick={nextAction.onClick}
               disabled={nextAction.tone === 'muted'}
-              className={`w-full h-11 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
+              className={`w-full h-12 rounded-xl text-[14px] font-semibold transition-colors ${
                 nextAction.tone === 'primary'
-                  ? 'bg-slate-900 text-white hover:bg-slate-800'
-                  : 'bg-slate-100 text-slate-500 cursor-default'
+                  ? 'bg-brand-700 text-white hover:bg-brand-800 active:scale-[0.99]'
+                  : 'bg-slate-100 text-slate-400 cursor-default'
               }`}
             >
-              {nextAction.label === 'Send invoice' && <Send className="w-4 h-4" />}
-              {nextAction.label === 'Send payment reminder' && <BellRing className="w-4 h-4" />}
-              {nextAction.label.startsWith('Upgrade') && <Lock className="w-4 h-4" />}
               {nextAction.label}
             </button>
             <p className="mt-2 text-[12px] text-slate-500 text-center leading-relaxed">
-              {nextAction.hint}
+              {nextAction.sub}
             </p>
+
+            {showResend && (
+              <button
+                onClick={() => setShowSendConfirm(true)}
+                className="mt-2 w-full h-11 rounded-xl border border-slate-200 text-[13px] font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              >
+                Resend invoice
+              </button>
+            )}
           </div>
         )}
 
         {isPaid && !isClosed && (
-          <div className="mx-5 mb-5 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div className="mx-4 sm:mx-5 mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
             <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
             <p className="text-[13px] font-medium text-emerald-900">
               Settled{lead?.payment_date ? ` on ${fmtDate(lead.payment_date)}` : ''}. Nothing left to do.
@@ -580,17 +802,6 @@ const handleSavePayment = async () => {
             </label>
           </DetailRow>
 
-          <DetailRow label="Amount">
-            <span className="tabular-nums">
-              {fmt(total)}
-              {invoiceTaxRate > 0 && (
-                <span className="ml-2 text-slate-400 font-normal">
-                  {fmt(invoiceSubtotal)} + {invoiceTaxRate}% tax
-                </span>
-              )}
-            </span>
-          </DetailRow>
-
           <DetailRow label="Customer pays by">
             {hasPayLink ? (
               <span>{activeMethodLabel}</span>
@@ -603,17 +814,6 @@ const handleSavePayment = async () => {
               </a>
             )}
           </DetailRow>
-
-          {lead?.payment_method && !isClosed && (
-            <DetailRow label="Paid with">
-              <span className="capitalize">
-                {lead.payment_method.replace('_', ' ')}
-                {lead.payment_date && (
-                  <span className="ml-2 text-slate-400 font-normal">{fmtDate(lead.payment_date)}</span>
-                )}
-              </span>
-            </DetailRow>
-          )}
 
           {isStripeVerified && !isClosed && (
             <DetailRow label="Charged via">
@@ -642,26 +842,16 @@ const handleSavePayment = async () => {
              hid that. */}
         {payments.length > 0 && (
           <div className="border-t border-slate-100">
-            <p className="px-5 pt-3 pb-1 text-[13px] text-slate-500">
-              Payments received
-            </p>
+            <p className="px-4 sm:px-5 pt-3 pb-1 text-[13px] text-slate-500">Payments received</p>
             {payments.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center justify-between gap-3 px-5 py-2.5 border-t border-slate-50 first:border-t-0"
+                className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2.5 border-t border-slate-50 first:border-t-0"
               >
                 <div className="min-w-0">
                   <p className="text-[13px] font-medium text-slate-900 tabular-nums">
                     {p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}
-                    <span className="ml-2 font-normal text-slate-400 capitalize">
-                      {p.kind === 'refund'
-                        ? 'refund'
-                        : p.kind === 'deposit'
-                        ? 'deposit'
-                        : p.kind === 'balance'
-                        ? 'balance'
-                        : 'payment'}
-                    </span>
+                    <span className="ml-2 font-normal text-slate-400 capitalize">{p.kind}</span>
                   </p>
                   <p className="text-[11px] text-slate-400 capitalize">
                     {p.is_stripe && p.card_brand
@@ -678,13 +868,13 @@ const handleSavePayment = async () => {
                   <button
                     onClick={() => handleDeletePayment(p.id)}
                     disabled={deletingPaymentId === p.id}
-                    className="shrink-0 p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-50"
+                    className="shrink-0 p-2 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-50"
                     aria-label="Remove payment"
                   >
                     {deletingPaymentId === p.id ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <X className="w-3.5 h-3.5" />
+                      <X className="w-4 h-4" />
                     )}
                   </button>
                 )}
@@ -693,49 +883,41 @@ const handleSavePayment = async () => {
           </div>
         )}
 
-
-        {/* ── SECONDARY ACTIONS — quiet text buttons, not competing tiles ── */}
-        <div className="flex items-center gap-1 border-t border-slate-100 px-3 py-2">
+        {/* ── SECONDARY ACTIONS ──
+             Record a payment is always available — a contractor handed a
+             check shouldn't have to email an invoice first to log it. */}
+        <div className="flex items-center gap-1 border-t border-slate-100 px-2 sm:px-3 py-2">
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors disabled:opacity-50"
           >
-            {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             PDF
           </button>
 
-          {invoiceSent && !isPaid && !isClosed && canSendInvoice && (
+          {!isClosed && !isPaid && (
             <button
-              onClick={() => setShowSendConfirm(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+              onClick={() => {
+                // Pre-fill what's actually still owed — the common case is
+                // recording exactly the balance.
+                const prefill = hasDepositTerms && !depositPaid ? depositAmount : remaining;
+                if (prefill > 0) {
+                  setRawAmount(prefill.toString());
+                  setPaymentAmount(
+                    prefill.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })
+                  );
+                }
+                if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
+                setShowRecordPayment(true);
+              }}
+              className="ml-auto inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
             >
-              <Send className="w-3.5 h-3.5" />
-              Resend
-            </button>
-          )}
-
-          {!isClosed && !isStripeVerified && (
-            <button
-             onClick={() => {
-              // Pre-fill what's actually still owed — the common case is
-              // recording exactly the balance.
-              if (remaining > 0) {
-                setRawAmount(remaining.toString());
-                setPaymentAmount(
-                  remaining.toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })
-                );
-              }
-              if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
-              setShowRecordPayment(true);
-            }}
-            className="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
-          >
-            <CreditCard className="w-3.5 h-3.5" />
-            {isPaid ? 'Record another' : isPartial ? 'Record balance' : 'Record payment'}
+              <CreditCard className="w-4 h-4" />
+              Record a payment
             </button>
           )}
         </div>
@@ -744,11 +926,11 @@ const handleSavePayment = async () => {
         <div className="border-t border-slate-100">
           <button
             onClick={() => setShowActivity((v) => !v)}
-            className="w-full flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors text-left"
+            className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
           >
             <span className="text-[13px] text-slate-500">Activity</span>
             <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-[13px]">{activityLog.length}</span>
+              <span className="text-[13px]">{logsLoaded ? activityLog.length : ''}</span>
               <ChevronDown
                 className={`w-4 h-4 transition-transform duration-200 ${showActivity ? 'rotate-180' : ''}`}
               />
@@ -764,7 +946,7 @@ const handleSavePayment = async () => {
                 transition={{ duration: 0.2 }}
                 className="overflow-hidden border-t border-slate-100 bg-slate-50/50"
               >
-                <div className="p-4 space-y-2">
+                <div className="p-3 sm:p-4 space-y-2">
                   {activityLog.length === 0 ? (
                     <p className="text-[13px] text-slate-400 py-2 text-center">Nothing sent yet</p>
                   ) : (
@@ -804,7 +986,7 @@ const handleSavePayment = async () => {
                         {entry.html_body && (
                           <button
                             onClick={() => setPreviewHtml(entry.html_body)}
-                            className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-white rounded-lg text-[11px] font-medium transition-colors"
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-white rounded-lg text-[11px] font-medium transition-colors"
                           >
                             <Eye className="w-3 h-3" /> Preview
                           </button>
@@ -840,7 +1022,11 @@ const handleSavePayment = async () => {
             >
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-base font-semibold text-slate-900">
-                  {invoiceSent ? 'Resend invoice' : 'Send invoice'}
+                  {awaitingDeposit
+                    ? 'Send deposit request'
+                    : invoiceSent
+                    ? 'Resend invoice'
+                    : 'Send invoice'}
                 </h3>
                 <button
                   type="button"
@@ -866,10 +1052,20 @@ const handleSavePayment = async () => {
                       </p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[11px] text-slate-500">Amount</p>
-                      <p className="text-sm font-semibold text-slate-900 tabular-nums">{fmt(total)}</p>
+                      <p className="text-[11px] text-slate-500">
+                        {awaitingDeposit ? 'Deposit' : 'Amount'}
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900 tabular-nums">
+                        {fmt(awaitingDeposit ? depositAmount : remaining)}
+                      </p>
                     </div>
                   </div>
+
+                  {awaitingDeposit && (
+                    <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 tabular-nums">
+                      {fmt(total - depositAmount)} balance due on completion.
+                    </p>
+                  )}
 
                   <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 text-[11px]">
                     <span className="text-slate-500">
@@ -931,7 +1127,7 @@ const handleSavePayment = async () => {
                       value={dueDate || ''}
                       disabled={sending}
                       onChange={(e) => setDueDate(e.target.value)}
-                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-slate-900 focus:ring-2 focus:ring-slate-100 transition-all disabled:opacity-50"
+                      className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-slate-100 transition-all disabled:opacity-50"
                     />
                     {dueDate && (
                       <button
@@ -958,7 +1154,7 @@ const handleSavePayment = async () => {
                   type="button"
                   onClick={() => setShowSendConfirm(false)}
                   disabled={sending}
-                  className="flex-1 py-2.5 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                  className="flex-1 py-3 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -966,7 +1162,7 @@ const handleSavePayment = async () => {
                   type="button"
                   onClick={handleSendInvoice}
                   disabled={sending}
-                  className="flex-1 py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-3 px-3 bg-brand-700 hover:bg-brand-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {sending ? (
                     <>
@@ -974,7 +1170,10 @@ const handleSavePayment = async () => {
                       Sending...
                     </>
                   ) : (
-                    'Confirm & send'
+                    <>
+                      <Send className="w-3.5 h-3.5" />
+                      Confirm &amp; send
+                    </>
                   )}
                 </button>
               </div>
@@ -1001,9 +1200,7 @@ const handleSavePayment = async () => {
               className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-slate-900">
-                  {isPaid ? 'Edit payment' : isPartial ? 'Update payment' : 'Record payment'}
-                </h3>
+                <h3 className="text-base font-semibold text-slate-900">Record a payment</h3>
                 <button
                   onClick={() => !savingPayment && setShowRecordPayment(false)}
                   className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
@@ -1040,20 +1237,39 @@ const handleSavePayment = async () => {
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold tabular-nums outline-none focus:bg-white focus:border-slate-900 focus:ring-2 focus:ring-slate-100 transition-colors"
+                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-[15px] font-semibold tabular-nums outline-none focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-slate-100 transition-colors"
                   />
 
-                  {remaining > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        // Fills what's still owed, not the full quote total —
-                        // after a $500 deposit on a $3,000 job this is $2,500.
-                        const isFullAmount = rawAmount === remaining.toString();
-                        if (isFullAmount) {
-                          setRawAmount('');
-                          setPaymentAmount('');
-                        } else {
+                  {/* Two quick-fills when a deposit is pending — the two
+                      amounts a contractor actually receives. */}
+                  <div className="mt-2 grid gap-2">
+                    {hasDepositTerms && !depositPaid && depositAmount > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setRawAmount(depositAmount.toString());
+                          setPaymentAmount(
+                            depositAmount.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          );
+                          if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
+                        }}
+                        className={`w-full p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between transition-colors ${
+                          rawAmount === depositAmount.toString()
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>Deposit</span>
+                        <span className="tabular-nums">{fmt(depositAmount)}</span>
+                      </button>
+                    )}
+                    {remaining > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
                           setRawAmount(remaining.toString());
                           setPaymentAmount(
                             remaining.toLocaleString('en-US', {
@@ -1062,21 +1278,18 @@ const handleSavePayment = async () => {
                             })
                           );
                           if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
-                        }
-                      }}
-                      className={`mt-2 w-full p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between transition-colors ${
-                        rawAmount === remaining.toString()
-                          ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      <span className="flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        {paidAmount > 0 ? 'Pay off balance' : 'Paid in full'}
-                      </span>
-                      <span className="tabular-nums">{fmt(remaining)}</span>
-                    </button>
-                  )}
+                        }}
+                        className={`w-full p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between transition-colors ${
+                          rawAmount === remaining.toString()
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        <span>{paidAmount > 0 ? 'Pay off balance' : 'Full amount'}</span>
+                        <span className="tabular-nums">{fmt(remaining)}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div>
@@ -1084,7 +1297,7 @@ const handleSavePayment = async () => {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-slate-900 transition-colors"
+                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700 transition-colors"
                   >
                     <option value="">Select method...</option>
                     <option value="cash">Cash</option>
@@ -1103,7 +1316,7 @@ const handleSavePayment = async () => {
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-slate-900 transition-colors"
+                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700 transition-colors"
                   />
                 </div>
               </div>
@@ -1112,14 +1325,14 @@ const handleSavePayment = async () => {
                 <button
                   onClick={() => setShowRecordPayment(false)}
                   disabled={savingPayment}
-                  className="flex-1 py-2.5 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-3 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSavePayment}
                   disabled={savingPayment}
-                  className="flex-1 py-2.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {savingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save payment'}
                 </button>
@@ -1174,14 +1387,14 @@ const handleSavePayment = async () => {
                 <button
                   onClick={() => setShowReminderConfirm(false)}
                   disabled={sendingReminder}
-                  className="flex-1 py-2.5 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-3 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder || daysSinceReminder === 0}
-                  className="flex-1 py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-3 px-3 bg-brand-700 hover:bg-brand-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {sendingReminder ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send reminder'}
                 </button>

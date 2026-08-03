@@ -81,6 +81,8 @@ p.quote_tax_rate,
 p.quote_data,
 p.payment_status,
 p.payment_amount,
+p.deposit_type,
+p.deposit_value,
 p.payment_due_date,
  p.payment_date,
         p.payment_method,
@@ -335,8 +337,10 @@ for (const lead of invoicedLeads) {
         'Quote Total',
         'Tax Rate',
         'Tax Amount',
-         'Payment Status',
+        'Payment Status',
         'Payment Amount',
+        'Deposit Terms',
+        'Balance Remaining',
         'Payment Method Detail',
         'Payment Due Date',
         'Payment Received Date',
@@ -390,6 +394,19 @@ escape(lead.name || ''),
           })()),
           escape(lead.payment_status || ''),
           escape(lead.payment_amount ? `$${parseFloat(lead.payment_amount).toFixed(2)}` : ''),
+          escape(
+            lead.deposit_type && parseFloat(lead.deposit_value || '0') > 0
+              ? lead.deposit_type === 'percent'
+                ? `${parseFloat(lead.deposit_value)}%`
+                : `$${parseFloat(lead.deposit_value).toFixed(2)}`
+              : ''
+          ),
+          escape((() => {
+            const total = parseFloat(lead.quote_total || '0');
+            const paid = parseFloat(lead.payment_amount || '0');
+            if (!total) return '';
+            return `$${Math.max(total - paid, 0).toFixed(2)}`;
+          })()),
                   escape(getPaymentMethodLabel(lead)),
 
           escape(lead.payment_due_date ? new Date(lead.payment_due_date).toLocaleDateString() : ''),

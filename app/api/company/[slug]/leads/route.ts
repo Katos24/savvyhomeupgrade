@@ -95,8 +95,15 @@ export async function GET(request: Request, { params }: Props) {
       SELECT
         COUNT(*) as total_leads,
         COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
-        COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status = 'paid'), 0) as revenue,
-        COALESCE(SUM(p.quote_total::numeric) FILTER (WHERE p.payment_status != 'paid' AND p.quote_total IS NOT NULL), 0) as pending
+        -- Cash actually collected, not contract value of closed jobs. The old
+        -- version filtered to payment_status = 'paid', so a collected deposit
+        -- was invisible in revenue AND still counted in full as pending.
+        -- payment_amount is maintained by sync_project_payment_totals from
+        -- SUM(payments), negatives included, so refunds reduce revenue too.
+        COALESCE(SUM(p.payment_amount::numeric), 0) as revenue,
+        COALESCE(SUM(
+          GREATEST(COALESCE(p.quote_total::numeric, 0) - COALESCE(p.payment_amount::numeric, 0), 0)
+        ) FILTER (WHERE p.quote_total IS NOT NULL), 0) as pending
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
       WHERE l.company_id = ${companyId}
@@ -156,6 +163,8 @@ export async function GET(request: Request, { params }: Props) {
          p.quote_data,
           p.ai_brief,
           p.quote_total,
+          p.deposit_type,
+          p.deposit_value,
           p.quote_tax_rate,
           p.quote_sent_at,
           p.quote_accepted_at,
@@ -256,6 +265,8 @@ export async function GET(request: Request, { params }: Props) {
           p.quote_data,
           p.ai_brief,
           p.quote_total,
+          p.deposit_type,
+          p.deposit_value,
           p.quote_tax_rate,
           p.quote_sent_at,
           p.quote_accepted_at,

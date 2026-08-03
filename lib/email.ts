@@ -654,8 +654,10 @@ export async function sendInvoiceToCustomer({
   contractorEmail,
   amountPaid,
   paymentLinkUrl,
-  paymentLinkType,
+ paymentLinkType,
   taxRate,
+  depositAmount,
+  collectionKind,
 }: {
   customerEmail: string;
   customerName: string;
@@ -670,8 +672,11 @@ export async function sendInvoiceToCustomer({
   contractorEmail?: string;
   amountPaid?: number;
   paymentLinkUrl?: string;
-  paymentLinkType?: string;
+ paymentLinkType?: string;
   taxRate?: number;
+  /** What the pay link actually charges, when it's less than the total. */
+  depositAmount?: number;
+  collectionKind?: 'deposit' | 'balance';
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -685,6 +690,13 @@ export async function sendInvoiceToCustomer({
     // over the company's static payment_link_url
     const effectivePaymentUrl = paymentLinkUrl || company.payment_link_url;
     const effectivePaymentType = paymentLinkType || company.payment_link_type;
+
+    // The pay link charges the deposit, not the total. Showing the total on
+    // the button while charging half is how a customer decides the invoice
+    // is broken and doesn't pay.
+    const isDepositCollection =
+      collectionKind === 'deposit' && !!depositAmount && depositAmount > 0 && depositAmount < invoiceTotal;
+    const payButtonAmount = isDepositCollection ? depositAmount! : invoiceTotal;
 
     // ── STEP 1: Generate PDF buffer ───────────────────────
     const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
@@ -708,6 +720,8 @@ export async function sendInvoiceToCustomer({
       })),
       total: invoiceTotal,
       taxRate,
+            depositAmount: isDepositCollection ? depositAmount : undefined,
+
       notes,
       amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
       paymentLinkUrl: effectivePaymentUrl || undefined,
@@ -741,7 +755,7 @@ export async function sendInvoiceToCustomer({
       <div style="margin-bottom: 16px; text-align: center;">
         <a href="${paymentUrl}"
           style="display: inline-block; background-color: ${accentColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
-          ${paymentMethodLabels[effectivePaymentType || 'other'] || 'Pay Now'} — ${fmt(invoiceTotal)}
+         ${isDepositCollection ? 'Pay Deposit' : (paymentMethodLabels[effectivePaymentType || 'other'] || 'Pay Now')} — ${fmt(payButtonAmount)}
         </a>
       </div>
     ` : '';
@@ -754,8 +768,7 @@ export async function sendInvoiceToCustomer({
           Download Invoice PDF
         </a>
         <p style="margin: 10px 0 0 0; color: #94a3b8; font-size: 11px;">
-          ${invoiceNumber} · ${fmt(invoiceTotal)}
-        </p>
+${invoiceNumber} · ${fmt(invoiceTotal)}${isDepositCollection ? ` · ${fmt(payButtonAmount)} due now` : ''}        </p>
       </div>
     `;
 
@@ -790,6 +803,8 @@ export async function sendInvoiceToCustomer({
     // partial-payment table already covering the numbers (avoids showing
     // two overlapping breakdown boxes on the same email).
     const taxBreakdownHtml = (taxRate && taxRate > 0 && !(amountPaid && amountPaid > 0 && amountPaid < invoiceTotal)) ? (() => {
+
+      
       const subtotal = invoiceItems.reduce((s, i: any) => s + (i.amount || 0), 0);
       const taxAmount = subtotal * (taxRate / 100);
       return `
@@ -811,6 +826,27 @@ export async function sendInvoiceToCustomer({
       </div>
     `;
     })() : '';
+
+    // Shown only before anything is collected. Once the deposit lands,
+    // partialPaymentHtml takes over and shows the balance instead.
+    const depositDueHtml = isDepositCollection ? `
+      <div style="margin-bottom: 24px; padding: 16px; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="font-size: 13px; color: #475569; padding: 4px 0;">Project Total</td>
+            <td style="font-size: 13px; color: #475569; text-align: right; padding: 4px 0;">${fmt(invoiceTotal)}</td>
+          </tr>
+          <tr>
+            <td style="font-size: 15px; font-weight: 800; color: #92400e; padding: 8px 0 4px;">Deposit Due Now</td>
+            <td style="font-size: 15px; font-weight: 800; color: #92400e; text-align: right; padding: 8px 0 4px;">${fmt(depositAmount!)}</td>
+          </tr>
+          <tr>
+            <td style="font-size: 13px; color: #475569; padding: 4px 0;">Balance on Completion</td>
+            <td style="font-size: 13px; color: #475569; text-align: right; padding: 4px 0;">${fmt(invoiceTotal - depositAmount!)}</td>
+          </tr>
+        </table>
+      </div>
+    ` : '';
 
     const notesHtml = notes ? `
       <div style="margin-bottom: 24px; padding: 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px;">
@@ -845,13 +881,16 @@ export async function sendInvoiceToCustomer({
         ${downloadButtonHtml}
         <p style="white-space: pre-line; margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">${templateBody}</p>
         ${dueDateHtml}
-        ${taxBreakdownHtml}
+      ${taxBreakdownHtml}
+        ${depositDueHtml}
         ${partialPaymentHtml}
         ${notesHtml}
       `,
       phone: company.phone || companyPhone,
       website: company.website,
-      preheader: `Invoice ${invoiceNumber} from ${company.name || companyName} — ${fmt(invoiceTotal)}`,
+      preheader: isDepositCollection
+        ? `Invoice ${invoiceNumber} from ${company.name || companyName} — ${fmt(depositAmount!)} deposit due`
+        : `Invoice ${invoiceNumber} from ${company.name || companyName} — ${fmt(invoiceTotal)}`,
     });
 
     // ── STEP 5: Send email with PDF attached ──────────────
@@ -1591,9 +1630,11 @@ export async function sendPaymentReminderEmail({
   companyName,
   companyPhone,
   companyId,
-  amountDue,
-  dueDate,
-  isOverdue,
+amountDue,
+dueDate,
+isOverdue,
+paymentLinkUrl,
+paymentLinkType,
 }: {
   customerEmail: string;
   customerName: string;
@@ -1602,8 +1643,13 @@ export async function sendPaymentReminderEmail({
   companyId?: number;
   amountDue: number;
   dueDate: string | null;  // ← fix the type
-  isOverdue: boolean;
-  contractorEmail?: string;
+ isOverdue: boolean;
+contractorEmail?: string;
+/** Without this the reminder tells the customer they owe money and gives
+ *  them no way to pay it. Derived server-side, so after a deposit it
+ *  charges only the balance. */
+paymentLinkUrl?: string;
+paymentLinkType?: string;
 }) {
   try {
     const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -1636,17 +1682,41 @@ export async function sendPaymentReminderEmail({
         due_date: formattedDate,  // null if no due date → conditional block strips the line
       };
 
-      const rendered = renderEmailTemplate(paymentTemplate, variables);
+    const rendered = renderEmailTemplate(paymentTemplate, variables);
       subject = rendered.subject;
+
+      const rawUrl = paymentLinkUrl || company.payment_link_url || '';
+      const payUrl = rawUrl.startsWith('http') ? rawUrl : rawUrl ? `https://${rawUrl}` : '';
+      const linkType = paymentLinkType || company.payment_link_type || 'other';
+      const payLabels: Record<string, string> = {
+        venmo: 'Pay with Venmo',
+        zelle: 'Pay with Zelle',
+        cashapp: 'Pay with Cash App',
+        paypal: 'Pay with PayPal',
+        stripe: 'Pay with Card',
+        other: 'Pay Now',
+      };
+      const btnColor = isOverdue ? '#dc2626' : (company.email_brand_color_1 || '#667eea');
+
+      const payButtonHtml = payUrl ? `
+        <div style="margin: 8px 0 24px 0; text-align: center;">
+          <a href="${payUrl}"
+            style="display: inline-block; background-color: ${btnColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
+            ${payLabels[linkType] || 'Pay Now'} — ${fmt(amountDue)}
+          </a>
+        </div>
+      ` : '';
+
       emailHtml = textToHtml(
-  rendered.body,
-  company.name || companyName,
-  company.logo_url || undefined,
-  company.phone || companyPhone || undefined,
-  company.website || undefined,           // ← was undefined before
-  company.email_brand_color_1 || undefined,
-  company.email_brand_color_2 || undefined,
-);
+        rendered.body,
+        company.name || companyName,
+        company.logo_url || undefined,
+        company.phone || companyPhone || undefined,
+        company.website || undefined,
+        company.email_brand_color_1 || undefined,
+        company.email_brand_color_2 || undefined,
+        payButtonHtml,
+      );
 
     } else {
       const accentColor = isOverdue ? '#dc2626' : '#f59e0b';
@@ -1657,6 +1727,7 @@ export async function sendPaymentReminderEmail({
         <h2 style="color:${accentColor};">${isOverdue ? 'Payment Overdue' : 'Payment Reminder'}</h2>
         <p>Hi ${customerName},</p>
         <p>Amount due: <strong>${fmt(amountDue)}</strong>${formattedDate ? ` by ${formattedDate}` : ''}</p>
+        ${paymentLinkUrl ? `<p><a href="${paymentLinkUrl}" style="display:inline-block;background:${accentColor};color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;">Pay ${fmt(amountDue)}</a></p>` : ''}
         <p>${companyPhone ? `Call us: ${companyPhone}` : ''}</p>
         <p>${companyName}</p>
       </body></html>`;

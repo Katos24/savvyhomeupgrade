@@ -218,16 +218,26 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           };
         });
 
-        const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
+       const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
         const nextTaxRate = target === 'tax' ? taxRate : (t.tax_rate ?? 0);
+        // Applying a deposit shouldn't rewrite pricing. Only recompute the
+        // total when the tax rate is what changed.
+        const nextTotal =
+          target === 'tax' ? subtotal + subtotal * (nextTaxRate / 100) : t.total;
 
-        return {
+       return {
           ...t,
           items: normalizedItems,
           tax_rate: nextTaxRate,
+          // Both columns go null together — deposit_value of 0 alongside a
+          // null type violates the paired CHECK constraint and throws the
+          // whole batch.
           deposit_type: target === 'deposit' ? depositType : (t.deposit_type ?? null),
-          deposit_value: target === 'deposit' ? depositValue : (t.deposit_value ?? null),
-          total: subtotal + subtotal * (nextTaxRate / 100),
+          deposit_value:
+            target === 'deposit'
+              ? (depositType && depositValue > 0 ? depositValue : null)
+              : (t.deposit_value ?? null),
+          total: nextTotal,
         };
       });
 

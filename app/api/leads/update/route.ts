@@ -6,6 +6,7 @@ import { sendQuoteToCustomer, sendScheduleConfirmation, sendInvoiceToCustomer } 
 import { can, type PlanTier } from '@/lib/permissions';
 import { formatPhone } from '@/lib/emailTemplates';
 import { stripe } from '@/lib/stripe'
+import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
 
 export async function POST(request: Request) {
   try {
@@ -436,7 +437,7 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
     // ==================== SAVE QUOTE ====================
     else if (action === 'save_quote') {
       
-      const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
+     const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
       const projectId = leadCheck[0]?.project_id;
 
       if (!projectId) {
@@ -446,30 +447,57 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         }, { status: 400 });
       }
 
+      // Pull deposit terms from the category's pricing template, but only onto
+      // a job that has none yet and hasn't collected anything. After the first
+      // quote save the project owns its terms — otherwise a contractor who
+      // overrode 50% to 30% in Billing would lose it on the next quote edit.
+      // Consequence: changing a category template later doesn't propagate to
+      // existing jobs. Same rule tax rates already follow.
+      const depositCheck = await sql`
+        SELECT category, deposit_type, COALESCE(payment_amount, 0) AS collected, company_id
+        FROM projects WHERE id = ${projectId} LIMIT 1
+      `;
+      const dep = depositCheck[0];
+
+      if (dep && !dep.deposit_type && parseFloat(dep.collected || '0') === 0 && dep.category) {
+        const tpl = await sql`
+          SELECT deposit_type, deposit_value
+          FROM quote_templates
+          WHERE company_id = ${dep.company_id} AND category = ${dep.category}
+          LIMIT 1
+        `;
+        const t = tpl[0];
+        if (t?.deposit_type && Number(t.deposit_value) > 0) {
+          await sql`
+            UPDATE projects
+            SET deposit_type = ${t.deposit_type},
+                deposit_value = ${Number(t.deposit_value)}
+            WHERE id = ${projectId}
+          `;
+        }
+      }
+
    // Get current payment amount before updating
-const currentProject = await sql`
-  SELECT payment_amount FROM projects WHERE id = ${projectId}
-`;
-const paid = parseFloat(currentProject[0]?.payment_amount || '0');
-const newTotal = parseFloat(quote_total || '0');
-
-let newPaymentStatus = 'unpaid';
-if (paid > 0 && newTotal > 0) {
-  if (paid >= newTotal) newPaymentStatus = 'paid';
-  else newPaymentStatus = 'partial';
-}
-
-
-
 await sql`
-  UPDATE projects 
-  SET 
-quote_data = ${JSON.stringify(quote_data)},
-    quote_total = ${quote_total},
+  UPDATE projects
+  SET
+    quote_data     = ${JSON.stringify(quote_data)},
+    quote_total    = ${quote_total},
     quote_tax_rate = ${quote_tax_rate ?? 0},
-    payment_status = ${newPaymentStatus},
-    updated_at = NOW()
+    updated_at     = NOW()
   WHERE id = ${projectId}
+`;
+
+// quote_total changed, so payment_status may be stale. Nudge the trigger
+// instead of writing the column here — sync_project_payment_totals owns it,
+// and the old manual write clobbered the 'refunded' states the trigger
+// deliberately preserves. No-op when the job has no payments yet.
+await sql`
+  UPDATE payments
+  SET amount = amount
+  WHERE id = (
+    SELECT id FROM payments WHERE project_id = ${projectId} ORDER BY id DESC LIMIT 1
+  )
 `;
 
       const quoteEntry = {
@@ -521,8 +549,8 @@ quote_data = ${JSON.stringify(quote_data)},
 // ==================== SEND QUOTE TO CUSTOMER 📧 ====================
    else if (action === 'send_quote_to_customer') {
   
-  const leadCheck = await sql`
-  SELECT l.*, p.quote_data, p.quote_total, 
+ const leadCheck = await sql`
+  SELECT l.*, p.quote_data, p.quote_total, p.quote_tax_rate,
          c.name as company_name, c.phone as company_phone, 
          c.email as company_email,
          c.id as company_id, c.plan_tier
@@ -581,6 +609,7 @@ await sql`UPDATE projects
   projectDescription: lead.category || 'Your project',
   quoteToken: quoteToken,
   contractorEmail: lead.company_email,
+  taxRate: lead.quote_tax_rate ? parseFloat(lead.quote_tax_rate) : undefined,
 });
 
         // Log to outbox
@@ -763,49 +792,7 @@ const emailResult = await sendScheduleConfirmation({
       }
     }
     
-    // ==================== UPDATE PAYMENT 💳 ====================
-    else if (action === 'update_payment') {
-      
-      const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
-      const projectId = leadCheck[0]?.project_id;
-
-      if (!projectId) {
-        return NextResponse.json({ 
-          success: false, 
-          error: 'No project exists. Please create a project first.' 
-        }, { status: 400 });
-      }
-
-      const paidAt = payment_status === 'paid' ? new Date().toISOString() : null;
-
-      await sql`
-        UPDATE projects 
-        SET 
-          payment_status = ${payment_status},
-          payment_amount = ${payment_amount || null},
-          payment_method = ${body.payment_method || null},
-          payment_date = ${body.payment_date || null},
-          payment_notes = ${body.payment_notes || null},
-          payment_due_date = ${payment_due_date || null},
-          paid_at = ${paidAt},
-          updated_at = NOW()
-        WHERE id = ${projectId}
-      `;
-
-      const paymentMethodText = body.payment_method ? ` via ${body.payment_method}` : '';
-      const paymentEntry = {
-        type: 'payment_updated',
-        text: `Payment: ${payment_status}${payment_amount ? ` - $${payment_amount}` : ''}${paymentMethodText}`,
-        user_name: user_name,
-        user_email: user_email,
-        timestamp: new Date().toISOString()
-      };
-
-      await addActivityToProject(id, paymentEntry);
-
-      return NextResponse.json({ success: true });
-    }
-
+   
     // ==================== UPDATE DETAILS 📝 ====================
     else if (action === 'update_details') {
       
@@ -1031,71 +1018,52 @@ const leadCheck = await sql`
     return NextResponse.json({ success: false, error: 'No line items found.' }, { status: 400 });
   }
 
-  const invoiceSubtotal = invoiceItems.reduce((s: number, i: any) => s + (i.amount || 0), 0);
   const invoiceTaxRate = lead.quote_tax_rate ? parseFloat(lead.quote_tax_rate) : 0;
-  const invoiceTotal = invoiceSubtotal + invoiceSubtotal * (invoiceTaxRate / 100);
+  // quote_total is stored tax-inclusive and is what the PDF and the customer's
+  // payment link both use. Recomputing from items drifted when the stored tax
+  // rate had been rounded — the emailed total and the charged total differed.
+  const invoiceTotal = parseFloat(lead.quote_total || '0');
   const invoiceNumber = body.invoice_number || lead.invoice_number || 'INV-001';
 
   // ── Generate or reuse a Stripe Connect payment link ──
+  // ── Generate or reuse a Stripe Connect payment link ──
   let paymentLinkUrl: string | undefined;
   let paymentLinkType: string | undefined;
+  // What the link actually charges. Without these the email showed the full
+  // total on a button that collected only the deposit.
+  let collectionKind: 'deposit' | 'balance' | undefined;
+  let chargeAmount: number | undefined;
 
-  if (lead.stripe_payment_status === 'active' && lead.payment_status !== 'paid' && invoiceTotal > 0) {
-
-    let checkoutUrl: string | null = null;
-
-    if (lead.stripe_checkout_session_id) {
-      try {
-        const existing = await stripe.checkout.sessions.retrieve(
-          lead.stripe_checkout_session_id,
-          { stripeAccount: lead.stripe_connect_account_id }
-        );
-        if (existing.status === 'open' && existing.url) {
-          checkoutUrl = existing.url;
-        }
-      } catch {
-        // expired/invalid — fall through and create a new one
+  // The amount is derived inside the helper from what the ledger says has
+  // been collected. The old inline version charged the full invoiceTotal
+  // whenever status wasn't 'paid' — so after a deposit, the balance link
+  // asked for the whole job again.
+  if (lead.stripe_payment_status === 'active' && invoiceTotal > 0) {
+    try {
+      const checkout = await getOrCreateCheckoutSession({
+        projectId: lead.project_id,
+        connectedAccountId: lead.stripe_connect_account_id,
+        customerName: lead.name,
+        customerEmail: lead.email,
+        companySlug: lead.company_slug,
+        contractTotal: invoiceTotal,
+        collect: body.collect === 'full' ? 'full' : undefined,
+      });
+     if (checkout.url) {
+        paymentLinkUrl = checkout.url;
+        paymentLinkType = 'stripe';
+        collectionKind = checkout.kind ?? undefined;
+        chargeAmount = checkout.amount;
       }
-    }
-
-    if (!checkoutUrl) {
-      try {
-        const newSession = await stripe.checkout.sessions.create(
-          {
-            mode: 'payment',
-            payment_method_types: ['card'],
-            line_items: [{
-              price_data: {
-                currency: 'usd',
-                product_data: { name: `Invoice for ${lead.name}` },
-                unit_amount: Math.round(invoiceTotal * 100),
-              },
-              quantity: 1,
-            }],
-            customer_email: lead.email || undefined,
-            success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${lead.project_id}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lead.company_slug}/dashboard?payment=cancelled`,
-            metadata: { projectId: lead.project_id.toString() },
-          },
-          { stripeAccount: lead.stripe_connect_account_id }
-        );
-        checkoutUrl = newSession.url;
-        await sql`UPDATE projects SET stripe_checkout_session_id = ${newSession.id} WHERE id = ${lead.project_id}`;
-      } catch (stripeErr: any) {
-        console.error('Failed to create Stripe Checkout session:', stripeErr.message);
-        if (stripeErr.code === 'account_invalid' || stripeErr.message?.includes('not enabled')) {
-          return NextResponse.json({
-            success: false,
-            error: 'Your Stripe account needs attention before you can send payment links. Check your Stripe dashboard or reconnect in Settings.',
-          }, { status: 400 });
-        }
-        // other errors: fall through — email will just send without a pay-now button
+    } catch (stripeErr: any) {
+      console.error('Failed to create Stripe Checkout session:', stripeErr.message);
+      if (stripeErr.code === 'account_invalid' || stripeErr.message?.includes('not enabled')) {
+        return NextResponse.json({
+          success: false,
+          error: 'Your Stripe account needs attention before you can send payment links. Check your Stripe dashboard or reconnect in Settings.',
+        }, { status: 400 });
       }
-    }
-
-    if (checkoutUrl) {
-      paymentLinkUrl = checkoutUrl;
-      paymentLinkType = 'stripe';
+      // other errors: fall through — email sends without a pay-now button
     }
   }
 
@@ -1113,9 +1081,11 @@ const leadCheck = await sql`
       dueDate: body.due_date || undefined,
       notes: body.notes || undefined,
       contractorEmail: lead.company_email,
-  paymentLinkUrl,
+ paymentLinkUrl,
   paymentLinkType,
   taxRate: invoiceTaxRate > 0 ? invoiceTaxRate : undefined,
+  depositAmount: chargeAmount,
+  collectionKind,
     });
 
     // Log to outbox
@@ -1169,6 +1139,109 @@ const leadCheck = await sql`
     return NextResponse.json({ success: false, error: 'Failed to send email.' }, { status: 500 });
   }
 }
+
+
+// ==================== SAVE DEPOSIT TERMS 💰 ====================
+else if (action === 'save_deposit_terms') {
+  const { deposit_type, deposit_value } = body;
+
+  const projectRows = await sql`
+    SELECT id, COALESCE(payment_amount, 0) AS collected, quote_total
+    FROM projects WHERE lead_id = ${id} LIMIT 1
+  `;
+
+  if (projectRows.length === 0) {
+    return NextResponse.json(
+      { success: false, error: 'No project exists. Please create a project first.' },
+      { status: 404 }
+    );
+  }
+
+  const project = projectRows[0];
+
+  // Editable only before money lands. Once a deposit is collected the terms
+  // are part of what the customer agreed to — refund it to change them.
+  // Checked here and not just in the UI, because a stale tab is exactly how
+  // terms would otherwise change after a payment.
+  if (parseFloat(project.collected || '0') > 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Payments have already been collected. Refund them before changing deposit terms.',
+      },
+      { status: 400 }
+    );
+  }
+
+  // Clearing terms means collect the full amount — both columns go null
+  // together so the CHECK constraint can't fire.
+  const clearing =
+    !deposit_type || deposit_value === null || deposit_value === undefined || Number(deposit_value) <= 0;
+
+  let nextType: string | null = null;
+  let nextValue: number | null = null;
+
+  if (!clearing) {
+    if (!['percent', 'fixed'].includes(deposit_type)) {
+      return NextResponse.json(
+        { success: false, error: 'Deposit type must be percent or fixed.' },
+        { status: 400 }
+      );
+    }
+    const parsed = parseFloat(String(deposit_value));
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'Enter a deposit amount greater than zero.' },
+        { status: 400 }
+      );
+    }
+    if (deposit_type === 'percent' && parsed > 100) {
+      return NextResponse.json(
+        { success: false, error: 'A percent deposit can\u2019t exceed 100.' },
+        { status: 400 }
+      );
+    }
+    nextType = deposit_type;
+    nextValue = parsed;
+  }
+
+  await sql`
+    UPDATE projects
+    SET deposit_type  = ${nextType},
+        deposit_value = ${nextValue},
+        updated_at    = NOW()
+    WHERE id = ${project.id}
+  `;
+
+  // What the customer will actually be asked for, capped at the total so a
+  // fixed deposit larger than the job reads honestly in the log.
+  const contractTotal = parseFloat(project.quote_total || '0');
+  const depositAmount = clearing
+    ? 0
+    : Math.min(
+        nextType === 'percent' ? (contractTotal * (nextValue as number)) / 100 : (nextValue as number),
+        contractTotal
+      );
+
+  await addActivityToProject(id, {
+    type: 'deposit_terms_updated',
+    text: clearing
+      ? 'Deposit removed \u2014 full amount due'
+      : `Deposit set to ${nextType === 'percent' ? `${nextValue}%` : `$${nextValue}`}` +
+        (contractTotal > 0 ? ` ($${depositAmount.toFixed(2)} of $${contractTotal.toFixed(2)})` : ''),
+    user_name,
+    user_email,
+    timestamp: new Date().toISOString(),
+  });
+
+  return NextResponse.json({
+    success: true,
+    deposit_type: nextType,
+    deposit_value: nextValue,
+    deposit_amount: Math.round(depositAmount * 100) / 100,
+  });
+}
+
 
 // ==================== SAVE AI BRIEF ====================
 else if (action === 'save_ai_brief') {

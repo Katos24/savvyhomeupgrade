@@ -31,8 +31,10 @@ export async function GET() {
         c.plan_tier,
         c.created_at,
         COUNT(DISTINCT p.id) as total_projects,
-        COUNT(DISTINCT CASE WHEN p.payment_status != 'paid' AND p.quote_total IS NOT NULL THEN p.id END) as unpaid_count,
-        COUNT(DISTINCT CASE WHEN p.payment_status = 'paid' THEN p.id END) as paid_count,
+-- NULL != 'paid' is NULL, not true, so quoted jobs that never had a
+        -- payment status recorded were silently dropped from the count.
+        COUNT(DISTINCT CASE WHEN (p.payment_status IS NULL OR p.payment_status != 'paid') AND p.quote_total IS NOT NULL THEN p.id END) as unpaid_count,
+                COUNT(DISTINCT CASE WHEN p.payment_status = 'paid' THEN p.id END) as paid_count,
         SUM(CASE WHEN p.quote_total IS NOT NULL THEN p.quote_total::numeric ELSE 0 END) as total_revenue,
         SUM(CASE WHEN p.payment_amount IS NOT NULL THEN p.payment_amount::numeric ELSE 0 END) as total_collected,
         MAX(p.updated_at) as last_activity
