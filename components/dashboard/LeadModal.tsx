@@ -31,7 +31,11 @@ type LeadModalProps = {
   company?: any;
   companySlug: string;
   teamMembers?: any[];
+  /** From /api/leads/[id], threaded down to BillingSection. */
+  payments?: any[];
+  activity?: any[];
 };
+
 
 export default function LeadModal({
   lead,
@@ -44,8 +48,10 @@ export default function LeadModal({
   statusOptions,
   categories = [],
   company,
-  companySlug,
+ companySlug,
   teamMembers = [],
+  payments,
+  activity,
 }: LeadModalProps) {
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -185,8 +191,10 @@ export default function LeadModal({
         statusOptions={statusOptions}
         onUpdateStatus={onUpdateStatus}
         companySlug={companySlug}
-        defaultTab={activeTab}
+       defaultTab={activeTab}
         teamMembers={teamMembers}
+        payments={payments}
+        activity={activity}
       />
     );
   };

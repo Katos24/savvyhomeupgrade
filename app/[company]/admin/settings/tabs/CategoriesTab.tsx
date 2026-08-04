@@ -1035,28 +1035,11 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   </div>
                 )}
 
+                {/* ── SUBTOTAL & TOTAL DISPLAY ── */}
                 <div className="mb-4 space-y-1.5 px-1">
                   <div className="flex items-center justify-between text-xs font-bold text-gray-400">
                     <span>Subtotal</span>
                     <span>{fmt(quoteEditorSubtotal)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-400">
-                      <Percent className="h-3 w-3" />
-                      Tax rate
-                    </label>
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max="100"
-                        value={editingTaxRateValue}
-                        onChange={(e) => setEditingTaxRateValue(parseFloat(e.target.value) || 0)}
-                        className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-emerald-500"
-                      />
-                      <span className="text-xs font-bold text-gray-400">%</span>
-                    </div>
                   </div>
                   {editingTaxRateValue > 0 && (
                     <div className="flex items-center justify-between text-xs font-bold text-gray-400">
@@ -1070,80 +1053,110 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   </div>
                 </div>
 
-                {/* ── DEPOSIT TERMS ── */}
-                <div className="mb-4 space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <label className="flex items-center gap-1.5 text-xs font-bold text-gray-300">
-                      <HandCoins className="h-3.5 w-3.5 text-amber-400" />
-                      Deposit
-                    </label>
-                    <div className="flex items-center gap-1.5">
-                      <div className="flex overflow-hidden rounded-lg border border-white/10">
-                        {(['percent', 'fixed'] as DepositType[]).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => setEditingDepositType(t)}
-                            className={`px-2.5 py-1 text-[11px] font-black transition-colors ${
-                              editingDepositType === t
-                                ? 'bg-amber-500 text-black'
-                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                            }`}
-                          >
-                            {t === 'percent' ? '%' : '$'}
-                          </button>
-                        ))}
+                {/* ── TAX RATE & DEPOSIT GRID (LEFT TO RIGHT) ── */}
+                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  
+                  {/* Tax Rate Block */}
+                  <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-gray-300">
+                        <Percent className="h-3.5 w-3.5 text-emerald-400" />
+                        Tax Rate
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max="100"
+                          value={editingTaxRateValue}
+                          onChange={(e) => setEditingTaxRateValue(parseFloat(e.target.value) || 0)}
+                          className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-emerald-500"
+                        />
+                        <span className="text-xs font-bold text-gray-400">%</span>
                       </div>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        max={editingDepositType === 'percent' ? 100 : undefined}
-                        value={editingDepositValue || ''}
-                        placeholder="0"
-                        onChange={(e) => {
-                          const v = parseFloat(e.target.value) || 0;
-                          setEditingDepositValue(v);
-                          // Picking a value before a type is the common slip.
-                          if (v > 0 && !editingDepositType) setEditingDepositType('percent');
-                        }}
-                        className={`w-20 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-amber-500 ${noSpinners}`}
-                      />
-                      {editingDepositValue > 0 && (
-                        <button
-                          onClick={() => { setEditingDepositValue(0); setEditingDepositType(null); }}
-                          className="text-[11px] font-bold text-gray-500 hover:text-red-400"
-                        >
-                          Clear
-                        </button>
-                      )}
+                    </div>
+                    <div className="border-t border-white/5 pt-2 text-[11px] font-semibold text-gray-400">
+                      Amount: <span className="font-bold text-white">{fmt(quoteEditorTaxAmount)}</span>
                     </div>
                   </div>
 
-                  {quoteEditorDeposit > 0 ? (
-                    <div className="space-y-1 border-t border-white/5 pt-2">
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-gray-400">Due on signing</span>
-                        <span className="text-amber-400">{fmt(quoteEditorDeposit)}</span>
-                      </div>
-                      <div className="flex items-center justify-between text-xs font-bold">
-                        <span className="text-gray-400">Balance on completion</span>
-                        <span className="text-gray-300">{fmt(quoteEditorBalance)}</span>
+                  {/* Deposit Terms Block */}
+                  <div className="flex flex-col justify-between space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="flex items-center justify-between gap-2">
+                      <label className="flex items-center gap-1.5 text-xs font-bold text-gray-300">
+                        <HandCoins className="h-3.5 w-3.5 text-amber-400" />
+                        Deposit
+                      </label>
+                      <div className="flex items-center gap-1">
+                        <div className="flex overflow-hidden rounded-lg border border-white/10">
+                          {(['percent', 'fixed'] as DepositType[]).map((t) => (
+                            <button
+                              key={t}
+                              onClick={() => setEditingDepositType(t)}
+                              className={`px-2 py-1 text-[11px] font-black transition-colors ${
+                                editingDepositType === t
+                                  ? 'bg-amber-500 text-black'
+                                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                              }`}
+                            >
+                              {t === 'percent' ? '%' : '$'}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={editingDepositType === 'percent' ? 100 : undefined}
+                          value={editingDepositValue || ''}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value) || 0;
+                            setEditingDepositValue(v);
+                            if (v > 0 && !editingDepositType) setEditingDepositType('percent');
+                          }}
+                          className={`w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-amber-500 ${noSpinners}`}
+                        />
+                        {editingDepositValue > 0 && (
+                          <button
+                            onClick={() => { setEditingDepositValue(0); setEditingDepositType(null); }}
+                            className="text-[10px] font-bold text-gray-500 hover:text-red-400"
+                          >
+                            Clear
+                          </button>
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <p className="border-t border-white/5 pt-2 text-[11px] font-semibold text-gray-500">
-                      No deposit — the full amount is due on the invoice.
-                    </p>
-                  )}
 
-                  {editingDepositType === 'fixed' && editingDepositValue > quoteEditorTotal && quoteEditorTotal > 0 && (
-                    <p className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
-                      <AlertCircle className="h-3 w-3 shrink-0" />
-                      Deposit is more than the estimate. It will be capped at the total.
-                    </p>
-                  )}
+                    {quoteEditorDeposit > 0 ? (
+                      <div className="space-y-0.5 border-t border-white/5 pt-2 text-[11px] font-bold">
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Signing:</span>
+                          <span className="text-amber-400">{fmt(quoteEditorDeposit)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-gray-400">Balance:</span>
+                          <span className="text-gray-300">{fmt(quoteEditorBalance)}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="border-t border-white/5 pt-2 text-[11px] font-semibold text-gray-500">
+                        No deposit required.
+                      </p>
+                    )}
+                  </div>
+
                 </div>
 
+                {editingDepositType === 'fixed' && editingDepositValue > quoteEditorTotal && quoteEditorTotal > 0 && (
+                  <p className="mb-4 flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
+                    <AlertCircle className="h-3 w-3 shrink-0" />
+                    Deposit is more than the estimate. It will be capped at the total.
+                  </p>
+                )}
+
+                {/* Modal Action Buttons */}
                 <div className="grid grid-cols-2 gap-4">
                   {editingQuoteId ? (
                     <button

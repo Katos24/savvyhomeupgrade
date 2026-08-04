@@ -19,6 +19,9 @@ type ProjectSectionProps = {
   company: any;
   defaultTab?: string;
   teamMembers?: any[];
+  /** From /api/leads/[id], passed straight to BillingSection. */
+  payments?: any[];
+  activity?: any[];
 };
 
 export default function ProjectSection({
@@ -31,6 +34,8 @@ export default function ProjectSection({
   companySlug,
   defaultTab,
   teamMembers = [],
+  payments,
+  activity,
 }: ProjectSectionProps) {
   const hasProject = !!lead?.project_id;
 
@@ -259,6 +264,8 @@ export default function ProjectSection({
     onRefresh={onRefresh}
     hasProject={hasProject}
     companySlug={companySlug}
+    payments={payments}
+    activity={activity}
   />
 )}
           {financialsTab === 'media' && (

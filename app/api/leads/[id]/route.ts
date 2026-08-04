@@ -5,16 +5,60 @@ import jwt from 'jsonwebtoken';
 
 const sql = neon(process.env.DATABASE_URL!);
 
+/** Postgres returns NUMERIC as a string; the client does arithmetic on these. */
+function shapePayment(row: any) {
+  return {
+    id: row.id,
+    amount: Number(row.amount) || 0,
+    invoiced_total: row.invoiced_total === null ? null : Number(row.invoiced_total),
+    method: row.method,
+    kind: row.kind,
+    paid_on: row.paid_on,
+    card_brand: row.card_brand,
+    card_last4: row.card_last4,
+    note: row.note,
+    recorded_by: row.recorded_by,
+    // Non-null means it came from Stripe and can't be deleted in the UI.
+    is_stripe: !!row.stripe_payment_intent_id,
+    created_at: row.created_at,
+  };
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id } = await params;
+    const leadId = parseInt(id);
+    if (!leadId || Number.isNaN(leadId)) {
+      return NextResponse.json({ success: false, error: 'Invalid id' }, { status: 400 });
+    }
+
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ success: false }, { status: 401 });
-    jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+
+    const secret = process.env.JWT_SECRET;
+    if (!secret) throw new Error('JWT_SECRET is not set');
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, secret) as any;
+    } catch {
+      return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
+    }
+
+    // Resolve the caller's company from their user row rather than trusting
+    // the token payload, then scope every query below to it. Without this,
+    // any authenticated user could read any lead by guessing an id.
+    const users = await sql`
+      SELECT id, company_id FROM users WHERE id = ${decoded.userId} LIMIT 1
+    `;
+    const companyId = users[0]?.company_id;
+    if (!companyId) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
 
     const leads = await sql`
       SELECT
@@ -37,7 +81,7 @@ export async function GET(
         p.quote_accepted_at as project_quote_accepted_at,
         p.quote_declined_at as project_quote_declined_at,
         p.schedule_emails,
-       p.payment_status,
+        p.payment_status,
         p.quote_emails,
         p.payment_amount,
         p.paid_at,
@@ -45,6 +89,9 @@ export async function GET(
         p.payment_method,
         p.payment_notes,
         p.payment_due_date,
+        p.card_brand,
+        p.card_last4,
+        p.stripe_payment_intent_id,
         p.refunded_amount,
         p.refunded_at,
         p.reminder_sent_at,
@@ -63,13 +110,60 @@ export async function GET(
         p.follow_up_notes
       FROM leads l
       LEFT JOIN projects p ON p.lead_id = l.id
-      WHERE l.id = ${parseInt(id)} AND l.deleted = false
+      WHERE l.id = ${leadId}
+        AND l.company_id = ${companyId}
+        AND l.deleted = false
       LIMIT 1
     `;
 
-    if (!leads.length) return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
-    return NextResponse.json({ success: true, lead: leads[0] });
+    if (!leads.length) {
+      return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
+    }
+
+    const lead = leads[0];
+    const projectId = lead.project_id;
+
+    // Payments and activity ship with the lead. They used to be two separate
+    // fetches from the billing panel, which meant the deposit box rendered as
+    // unpaid and the activity count as empty until they landed — both wrong
+    // rather than merely absent. One response can't be half-right.
+    //
+    // html_body is deliberately excluded: an invoice email is often 100KB+ and
+    // the list only renders a date and a label. The body is fetched from
+    // outbox-preview when Preview is clicked.
+    const [paymentRows, activityRows] = await Promise.all([
+      projectId
+        ? sql`
+            SELECT id, amount, invoiced_total, method, kind, paid_on,
+                   card_brand, card_last4, note, recorded_by,
+                   stripe_payment_intent_id, created_at
+            FROM payments
+            WHERE project_id = ${projectId} AND company_id = ${companyId}
+            ORDER BY paid_on DESC, id DESC
+          `
+        : Promise.resolve([] as any[]),
+      sql`
+        SELECT id, type, status, error_message,
+               sent_by_email, sent_by_name, subject,
+               created_at, sent_at,
+               (html_body IS NOT NULL AND html_body <> '') AS has_body
+        FROM email_outbox
+        WHERE lead_id = ${leadId}
+          AND company_id = ${companyId}
+          AND type IN ('invoice', 'payment_reminder')
+        ORDER BY created_at DESC
+        LIMIT 50
+      `,
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      lead,
+      payments: (paymentRows as any[]).map(shapePayment),
+      activity: activityRows,
+    });
   } catch (error) {
+    console.error('Get lead error:', error);
     return NextResponse.json({ success: false, error: 'Failed to fetch lead' }, { status: 500 });
   }
 }

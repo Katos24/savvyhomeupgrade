@@ -26,6 +26,12 @@ type BillingSectionProps = {
   onRefresh: () => Promise<void>;
   hasProject: boolean;
   companySlug: string;
+  /** Ship with the lead from /api/leads/[id]. They used to be separate
+   *  fetches, which meant the deposit box rendered as unpaid and the
+   *  activity count as empty until they landed — both wrong rather than
+   *  merely absent. */
+  payments?: any[];
+  activity?: any[];
 };
 
 const fmt = (n: number | null | undefined) =>
@@ -74,6 +80,8 @@ export default function BillingSection({
   onRefresh,
   hasProject,
   companySlug,
+  payments: paymentsProp,
+  activity: activityProp,
 }: BillingSectionProps) {
   // ── UI MODAL STATES ──
   const [showActivity, setShowActivity] = useState(false);
@@ -102,17 +110,12 @@ export default function BillingSection({
   const [rawAmount, setRawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
+  
 
-  // ── LOGS ──
-  const [outboxLog, setOutboxLog] = useState<any[]>([]);
-  const [invoiceLog, setInvoiceLog] = useState<any[]>([]);
-  // Gates only the things that are actively WRONG while loading — the
-  // activity count and the primary button. The money comes from the `lead`
-  // prop and paints immediately.
-  const [logsLoaded, setLogsLoaded] = useState(false);
-
-  // ── PAYMENTS ──
-  const [payments, setPayments] = useState<any[]>([]);
+  // ── PAYMENTS / ACTIVITY ──
+  // Both arrive with the lead, so there is no loading state to get wrong.
+  const payments = paymentsProp ?? [];
+  const activityLog = activityProp ?? [];
   const [deletingPaymentId, setDeletingPaymentId] = useState<number | null>(null);
 
   // ── PERMISSIONS ──
@@ -161,8 +164,14 @@ export default function BillingSection({
   const isRefunded = lead?.payment_status === 'refunded';
   const isStripeVerified = !!lead?.stripe_payment_intent_id;
   const isPartiallyRefunded = lead?.payment_status === 'partially_refunded';
-  const isClosed = isRefunded || isPartiallyRefunded;
+ const isClosed = isRefunded || isPartiallyRefunded;
   const refundedAmount = parseFloat(lead?.refunded_amount || '0');
+  // A refund isn't necessarily the end of the job. Refund the wrong amount
+  // and re-invoice, or refund a disputed line and still be owed the rest —
+  // the balance decides whether there's anything left to do, not the status.
+  // Forcing a new project would throw away the quote, photos, and history
+  // over what is often a correction.
+  const refundedButOwing = isClosed && remaining > 0;
 
   const stripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
   const hasManualLink = !!company?.payment_link_url;
@@ -185,7 +194,9 @@ export default function BillingSection({
 
   const isPaid = !isClosed && total > 0 && paidAmount >= total;
   const isPartial = !isClosed && paidAmount > 0 && !isPaid;
-  const invoiceSent = invoiceLog.length > 0;
+  // From the project row, not the outbox fetch — the primary button
+  // shouldn't wait on activity loading to know an invoice went out.
+  const invoiceSent = !!lead?.invoice_sent_at;
   const lastReminderSent = lead?.reminder_sent_at || null;
   const daysSinceReminder = lastReminderSent
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
@@ -193,8 +204,11 @@ export default function BillingSection({
 
   // The deposit row from the ledger, so we can tell whether the balance has
   // been asked for since it landed.
-  const depositPayment = payments.find((p) => p.kind === 'deposit');
-  const depositPaid = !!depositPayment;
+  const depositPayment = payments.find((p: any) => p.kind === 'deposit');
+  // payment_amount is on the project row. If money has landed and there are
+  // deposit terms, the deposit is settled — the payments list only adds the
+  // date and card.
+  const depositPaid = hasDepositTerms && paidAmount > 0;
   // If the last invoice send predates the deposit, the customer was asked for
   // the deposit — not the balance. Reminding them about a balance they were
   // never sent is the wrong next step.
@@ -207,10 +221,6 @@ export default function BillingSection({
       new Date(lead.invoice_sent_at).getTime() <
         new Date(depositPayment.paid_on).getTime());
 
-  const activityLog = [...invoiceLog, ...outboxLog].sort(
-    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
   // ── EFFECTS ──
   useEffect(() => {
     setDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
@@ -222,51 +232,6 @@ export default function BillingSection({
       num > 0 ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
     );
   }, [lead?.id]);
-
-  const fetchPayments = async () => {
-    if (!lead?.project_id || !companySlug) return;
-    try {
-      const res = await fetch(`/api/company/${companySlug}/payments?project_id=${lead.project_id}`);
-      const data = await res.json();
-      if (data.success) setPayments(data.payments || []);
-    } catch {
-      // Non-fatal — the summary above still renders from the project row.
-    }
-  };
-
-  useEffect(() => {
-    fetchPayments();
-  }, [lead?.project_id, companySlug]);
-
-  // Both types on mount. The old version loaded invoices on mount but
-  // reminders only when Activity was expanded, so the count read "1" until
-  // you opened it and then jumped to "2".
-  useEffect(() => {
-    if (!lead?.id || !companySlug) return;
-    let cancelled = false;
-    setLogsLoaded(false);
-
-    const load = (type: string) =>
-      fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=${type}`)
-        .then((r) => r.json())
-        .then((d) => d?.entries || []);
-
-    // allSettled + finally: one dead endpoint can't leave the panel stuck
-    // behind a permanent skeleton.
-    Promise.allSettled([load('invoice'), load('payment_reminder')])
-      .then(([inv, rem]) => {
-        if (cancelled) return;
-        if (inv.status === 'fulfilled') setInvoiceLog(inv.value);
-        if (rem.status === 'fulfilled') setOutboxLog(rem.value);
-      })
-      .finally(() => {
-        if (!cancelled) setLogsLoaded(true);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [lead?.id, companySlug]);
 
   // ── HANDLERS ──
   const handleDownload = async () => {
@@ -317,13 +282,9 @@ export default function BillingSection({
       if (result.success) {
         toast.success('Invoice sent');
         setShowSendConfirm(false);
+        // onRefresh re-fetches the lead, which now carries payments and
+        // activity — no separate refetch needed.
         await onRefresh();
-        fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=invoice`)
-          .then((r) => r.json())
-          .then((d) => {
-            if (d.entries) setInvoiceLog(d.entries);
-          })
-          .catch(() => {});
       } else toast.error(result.error || 'Failed to send invoice');
     } catch {
       toast.error('Failed to send invoice');
@@ -417,7 +378,6 @@ export default function BillingSection({
         setRawAmount('');
         setPaymentAmount('');
         setPaymentMethod('');
-        setPayments(result.payments || []);
         await onRefresh();
       } else {
         toast.error(result.error || 'Failed to record payment');
@@ -439,7 +399,6 @@ export default function BillingSection({
       const result = await res.json();
       if (res.ok && result.success) {
         toast.success('Payment removed');
-        setPayments(result.payments || []);
         await onRefresh();
       } else {
         toast.error(result.error || 'Could not remove payment');
@@ -464,17 +423,30 @@ export default function BillingSection({
         toast.success('Reminder sent');
         setShowReminderConfirm(false);
         await onRefresh();
-        fetch(`/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&type=payment_reminder`)
-          .then((r) => r.json())
-          .then((d) => {
-            if (d.entries) setOutboxLog(d.entries);
-          })
-          .catch(() => {});
       } else toast.error(data.error || 'Failed to send reminder');
     } catch {
       toast.error('Failed to send reminder');
     } finally {
       setSendingReminder(false);
+    }
+  };
+
+  // The list no longer carries html_body — fetch it only when asked for.
+  const loadPreview = async (entryId: number) => {
+    setPreviewHtml('<p style="padding:32px;font-family:sans-serif;color:#94a3b8">Loading preview…</p>');
+    try {
+      const res = await fetch(
+        `/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&body=1&entry_id=${entryId}`
+      );
+      const data = await res.json();
+      setPreviewHtml(
+        data?.entry?.html_body ||
+          '<p style="padding:32px;font-family:sans-serif;color:#64748b">Preview unavailable.</p>'
+      );
+    } catch {
+      setPreviewHtml(
+        '<p style="padding:32px;font-family:sans-serif;color:#64748b">Could not load preview.</p>'
+      );
     }
   };
 
@@ -500,24 +472,38 @@ export default function BillingSection({
      Sending never disables — resending is legitimate when a customer loses
      the email. Only the reminder greys out, because the server genuinely
      blocks it for 24 hours.                                              */
+  type ActionKey = 'upgrade' | 'deposit' | 'balance' | 'invoice' | 'reminder' | 'reminder-sent';
   const nextAction: {
+    key: ActionKey;
     label: string;
     sub: string;
     onClick: () => void;
     tone: 'primary' | 'muted';
-  } | null = !logsLoaded
-    ? null
-    : isClosed || isPaid
+  } | null = (isClosed && !refundedButOwing) || isPaid
     ? null
     : !canSendInvoice
     ? {
+        key: 'upgrade',
         label: 'Upgrade to send invoices',
         sub: 'Emailing invoices is on the Basic plan.',
         onClick: () => (window.location.href = `/${company?.slug}/admin/settings#billing`),
         tone: 'primary',
       }
+    : // An uncollected deposit outranks everything. Setting terms on a job
+      // that was already invoiced used to drop straight to "send a reminder",
+      // which would have chased the full amount while the pay link charged
+      // the deposit.
+      awaitingDeposit
+    ? {
+        key: 'deposit',
+        label: `Send deposit request — ${fmt(depositAmount)}`,
+        sub: `Customer pays ${fmt(depositAmount)} now, ${fmt(total - depositAmount)} on completion.`,
+        onClick: () => setShowSendConfirm(true),
+        tone: 'primary',
+      }
     : balanceNotYetRequested
     ? {
+        key: 'balance',
         label: `Send remaining balance — ${fmt(remaining)}`,
         sub: 'Bills what\u2019s left after the deposit.',
         onClick: () => setShowSendConfirm(true),
@@ -525,9 +511,8 @@ export default function BillingSection({
       }
     : !invoiceSent
     ? {
-        label: awaitingDeposit
-          ? `Send deposit request — ${fmt(depositAmount)}`
-          : `Send invoice — ${fmt(remaining)}`,
+        key: 'invoice',
+        label: `Send invoice — ${fmt(remaining)}`,
         sub: hasPayLink
           ? `Emails the PDF with a ${activeMethodLabel} pay link.`
           : 'Emails the PDF. No payment method connected yet.',
@@ -536,12 +521,14 @@ export default function BillingSection({
       }
     : daysSinceReminder === 0
     ? {
+        key: 'reminder-sent',
         label: 'Reminder sent today',
         sub: 'Available again tomorrow.',
         onClick: () => {},
         tone: 'muted',
       }
     : {
+        key: 'reminder',
         label: 'Send payment reminder',
         sub: lastReminderSent
           ? `Last reminder ${fmtDate(lastReminderSent)}. ${fmt(remaining)} outstanding.`
@@ -550,9 +537,23 @@ export default function BillingSection({
         tone: 'primary',
       };
 
-  // Resending is a secondary action once something has already gone out —
-  // it sits under the primary rather than replacing it.
-  const showResend = logsLoaded && invoiceSent && !isPaid && !isClosed && canSendInvoice && !balanceNotYetRequested;
+  // Derived from the key rather than the label, so a copy change can't
+  // silently break which secondary shows. Never a disabled control: if the
+  // only alternative is unavailable, nothing renders.
+  const secondaryAction: { label: string; onClick: () => void } | null =
+    !nextAction || isPaid || (isClosed && !refundedButOwing)
+      ? null
+      : nextAction.key === 'reminder' || nextAction.key === 'reminder-sent'
+      ? { label: 'Resend invoice', onClick: () => setShowSendConfirm(true) }
+      : (nextAction.key === 'deposit' || nextAction.key === 'balance' || nextAction.key === 'invoice') &&
+        invoiceSent &&
+        daysSinceReminder !== 0
+      ? { label: 'Send payment reminder', onClick: () => setShowReminderConfirm(true) }
+      : null;
+
+ // Suppressed on a refunded job — the refund note above already explains
+  // the situation, and two amber boxes stacked read as two separate problems.
+  const staleInvoiceWarning = awaitingDeposit && invoiceSent && !refundedButOwing;
 
   return (
     <>
@@ -564,28 +565,51 @@ export default function BillingSection({
              what's left. Both always render, so the layout doesn't jump
              when a deposit is added or cleared. */}
         <div className="px-4 sm:px-5 pt-5 pb-4">
-          <p className="text-[13px] text-slate-500">
-            {isClosed ? 'Refunded' : isPaid ? 'Paid in full' : 'Total due'}
+         <p className="text-[13px] text-slate-500">
+            {isClosed && !refundedButOwing
+              ? 'Refunded'
+              : isPaid
+              ? 'Paid in full'
+              : 'Total due'}
           </p>
           <p
             className={`mt-1 text-[32px] sm:text-4xl font-semibold tracking-tight tabular-nums leading-tight ${
-              isClosed ? 'text-slate-500' : isPaid ? 'text-emerald-600' : 'text-slate-900'
+              isClosed && !refundedButOwing
+                ? 'text-slate-500'
+                : isPaid
+                ? 'text-emerald-600'
+                : 'text-slate-900'
             }`}
           >
-            {isClosed ? fmt(refundedAmount) : fmt(total)}
+            {isClosed && !refundedButOwing ? fmt(refundedAmount) : fmt(total)}
           </p>
-          {invoiceTaxRate > 0 && !isClosed && (
+          {invoiceTaxRate > 0 && !(isClosed && !refundedButOwing) && (
             <p className="mt-0.5 text-[12px] text-slate-400 tabular-nums">
               {fmt(invoiceSubtotal)} + {invoiceTaxRate}% tax
             </p>
           )}
-          {isClosed && lead?.refunded_at && (
+          {isClosed && !refundedButOwing && lead?.refunded_at && (
             <p className="mt-1 text-[13px] text-slate-500">
               Refund processed {fmtDate(lead.refunded_at)}
             </p>
           )}
 
-          {!isClosed && (
+          {/* A send button on a job marked refunded reads as a bug without
+              this. State both numbers plainly. */}
+          {refundedButOwing && (
+            <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-800">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+              <span>
+                {fmt(refundedAmount)} refunded
+                {lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}.{' '}
+                {paidAmount > 0
+                  ? `${fmt(remaining)} still outstanding.`
+                  : 'Nothing is currently collected on this job.'}
+              </span>
+            </div>
+          )}
+
+         {(!isClosed || refundedButOwing) && (
             <div className="mt-4 grid grid-cols-2 gap-2">
               {/* DEPOSIT BOX */}
               {showDepositEditor ? (
@@ -700,7 +724,7 @@ export default function BillingSection({
                     {depositPaid ? (
                       <span className="inline-flex items-center gap-1">
                         <CheckCircle className="w-3 h-3 shrink-0" />
-                        Paid {fmtDate(depositPayment.paid_on)}
+                        {depositPayment ? `Paid ${fmtDate(depositPayment.paid_on)}` : 'Paid'}
                       </span>
                     ) : hasDepositTerms ? (
                       <>
@@ -752,13 +776,23 @@ export default function BillingSection({
               {nextAction.sub}
             </p>
 
-            {showResend && (
+           {secondaryAction && (
               <button
-                onClick={() => setShowSendConfirm(true)}
+                onClick={secondaryAction.onClick}
                 className="mt-2 w-full h-11 rounded-xl border border-slate-200 text-[13px] font-medium text-slate-600 hover:bg-slate-50 transition-colors"
               >
-                Resend invoice
+                {secondaryAction.label}
               </button>
+            )}
+
+            {staleInvoiceWarning && (
+              <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-800">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+                <span>
+                  An invoice for {fmt(total)} already went out. Sending the deposit request
+                  gives them a new email for {fmt(depositAmount)}.
+                </span>
+              </p>
             )}
           </div>
         )}
@@ -896,7 +930,7 @@ export default function BillingSection({
             PDF
           </button>
 
-          {!isClosed && !isPaid && (
+          {(!isClosed || refundedButOwing) && !isPaid && (
             <button
               onClick={() => {
                 // Pre-fill what's actually still owed — the common case is
@@ -930,7 +964,7 @@ export default function BillingSection({
           >
             <span className="text-[13px] text-slate-500">Activity</span>
             <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-[13px]">{logsLoaded ? activityLog.length : ''}</span>
+              <span className="text-[13px]">{activityLog.length}</span>
               <ChevronDown
                 className={`w-4 h-4 transition-transform duration-200 ${showActivity ? 'rotate-180' : ''}`}
               />
@@ -983,9 +1017,9 @@ export default function BillingSection({
                           </div>
                         </div>
 
-                        {entry.html_body && (
+                        {entry.has_body && (
                           <button
-                            onClick={() => setPreviewHtml(entry.html_body)}
+                            onClick={() => loadPreview(entry.id)}
                             className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-white rounded-lg text-[11px] font-medium transition-colors"
                           >
                             <Eye className="w-3 h-3" /> Preview

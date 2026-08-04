@@ -104,7 +104,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [newLeadCount, setNewLeadCount] = useState(0);
 
   // UI state
-  const [selectedLead, setSelectedLead] = useState<any>(null);
+ const [selectedLead, setSelectedLead] = useState<any>(null);
+  // Payments and activity ship with the lead from /api/leads/[id] so the
+  // billing panel has no loading states of its own to get wrong.
+  const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
+  const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
   const [currentView, setCurrentView] = useState<ViewMode>(() => {
     if (typeof window === 'undefined') return 'cards';
     return (localStorage.getItem('dashboard-view') as ViewMode) || 'cards';
@@ -242,11 +246,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     const params = new URLSearchParams(window.location.search);
     const leadId = params.get('lead');
     if (!leadId) return;
-    const lead = allLeads.find(l => l.id === parseInt(leadId));
+  const lead = allLeads.find(l => l.id === parseInt(leadId));
     if (lead) {
+      // The list row has no payments or activity — open with what we have
+      // and let the detail fetch below fill them in.
       setSelectedLead(lead);
       window.history.replaceState({}, '', window.location.pathname);
-      return;
     }
     if (isInitialLoad) return;
     fetch(`/api/leads/${leadId}`, { cache: 'no-store' })
@@ -254,6 +259,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       .then(data => {
         if (data.success && data.lead) {
           setSelectedLead(data.lead);
+          setSelectedLeadPayments(data.payments || []);
+          setSelectedLeadActivity(data.activity || []);
           window.history.replaceState({}, '', window.location.pathname);
         }
       })
@@ -384,9 +391,32 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         headers: { 'Cache-Control': 'no-cache' },
       });
       const data = await res.json();
-      if (data.success && data.lead) setSelectedLead(data.lead);
+      if (data.success && data.lead) {
+        setSelectedLead(data.lead);
+        setSelectedLeadPayments(data.payments || []);
+        setSelectedLeadActivity(data.activity || []);
+      }
     } catch (e) { console.error('refreshModalLead:', e); }
   }, [fetchLeads, selectedLead]);
+
+// Opening from the list used to hand the modal a row from allLeads, which
+  // has no payments or activity. Show it immediately, then fetch the detail.
+  const openLead = useCallback(async (lead: any) => {
+    setSelectedLead(lead);
+    setSelectedLeadPayments([]);
+    setSelectedLeadActivity([]);
+    try {
+      const res = await fetch(`/api/leads/${lead.id}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.lead) {
+        setSelectedLead(data.lead);
+        setSelectedLeadPayments(data.payments || []);
+        setSelectedLeadActivity(data.activity || []);
+      }
+    } catch (e) {
+      console.error('openLead:', e);
+    }
+  }, []);
 
   const clearFilters = useCallback(() => {
     setSearchQuery('');
@@ -609,10 +639,10 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
           subscriptionCancelAt={company.subscription_cancel_at}
           planTier={company.plan_tier || 'free'}
         />
-       <PaymentReminderBanner
+     <PaymentReminderBanner
   slug={company.slug}
   planTier={planTier}
-  onSelectLead={setSelectedLead}
+  onSelectLead={openLead}
   allLeads={allLeads}
 />
       </div>
@@ -692,7 +722,7 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
           company={company}
           hasActiveFilters={hasActiveFilters}
           clearFilters={clearFilters}
-          onSelectLead={setSelectedLead}
+          onSelectLead={openLead}
           newLeadCount={newLeadCount}
           onDismissNewLeads={() => {
             setNewLeadCount(0);
@@ -717,6 +747,7 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
           lead={selectedLead} onClose={() => setSelectedLead(null)}
           onUpdateStatus={updateLeadStatus} onAddNote={addNote}
           onDeleteLead={deleteLead} onRefresh={refreshModalLead}
+          payments={selectedLeadPayments} activity={selectedLeadActivity}
           currentUser={currentUser} statusOptions={statusOptions}
           categories={company.form_categories || []} company={company}
           companySlug={company.slug}

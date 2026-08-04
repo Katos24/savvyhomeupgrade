@@ -694,9 +694,14 @@ export async function sendInvoiceToCustomer({
     // The pay link charges the deposit, not the total. Showing the total on
     // the button while charging half is how a customer decides the invoice
     // is broken and doesn't pay.
-    const isDepositCollection =
+   const isDepositCollection =
       collectionKind === 'deposit' && !!depositAmount && depositAmount > 0 && depositAmount < invoiceTotal;
-    const payButtonAmount = isDepositCollection ? depositAmount! : invoiceTotal;
+    // What the link actually charges: the deposit, or the outstanding balance
+    // once money has been collected. The old version fell back to the full
+    // total, so a $500 balance invoice showed a "Pay $3,135.06" button over a
+    // checkout that correctly charged $500.
+    const outstanding = Math.max(invoiceTotal - (amountPaid || 0), 0);
+    const payButtonAmount = isDepositCollection ? depositAmount! : outstanding;
 
     // ── STEP 1: Generate PDF buffer ───────────────────────
     const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
@@ -2752,8 +2757,13 @@ export async function sendPaymentReceiptToCustomer({
   customerName,
   companyName,
   companyId,
-  amountPaid,
+amountPaid,
   invoiceNumber,
+  contractTotal,
+  paidToDate,
+  paymentKind,
+  cardBrand,
+  cardLast4,
 }: {
   customerEmail: string;
   customerName: string;
@@ -2761,11 +2771,59 @@ export async function sendPaymentReceiptToCustomer({
   companyId: number;
   amountPaid: number;
   invoiceNumber?: string;
+  /** Job totals so a deposit receipt says what's still coming. Without these
+   *  a customer paying $627 of a $3,135 job just sees "$627 received" and
+   *  reasonably assumes they're done. */
+  contractTotal?: number;
+  paidToDate?: number;
+  paymentKind?: 'deposit' | 'balance' | 'refund' | string;
+  cardBrand?: string | null;
+  cardLast4?: string | null;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
     const fmt = (n: number) =>
       new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+    const total = Number(contractTotal) || 0;
+    const collected = Number(paidToDate) || amountPaid;
+    const balance = total > 0 ? Math.max(total - collected, 0) : 0;
+    const settled = total > 0 && balance <= 0;
+    const isDeposit = paymentKind === 'deposit';
+
+    const cardLine =
+      cardBrand && cardLast4
+        ? `<p style="margin: 6px 0 0; color: #94a3b8; font-size: 12px; text-transform: capitalize;">${cardBrand} ····${cardLast4}</p>`
+        : '';
+
+    // No pay button here on purpose — the balance isn't due yet, and asking
+    // for it inside a receipt reads as chasing. The balance invoice is its
+    // own email when the work is done.
+    const balanceHtml =
+      total > 0 && balance > 0
+        ? `
+        <div style="margin: 0 0 8px; padding: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;">
+          <table style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td style="font-size: 13px; color: #475569; padding: 4px 0;">Project total</td>
+              <td style="font-size: 13px; color: #475569; text-align: right; padding: 4px 0;">${fmt(total)}</td>
+            </tr>
+            <tr>
+              <td style="font-size: 13px; color: #475569; padding: 4px 0;">Paid to date</td>
+              <td style="font-size: 13px; color: #10b981; text-align: right; padding: 4px 0;">− ${fmt(collected)}</td>
+            </tr>
+            <tr>
+              <td style="font-size: 15px; font-weight: 800; color: #0f172a; padding: 8px 0 4px;">Balance remaining</td>
+              <td style="font-size: 15px; font-weight: 800; color: #0f172a; text-align: right; padding: 8px 0 4px;">${fmt(balance)}</td>
+            </tr>
+          </table>
+          <p style="margin: 10px 0 0; color: #64748b; font-size: 12px;">
+            ${isDeposit
+              ? 'This is due when the work is complete. We\u2019ll send an invoice then — nothing to do right now.'
+              : 'We\u2019ll be in touch about the remaining balance.'}
+          </p>
+        </div>`
+        : '';
 
     const html = buildEmail({
       companyName: company.name || companyName,
@@ -2774,24 +2832,37 @@ export async function sendPaymentReceiptToCustomer({
       brandColor2: company.email_brand_color_2,
       bodyHtml: `
         <p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">
-          Hi ${customerName}, this confirms your payment to ${company.name || companyName} was successful.
+          Hi ${customerName}, this confirms your ${isDeposit ? 'deposit' : 'payment'} to ${company.name || companyName} was successful.
         </p>
         <div style="text-align: center; margin: 24px 0; padding: 20px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px;">
-          <p style="margin: 0; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;">Amount paid</p>
+          <p style="margin: 0; color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;">
+            ${isDeposit ? 'Deposit received' : 'Amount paid'}
+          </p>
           <p style="margin: 4px 0 0; color: #0f172a; font-size: 28px; font-weight: 800;">${fmt(amountPaid)}</p>
           ${invoiceNumber ? `<p style="margin: 4px 0 0; color: #94a3b8; font-size: 12px;">${invoiceNumber}</p>` : ''}
+          ${cardLine}
+          ${settled ? `<p style="margin: 10px 0 0; color: #059669; font-size: 13px; font-weight: 700;">Paid in full — thank you!</p>` : ''}
         </div>
+        ${balanceHtml}
       `,
       phone: company.phone,
       website: company.website,
-      preheader: `Payment of ${fmt(amountPaid)} received — thank you!`,
+      preheader: settled
+        ? `Paid in full — ${fmt(amountPaid)} received. Thank you!`
+        : balance > 0
+        ? `${fmt(amountPaid)} received. ${fmt(balance)} balance remaining.`
+        : `Payment of ${fmt(amountPaid)} received — thank you!`,
     });
 
     await resend.emails.send({
       from: `${company.name || companyName} <hello@lead2project.com>`,
       to: customerEmail,
       replyTo: company.email || undefined,
-      subject: `Payment received — ${fmt(amountPaid)}`,
+      subject: settled
+        ? `Paid in full — ${fmt(amountPaid)} received`
+        : isDeposit
+        ? `Deposit received — ${fmt(amountPaid)}`
+        : `Payment received — ${fmt(amountPaid)}`,
       html,
     });
 
@@ -2809,8 +2880,11 @@ export async function sendPaymentNotificationToContractor({
   customerName,
   companyName,
   companyId,
-  amountPaid,
+ amountPaid,
   dashboardUrl,
+  contractTotal,
+  paidToDate,
+  paymentKind,
 }: {
   contractorEmail: string;
   customerName: string;
@@ -2818,8 +2892,16 @@ export async function sendPaymentNotificationToContractor({
   companyId: number;
   amountPaid: number;
   dashboardUrl: string;
+  contractTotal?: number;
+  paidToDate?: number;
+  paymentKind?: 'deposit' | 'balance' | 'refund' | string;
 }) {
   try {
+    const total = Number(contractTotal) || 0;
+    const collected = Number(paidToDate) || amountPaid;
+    const balance = total > 0 ? Math.max(total - collected, 0) : 0;
+    const settled = total > 0 && balance <= 0;
+    const isDeposit = paymentKind === 'deposit';
     const company = await getCompanyDetails(companyId);
     const fmt = (n: number) =>
       new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -2830,9 +2912,20 @@ export async function sendPaymentNotificationToContractor({
       brandColor: company.email_brand_color_1,
       brandColor2: company.email_brand_color_2,
       bodyHtml: `
-        <p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">
-          ${customerName} just paid <strong>${fmt(amountPaid)}</strong> online.
+       <p style="margin: 0 0 16px 0; color: #334155; font-size: 15px; line-height: 1.7;">
+          ${customerName} just paid <strong>${fmt(amountPaid)}</strong> online${isDeposit ? ' as a deposit' : ''}.
         </p>
+        ${
+          balance > 0
+            ? `<p style="margin: 0 0 16px 0; color: #92400e; font-size: 14px; background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 12px;">
+                 <strong>${fmt(balance)}</strong> still outstanding on this job.
+               </p>`
+            : settled
+            ? `<p style="margin: 0 0 16px 0; color: #065f46; font-size: 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 12px;">
+                 This job is now <strong>paid in full</strong>.
+               </p>`
+            : ''
+        }
         <div style="text-align: center; margin: 24px 0;">
           <a href="${dashboardUrl}" style="display: inline-block; background-color: #111827; color: #fff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px;">
             View in dashboard

@@ -59,7 +59,7 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
 
   const content = (
     <div className="max-w-5xl mx-auto space-y-8">
-      {/* 1. Hero Section */}
+      {/* 1. Hero Section (Kept at the Very Top) */}
       <div className="bg-white rounded-2xl border border-slate-200 p-5 md:p-10 shadow-sm overflow-hidden">
         <div className="grid md:grid-cols-12 gap-6 md:gap-8 items-center">
           <div className="md:col-span-7">
@@ -71,7 +71,7 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
               <FeatureItem>Automatically dispatch review requests when you mark a job as <strong>Completed</strong>.</FeatureItem>
               <FeatureItem>Collect and manage ratings from your preferred customers.</FeatureItem>
               <FeatureItem>Elevate your business reputation with more Google Reviews.</FeatureItem>
-              <FeatureItem>Requires a Google Business profile address. Only available in US/CA</FeatureItem>
+              <FeatureItem>Requires a Google Business profile address.</FeatureItem>
             </div>
           </div>
 
@@ -88,13 +88,25 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
         </div>
       </div>
 
-      {/* 2. Middle Setup Section */}
+      {/* 2. Middle Setup Section (With Link directly under the label) */}
       <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
           <div className="flex-1 w-full">
-            <label htmlFor="google-review-url" className="block text-[12px] font-semibold text-slate-700 mb-1.5 ml-1">
+            <label htmlFor="google-review-url" className="block text-[12px] font-semibold text-slate-700 mb-0.5 ml-1">
               Google review link
             </label>
+            <p className="text-[12px] text-slate-500 mb-2 ml-1 leading-normal">
+              Need help?{' '}
+              <a
+                href="https://support.google.com/business/answer/7035772"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-indigo-600 font-semibold hover:underline"
+              >
+                See Google&apos;s guide to sharing your review link
+              </a>{' '}
+              or tap <strong>Share review form</strong> in your Google Business Profile app.
+            </p>
             <div className="flex items-center gap-3">
               <Link className="w-5 h-5 text-indigo-600 shrink-0" />
               <input
@@ -107,7 +119,7 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
             </div>
           </div>
 
-          <label className="flex items-center gap-3 px-4 py-3 bg-white border border-indigo-200 rounded-lg cursor-pointer hover:border-indigo-300 w-full md:w-auto">
+          <label className="flex items-center gap-3 px-4 py-3 bg-white border border-indigo-200 rounded-lg cursor-pointer hover:border-indigo-300 w-full md:w-auto md:self-end">
             <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="w-4 h-4 accent-indigo-600" />
             <span className="text-sm font-semibold text-slate-900 whitespace-nowrap">Auto-send</span>
           </label>
@@ -115,7 +127,7 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-sm transition-all"
+            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-sm transition-all md:self-end"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
             {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
@@ -123,21 +135,6 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
         </div>
 
         {error && <p className="mt-2 text-xs font-semibold text-red-600 pl-8">{error}</p>}
-
-        <div className="mt-3 pl-8 pr-1">
-          <p className="text-[12px] text-slate-600 leading-relaxed">
-            <a
-              href="https://support.google.com/business/answer/7035772"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-indigo-600 font-medium hover:underline"
-            >
-              See Google's guide to sharing your review link
-            </a>{" "}
-            — or search "get more reviews" in your Google Business Profile app, tap{" "}
-            <strong>Share review form</strong>, and copy the link it gives you.
-          </p>
-        </div>
       </div>
 
       {/* 3. Details/Workflow Grid */}
@@ -148,7 +145,7 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
           </div>
           <div className="bg-slate-50 rounded-lg p-5 border border-slate-200 text-sm text-slate-700 italic">
             <p className="mb-3">Hi [Customer Name],</p>
-            <p className="mb-4">"Thanks for choosing us! Could you spare a moment to leave us a Google review?"</p>
+            <p className="mb-4">&quot;Thanks for choosing us! Could you spare a moment to leave us a Google review?&quot;</p>
             <div className="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 font-medium text-[13px] px-4 py-2 rounded shadow-sm cursor-default">
               <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-4 h-4" alt="Google" />
               Leave a Google review

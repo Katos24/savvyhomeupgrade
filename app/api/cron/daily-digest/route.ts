@@ -5,6 +5,13 @@ import { FEATURE_PLAN_MAP } from '@/lib/permissions';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+// A job is settled when it's fully paid or the money went back. Everything
+// else — unpaid, partial, or a status that was never set — still owes
+// something and belongs in the digest. The old checks tested
+// `payment_status = 'unpaid'`, which silently dropped every job with a
+// collected deposit: the exact jobs where a balance gets forgotten.
+const SETTLED = ['paid', 'refunded', 'partially_refunded'];
+
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization');
@@ -99,7 +106,10 @@ export async function GET(request: NextRequest) {
           LIMIT 10
         `;
 
-        // Quotes sent, no response
+        // Quotes sent, no response.
+        // Money in the door is a response even without a signature — a paid
+        // deposit means they said yes, so COALESCE(payment_amount,0) = 0
+        // rather than a status check.
         const quoteCutoff = new Date();
         quoteCutoff.setDate(quoteCutoff.getDate() - quoteFollowDays);
 
@@ -116,12 +126,16 @@ export async function GET(request: NextRequest) {
             AND p.quote_sent_at IS NOT NULL
             AND p.quote_accepted_at IS NULL
             AND p.quote_sent_at < ${quoteCutoff.toISOString()}
-            AND (p.payment_status IS NULL OR p.payment_status = 'unpaid')
+            AND COALESCE(p.payment_amount, 0) = 0
+            AND (p.payment_status IS NULL OR p.payment_status <> ALL(${SETTLED}))
           ORDER BY p.quote_sent_at ASC
           LIMIT 10
         `;
 
-        // Job done, no payment
+        // Job done, nothing collected at all.
+        // Deliberately still requires zero collected: a job with a deposit
+        // paid and a balance owing belongs under outstanding balances below,
+        // where it reads as "chase the rest" rather than "never paid".
         const schedCutoff = new Date();
         schedCutoff.setDate(schedCutoff.getDate() - schedFollowDays);
 
@@ -137,26 +151,31 @@ export async function GET(request: NextRequest) {
             AND l.deleted = false
             AND p.scheduled_date IS NOT NULL
             AND p.scheduled_date < ${schedCutoff.toISOString()}
-            AND (p.payment_status IS NULL OR p.payment_status = 'unpaid')
-            AND p.quote_total IS NOT NULL
+            AND COALESCE(p.payment_amount, 0) = 0
+            AND (p.payment_status IS NULL OR p.payment_status <> ALL(${SETTLED}))
+            AND COALESCE(p.quote_total, 0) > 0
           ORDER BY p.scheduled_date ASC
           LIMIT 10
         `;
 
-        // Overdue payments
+        // Overdue payments.
+        // outstanding is what's actually still owed — quote_total alone told
+        // a contractor a job with a collected deposit owed the full amount.
         const overduePayments = await sql`
           SELECT
             l.name AS customer_name,
             p.project_number,
             p.quote_total,
             p.payment_amount,
-            p.payment_due_date
+            p.payment_due_date,
+            (COALESCE(p.quote_total, 0) - COALESCE(p.payment_amount, 0)) AS outstanding
           FROM projects p
           JOIN leads l ON p.lead_id = l.id
           WHERE l.company_id = ${company.id}
             AND l.deleted = false
             AND p.payment_due_date < NOW()
-            AND (p.payment_status IS NULL OR p.payment_status NOT IN ('paid'))
+            AND (p.payment_status IS NULL OR p.payment_status <> ALL(${SETTLED}))
+            AND COALESCE(p.quote_total, 0) - COALESCE(p.payment_amount, 0) > 0
           ORDER BY p.payment_due_date ASC
           LIMIT 10
         `;
@@ -171,15 +190,41 @@ export async function GET(request: NextRequest) {
             p.project_number,
             p.quote_total,
             p.payment_amount,
-            p.payment_due_date
+            p.payment_due_date,
+            (COALESCE(p.quote_total, 0) - COALESCE(p.payment_amount, 0)) AS outstanding
           FROM projects p
           JOIN leads l ON p.lead_id = l.id
           WHERE l.company_id = ${company.id}
             AND l.deleted = false
             AND p.payment_due_date >= ${todayStr}::date
             AND p.payment_due_date <= ${weekFromNowStr}::date
-            AND (p.payment_status IS NULL OR p.payment_status NOT IN ('paid'))
+            AND (p.payment_status IS NULL OR p.payment_status <> ALL(${SETTLED}))
+            AND COALESCE(p.quote_total, 0) - COALESCE(p.payment_amount, 0) > 0
           ORDER BY p.payment_due_date ASC
+          LIMIT 10
+        `;
+
+        // Deposit collected, balance still outstanding, and no due date set
+        // so it appears in neither list above. This is where money actually
+        // goes missing: the job finishes, the contractor moves on, and the
+        // remaining balance is never chased.
+        const awaitingBalance = await sql`
+          SELECT
+            l.name AS customer_name,
+            p.project_number,
+            p.quote_total,
+            p.payment_amount,
+            p.scheduled_date,
+            (COALESCE(p.quote_total, 0) - COALESCE(p.payment_amount, 0)) AS outstanding
+          FROM projects p
+          JOIN leads l ON p.lead_id = l.id
+          WHERE l.company_id = ${company.id}
+            AND l.deleted = false
+            AND COALESCE(p.payment_amount, 0) > 0
+            AND COALESCE(p.quote_total, 0) - COALESCE(p.payment_amount, 0) > 0
+            AND p.payment_due_date IS NULL
+            AND (p.payment_status IS NULL OR p.payment_status <> ALL(${SETTLED}))
+          ORDER BY p.scheduled_date ASC NULLS LAST
           LIMIT 10
         `;
 
@@ -207,7 +252,7 @@ export async function GET(request: NextRequest) {
         const totalItems =
           todayJobs.length + staleLeads.length + staleQuotes.length +
           unpaidJobs.length + overduePayments.length + dueSoon.length +
-          followUpReminders.length;
+          awaitingBalance.length + followUpReminders.length;
 
         if (totalItems === 0) {
           skipped++;
@@ -225,6 +270,7 @@ export async function GET(request: NextRequest) {
             unpaidJobs:        unpaidJobs        as any[],
             overduePayments:   overduePayments   as any[],
             dueSoon:           dueSoon           as any[],
+            awaitingBalance:   awaitingBalance   as any[],
             followUpReminders: followUpReminders as any[],
           } as any);
 

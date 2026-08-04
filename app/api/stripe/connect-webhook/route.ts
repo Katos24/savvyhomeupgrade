@@ -89,7 +89,7 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
         console.error(`Webhook ${event.id}: session ${session.id} has no amount_total`);
         break;
       }
-      
+
       // Fetch card brand/last4 once at payment time so BillingSection can
       // display it without a live Stripe call on every page load.
       let cardBrand: string | null = null;
@@ -147,6 +147,7 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
         RETURNING id
       `;
 
+      
       if (insertedPayment.length === 0) {
         console.log(`Webhook ${event.id}: intent ${session.payment_intent} already recorded — skipping`);
         break;
@@ -155,10 +156,21 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
       // payments_sync_project recomputes projects.payment_amount,
       // payment_status, payment_method, payment_date, card_brand, card_last4
       // and paid_at from SUM(payments.amount). Nothing else to write.
+     // payments_sync_project recomputes projects.payment_amount,
+      // payment_status, payment_method, payment_date, card_brand, card_last4
+      // and paid_at from SUM(payments.amount). Nothing else to write.
       console.log(
         `✅ Project ${projectId}: ${paymentKind} of ${amountPaid} recorded via Stripe Connect`
       );
 
+      // The trigger has already run, so this is the true collected total.
+      // Both receipts need it — a customer paying a deposit otherwise sees
+      // only the amount they just paid and assumes the job is settled.
+      const afterInsert = await sql`
+        SELECT COALESCE(payment_amount, 0) AS collected
+        FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
+      `;
+      const paidToDate = parseFloat(afterInsert[0]?.collected || '0');
       // ── Send confirmation emails to customer and contractor ──
       const emailData = await sql`
         SELECT l.email as customer_email, l.name as customer_name,
@@ -176,13 +188,18 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
         const { sendPaymentReceiptToCustomer, sendPaymentNotificationToContractor } = await import('@/lib/email');
 
         if (d.customer_email) {
-          await sendPaymentReceiptToCustomer({
+         await sendPaymentReceiptToCustomer({
             customerEmail: d.customer_email,
             customerName: d.customer_name,
             companyName: d.company_name,
             companyId: d.company_id,
             amountPaid: amountPaid || 0,
             invoiceNumber: d.invoice_number,
+            contractTotal: projectQuoteTotal,
+            paidToDate,
+            paymentKind,
+            cardBrand,
+            cardLast4,
           });
         }
 
@@ -194,6 +211,9 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
             companyId: d.company_id,
             amountPaid: amountPaid || 0,
             dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${d.company_slug}/dashboard`,
+            contractTotal: projectQuoteTotal,
+            paidToDate,
+            paymentKind,
           });
         }
       }
@@ -294,9 +314,9 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
         // ON CONFLICT covers the race where two events for the same charge
         // arrive concurrently and both pass the check above.
         const inserted = await sql`
-          INSERT INTO payments (
+         INSERT INTO payments (
             project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-            stripe_refund_id, stripe_payment_intent_id, note, recorded_by
+            stripe_refund_id, note, recorded_by
           ) VALUES (
             ${refundProjectId},
             ${refundCompanyId},
@@ -306,7 +326,6 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
             'refund',
             CURRENT_DATE,
             ${refund.id},
-            ${paymentIntentId},
             ${`Refund ${refund.id} against intent ${paymentIntentId}`},
             'Stripe'
           )
