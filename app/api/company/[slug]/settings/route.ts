@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
@@ -75,7 +76,7 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as any;
     
     const users = await sql`
       SELECT * FROM users WHERE id = ${decoded.userId} LIMIT 1

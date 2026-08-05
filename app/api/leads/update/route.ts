@@ -477,8 +477,11 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         }
       }
 
+console.log('save_quote tax rate received:', quote_tax_rate, typeof quote_tax_rate);
+
    // Get current payment amount before updating
 await sql`
+
   UPDATE projects
   SET
     quote_data     = ${JSON.stringify(quote_data)},
@@ -551,7 +554,8 @@ await sql`
   
  const leadCheck = await sql`
   SELECT l.*, p.quote_data, p.quote_total, p.quote_tax_rate,
-         c.name as company_name, c.phone as company_phone, 
+         p.deposit_type, p.deposit_value,
+         c.name as company_name, c.phone as company_phone,
          c.email as company_email,
          c.id as company_id, c.plan_tier
   FROM leads l
@@ -610,8 +614,20 @@ await sql`UPDATE projects
   quoteToken: quoteToken,
   contractorEmail: lead.company_email,
   taxRate: lead.quote_tax_rate ? parseFloat(lead.quote_tax_rate) : undefined,
+  // Computed here so the email doesn't reimplement the percent/fixed rule.
+  // Same formula as depositFor() in getOrCreateCheckoutSession — capped at
+  // the total so a fixed deposit larger than the job reads honestly.
+  depositAmount: (() => {
+    const t = parseFloat(lead.quote_total || '0');
+    const v = parseFloat(lead.deposit_value || '0');
+    if (!lead.deposit_type || v <= 0 || t <= 0) return undefined;
+    const raw = lead.deposit_type === 'percent' ? (t * v) / 100 : v;
+    return Math.min(Math.round(raw * 100) / 100, t);
+  })(),
+  depositLabel: lead.deposit_type === 'percent' && parseFloat(lead.deposit_value || '0') > 0
+    ? `${parseFloat(lead.deposit_value)}%`
+    : undefined,
 });
-
         // Log to outbox
         try {
           await sql`

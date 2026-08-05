@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { neon } from '@neondatabase/serverless';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -28,7 +29,7 @@ async function verifyAuth(companySlug: string) {
   if (!token?.value) redirect('/login');
   let decoded: any;
   try {
-    decoded = jwt.verify(token.value, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    decoded = jwt.verify(token.value, getJwtSecret());
   } catch {
     redirect('/login');
   }

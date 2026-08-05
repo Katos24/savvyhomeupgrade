@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { neon } from '@neondatabase/serverless';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -40,7 +41,7 @@ async function verifyAuth(companySlug: string): Promise<{ userId: number }> {
 
     const decoded = jwt.verify(
       token.value,
-      process.env.JWT_SECRET || 'your-secret-key-change-this'
+      getJwtSecret()
     ) as any;
 
     const sql = neon(process.env.DATABASE_URL!);

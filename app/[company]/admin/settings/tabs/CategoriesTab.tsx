@@ -582,7 +582,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   <div className="flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-2 py-1">
                     <input
                       type="number"
-                      step="0.01"
+                      step="0.001"
                       min="0"
                       max="100"
                       value={taxRateDraft}
@@ -632,7 +632,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                     </div>
                     <input
                       type="number"
-                      step="0.01"
+                      step="0.001"
                       min="0"
                       max={depositTypeDraft === 'percent' ? 100 : undefined}
                       value={depositValueDraft}
@@ -1066,7 +1066,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
-                          step="0.01"
+                          step="0.001"
                           min="0"
                           max="100"
                           value={editingTaxRateValue}
@@ -1106,7 +1106,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                         </div>
                         <input
                           type="number"
-                          step="0.01"
+                          step="0.001"
                           min="0"
                           max={editingDepositType === 'percent' ? 100 : undefined}
                           value={editingDepositValue || ''}

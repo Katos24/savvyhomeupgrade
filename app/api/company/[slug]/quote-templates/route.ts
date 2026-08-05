@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
@@ -55,7 +56,7 @@ async function authorize(slug: string, requireWriteRole: boolean) {
 
   const decoded = jwt.verify(
     token,
-    process.env.JWT_SECRET || 'your-secret-key-change-this'
+    getJwtSecret()
   ) as any;
 
   const companies = await sql`

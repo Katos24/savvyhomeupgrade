@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const decoded: any = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+    const decoded: any = jwt.verify(token, getJwtSecret());
     const userId = decoded.userId;
 
     const sql = neon(process.env.DATABASE_URL!);

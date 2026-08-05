@@ -57,7 +57,7 @@ export default function QuoteSection({
   const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
 
-  const newRowRef = useRef<HTMLDivElement | HTMLTableRowElement | null>(null);
+  const newRowRef = useRef<HTMLDivElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
 
   // Restrict key presses for numeric fields
@@ -175,7 +175,7 @@ export default function QuoteSection({
         }),
       });
       if (res.ok) {
-        toast.success('Quote saved successfully');
+        toast.success('Quote saved');
         setIsDirty(false);
         await onRefresh();
       } else {
@@ -220,8 +220,7 @@ export default function QuoteSection({
   };
 
   const handleRemoveRow = (id: number) => {
-    const updated = quoteData.filter((item: any) => item.id !== id);
-    setQuoteData(updated);
+    setQuoteData(quoteData.filter((item: any) => item.id !== id));
     setIsDirty(true);
   };
 
@@ -231,6 +230,7 @@ export default function QuoteSection({
     setIsDirty(true);
   };
 
+  // Mobile opens the sheet immediately; desktop focuses the inline field.
   const handleAddRowMobile = () => {
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
     setQuoteData([...quoteData, newItem]);
@@ -240,8 +240,7 @@ export default function QuoteSection({
 
   const handleDoneEditing = () => {
     if (!editingItem) return;
-    const updated = quoteData.map((item: any) => (item.id === editingItem.id ? editingItem : item));
-    setQuoteData(updated);
+    setQuoteData(quoteData.map((item: any) => (item.id === editingItem.id ? editingItem : item)));
     setEditingItem(null);
     setIsDirty(true);
   };
@@ -261,13 +260,115 @@ export default function QuoteSection({
   const total = subtotal + taxAmount;
   const lastAddedId = quoteData.length > 0 ? quoteData[quoteData.length - 1].id : null;
 
+  // Read-only here. Deposit terms are a payment decision, edited in Billing
+  // where "Send deposit request" lives — but a contractor pricing the job
+  // should see that a share of it is due up front. Recomputes against the
+  // unsaved total so the number tracks while line items are edited.
+  const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;
+  const depositValue = parseFloat(lead?.deposit_value || '0');
+  const depositAmount =
+    depositType && depositValue > 0 && total > 0
+      ? Math.min(
+          Math.round((depositType === 'percent' ? (total * depositValue) / 100 : depositValue) * 100) / 100,
+          total
+        )
+      : 0;
+
   const quoteAccepted = !!(lead?.project_quote_accepted_at || lead?.quote_accepted_at);
   const quoteSent = !!(lead?.project_quote_sent_at || lead?.quote_sent_at);
 
-  /* Borderless until you touch it — the box appears on hover/focus so the row
-     reads as a line of a quote rather than a row of form fields. */
+  /* Borderless until touched — the box appears on hover/focus so a row reads
+     as a line of a quote rather than a row of form fields. */
   const cellInput =
     'w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-right text-[15px] font-medium text-gray-900 tabular-nums outline-none transition-colors hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100';
+
+  /* ── One line-item card, used at every width ──────────────────────────
+     Below md it's a tappable summary that opens the bottom sheet. At md and
+     up the same card exposes inline inputs, so a contractor at a desk can
+     tab straight through a ten-line quote. Previously this was a desktop
+     <table> and a separate mobile card list — two implementations of the
+     same thing, which is why every change had to be made twice.          */
+  const renderLineItem = (item: any) => {
+    const isNew = item.id === lastAddedId && !item.description;
+    return (
+      <div
+        ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
+        className="rounded-xl border border-gray-200 bg-white transition-colors hover:border-gray-300"
+      >
+        {/* Mobile: tap anywhere to edit */}
+        <button
+          onClick={() => setEditingItem(item)}
+          className="w-full text-left p-4 md:hidden active:bg-gray-50 rounded-xl transition-colors"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-[15px] font-semibold text-gray-900 leading-snug min-w-0">
+              {item.description || <span className="font-normal text-gray-300">No description</span>}
+            </p>
+            <p className="text-[15px] font-semibold text-gray-900 tabular-nums shrink-0">
+              {fmt(item.amount || 0)}
+            </p>
+          </div>
+          <p className="mt-1.5 text-xs text-gray-400 tabular-nums">
+            {fmt(item.unitPrice || 0)} × {item.quantity}
+          </p>
+        </button>
+
+        {/* Mobile delete sits outside the tap target so it can't fire by accident */}
+        <div className="md:hidden px-4 pb-3 -mt-1 flex justify-end">
+          <button
+            onClick={() => handleRemoveRow(item.id)}
+            className="p-2 -mr-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+            aria-label="Remove item"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Desktop: inline fields */}
+        <div className="hidden md:grid md:grid-cols-[1fr_120px_72px_110px_44px] md:items-center md:gap-1 md:p-1.5">
+          <input
+            ref={isNew ? newRowInputRef : undefined}
+            type="text"
+            value={item.description}
+            onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+            placeholder="Describe this line…"
+            className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-[15px] font-semibold text-gray-900 outline-none transition-colors placeholder:font-normal placeholder:text-gray-300 hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
+            <input
+              type="number"
+              step="any"
+              value={item.unitPrice || ''}
+              onKeyDown={(e) => handleNumericKeyDown(e, true)}
+              onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+              placeholder="0.00"
+              className={`${cellInput} pl-6 ${noSpinners}`}
+            />
+          </div>
+          <input
+            type="number"
+            step="any"
+            value={item.quantity || ''}
+            onKeyDown={(e) => handleNumericKeyDown(e, true)}
+            onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+            placeholder="1"
+            className={`${cellInput} text-center ${noSpinners}`}
+          />
+          <p className="px-2 text-right text-[15px] font-semibold text-gray-900 tabular-nums">
+            {fmt(item.amount || 0)}
+          </p>
+          <button
+            onClick={() => handleRemoveRow(item.id)}
+            className="mx-auto p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
+            aria-label="Remove item"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -317,12 +418,10 @@ export default function QuoteSection({
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        // No overflow-hidden — it silently breaks `sticky` on the totals bar.
-        // Corners are rounded on the first and last children instead.
         className="bg-white rounded-2xl border border-gray-200 shadow-sm"
       >
         {/* ── HEADER ── */}
-        <div className="px-5 py-4 flex items-center justify-between gap-3 rounded-t-2xl">
+        <div className="px-4 sm:px-5 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 bg-gray-100 text-gray-600 rounded-xl shrink-0">
               <Receipt className="w-4 h-4" />
@@ -334,7 +433,6 @@ export default function QuoteSection({
               </p>
             </div>
 
-            {/* Status as a chip rather than a line under the title */}
             {quoteAccepted ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-200/70 shrink-0">
                 <CheckCircle2 className="w-3 h-3" /> Approved
@@ -348,10 +446,8 @@ export default function QuoteSection({
 
           <button
             onClick={() => setShowAI((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-medium transition shrink-0 ${
-              showAI
-                ? 'bg-gray-900 text-white'
-                : 'text-gray-600 border border-gray-200 hover:bg-gray-50'
+            className={`flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium transition shrink-0 ${
+              showAI ? 'bg-gray-900 text-white' : 'text-gray-600 border border-gray-200 hover:bg-gray-50'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
@@ -368,7 +464,7 @@ export default function QuoteSection({
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden"
             >
-              <div className="mx-5 mb-4 flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+              <div className="mx-4 sm:mx-5 mb-4 flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-[13px] font-semibold text-gray-900 truncate">
                     Pricing template for {lead?.category || categoryTemplate.category}
@@ -397,180 +493,132 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* ── DESKTOP TABLE ── */}
-        <div className="hidden md:block">
-          <table className="w-full border-collapse table-fixed">
-            <colgroup>
-              <col />
-              <col className="w-32" />
-              <col className="w-20" />
-              <col className="w-32" />
-              <col className="w-12" />
-            </colgroup>
-            <thead>
-              <tr className="text-[11px] font-medium uppercase tracking-wider text-gray-400 border-y border-gray-100">
-                <th className="text-left px-5 py-2 font-medium">Item</th>
-                <th className="text-right px-2 py-2 font-medium">Unit price</th>
-                <th className="text-right px-2 py-2 font-medium">Qty</th>
-                <th className="text-right px-5 py-2 font-medium">Amount</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {quoteData.length === 0 ? (
-                <tr>
-                  <td colSpan={5}>
-                    <div className="py-14 flex flex-col items-center justify-center gap-3 text-center">
-                      <p className="text-sm text-gray-400">Nothing on this quote yet.</p>
-                      <button
-                        onClick={handleAddRow}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-800 transition"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> Add first item
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                quoteData.map((item: any) => {
-                  const isNew = item.id === lastAddedId && !item.description;
-                  return (
-                    <tr
-                      key={item.id}
-                      ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50/60 transition-colors group"
-                    >
-                      {/* The item name is what you read — give it the weight. */}
-                      <td className="px-5 py-1">
-                        <input
-                          ref={isNew ? newRowInputRef : undefined}
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                          placeholder="Describe this line…"
-                          className="w-full rounded-lg border border-transparent bg-transparent px-2 py-2 text-[15px] font-semibold text-gray-900 outline-none transition-colors placeholder:font-normal placeholder:text-gray-300 hover:border-gray-200 hover:bg-white focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
-                        />
-                      </td>
-
-                      <td className="px-2 py-1">
-                        <div className="relative">
-                          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
-                            $
-                          </span>
-                          <input
-                            type="number"
-                            step="any"
-                            value={item.unitPrice || ''}
-                            onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                            onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                            placeholder="0.00"
-                            className={`${cellInput} pl-6 ${noSpinners}`}
-                          />
-                        </div>
-                      </td>
-
-                      <td className="px-2 py-1">
-                        <input
-                          type="number"
-                          step="any"
-                          value={item.quantity || ''}
-                          onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                          onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                          placeholder="1"
-                          className={`${cellInput} text-center ${noSpinners}`}
-                        />
-                      </td>
-
-                      <td className="px-5 py-1 text-right text-[15px] font-semibold text-gray-900 tabular-nums">
-                        {fmt(item.amount || 0)}
-                      </td>
-
-                      {/* Visible but quiet, rather than appearing on hover */}
-                      <td className="pr-4 py-1 text-right">
-                        <button
-                          onClick={() => handleRemoveRow(item.id)}
-                          className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
-                          aria-label="Remove item"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-
-          {quoteData.length > 0 && (
-            <button
-              onClick={handleAddRow}
-              className="w-full py-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 border-t border-gray-100 transition"
-            >
-              <Plus className="w-4 h-4" /> Add item
-            </button>
-          )}
-        </div>
-
-        {/* ── MOBILE CARDS ── */}
-        <div className="md:hidden">
-          {quoteData.length === 0 ? (
-            <button
-              onClick={handleAddRowMobile}
-              className="w-full py-14 flex flex-col items-center justify-center gap-3 group"
-            >
-              <div className="w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center transition-transform group-active:scale-95">
-                <Plus className="w-5 h-5 text-white" />
+        {/* ── ITEMS + TOTALS ──
+             One grid. Below lg the rail stacks under the items; at lg and up
+             it sits beside them, so the money stops competing with subtotal,
+             tax, and deposit for a single crowded row. */}
+        <div className="px-4 sm:px-5 pb-5 grid gap-4 lg:grid-cols-[1fr_240px] lg:items-start">
+          {/* Items */}
+          <div className="min-w-0">
+            {quoteData.length > 0 && (
+              <div className="hidden md:grid md:grid-cols-[1fr_120px_72px_110px_44px] md:gap-1 px-3 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                <span>Item</span>
+                <span className="text-right pr-2">Unit price</span>
+                <span className="text-center">Qty</span>
+                <span className="text-right pr-2">Amount</span>
+                <span />
               </div>
-              <span className="text-[13px] font-medium text-gray-500">Add line item</span>
-            </button>
-          ) : (
-            <div className="px-4 pb-4 flex flex-col gap-2">
-              {quoteData.map((item: any) => {
-                const isNew = item.id === lastAddedId && !item.description;
-                return (
-                  <div
-                    key={item.id}
-                    ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-                    onClick={() => setEditingItem(item)}
-                    className="rounded-xl border border-gray-200 bg-white p-4 cursor-pointer active:scale-[0.99] active:bg-gray-50 transition-all"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-[15px] font-semibold text-gray-900 leading-snug min-w-0">
-                        {item.description || <span className="font-normal text-gray-300">No description</span>}
-                      </p>
-                      <p className="text-[15px] font-semibold text-gray-900 tabular-nums shrink-0">
-                        {fmt(item.amount || 0)}
-                      </p>
-                    </div>
+            )}
 
-                    <div className="mt-2 flex items-center justify-between gap-3">
-                      <p className="text-xs text-gray-400 tabular-nums">
-                        {fmt(item.unitPrice || 0)} × {item.quantity}
-                      </p>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleRemoveRow(item.id);
-                        }}
-                        className="p-1.5 -mr-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-
+            {quoteData.length === 0 ? (
               <button
                 onClick={handleAddRowMobile}
-                className="w-full rounded-xl border border-dashed border-gray-300 py-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 hover:border-gray-400 hover:bg-gray-50 transition-all"
+                className="w-full rounded-xl border border-dashed border-gray-300 py-12 flex flex-col items-center justify-center gap-3 hover:border-gray-400 hover:bg-gray-50 transition-all group"
               >
-                <Plus className="w-4 h-4" /> Add line item
+                <div className="w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center transition-transform group-active:scale-95">
+                  <Plus className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-[13px] font-medium text-gray-500">Add the first line item</span>
+              </button>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {quoteData.map((item: any) => renderLineItem(item))}
+
+                {/* Desktop appends and focuses inline; mobile opens the sheet. */}
+                <button
+                  onClick={handleAddRow}
+                  className="hidden md:flex w-full rounded-xl border border-dashed border-gray-300 py-3 items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 hover:border-gray-400 hover:bg-gray-50 transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add item
+                </button>
+                <button
+                  onClick={handleAddRowMobile}
+                  className="md:hidden w-full rounded-xl border border-dashed border-gray-300 py-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 active:bg-gray-50 transition-all"
+                >
+                  <Plus className="w-4 h-4" /> Add line item
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Totals rail */}
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 lg:sticky lg:top-4">
+            <p className="text-[11px] text-gray-400">
+              Total
+              {isDirty && <span className="ml-1.5 text-amber-600 font-medium">Unsaved</span>}
+            </p>
+            <motion.p
+              key={total}
+              initial={{ opacity: 0, y: -3 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-[26px] font-semibold text-gray-900 tabular-nums leading-tight"
+            >
+              {fmt(total)}
+            </motion.p>
+
+            <div className="mt-3 space-y-1.5 border-t border-gray-200 pt-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Subtotal</span>
+                <span className="text-gray-700 tabular-nums">{fmt(subtotal)}</span>
+              </div>
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Tax</span>
+                <div className="flex items-center gap-1">
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    max="100"
+                    value={taxRate}
+                    onChange={(e) => { setTaxRate(parseFloat(e.target.value) || 0); setIsDirty(true); }}
+                    className={`w-14 rounded-md border border-gray-200 bg-white px-1.5 py-1 text-xs font-medium text-gray-900 text-right tabular-nums outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${noSpinners}`}
+                  />
+                  <span className="text-gray-400">%</span>
+                  <span className="ml-1 text-gray-700 tabular-nums w-16 text-right">{fmt(taxAmount)}</span>
+                </div>
+              </div>
+            </div>
+
+            {depositAmount > 0 && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
+                <p className="text-[11px] text-amber-700">
+                  Deposit{depositType === 'percent' ? ` · ${depositValue}%` : ''}
+                </p>
+                <p className="text-[15px] font-semibold text-amber-900 tabular-nums">{fmt(depositAmount)}</p>
+                <p className="text-[11px] text-amber-700 tabular-nums mt-0.5">
+                  {fmt(total - depositAmount)} on completion
+                </p>
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-col gap-2">
+              <button
+                onClick={handleManualSave}
+                disabled={!hasProject || quoteData.length === 0 || saving}
+                className={`inline-flex items-center justify-center gap-2 px-4 h-11 text-[13px] font-medium rounded-lg transition disabled:opacity-40 ${
+                  isDirty ? 'bg-gray-900 text-white hover:bg-gray-800' : 'text-gray-500 border border-gray-200 bg-white'
+                }`}
+              >
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isDirty ? (
+                  <Save className="w-4 h-4" />
+                ) : (
+                  <CheckCircle2 className="w-4 h-4" />
+                )}
+                {isDirty ? 'Save quote' : 'Saved'}
+              </button>
+
+              <button
+                onClick={() => setShowEmailModal(true)}
+                disabled={!hasProject || quoteData.length === 0}
+                className="inline-flex items-center justify-center gap-2 px-4 h-11 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-40"
+              >
+                <Mail className="w-4 h-4" />
+                Send to customer
               </button>
             </div>
-          )}
+          </div>
         </div>
 
         {/* ── BOTTOM SHEET EDITOR (mobile) ── */}
@@ -606,13 +654,13 @@ export default function QuoteSection({
                         }
                         setEditingItem(null);
                       }}
-                      className="px-4 py-1.5 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+                      className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleDoneEditing}
-                      className="px-4 py-1.5 bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors hover:bg-gray-800"
+                      className="px-4 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors hover:bg-gray-800"
                     >
                       Done
                     </button>
@@ -680,84 +728,9 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* ── TOTALS + ACTIONS ──
-             Light instead of near-black: the dark bar paired visually with the
-             modal header and made the item list look like a gap between them. */}
-        <div className="sticky bottom-0 z-20 border-t border-gray-200 bg-gray-50/95 backdrop-blur-sm md:relative">
-          <div className="px-5 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-            <div className="flex items-center gap-5 min-w-0">
-              <div className="min-w-0">
-                <p className="text-[11px] text-gray-400">Subtotal</p>
-                <p className="text-sm font-medium text-gray-600 tabular-nums">{fmt(subtotal)}</p>
-              </div>
-
-              <div className="min-w-0">
-                <p className="text-[11px] text-gray-400">Tax</p>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={taxRate}
-                    onChange={(e) => { setTaxRate(parseFloat(e.target.value) || 0); setIsDirty(true); }}
-                    className={`w-12 rounded-md border border-gray-200 bg-white px-1.5 py-0.5 text-sm font-medium text-gray-900 text-right tabular-nums outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${noSpinners}`}
-                  />
-                  <span className="text-xs text-gray-400">%</span>
-                </div>
-              </div>
-
-              <div className="min-w-0 pl-5 border-l border-gray-200">
-                <p className="text-[11px] text-gray-400">
-                  Total
-                  {isDirty && <span className="ml-1.5 text-amber-600 font-medium">Unsaved</span>}
-                </p>
-                <motion.p
-                  key={total}
-                  initial={{ opacity: 0, y: -3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-2xl font-semibold text-emerald-600 tabular-nums leading-tight whitespace-nowrap"
-                >
-                  {fmt(total)}
-                </motion.p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={handleManualSave}
-                disabled={!hasProject || quoteData.length === 0 || saving}
-                className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 h-10 text-[13px] font-medium rounded-lg transition disabled:opacity-40 ${
-                  isDirty
-                    ? 'bg-gray-900 text-white hover:bg-gray-800'
-                    : 'text-gray-500 border border-gray-200'
-                }`}
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isDirty ? (
-                  <Save className="w-4 h-4" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4" />
-                )}
-                {isDirty ? 'Save' : 'Saved'}
-              </button>
-
-              <button
-                onClick={() => setShowEmailModal(true)}
-                disabled={!hasProject || quoteData.length === 0}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 h-10 rounded-lg border border-gray-200 text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-40"
-              >
-                <Mail className="w-4 h-4" />
-                Send
-              </button>
-            </div>
-          </div>
-        </div>
-
         {/* SENT HISTORY */}
         {outboxLog.length > 0 && (
-          <div className="px-5 pb-4 pt-3 border-t border-gray-100 bg-gray-50/60">
+          <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gray-100 bg-gray-50/60">
             <div className="flex items-center gap-1.5 mb-2.5">
               <Mail className="w-3 h-3 text-gray-400" />
               <span className="text-[11px] text-gray-400">Sent history ({outboxLog.length})</span>
@@ -791,7 +764,7 @@ export default function QuoteSection({
                   {entry.html_body && (
                     <button
                       onClick={() => setPreviewHtml(entry.html_body)}
-                      className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg text-[11px] font-medium transition-colors"
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg text-[11px] font-medium transition-colors"
                     >
                       <Eye className="w-3 h-3" /> Preview
                     </button>
@@ -885,8 +858,7 @@ export default function QuoteSection({
               <div className="flex flex-col gap-2.5">
                 <button
                   onClick={() => {
-                    const updated = [...quoteData, ...pendingAiItems];
-                    setQuoteData(updated);
+                    setQuoteData([...quoteData, ...pendingAiItems]);
                     setPendingAiItems(null);
                     setShowAI(false);
                     setIsDirty(true);

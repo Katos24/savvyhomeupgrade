@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { neon } from '@neondatabase/serverless';
@@ -21,7 +22,7 @@ export default async function SettingsPage({
   try {
     const decoded = jwt.verify(
       token,
-      process.env.JWT_SECRET || 'your-secret-key-change-this'
+      getJwtSecret()
     ) as any;
 
     const users = await sql`

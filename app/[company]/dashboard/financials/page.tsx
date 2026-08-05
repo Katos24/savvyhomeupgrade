@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { neon } from '@neondatabase/serverless';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
@@ -16,7 +17,7 @@ async function verifyAuth(companySlug: string) {
 
     const decoded = jwt.verify(
       token.value,
-      process.env.JWT_SECRET || 'your-secret-key-change-this'
+      getJwtSecret()
     ) as any;
 
     const sql = neon(process.env.DATABASE_URL!);
@@ -60,7 +61,12 @@ const [companyRows, projectRows] = await Promise.all([
       SELECT
         p.id,
         p.invoice_number,
+                p.invoice_sent_at,
+ p.reminder_sent_at,
+         l.email as customer_email,
+
         p.quote_total,
+        
         p.quote_tax_rate,
         p.payment_status,
         p.payment_amount,

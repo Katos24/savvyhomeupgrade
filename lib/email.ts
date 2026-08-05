@@ -480,6 +480,8 @@ export async function sendQuoteToCustomer({
   quoteToken,
   contractorEmail,
   taxRate,
+  depositAmount,
+  depositLabel,
 }: {
   customerEmail: string;
   customerName: string;
@@ -492,6 +494,11 @@ export async function sendQuoteToCustomer({
   quoteToken?: string;
   contractorEmail?: string;
   taxRate?: number;
+  /** Shown on the quote so a customer knows what's due on signing before
+   *  they accept. Display only — accepting doesn't collect anything; the
+   *  contractor sends the deposit request separately. */
+  depositAmount?: number;
+  depositLabel?: string;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -561,6 +568,27 @@ export async function sendQuoteToCustomer({
                 ${fmt(quoteTotal)}
               </td>
             </tr>
+            ${
+              depositAmount && depositAmount > 0 && depositAmount < quoteTotal
+                ? `
+                <tr style="background-color: #fffbeb; border-top: 1px solid #fde68a;">
+                  <td colspan="3" style="padding: 10px 14px; text-align: right; color: #92400e; font-weight: 700; font-size: 13px;">
+                    Deposit due on signing${depositLabel ? ` (${depositLabel})` : ''}
+                  </td>
+                  <td style="padding: 10px 14px; text-align: right; color: #92400e; font-weight: 800; font-size: 15px;">
+                    ${fmt(depositAmount)}
+                  </td>
+                </tr>
+                <tr style="background-color: #fffbeb;">
+                  <td colspan="3" style="padding: 0 14px 10px; text-align: right; color: #b45309; font-size: 12px;">
+                    Balance on completion
+                  </td>
+                  <td style="padding: 0 14px 10px; text-align: right; color: #b45309; font-size: 12px;">
+                    ${fmt(quoteTotal - depositAmount)}
+                  </td>
+                </tr>`
+                : ''
+            }
           </tfoot>
         </table>
       </div>
@@ -573,7 +601,11 @@ export async function sendQuoteToCustomer({
           Ready to move forward?
         </p>
         <p style="margin: 0 0 24px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
-          Review the quote above and let us know your decision.
+          Review the quote above and let us know your decision.${
+            depositAmount && depositAmount > 0 && depositAmount < quoteTotal
+              ? ` A ${fmt(depositAmount)} deposit is due before work begins — we\u2019ll send that separately once you accept.`
+              : ''
+          }
         </p>
         <table cellpadding="0" cellspacing="0" role="presentation" style="margin: 0 auto;">
           <tr>

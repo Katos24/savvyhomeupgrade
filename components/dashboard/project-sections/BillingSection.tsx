@@ -16,6 +16,9 @@ import {
   Calendar,
   Receipt,
   AlertCircle,
+  Edit2,
+  Clock,
+  ArrowRight,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
@@ -26,10 +29,6 @@ type BillingSectionProps = {
   onRefresh: () => Promise<void>;
   hasProject: boolean;
   companySlug: string;
-  /** Ship with the lead from /api/leads/[id]. They used to be separate
-   *  fetches, which meant the deposit box rendered as unpaid and the
-   *  activity count as empty until they landed — both wrong rather than
-   *  merely absent. */
   payments?: any[];
   activity?: any[];
 };
@@ -51,28 +50,6 @@ function StripeWordmark() {
   return <span className="font-extrabold text-xs tracking-tight text-[#635BFF]">stripe</span>;
 }
 
-/** A row in the details list. Reference material, not a card. */
-function DetailRow({
-  label,
-  children,
-  first,
-}: {
-  label: string;
-  children: React.ReactNode;
-  first?: boolean;
-}) {
-  return (
-    <div
-      className={`flex items-center justify-between gap-3 px-4 sm:px-5 py-3 ${
-        first ? '' : 'border-t border-slate-100'
-      }`}
-    >
-      <span className="text-[13px] text-slate-500 shrink-0">{label}</span>
-      <div className="min-w-0 text-right text-[13px] font-medium text-slate-900">{children}</div>
-    </div>
-  );
-}
-
 export default function BillingSection({
   lead,
   company,
@@ -83,8 +60,9 @@ export default function BillingSection({
   payments: paymentsProp,
   activity: activityProp,
 }: BillingSectionProps) {
-  // ── UI MODAL STATES ──
+  // ── UI / MODAL STATES ──
   const [showActivity, setShowActivity] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
@@ -110,10 +88,7 @@ export default function BillingSection({
   const [rawAmount, setRawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
-  
 
-  // ── PAYMENTS / ACTIVITY ──
-  // Both arrive with the lead, so there is no loading state to get wrong.
   const payments = paymentsProp ?? [];
   const activityLog = activityProp ?? [];
   const [deletingPaymentId, setDeletingPaymentId] = useState<number | null>(null);
@@ -134,17 +109,14 @@ export default function BillingSection({
   })();
 
   const invoiceNumber = lead?.invoice_number || generateInvoiceNumber(lead?.project_number);
-  const quoteTotal = parseFloat(lead?.quote_total || '0');
-  const hasQuote = quoteTotal > 0;
-  const total = quoteTotal;
+  const total = parseFloat(lead?.quote_total || '0');
+  const hasQuote = total > 0;
 
   const invoiceTaxRate = parseFloat(lead?.quote_tax_rate || '0');
   const invoiceSubtotal = invoiceTaxRate > 0 ? total / (1 + invoiceTaxRate / 100) : total;
   const paidAmount = parseFloat(lead?.payment_amount || '0');
   const remaining = Math.max(total - paidAmount, 0);
 
-  // Deposit on the tax-inclusive total, capped at it. Mirrors depositFor() in
-  // getOrCreateCheckoutSession so the panel and the customer's link agree.
   const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;
   const depositValue = parseFloat(lead?.deposit_value || '0');
   const hasDepositTerms = !!depositType && depositValue > 0;
@@ -156,21 +128,15 @@ export default function BillingSection({
         total
       )
     : 0;
-  // Terms lock once money lands — refund to change them.
+
   const depositLocked = paidAmount > 0;
-  // Terms set, nothing collected: the deposit is what's being asked for now.
   const awaitingDeposit = hasDepositTerms && paidAmount === 0 && depositAmount > 0;
 
   const isRefunded = lead?.payment_status === 'refunded';
   const isStripeVerified = !!lead?.stripe_payment_intent_id;
   const isPartiallyRefunded = lead?.payment_status === 'partially_refunded';
- const isClosed = isRefunded || isPartiallyRefunded;
+  const isClosed = isRefunded || isPartiallyRefunded;
   const refundedAmount = parseFloat(lead?.refunded_amount || '0');
-  // A refund isn't necessarily the end of the job. Refund the wrong amount
-  // and re-invoice, or refund a disputed line and still be owed the rest —
-  // the balance decides whether there's anything left to do, not the status.
-  // Forcing a new project would throw away the quote, photos, and history
-  // over what is often a correction.
   const refundedButOwing = isClosed && remaining > 0;
 
   const stripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
@@ -194,24 +160,14 @@ export default function BillingSection({
 
   const isPaid = !isClosed && total > 0 && paidAmount >= total;
   const isPartial = !isClosed && paidAmount > 0 && !isPaid;
-  // From the project row, not the outbox fetch — the primary button
-  // shouldn't wait on activity loading to know an invoice went out.
   const invoiceSent = !!lead?.invoice_sent_at;
   const lastReminderSent = lead?.reminder_sent_at || null;
   const daysSinceReminder = lastReminderSent
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
     : null;
 
-  // The deposit row from the ledger, so we can tell whether the balance has
-  // been asked for since it landed.
   const depositPayment = payments.find((p: any) => p.kind === 'deposit');
-  // payment_amount is on the project row. If money has landed and there are
-  // deposit terms, the deposit is settled — the payments list only adds the
-  // date and card.
   const depositPaid = hasDepositTerms && paidAmount > 0;
-  // If the last invoice send predates the deposit, the customer was asked for
-  // the deposit — not the balance. Reminding them about a balance they were
-  // never sent is the wrong next step.
   const balanceNotYetRequested =
     !!depositPayment &&
     !isPaid &&
@@ -236,7 +192,7 @@ export default function BillingSection({
   // ── HANDLERS ──
   const handleDownload = async () => {
     if (!hasQuote) {
-      toast.error('No quote saved yet');
+      toast.error('No invoice available');
       return;
     }
     if (!lead?.project_id) {
@@ -254,7 +210,7 @@ export default function BillingSection({
       a.download = `Invoice-${invoiceNumber}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('Invoice downloaded');
+      toast.success('Invoice PDF downloaded');
     } catch {
       toast.error('Failed to generate PDF');
     } finally {
@@ -282,8 +238,6 @@ export default function BillingSection({
       if (result.success) {
         toast.success('Invoice sent');
         setShowSendConfirm(false);
-        // onRefresh re-fetches the lead, which now carries payments and
-        // activity — no separate refetch needed.
         await onRefresh();
       } else toast.error(result.error || 'Failed to send invoice');
     } catch {
@@ -358,8 +312,6 @@ export default function BillingSection({
 
     setSavingPayment(true);
     try {
-      // Inserts a row rather than overwriting the project total, so a deposit
-      // followed by a balance keeps both.
       const res = await fetch(`/api/company/${companySlug}/payments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -431,7 +383,6 @@ export default function BillingSection({
     }
   };
 
-  // The list no longer carries html_body — fetch it only when asked for.
   const loadPreview = async (entryId: number) => {
     setPreviewHtml('<p style="padding:32px;font-family:sans-serif;color:#94a3b8">Loading preview…</p>');
     try {
@@ -462,16 +413,13 @@ export default function BillingSection({
         <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400">
           <Receipt className="w-5 h-5" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">Nothing to invoice yet</p>
-        <p className="text-[13px] text-slate-500 mt-1">Save a quote first and billing opens up.</p>
+        <p className="text-sm font-semibold text-slate-700">No Invoice Generated</p>
+        <p className="text-[13px] text-slate-500 mt-1">Complete the quote to activate billing &amp; invoicing.</p>
       </div>
     );
   }
 
-  /* ── The one thing to do next ──────────────────────────────────────────
-     Sending never disables — resending is legitimate when a customer loses
-     the email. Only the reminder greys out, because the server genuinely
-     blocks it for 24 hours.                                              */
+  // ── ACTION LOGIC ──
   type ActionKey = 'upgrade' | 'deposit' | 'balance' | 'invoice' | 'reminder' | 'reminder-sent';
   const nextAction: {
     key: ActionKey;
@@ -484,19 +432,15 @@ export default function BillingSection({
     : !canSendInvoice
     ? {
         key: 'upgrade',
-        label: 'Upgrade to send invoices',
-        sub: 'Emailing invoices is on the Basic plan.',
+        label: 'Upgrade to Send Invoices',
+        sub: 'Emailing invoices is available on the Basic plan.',
         onClick: () => (window.location.href = `/${company?.slug}/admin/settings#billing`),
         tone: 'primary',
       }
-    : // An uncollected deposit outranks everything. Setting terms on a job
-      // that was already invoiced used to drop straight to "send a reminder",
-      // which would have chased the full amount while the pay link charged
-      // the deposit.
-      awaitingDeposit
+    : awaitingDeposit
     ? {
         key: 'deposit',
-        label: `Send deposit request — ${fmt(depositAmount)}`,
+        label: `Send Deposit Request — ${fmt(depositAmount)}`,
         sub: `Customer pays ${fmt(depositAmount)} now, ${fmt(total - depositAmount)} on completion.`,
         onClick: () => setShowSendConfirm(true),
         tone: 'primary',
@@ -504,437 +448,336 @@ export default function BillingSection({
     : balanceNotYetRequested
     ? {
         key: 'balance',
-        label: `Send remaining balance — ${fmt(remaining)}`,
-        sub: 'Bills what\u2019s left after the deposit.',
+        label: `Send Final Balance Invoice — ${fmt(remaining)}`,
+        sub: 'Bills remaining balance following settled deposit.',
         onClick: () => setShowSendConfirm(true),
         tone: 'primary',
       }
     : !invoiceSent
     ? {
         key: 'invoice',
-        label: `Send invoice — ${fmt(remaining)}`,
+        label: `Send Invoice — ${fmt(remaining)}`,
         sub: hasPayLink
-          ? `Emails the PDF with a ${activeMethodLabel} pay link.`
-          : 'Emails the PDF. No payment method connected yet.',
+          ? `Includes ${activeMethodLabel} pay link and attached PDF.`
+          : 'Emails PDF invoice directly to customer.',
         onClick: () => setShowSendConfirm(true),
         tone: 'primary',
       }
     : daysSinceReminder === 0
     ? {
         key: 'reminder-sent',
-        label: 'Reminder sent today',
-        sub: 'Available again tomorrow.',
+        label: 'Reminder Sent Today',
+        sub: 'Follow-up available again tomorrow.',
         onClick: () => {},
         tone: 'muted',
       }
     : {
         key: 'reminder',
-        label: 'Send payment reminder',
+        label: 'Send Payment Reminder',
         sub: lastReminderSent
-          ? `Last reminder ${fmtDate(lastReminderSent)}. ${fmt(remaining)} outstanding.`
+          ? `Last reminder sent ${fmtDate(lastReminderSent)}. ${fmt(remaining)} outstanding.`
           : `Invoice sent. ${fmt(remaining)} outstanding.`,
         onClick: () => setShowReminderConfirm(true),
         tone: 'primary',
       };
 
-  // Derived from the key rather than the label, so a copy change can't
-  // silently break which secondary shows. Never a disabled control: if the
-  // only alternative is unavailable, nothing renders.
   const secondaryAction: { label: string; onClick: () => void } | null =
     !nextAction || isPaid || (isClosed && !refundedButOwing)
       ? null
       : nextAction.key === 'reminder' || nextAction.key === 'reminder-sent'
-      ? { label: 'Resend invoice', onClick: () => setShowSendConfirm(true) }
+      ? { label: 'Resend Full Invoice', onClick: () => setShowSendConfirm(true) }
       : (nextAction.key === 'deposit' || nextAction.key === 'balance' || nextAction.key === 'invoice') &&
         invoiceSent &&
         daysSinceReminder !== 0
-      ? { label: 'Send payment reminder', onClick: () => setShowReminderConfirm(true) }
+      ? { label: 'Send Payment Reminder', onClick: () => setShowReminderConfirm(true) }
       : null;
 
- // Suppressed on a refunded job — the refund note above already explains
-  // the situation, and two amber boxes stacked read as two separate problems.
   const staleInvoiceWarning = awaitingDeposit && invoiceSent && !refundedButOwing;
 
   return (
     <>
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        {/* ── INVOICE TOP BANNER ── */}
+        <div className="px-5 py-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
+              <Receipt className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold tracking-tight">{invoiceNumber}</span>
+                <span
+                  className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                    invoiceSent ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
+                  }`}
+                >
+                  {invoiceSent ? 'Sent' : 'Draft'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400">
+                {dueDate ? `Due ${fmtDate(dueDate)}` : 'No due date set'}
+              </p>
+            </div>
+          </div>
 
-        {/* ── TOTAL + GRID ──
-             Total on top is the contract price and doesn't move as money
-             comes in. The two boxes below split it into what's due now and
-             what's left. Both always render, so the layout doesn't jump
-             when a deposit is added or cleared. */}
-        <div className="px-4 sm:px-5 pt-5 pb-4">
-         <p className="text-[13px] text-slate-500">
-            {isClosed && !refundedButOwing
-              ? 'Refunded'
-              : isPaid
-              ? 'Paid in full'
-              : 'Total due'}
-          </p>
-          <p
-            className={`mt-1 text-[32px] sm:text-4xl font-semibold tracking-tight tabular-nums leading-tight ${
-              isClosed && !refundedButOwing
-                ? 'text-slate-500'
+          <div className="text-right">
+            <span className="text-[11px] uppercase tracking-wider text-slate-400 block font-semibold">
+              Status
+            </span>
+            <span className="text-xs font-semibold text-slate-200">
+              {isClosed && !refundedButOwing
+                ? 'Refunded'
                 : isPaid
-                ? 'text-emerald-600'
-                : 'text-slate-900'
-            }`}
-          >
-            {isClosed && !refundedButOwing ? fmt(refundedAmount) : fmt(total)}
-          </p>
-          {invoiceTaxRate > 0 && !(isClosed && !refundedButOwing) && (
-            <p className="mt-0.5 text-[12px] text-slate-400 tabular-nums">
-              {fmt(invoiceSubtotal)} + {invoiceTaxRate}% tax
-            </p>
-          )}
-          {isClosed && !refundedButOwing && lead?.refunded_at && (
-            <p className="mt-1 text-[13px] text-slate-500">
-              Refund processed {fmtDate(lead.refunded_at)}
-            </p>
-          )}
+                ? 'Paid in Full'
+                : awaitingDeposit
+                ? 'Awaiting Deposit'
+                : isPartial
+                ? 'Partially Paid'
+                : 'Outstanding'}
+            </span>
+          </div>
+        </div>
 
-          {/* A send button on a job marked refunded reads as a bug without
-              this. State both numbers plainly. */}
+        {/* ── FINANCIAL KPI SUMMARY TILES ── */}
+        <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/50">
+          <div className="p-3.5 sm:p-4">
+            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide block">
+              Invoiced Total
+            </span>
+            <span className="text-base sm:text-lg font-bold text-slate-900 tabular-nums">
+              {fmt(total)}
+            </span>
+            {invoiceTaxRate > 0 && (
+              <span className="text-[10px] text-slate-400 block tabular-nums">
+                Incl. {invoiceTaxRate}% tax
+              </span>
+            )}
+          </div>
+
+          <div className="p-3.5 sm:p-4">
+            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide block">
+              Paid to Date
+            </span>
+            <span className="text-base sm:text-lg font-bold text-emerald-600 tabular-nums">
+              {fmt(paidAmount)}
+            </span>
+          </div>
+
+          <div className="p-3.5 sm:p-4">
+            <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide block">
+              Amount Due
+            </span>
+            <span className="text-base sm:text-lg font-bold text-slate-900 tabular-nums">
+              {fmt(remaining)}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-4 sm:p-5 space-y-4">
+          {/* ── REFUND WARNING BANNER ── */}
           {refundedButOwing && (
-            <div className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-800">
-              <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
               <span>
-                {fmt(refundedAmount)} refunded
+                <strong>{fmt(refundedAmount)} refunded</strong>
                 {lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}.{' '}
                 {paidAmount > 0
-                  ? `${fmt(remaining)} still outstanding.`
-                  : 'Nothing is currently collected on this job.'}
+                  ? `${fmt(remaining)} remains outstanding on this invoice.`
+                  : 'No collected balance remains on this job.'}
               </span>
             </div>
           )}
 
-         {(!isClosed || refundedButOwing) && (
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              {/* DEPOSIT BOX */}
+          {/* ── STAGE MILESTONE TRACKER ── */}
+          {(!isClosed || refundedButOwing) && (
+            <div className="rounded-xl border border-slate-200 bg-slate-50/30 p-3 space-y-3">
+              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                <span>Invoice Milestones</span>
+                {!depositLocked && (
+                  <button
+                    onClick={openDepositEditor}
+                    className="text-brand-700 hover:underline inline-flex items-center gap-1 text-[11px]"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    {hasDepositTerms ? 'Edit Terms' : 'Set Deposit'}
+                  </button>
+                )}
+              </div>
+
               {showDepositEditor ? (
-                <div className="col-span-2 rounded-xl border-2 border-brand-700 bg-white p-3">
-                  <p className="text-[11px] text-slate-500 mb-2">Deposit</p>
+                <div className="rounded-lg border-2 border-brand-700 bg-white p-3 space-y-3">
+                  <p className="text-xs font-medium text-slate-600">Configure Deposit Required</p>
                   <div className="flex items-center gap-2">
-                    <span className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
+                    <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
                       {(['percent', 'fixed'] as const).map((t) => (
                         <button
                           key={t}
                           onClick={() => setDepositTypeDraft(t)}
-                          className={`px-3 py-2 text-[13px] font-semibold transition-colors ${
+                          className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                             depositTypeDraft === t
                               ? 'bg-brand-700 text-white'
-                              : 'bg-white text-slate-500 hover:bg-slate-50'
+                              : 'bg-white text-slate-600 hover:bg-slate-50'
                           }`}
                         >
                           {t === 'percent' ? '%' : '$'}
                         </button>
                       ))}
-                    </span>
+                    </div>
                     <input
                       type="number"
                       inputMode="decimal"
-                      step="0.01"
+                      step="0.001"
                       min="0"
                       max={depositTypeDraft === 'percent' ? 100 : undefined}
                       value={depositValueDraft}
                       onChange={(e) => setDepositValueDraft(e.target.value)}
-                      placeholder={depositTypeDraft === 'percent' ? '35' : '500'}
+                      placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
                       autoFocus
-                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-[15px] font-semibold tabular-nums outline-none focus:border-brand-700"
+                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                     />
                   </div>
-                  {parseFloat(depositValueDraft || '0') > 0 && (
-                    <p className="mt-2 text-[12px] text-slate-500 tabular-nums">
-                      {fmt(
-                        Math.min(
-                          depositTypeDraft === 'percent'
-                            ? (total * parseFloat(depositValueDraft)) / 100
-                            : parseFloat(depositValueDraft),
-                          total
-                        )
-                      )}{' '}
-                      due now
-                    </p>
-                  )}
-                  <div className="mt-3 flex items-center gap-2">
+                  <div className="flex items-center justify-end gap-2">
                     <button
-                      onClick={() => handleSaveDepositTerms(false)}
-                      disabled={savingDeposit}
-                      className="flex-1 h-10 rounded-lg bg-brand-700 hover:bg-brand-800 text-white text-[13px] font-semibold disabled:opacity-50"
+                      onClick={() => setShowDepositEditor(false)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50"
                     >
-                      {savingDeposit ? 'Saving...' : 'Save'}
+                      Cancel
                     </button>
                     {hasDepositTerms && (
                       <button
                         onClick={() => handleSaveDepositTerms(true)}
                         disabled={savingDeposit}
-                        className="h-10 px-3 rounded-lg border border-slate-200 text-[13px] font-semibold text-rose-600 hover:bg-rose-50"
+                        className="px-3 py-1.5 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50"
                       >
                         Remove
                       </button>
                     )}
                     <button
-                      onClick={() => setShowDepositEditor(false)}
-                      className="h-10 px-3 rounded-lg border border-slate-200 text-[13px] font-semibold text-slate-500 hover:bg-slate-50"
+                      onClick={() => handleSaveDepositTerms(false)}
+                      disabled={savingDeposit}
+                      className="px-3 py-1.5 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 disabled:opacity-50"
                     >
-                      Cancel
+                      {savingDeposit ? 'Saving...' : 'Save Terms'}
                     </button>
                   </div>
                 </div>
               ) : (
-                <button
-                  onClick={depositLocked ? undefined : openDepositEditor}
-                  disabled={depositLocked}
-                  className={`text-left rounded-xl p-3 transition-colors ${
-                    depositPaid
-                      ? 'bg-emerald-50 border border-emerald-200'
-                      : hasDepositTerms
-                      ? 'bg-slate-50 border border-slate-200 hover:bg-slate-100'
-                      : 'border border-dashed border-slate-300 hover:bg-slate-50'
-                  } ${depositLocked ? 'cursor-default' : ''}`}
-                >
-                  <p
-                    className={`text-[11px] mb-0.5 ${
-                      depositPaid ? 'text-emerald-700' : 'text-slate-500'
-                    }`}
-                  >
-                    Deposit
-                  </p>
-                  <p
-                    className={`text-[17px] font-semibold tabular-nums ${
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Step 1: Deposit */}
+                  <div
+                    className={`rounded-lg p-2.5 border text-xs ${
                       depositPaid
-                        ? 'text-emerald-800'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
                         : hasDepositTerms
-                        ? 'text-slate-900'
-                        : 'text-slate-300'
+                        ? 'bg-white border-slate-200 text-slate-900'
+                        : 'bg-white border-dashed border-slate-200 text-slate-400'
                     }`}
                   >
-                    {hasDepositTerms ? fmt(depositAmount) : '—'}
-                  </p>
-                  <p
-                    className={`text-[12px] mt-0.5 ${
-                      depositPaid
-                        ? 'text-emerald-700'
-                        : hasDepositTerms
-                        ? 'text-slate-500'
-                        : 'text-slate-500 font-medium underline underline-offset-2'
-                    }`}
-                  >
-                    {depositPaid ? (
-                      <span className="inline-flex items-center gap-1">
-                        <CheckCircle className="w-3 h-3 shrink-0" />
-                        {depositPayment ? `Paid ${fmtDate(depositPayment.paid_on)}` : 'Paid'}
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        1. Deposit
                       </span>
-                    ) : hasDepositTerms ? (
-                      <>
-                        {depositType === 'percent' ? `${depositValue}%` : 'fixed'}
-                        {!depositLocked && ' · edit'}
-                      </>
-                    ) : (
-                      'Set one'
-                    )}
-                  </p>
-                </button>
-              )}
+                      {depositPaid && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+                    </div>
+                    <p className="font-bold tabular-nums text-sm">
+                      {hasDepositTerms ? fmt(depositAmount) : 'None set'}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {depositPaid
+                        ? `Paid ${fmtDate(depositPayment?.paid_on)}`
+                        : hasDepositTerms
+                        ? depositType === 'percent'
+                          ? `${depositValue}% required`
+                          : 'Fixed amount'
+                        : 'Optional'}
+                    </p>
+                  </div>
 
-              {/* REMAINING BOX — always the full amount when no deposit. */}
-              {!showDepositEditor && (
-                <div className="rounded-xl bg-slate-50 border border-slate-200 p-3">
-                  <p className="text-[11px] text-slate-500 mb-0.5">Remaining</p>
-                  <p className="text-[17px] font-semibold tabular-nums text-slate-900">
-                    {fmt(hasDepositTerms && !depositPaid ? total - depositAmount : remaining)}
-                  </p>
-                  <p className="text-[12px] text-slate-500 mt-0.5">
-                    {depositPaid
-                      ? 'still owed'
-                      : hasDepositTerms
-                      ? 'on completion'
-                      : 'full amount'}
-                  </p>
+                  {/* Step 2: Final Balance */}
+                  <div
+                    className={`rounded-lg p-2.5 border text-xs ${
+                      isPaid
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                        : 'bg-white border-slate-200 text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                        2. Final Balance
+                      </span>
+                      {isPaid && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
+                    </div>
+                    <p className="font-bold tabular-nums text-sm">
+                      {fmt(hasDepositTerms && !depositPaid ? total - depositAmount : remaining)}
+                    </p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      {isPaid ? 'Fully settled' : 'Due on completion'}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
           )}
-        </div>
 
-        {/* ── THE NEXT ACTION ── */}
-        {nextAction && (
-          <div className="px-4 sm:px-5 pb-4">
-            <button
-              onClick={nextAction.onClick}
-              disabled={nextAction.tone === 'muted'}
-              className={`w-full h-12 rounded-xl text-[14px] font-semibold transition-colors ${
-                nextAction.tone === 'primary'
-                  ? 'bg-brand-700 text-white hover:bg-brand-800 active:scale-[0.99]'
-                  : 'bg-slate-100 text-slate-400 cursor-default'
-              }`}
-            >
-              {nextAction.label}
-            </button>
-            <p className="mt-2 text-[12px] text-slate-500 text-center leading-relaxed">
-              {nextAction.sub}
-            </p>
-
-           {secondaryAction && (
+          {/* ── PRIMARY ACTION ── */}
+          {nextAction && (
+            <div className="space-y-2">
               <button
-                onClick={secondaryAction.onClick}
-                className="mt-2 w-full h-11 rounded-xl border border-slate-200 text-[13px] font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-              >
-                {secondaryAction.label}
-              </button>
-            )}
-
-            {staleInvoiceWarning && (
-              <p className="mt-3 flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-[12px] text-amber-800">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-px" />
-                <span>
-                  An invoice for {fmt(total)} already went out. Sending the deposit request
-                  gives them a new email for {fmt(depositAmount)}.
-                </span>
-              </p>
-            )}
-          </div>
-        )}
-
-        {isPaid && !isClosed && (
-          <div className="mx-4 sm:mx-5 mb-4 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-            <CheckCircle className="w-4 h-4 shrink-0 text-emerald-600" />
-            <p className="text-[13px] font-medium text-emerald-900">
-              Settled{lead?.payment_date ? ` on ${fmtDate(lead.payment_date)}` : ''}. Nothing left to do.
-            </p>
-          </div>
-        )}
-
-        {/* ── DETAILS — reference material, deliberately quiet ── */}
-        <div className="border-t border-slate-100">
-          <DetailRow first label="Invoice">
-            <span className="flex items-center justify-end gap-2">
-              {invoiceNumber}
-              <span
-                className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
-                  invoiceSent
-                    ? 'bg-slate-100 text-slate-600'
-                    : 'bg-amber-50 text-amber-700 border border-amber-200/70'
+                onClick={nextAction.onClick}
+                disabled={nextAction.tone === 'muted'}
+                className={`w-full h-11 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 ${
+                  nextAction.tone === 'primary'
+                    ? 'bg-brand-700 text-white hover:bg-brand-800 active:scale-[0.99]'
+                    : 'bg-slate-100 text-slate-400 cursor-default'
                 }`}
               >
-                {invoiceSent ? 'Sent' : 'Draft'}
-              </span>
-            </span>
-          </DetailRow>
+                <Send className="w-4 h-4" />
+                {nextAction.label}
+              </button>
+              <p className="text-center text-[11px] text-slate-500">{nextAction.sub}</p>
 
-          <DetailRow label="Due date">
-            <label className="cursor-pointer inline-flex items-center gap-1.5 hover:text-slate-600 transition-colors">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              {dueDate ? fmtDate(dueDate) : <span className="text-slate-400">Set a date</span>}
-              <input
-                type="date"
-                value={dueDate}
-                onChange={(e) => handleDueDateChange(e.target.value)}
-                className="sr-only"
-              />
-            </label>
-          </DetailRow>
-
-          <DetailRow label="Customer pays by">
-            {hasPayLink ? (
-              <span>{activeMethodLabel}</span>
-            ) : (
-              <a
-                href={`/${company?.slug}/admin/settings#billing`}
-                className="text-slate-500 hover:text-slate-900 underline underline-offset-2"
-              >
-                Not set up
-              </a>
-            )}
-          </DetailRow>
-
-          {isStripeVerified && !isClosed && (
-            <DetailRow label="Charged via">
-              <span className="inline-flex items-center gap-2">
-                <StripeWordmark />
-                {lead.card_brand && lead.card_last4 && (
-                  <span className="text-slate-400 font-normal capitalize">
-                    {lead.card_brand} ····{lead.card_last4}
-                  </span>
-                )}
-                <a
-                  href={`https://dashboard.stripe.com/${company?.stripe_connect_account_id}/payments/${lead.stripe_payment_intent_id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-slate-500 hover:text-slate-900 underline underline-offset-2"
+              {secondaryAction && (
+                <button
+                  onClick={secondaryAction.onClick}
+                  className="w-full h-9 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
                 >
-                  View
-                </a>
-              </span>
-            </DetailRow>
+                  {secondaryAction.label}
+                </button>
+              )}
+
+              {staleInvoiceWarning && (
+                <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  <span>
+                    Full invoice previously sent. Requesting deposit emails an updated link for {fmt(depositAmount)}.
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {isPaid && !isClosed && (
+            <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900 font-medium">
+              <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>Invoice completely settled{lead?.payment_date ? ` on ${fmtDate(lead.payment_date)}` : ''}.</span>
+            </div>
           )}
         </div>
 
-        {/* ── PAYMENTS RECEIVED ──
-             A deposit and a balance are two transactions; showing one number
-             hid that. */}
-        {payments.length > 0 && (
-          <div className="border-t border-slate-100">
-            <p className="px-4 sm:px-5 pt-3 pb-1 text-[13px] text-slate-500">Payments received</p>
-            {payments.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2.5 border-t border-slate-50 first:border-t-0"
-              >
-                <div className="min-w-0">
-                  <p className="text-[13px] font-medium text-slate-900 tabular-nums">
-                    {p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}
-                    <span className="ml-2 font-normal text-slate-400 capitalize">{p.kind}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-400 capitalize">
-                    {p.is_stripe && p.card_brand
-                      ? `${p.card_brand} ····${p.card_last4}`
-                      : p.method.replace('_', ' ')}
-                    {p.paid_on && ` · ${fmtDate(p.paid_on)}`}
-                    {p.recorded_by && ` · ${p.recorded_by}`}
-                  </p>
-                </div>
-
-                {/* Stripe rows are locked — deleting one would show the job
-                    unpaid while Stripe still holds the money. */}
-                {!p.is_stripe && p.kind !== 'refund' && (
-                  <button
-                    onClick={() => handleDeletePayment(p.id)}
-                    disabled={deletingPaymentId === p.id}
-                    className="shrink-0 p-2 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-colors disabled:opacity-50"
-                    aria-label="Remove payment"
-                  >
-                    {deletingPaymentId === p.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <X className="w-4 h-4" />
-                    )}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ── SECONDARY ACTIONS ──
-             Record a payment is always available — a contractor handed a
-             check shouldn't have to email an invoice first to log it. */}
-        <div className="flex items-center gap-1 border-t border-slate-100 px-2 sm:px-3 py-2">
+        {/* ── SECONDARY ACTION TOOLBAR ── */}
+        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2 bg-slate-50/50">
           <button
             onClick={handleDownload}
             disabled={downloading}
-            className="inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all disabled:opacity-50"
           >
-            {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-            PDF
+            {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            Download PDF
           </button>
 
           {(!isClosed || refundedButOwing) && !isPaid && (
             <button
               onClick={() => {
-                // Pre-fill what's actually still owed — the common case is
-                // recording exactly the balance.
                 const prefill = hasDepositTerms && !depositPaid ? depositAmount : remaining;
                 if (prefill > 0) {
                   setRawAmount(prefill.toString());
@@ -948,27 +791,140 @@ export default function BillingSection({
                 if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
                 setShowRecordPayment(true);
               }}
-              className="ml-auto inline-flex items-center gap-1.5 px-3 py-2.5 rounded-lg text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
             >
-              <CreditCard className="w-4 h-4" />
-              Record a payment
+              <CreditCard className="w-3.5 h-3.5" />
+              Record Payment
             </button>
           )}
         </div>
 
-        {/* ── ACTIVITY ── */}
+        {/* ── ACCORDION 1: INVOICE DETAILS ── */}
+        <div className="border-t border-slate-100">
+          <button
+            onClick={() => setShowDetails((v) => !v)}
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors text-left"
+          >
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Invoice Settings &amp; Dates
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                showDetails ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+
+          {showDetails && (
+            <div className="bg-slate-50/50 border-t border-slate-100 px-5 py-3 space-y-2.5 text-xs">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Invoice Number</span>
+                <span className="font-mono font-medium text-slate-900">{invoiceNumber}</span>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Payment Due Date</span>
+                <label className="cursor-pointer inline-flex items-center gap-1.5 font-medium text-slate-900 hover:text-brand-700">
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                  {dueDate ? fmtDate(dueDate) : <span className="text-slate-400">Set Date</span>}
+                  <input
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => handleDueDateChange(e.target.value)}
+                    className="sr-only"
+                  />
+                </label>
+              </div>
+
+              <div className="flex justify-between items-center">
+                <span className="text-slate-500">Payment Link Gateway</span>
+                {hasPayLink ? (
+                  <span className="font-medium text-slate-900">{activeMethodLabel}</span>
+                ) : (
+                  <a
+                    href={`/${company?.slug}/admin/settings#billing`}
+                    className="text-slate-500 hover:text-slate-900 underline"
+                  >
+                    Not Configured
+                  </a>
+                )}
+              </div>
+
+              {isStripeVerified && !isClosed && (
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500">Stripe Card Charge</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <StripeWordmark />
+                    {lead.card_brand && lead.card_last4 && (
+                      <span className="text-slate-600 capitalize">
+                        {lead.card_brand} ····{lead.card_last4}
+                      </span>
+                    )}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* ── PAYMENTS LEDGER ── */}
+        {payments.length > 0 && (
+          <div className="border-t border-slate-100">
+            <div className="px-5 pt-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              Payment Transactions
+            </div>
+            <div className="divide-y divide-slate-100">
+              {payments.map((p) => (
+                <div key={p.id} className="flex items-center justify-between px-5 py-2.5 text-xs">
+                  <div>
+                    <div className="flex items-center gap-2 font-semibold text-slate-900 tabular-nums">
+                      <span>{p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}</span>
+                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
+                        {p.kind}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 capitalize mt-0.5">
+                      {p.is_stripe && p.card_brand
+                        ? `${p.card_brand} ····${p.card_last4}`
+                        : p.method.replace('_', ' ')}
+                      {p.paid_on && ` · ${fmtDate(p.paid_on)}`}
+                    </p>
+                  </div>
+
+                  {!p.is_stripe && p.kind !== 'refund' && (
+                    <button
+                      onClick={() => handleDeletePayment(p.id)}
+                      disabled={deletingPaymentId === p.id}
+                      className="p-1.5 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
+                      aria-label="Remove payment"
+                    >
+                      {deletingPaymentId === p.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <X className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── ACCORDION 2: OUTBOX ACTIVITY ── */}
         <div className="border-t border-slate-100">
           <button
             onClick={() => setShowActivity((v) => !v)}
-            className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 hover:bg-slate-50 transition-colors text-left"
+            className="w-full flex items-center justify-between px-5 py-3 hover:bg-slate-50 transition-colors text-left"
           >
-            <span className="text-[13px] text-slate-500">Activity</span>
-            <div className="flex items-center gap-2 text-slate-400">
-              <span className="text-[13px]">{activityLog.length}</span>
-              <ChevronDown
-                className={`w-4 h-4 transition-transform duration-200 ${showActivity ? 'rotate-180' : ''}`}
-              />
-            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Outbox &amp; Email History ({activityLog.length})
+            </span>
+            <ChevronDown
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
+                showActivity ? 'rotate-180' : ''
+              }`}
+            />
           </button>
 
           <AnimatePresence initial={false}>
@@ -982,25 +938,25 @@ export default function BillingSection({
               >
                 <div className="p-3 sm:p-4 space-y-2">
                   {activityLog.length === 0 ? (
-                    <p className="text-[13px] text-slate-400 py-2 text-center">Nothing sent yet</p>
+                    <p className="text-xs text-slate-400 py-2 text-center">No emails sent yet.</p>
                   ) : (
                     activityLog.map((entry: any, i: number) => (
                       <div
                         key={i}
-                        className="flex items-center justify-between gap-3 p-2.5 rounded-lg bg-white border border-slate-200"
+                        className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-slate-200 text-xs"
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
                           <div
-                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                            className={`w-2 h-2 rounded-full shrink-0 ${
                               entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'
                             }`}
                           />
                           <div className="min-w-0">
-                            <p className="text-[13px] font-medium text-slate-800 truncate">
+                            <p className="font-medium text-slate-800 truncate">
                               {entry.type === 'invoice'
-                                ? 'Invoice sent'
+                                ? 'Invoice Sent'
                                 : entry.type === 'payment_reminder'
-                                ? 'Reminder sent'
+                                ? 'Reminder Sent'
                                 : entry.type}
                             </p>
                             <p className="text-[11px] text-slate-400">
@@ -1020,7 +976,7 @@ export default function BillingSection({
                         {entry.has_body && (
                           <button
                             onClick={() => loadPreview(entry.id)}
-                            className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-white rounded-lg text-[11px] font-medium transition-colors"
+                            className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-[11px] font-medium transition-colors"
                           >
                             <Eye className="w-3 h-3" /> Preview
                           </button>
@@ -1037,7 +993,7 @@ export default function BillingSection({
 
       {/* ══════════ MODALS ══════════ */}
 
-      {/* SEND INVOICE */}
+      {/* MODAL 1: SEND INVOICE */}
       <AnimatePresence>
         {showSendConfirm && (
           <motion.div
@@ -1055,41 +1011,37 @@ export default function BillingSection({
               className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-slate-900">
+                <h3 className="text-base font-bold text-slate-900">
                   {awaitingDeposit
-                    ? 'Send deposit request'
+                    ? 'Send Deposit Request'
                     : invoiceSent
-                    ? 'Resend invoice'
-                    : 'Send invoice'}
+                    ? 'Resend Invoice'
+                    : 'Send Invoice'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => !sending && setShowSendConfirm(false)}
                   disabled={sending}
                   aria-label="Close"
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors disabled:opacity-50"
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="space-y-3 mb-5">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-[11px] text-slate-500">To</p>
-                      <p className="text-sm font-semibold text-slate-900 truncate">
-                        {lead?.name || 'Unnamed client'}
-                      </p>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        {lead?.email || 'No email on file'}
-                      </p>
+                      <p className="text-[11px] text-slate-400">Recipient</p>
+                      <p className="font-bold text-slate-900 truncate">{lead?.name || 'Client'}</p>
+                      <p className="text-[11px] text-slate-500 truncate">{lead?.email || 'No email'}</p>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[11px] text-slate-500">
-                        {awaitingDeposit ? 'Deposit' : 'Amount'}
+                      <p className="text-[11px] text-slate-400">
+                        {awaitingDeposit ? 'Deposit Due' : 'Amount Billed'}
                       </p>
-                      <p className="text-sm font-semibold text-slate-900 tabular-nums">
+                      <p className="font-bold text-slate-900 tabular-nums text-sm">
                         {fmt(awaitingDeposit ? depositAmount : remaining)}
                       </p>
                     </div>
@@ -1097,30 +1049,13 @@ export default function BillingSection({
 
                   {awaitingDeposit && (
                     <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 tabular-nums">
-                      {fmt(total - depositAmount)} balance due on completion.
+                      {fmt(total - depositAmount)} balance due on job completion.
                     </p>
                   )}
-
-                  <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-200 text-[11px]">
-                    <span className="text-slate-500">
-                      {invoiceNumber} · {lineItems?.length || 0} line item
-                      {(lineItems?.length || 0) === 1 ? '' : 's'}
-                    </span>
-                    {lead?.project_id && company?.slug && (
-                      <a
-                        href={`/api/company/${company.slug}/generate-invoice-pdf?project_id=${lead.project_id}&preview=1`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 font-semibold text-slate-700 hover:text-slate-900 underline underline-offset-2"
-                      >
-                        Preview PDF
-                      </a>
-                    )}
-                  </div>
                 </div>
 
                 <div
-                  className={`flex items-start gap-2 p-2.5 rounded-lg border text-xs ${
+                  className={`flex items-start gap-2 p-2.5 rounded-xl border text-xs ${
                     hasPayLink
                       ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
                       : 'bg-amber-50 border-amber-200 text-amber-800'
@@ -1128,59 +1063,30 @@ export default function BillingSection({
                 >
                   {hasPayLink ? (
                     <>
-                      <CreditCard className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span>
-                        Includes a <span className="font-semibold">{activeMethodLabel}</span> pay link
-                        and the PDF.
-                      </span>
+                      <CreditCard className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>Includes direct payment link ({activeMethodLabel}) and PDF invoice.</span>
                     </>
                   ) : (
                     <>
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      <span>
-                        PDF only — no payment method connected, so they can&apos;t pay online.{' '}
-                        <a
-                          href={`/${company?.slug || ''}/admin/settings#billing`}
-                          className="font-semibold underline"
-                        >
-                          Set one up
-                        </a>
-                      </span>
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>PDF attachment only. No digital pay link configured.</span>
                     </>
                   )}
                 </div>
 
                 <div>
                   <label htmlFor="modal-due-date" className="block text-xs font-medium text-slate-600 mb-1">
-                    Due date <span className="text-slate-400 font-normal">(optional)</span>
+                    Invoice Due Date
                   </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="modal-due-date"
-                      type="date"
-                      value={dueDate || ''}
-                      disabled={sending}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-slate-100 transition-all disabled:opacity-50"
-                    />
-                    {dueDate && (
-                      <button
-                        type="button"
-                        onClick={() => setDueDate('')}
-                        disabled={sending}
-                        className="px-2.5 py-2 text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors disabled:opacity-50"
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </div>
+                  <input
+                    id="modal-due-date"
+                    type="date"
+                    value={dueDate || ''}
+                    disabled={sending}
+                    onChange={(e) => setDueDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700"
+                  />
                 </div>
-
-                {isPartial && (
-                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700">
-                    {fmt(paidAmount)} collected. Balance due {fmt(remaining)}.
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-2">
@@ -1188,7 +1094,7 @@ export default function BillingSection({
                   type="button"
                   onClick={() => setShowSendConfirm(false)}
                   disabled={sending}
-                  className="flex-1 py-3 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1196,17 +1102,13 @@ export default function BillingSection({
                   type="button"
                   onClick={handleSendInvoice}
                   disabled={sending}
-                  className="flex-1 py-3 px-3 bg-brand-700 hover:bg-brand-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {sending ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Sending...
-                    </>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
                     <>
-                      <Send className="w-3.5 h-3.5" />
-                      Confirm &amp; send
+                      <Send className="w-3.5 h-3.5" /> Confirm &amp; Send
                     </>
                   )}
                 </button>
@@ -1216,7 +1118,7 @@ export default function BillingSection({
         )}
       </AnimatePresence>
 
-      {/* RECORD PAYMENT */}
+      {/* MODAL 2: RECORD PAYMENT */}
       <AnimatePresence>
         {showRecordPayment && (
           <motion.div
@@ -1234,19 +1136,18 @@ export default function BillingSection({
               className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-slate-900">Record a payment</h3>
+                <h3 className="text-base font-bold text-slate-900">Record Manual Payment</h3>
                 <button
                   onClick={() => !savingPayment && setShowRecordPayment(false)}
                   className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
-                  aria-label="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="space-y-3 mb-5">
+              <div className="space-y-3 mb-5 text-xs">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Amount received</label>
+                  <label className="block font-medium text-slate-600 mb-1">Amount Collected</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -1271,12 +1172,11 @@ export default function BillingSection({
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-[15px] font-semibold tabular-nums outline-none focus:bg-white focus:border-brand-700 focus:ring-2 focus:ring-slate-100 transition-colors"
+                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold tabular-nums outline-none focus:bg-white focus:border-brand-700"
                   />
 
-                  {/* Two quick-fills when a deposit is pending — the two
-                      amounts a contractor actually receives. */}
-                  <div className="mt-2 grid gap-2">
+                  {/* QUICK FILLS */}
+                  <div className="mt-2 grid gap-1.5">
                     {hasDepositTerms && !depositPaid && depositAmount > 0 && (
                       <button
                         type="button"
@@ -1290,14 +1190,10 @@ export default function BillingSection({
                           );
                           if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
                         }}
-                        className={`w-full p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between transition-colors ${
-                          rawAmount === depositAmount.toString()
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                        }`}
+                        className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors text-[11px]"
                       >
-                        <span>Deposit</span>
-                        <span className="tabular-nums">{fmt(depositAmount)}</span>
+                        <span>Fill Required Deposit</span>
+                        <span className="font-bold tabular-nums">{fmt(depositAmount)}</span>
                       </button>
                     )}
                     {remaining > 0 && (
@@ -1313,30 +1209,26 @@ export default function BillingSection({
                           );
                           if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
                         }}
-                        className={`w-full p-2.5 rounded-lg border text-xs font-medium flex items-center justify-between transition-colors ${
-                          rawAmount === remaining.toString()
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                            : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                        }`}
+                        className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors text-[11px]"
                       >
-                        <span>{paidAmount > 0 ? 'Pay off balance' : 'Full amount'}</span>
-                        <span className="tabular-nums">{fmt(remaining)}</span>
+                        <span>Fill Full Balance</span>
+                        <span className="font-bold tabular-nums">{fmt(remaining)}</span>
                       </button>
                     )}
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Method</label>
+                  <label className="block font-medium text-slate-600 mb-1">Payment Method</label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700 transition-colors"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
                   >
-                    <option value="">Select method...</option>
+                    <option value="">Select Method...</option>
                     <option value="cash">Cash</option>
                     <option value="check">Check</option>
-                    <option value="credit_card">Credit Card</option>
+                    <option value="credit_card">Credit Card (External)</option>
                     <option value="zelle">Zelle</option>
                     <option value="venmo">Venmo</option>
                     <option value="stripe">Stripe</option>
@@ -1345,12 +1237,12 @@ export default function BillingSection({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Date</label>
+                  <label className="block font-medium text-slate-600 mb-1">Payment Date</label>
                   <input
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700 transition-colors"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
                   />
                 </div>
               </div>
@@ -1359,16 +1251,16 @@ export default function BillingSection({
                 <button
                   onClick={() => setShowRecordPayment(false)}
                   disabled={savingPayment}
-                  className="flex-1 py-3 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSavePayment}
                   disabled={savingPayment}
-                  className="flex-1 py-3 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  {savingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save payment'}
+                  {savingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save Payment'}
                 </button>
               </div>
             </motion.div>
@@ -1376,7 +1268,7 @@ export default function BillingSection({
         )}
       </AnimatePresence>
 
-      {/* REMINDER */}
+      {/* MODAL 3: PAYMENT REMINDER */}
       <AnimatePresence>
         {showReminderConfirm && (
           <motion.div
@@ -1394,11 +1286,10 @@ export default function BillingSection({
               className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-slate-900">Payment reminder</h3>
+                <h3 className="text-base font-bold text-slate-900">Send Payment Reminder</h3>
                 <button
                   onClick={() => !sendingReminder && setShowReminderConfirm(false)}
                   className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
-                  aria-label="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1406,14 +1297,14 @@ export default function BillingSection({
 
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-5 text-xs space-y-1">
                 <p className="text-slate-500">
-                  To <span className="font-semibold text-slate-800">{lead?.name}</span>
+                  Recipient: <span className="font-semibold text-slate-800">{lead?.name}</span>
                 </p>
                 <p className="text-slate-500">
-                  Outstanding{' '}
-                  <span className="font-semibold text-slate-800 tabular-nums">{fmt(remaining)}</span>
+                  Balance Outstanding:{' '}
+                  <span className="font-bold text-slate-900 tabular-nums">{fmt(remaining)}</span>
                 </p>
                 {lastReminderSent && (
-                  <p className="text-slate-400 pt-1">Last sent {fmtDate(lastReminderSent)}</p>
+                  <p className="text-slate-400 pt-1">Last reminder sent {fmtDate(lastReminderSent)}</p>
                 )}
               </div>
 
@@ -1421,16 +1312,16 @@ export default function BillingSection({
                 <button
                   onClick={() => setShowReminderConfirm(false)}
                   disabled={sendingReminder}
-                  className="flex-1 py-3 px-3 border border-slate-200 text-slate-600 font-medium text-xs rounded-lg hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSendReminder}
                   disabled={sendingReminder || daysSinceReminder === 0}
-                  className="flex-1 py-3 px-3 bg-brand-700 hover:bg-brand-800 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
-                  {sendingReminder ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send reminder'}
+                  {sendingReminder ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Send Reminder'}
                 </button>
               </div>
             </motion.div>
@@ -1438,7 +1329,7 @@ export default function BillingSection({
         )}
       </AnimatePresence>
 
-      {/* EMAIL PREVIEW */}
+      {/* MODAL 4: EMAIL PREVIEW */}
       <AnimatePresence>
         {previewHtml && (
           <motion.div
@@ -1456,13 +1347,12 @@ export default function BillingSection({
               onClick={(e) => e.stopPropagation()}
             >
               <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                  <Mail className="w-4 h-4 text-slate-400" /> Email preview
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                  <Mail className="w-4 h-4 text-slate-400" /> Outbox Email Preview
                 </div>
                 <button
                   onClick={() => setPreviewHtml(null)}
                   className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
-                  aria-label="Close"
                 >
                   <X className="w-4 h-4" />
                 </button>

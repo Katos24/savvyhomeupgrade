@@ -69,3 +69,9 @@ export async function clearSession() {
   const cookieStore = await cookies();
   cookieStore.delete('auth-token');
 }
+
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET is not set');
+  return secret;
+}

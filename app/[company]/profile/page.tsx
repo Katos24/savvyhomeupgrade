@@ -1,3 +1,4 @@
+import { getJwtSecret } from '@/lib/auth';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { neon } from '@neondatabase/serverless';
@@ -17,7 +18,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ compan
 
   try {
     // Verify JWT and get user
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this') as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as any;
     
     const users = await sql`
       SELECT id, name, email, phone, role, company_id, created_at 
