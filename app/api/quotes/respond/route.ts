@@ -1,6 +1,7 @@
 import { adminDb as sql } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendQuoteAcceptedNotification } from '@/lib/email';
+import { autoAdvanceStatus } from '@/lib/statusAutomation';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -25,8 +26,9 @@ export async function GET(request: NextRequest) {
         p.quote_data,
         p.quote_accepted_at,
         p.quote_declined_at,
-        p.customer_name,
+       p.customer_name,
         p.customer_email,
+        l.id as lead_id,
         l.company_id,
         c.name as company_name,
         c.email as company_email,
@@ -91,6 +93,12 @@ export async function GET(request: NextRequest) {
           updated_at = NOW()
         WHERE id = ${project.id}
       `;
+
+      // Before the email, so a mail failure can't skip the status move. This
+      // fires the same whether the customer clicked Accept here or a
+      // contractor marked it accepted from the dashboard — the trigger is
+      // quote_accepted_at being set, not who set it.
+      await autoAdvanceStatus(sql, project.lead_id, 'quote_accepted');
 
       try {
         await sendQuoteAcceptedNotification({

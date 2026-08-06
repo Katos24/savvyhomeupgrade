@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { CATEGORY_MAP, DEFAULT_STATUSES, ADDRESS_CONFIG } from '@/lib/formCategories';
+import { CATEGORY_MAP, ADDRESS_CONFIG } from '@/lib/formCategories';
 import { isReservedSlug } from '@/lib/reservedSlugs';
 
 // ── sendWelcomeEmail intentionally removed ──
@@ -98,8 +98,7 @@ const defaultFieldConfig = JSON.stringify({
         slug,
         email,
         phone,
-        business_type,
-        status_options,
+       business_type,
         form_categories,
         subscription_status,
         email_notifications_enabled,
@@ -114,7 +113,6 @@ const defaultFieldConfig = JSON.stringify({
         ${normalizedEmail},
         ${phone || null},
         ${businessType},
-        ${JSON.stringify(DEFAULT_STATUSES)},
         ${JSON.stringify(defaultCategories)},
         ${plan === 'free' ? 'free' : 'inactive'},
         true,

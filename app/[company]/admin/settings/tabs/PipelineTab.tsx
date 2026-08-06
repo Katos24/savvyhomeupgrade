@@ -7,14 +7,12 @@ import {
   AlertTriangle, Workflow, Lock, Palette,
   Save, Check
 } from 'lucide-react';
-
-type StatusOption = {
-  value: string;
-  label: string;
-  color: string;
-};
-
-const LOCKED_NAMES = ['new', 'completed'];
+import {
+  DEFAULT_STATUSES,
+  LOCKED_STAGES,
+  STAGE_TRIGGERS,
+  type StatusOption,
+} from '@/lib/formCategories';
 
 const COLOR_OPTIONS = [
   { value: 'blue',   label: 'Blue',   hex: '#3b82f6' },
@@ -40,19 +38,12 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
   const [newLabel, setNewLabel] = useState('');
   const [newColor, setNewColor] = useState('blue');
 
-  const [statuses, setStatuses] = useState<StatusOption[]>(() => {
+const [statuses, setStatuses] = useState<StatusOption[]>(() => {
     const saved = company.status_options;
-    return Array.isArray(saved) && saved.length > 0 ? saved : [
-      { value: 'new',         label: 'New',         color: 'pink'   },
-      { value: 'contacted',   label: 'Contacted',   color: 'blue'   },
-      { value: 'quoted',      label: 'Quoted',      color: 'yellow' },
-      { value: 'in-progress', label: 'In Progress', color: 'orange' },
-      { value: 'completed',   label: 'Completed',   color: 'green'  },
-    ];
+    return Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_STATUSES;
   });
-
   const getColorHex = (name: string) => COLOR_OPTIONS.find(c => c.value === name)?.hex || '#3b82f6';
-  const isNameLocked = (s: StatusOption) => LOCKED_NAMES.includes(s.value);
+  const isNameLocked = (s: StatusOption) => LOCKED_STAGES.includes(s.value);
 
   const showError = (msg: string) => { setError(msg); setTimeout(() => setError(''), 3000); };
 
@@ -94,6 +85,8 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
     setStatuses(updated);
     setActiveColorPicker(null);
   };
+
+
 
   const handleSave = async () => {
     setLoading(true); setError(''); setSuccess('');
@@ -218,8 +211,11 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
               <AnimatePresence>
                 {statuses.map((status, index) => {
                   const locked = isNameLocked(status);
-                  const canMoveUp   = index > 1 && !locked;
-                  const canMoveDown = index < statuses.length - 2 && !locked;
+                /* Locked identity doesn't mean fixed position — a contractor
+                     who works "Approved" before "Quoted" should be able to say
+                     so. First and last stay pinned. */
+                  const canMoveUp   = index > 1;
+                  const canMoveDown = index < statuses.length - 2;
 
                   return (
                     <motion.div
@@ -229,33 +225,31 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                       className={`relative flex items-center gap-3 px-4 py-3.5 group transition-colors ${locked ? 'bg-gray-50/50' : 'hover:bg-gray-50/60'}`}
                     >
                       <button
-                        onClick={() => !locked && setActiveColorPicker(activeColorPicker === index ? null : index)}
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all ${!locked ? 'hover:scale-105 active:scale-95' : 'cursor-default'}`}
+onClick={() => setActiveColorPicker(activeColorPicker === index ? null : index)}
+className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-all hover:scale-105 active:scale-95"
                         style={{ backgroundColor: getColorHex(status.color) }}
                       >
-                        {!locked && <Palette className="w-3.5 h-3.5 text-white/80 opacity-0 group-hover:opacity-100 transition-opacity" />}
+<Palette className="w-3.5 h-3.5 text-white/80 opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
 
                       <div className="flex-1 min-w-0">
+                      {/* Locked stages stay renameable — the label is the
+                            contractor's, the identity underneath is ours, so
+                            the automation always has something to target. */}
                         <input
                           type="text"
                           value={status.label}
-                          readOnly={locked}
                           onChange={e => {
                             const updated = [...statuses];
                             updated[index].label = e.target.value;
                             setStatuses(updated);
                           }}
-                          className={`w-full bg-transparent text-sm font-medium outline-none transition-all ${
-                            locked
-                              ? 'text-gray-400 cursor-default'
-                              : 'text-gray-900 border-b border-transparent focus:border-indigo-300'
-                          }`}
+                          className="w-full bg-transparent text-sm font-medium text-gray-900 border-b border-transparent outline-none transition-all focus:border-indigo-300"
                         />
                         <div className="flex items-center gap-1 mt-0.5">
-                          {locked && <Lock className="w-2.5 h-2.5 text-gray-300" />}
-                          <span className="text-[10px] font-medium text-gray-300">
-                            {locked ? 'System required' : 'Custom stage'}
+                          {locked && <Lock className="w-2.5 h-2.5 text-gray-300 shrink-0" />}
+                          <span className="text-[10px] font-medium text-gray-400 truncate">
+{locked ? STAGE_TRIGGERS[status.value] || 'Built-in stage' : 'Custom stage'}
                           </span>
                         </div>
                       </div>
@@ -347,7 +341,7 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
             </div>
           </div>
 
-          {/* Live stage preview */}
+         {/* Live stage preview */}
           <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
             <p className="text-[11px] font-medium text-gray-400 mb-3">Your current stages</p>
             <div className="flex flex-wrap gap-1.5">
@@ -362,6 +356,29 @@ export default function PipelineTab({ company }: { company: any; currentUser: an
                   {s.label}
                 </motion.span>
               ))}
+            </div>
+          </div>
+
+         <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
+            <p className="text-[11px] font-medium text-gray-400 mb-3">What moves on its own</p>
+            <div className="space-y-2">
+              {statuses
+.filter(s => STAGE_TRIGGERS[s.value] && s.value !== 'new')
+                .map(s => (
+                  <p key={s.value} className="text-[12px] text-gray-600 leading-relaxed">
+                    <span
+                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium text-white"
+                      style={{ backgroundColor: getColorHex(s.color) }}
+                    >
+                      {s.label}
+                    </span>{' '}
+— {STAGE_TRIGGERS[s.value].replace(/^Moves here when |^You move jobs here when /, '')}
+                  </p>
+                ))}
+              <p className="pt-1 text-[11px] text-gray-400 leading-relaxed">
+                Jobs only move forward, and never out of a stage you set by hand
+                like Completed. You can always change a stage manually.
+              </p>
             </div>
           </div>
         </div>

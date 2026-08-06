@@ -20,6 +20,7 @@ import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardExportModal from '@/components/dashboard/DashboardExportModal';
 import DashboardLeadsSection from '@/components/dashboard/DashboardLeadsSection';
+import { DEFAULT_STATUSES } from '@/lib/formCategories';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,20 +54,7 @@ type Company = {
 type ViewMode = 'cards' | 'table' | 'calendar';
 type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
 
-const DEFAULT_STATUSES: StatusOption[] = [
-  { value: 'new', label: 'New', color: 'green' },
-  { value: 'contacted', label: 'Contacted', color: 'yellow' },
-  { value: 'quoted', label: 'Quoted', color: 'purple' },
-  { value: 'scheduled', label: 'Scheduled', color: 'indigo' },
-  { value: 'in-progress', label: 'In Progress', color: 'orange' },
-  { value: 'completed', label: 'Completed', color: 'blue' },
-  { value: 'cancelled', label: 'Cancelled', color: 'red' },
-  { value: 'lost', label: 'Lost', color: 'gray' },
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -311,12 +299,19 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     startTransition(() => router.push('/login'));
   }, [router]);
 
-  const updateLeadStatus = useCallback(async (id: number, status: string, oldStatus: string) => {
+  const updateLeadStatus = useCallback(async (id: number, status: string, oldStatus: string, sendReview = true) => {
     try {
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status, action: 'update_status', old_status: oldStatus, ...userMeta() }),
+        body: JSON.stringify({
+          id,
+          status,
+          action: 'update_status',
+          old_status: oldStatus,
+          send_review_request: sendReview,
+          ...userMeta(),
+        }),
       });
       const result = await res.json();
       if (res.ok && result.success) {

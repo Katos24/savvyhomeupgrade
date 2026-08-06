@@ -6,6 +6,7 @@ import { sendQuoteToCustomer, sendScheduleConfirmation, sendInvoiceToCustomer } 
 import { can, type PlanTier } from '@/lib/permissions';
 import { formatPhone } from '@/lib/emailTemplates';
 import { stripe } from '@/lib/stripe'
+import { autoAdvanceStatus } from '@/lib/statusAutomation';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
 
 export async function POST(request: Request) {
@@ -143,7 +144,9 @@ if (action === 'update_status') {
 
   await addActivityToProject(id, statusChangeEntry);
 
-  if (status === 'completed' && old_status !== 'completed') {
+ // Opt-out rather than opt-in: anything else calling this route without the
+  // flag keeps the old automatic behaviour.
+  if (status === 'completed' && old_status !== 'completed' && body.send_review_request !== false) {
     const projectData = await sql`
       SELECT p.id, p.review_request_sent_at, l.email as customer_email, l.name as customer_name, l.category, p.company_id
       FROM leads l
@@ -277,7 +280,7 @@ if (action === 'update_status') {
           ${leadData.city || null},
           ${leadData.zip_code || null},
          ${leadData.category || null},
-'scheduled',
+          'active',
 ${leadData.company_id || null},
 ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
           ${JSON.stringify(leadNotes)},
@@ -346,6 +349,19 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
       `;
 
       
+   const movedTo = await autoAdvanceStatus(sql, id, 'lead_converted');
+      if (movedTo) {
+        await addActivityToProject(id, {
+          type: 'status_change',
+          text: `Moved to ${movedTo} automatically — converted to a project`,
+          user_name: 'System',
+          user_email: '',
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+    
+
       return NextResponse.json({ 
         success: true, 
         project_id: projectId,
@@ -431,6 +447,20 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
 
       await addActivityToProject(id, projectUpdateEntry);
 
+      // Only when a date is actually being set, not on every project edit.
+      if (scheduled_date) {
+        const movedTo = await autoAdvanceStatus(sql, id, 'job_scheduled');
+        if (movedTo) {
+          await addActivityToProject(id, {
+            type: 'status_change',
+            text: `Moved to ${movedTo} automatically — job scheduled`,
+            user_name: 'System',
+            user_email: '',
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+
       return NextResponse.json({ success: true });
     }
 
@@ -515,6 +545,49 @@ await sql`
 
       return NextResponse.json({ success: true });
     }
+
+
+    // ==================== MARK QUOTE ACCEPTED ====================
+else if (action === 'mark_quote_accepted') {
+  const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
+  const projectId = leadCheck[0]?.project_id;
+
+  if (!projectId) {
+    return NextResponse.json({ success: false, error: 'No project exists.' }, { status: 400 });
+  }
+
+  // Clears the token so the emailed Accept link can't fire a second time,
+  // and clears any prior decline — the customer changed their mind.
+  await sql`
+    UPDATE projects
+    SET quote_accepted_at = COALESCE(quote_accepted_at, NOW()),
+        quote_declined_at = NULL,
+        quote_token = NULL,
+        updated_at = NOW()
+    WHERE id = ${projectId}
+  `;
+
+  await addActivityToProject(id, {
+    type: 'quote_accepted',
+    text: 'Quote marked accepted manually',
+    user_name,
+    user_email,
+    timestamp: new Date().toISOString(),
+  });
+
+  const movedTo = await autoAdvanceStatus(sql, id, 'quote_accepted');
+  if (movedTo) {
+    await addActivityToProject(id, {
+      type: 'status_change',
+      text: `Moved to ${movedTo} automatically — quote accepted`,
+      user_name: 'System',
+      user_email: '',
+      timestamp: new Date().toISOString(),
+    });
+  }
+
+  return NextResponse.json({ success: true });
+}
 
     // ==================== SEND QUOTE ====================
     else if (action === 'send_quote') {
@@ -667,7 +740,18 @@ await sql`UPDATE projects
           timestamp: new Date().toISOString()
         };
 
-        await addActivityToProject(id, quoteSentEntry);
+       await addActivityToProject(id, quoteSentEntry);
+
+        const movedTo = await autoAdvanceStatus(sql, id, 'quote_sent');
+        if (movedTo) {
+          await addActivityToProject(id, {
+            type: 'status_change',
+            text: `Moved to ${movedTo} automatically — quote sent`,
+            user_name: 'System',
+            user_email: '',
+            timestamp: new Date().toISOString(),
+          });
+        }
 
         return NextResponse.json({ success: true, message: 'Quote sent to customer!' });
       } catch (emailError: any) {

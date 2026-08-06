@@ -13,7 +13,7 @@ import {
   Receipt,
   CheckCircle2,
   Save,
-  Eye,
+  Eye, XCircle,
   ArrowRightLeft,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
@@ -56,6 +56,8 @@ export default function QuoteSection({
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
+  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [markingAccepted, setMarkingAccepted] = useState(false);
 
   const newRowRef = useRef<HTMLDivElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
@@ -193,6 +195,36 @@ export default function QuoteSection({
     doSave(quoteData, taxRate);
   };
 
+  /* A customer who says yes on the phone should land in the same place as
+     one who clicks Accept in the email — same timestamp, same pipeline move. */
+  const handleMarkAccepted = async () => {
+    setMarkingAccepted(true);
+    try {
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'mark_quote_accepted',
+          user_name: currentUser?.name || 'Unknown',
+          user_email: currentUser?.email || '',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success('Quote marked accepted');
+        setShowAcceptConfirm(false);
+        await onRefresh();
+      } else {
+        toast.error(data.error || 'Could not update the quote');
+      }
+    } catch {
+      toast.error('Could not update the quote');
+    } finally {
+      setMarkingAccepted(false);
+    }
+  };
+
   const handleLoadTemplate = () => {
     if (!categoryTemplate?.items) return;
     const items = categoryTemplate.items.map((item: any, i: number) => ({ ...item, id: Date.now() + i }));
@@ -275,7 +307,24 @@ export default function QuoteSection({
       : 0;
 
   const quoteAccepted = !!(lead?.project_quote_accepted_at || lead?.quote_accepted_at);
+  const quoteDeclined = !!(lead?.project_quote_declined_at || lead?.quote_declined_at);
   const quoteSent = !!(lead?.project_quote_sent_at || lead?.quote_sent_at);
+  const acceptedAt = lead?.project_quote_accepted_at || lead?.quote_accepted_at;
+  const declinedAt = lead?.project_quote_declined_at || lead?.quote_declined_at;
+  const sentAt = lead?.project_quote_sent_at || lead?.quote_sent_at;
+
+  const dateOnly = (d: string) =>
+    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+  /* Declined was invisible everywhere — the chip only knew sent and accepted,
+     so a customer saying no looked identical to one who hadn't replied. */
+  const quoteState = quoteDeclined
+    ? { label: `Declined ${declinedAt ? dateOnly(declinedAt) : ''}`, cls: 'bg-rose-50 text-rose-700 border-rose-200' }
+    : quoteAccepted
+    ? { label: `Approved ${acceptedAt ? dateOnly(acceptedAt) : ''}`, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+    : quoteSent
+    ? { label: `Sent ${sentAt ? dateOnly(sentAt) : ''}`, cls: 'bg-blue-50 text-blue-700 border-blue-200' }
+    : { label: 'Not sent yet', cls: 'bg-gray-100 text-gray-500 border-gray-200' };
 
   /* Borderless until touched — the box appears on hover/focus so a row reads
      as a line of a quote rather than a row of form fields. */
@@ -433,15 +482,18 @@ export default function QuoteSection({
               </p>
             </div>
 
-            {quoteAccepted ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700 border border-emerald-200/70 shrink-0">
-                <CheckCircle2 className="w-3 h-3" /> Approved
-              </span>
-            ) : quoteSent ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 border border-blue-200/70 shrink-0">
-                <Send className="w-3 h-3" /> Sent
-              </span>
-            ) : null}
+           <span
+              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium shrink-0 ${quoteState.cls}`}
+            >
+              {quoteDeclined ? (
+                <XCircle className="w-3 h-3" />
+              ) : quoteAccepted ? (
+                <CheckCircle2 className="w-3 h-3" />
+              ) : quoteSent ? (
+                <Send className="w-3 h-3" />
+              ) : null}
+              {quoteState.label}
+            </span>
           </div>
 
           <button
@@ -609,7 +661,7 @@ export default function QuoteSection({
                 {isDirty ? 'Save quote' : 'Saved'}
               </button>
 
-              <button
+             <button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!hasProject || quoteData.length === 0}
                 className="inline-flex items-center justify-center gap-2 px-4 h-11 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-40"
@@ -617,6 +669,16 @@ export default function QuoteSection({
                 <Mail className="w-4 h-4" />
                 Send to customer
               </button>
+
+              {!quoteAccepted && quoteData.length > 0 && (
+                <button
+                  onClick={() => setShowAcceptConfirm(true)}
+                  className="inline-flex items-center justify-center gap-2 px-4 h-10 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-emerald-700 transition"
+                >
+                  <CheckCircle2 className="w-4 h-4" />
+                  Mark accepted
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -910,6 +972,55 @@ export default function QuoteSection({
           lastHtmlBody={lastHtmlBody}
         />
       )}
+
+      <AnimatePresence>
+        {showAcceptConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => !markingAccepted && setShowAcceptConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 12 }}
+              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+              </div>
+              <h3 className="text-base font-semibold text-gray-900 mb-2">
+                Mark this quote accepted?
+              </h3>
+              <p className="text-[13px] text-gray-500 leading-relaxed mb-5">
+                Use this when {lead?.name?.split(' ')[0] || 'the customer'} said yes by phone or in
+                person. It records the acceptance and moves the job forward, same as if they&apos;d
+                clicked Accept in the email. No email is sent to them.
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  onClick={() => setShowAcceptConfirm(false)}
+                  disabled={markingAccepted}
+                  className="py-3 border border-gray-200 text-gray-600 font-medium text-[13px] rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleMarkAccepted}
+                  disabled={markingAccepted}
+                  className="inline-flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[13px] rounded-xl transition disabled:opacity-50"
+                >
+                  {markingAccepted ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  Mark accepted
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style jsx>{`
         input[type='number']::-webkit-inner-spin-button,

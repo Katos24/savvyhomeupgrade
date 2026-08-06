@@ -1,11 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, XCircle, AlertTriangle, X, CheckCheck } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertTriangle, X, CheckCheck, Star } from 'lucide-react';
 
 type CompletionSummaryModalProps = {
   lead: any;
-  onConfirm: () => void;
+  onConfirm: (sendReview: boolean) => void;
   onCancel: () => void;
 };
 
@@ -17,6 +18,12 @@ type CheckItem = {
 };
 
 export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: CompletionSummaryModalProps) {
+  /* On by default — asking for a review is the right move on most jobs, and
+     a contractor closing five on a Friday shouldn't have to opt in five
+     times. The opt-out exists because the app can't know when a job ended
+     badly, and a public review request after a dispute makes it worse. */
+  const [sendReview, setSendReview] = useState(true);
+  const alreadySent = !!lead?.review_request_sent_at;
 
   const beforePhotos = lead?.before_photos
     ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos)
@@ -236,6 +243,40 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
           )}
         </AnimatePresence>
 
+        {/* Review request */}
+        {!alreadySent && lead?.customer_email !== null && (
+          <div className="px-5 pb-1">
+            <button
+              onClick={() => setSendReview(v => !v)}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition ${
+                sendReview
+                  ? 'bg-emerald-50 border-emerald-200'
+                  : 'bg-slate-50 border-slate-200'
+              }`}
+            >
+              <div
+                className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${
+                  sendReview ? 'bg-emerald-600' : 'bg-white border border-slate-300'
+                }`}
+              >
+                {sendReview && <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
+              </div>
+              <div className="flex-1 text-left">
+                <p className={`text-xs font-bold ${sendReview ? 'text-emerald-800' : 'text-slate-500'}`}>
+                  Ask {lead?.name?.split(' ')[0] || 'them'} for a Google review
+                </p>
+                <p className={`text-[11px] font-medium mt-0.5 ${sendReview ? 'text-emerald-600' : 'text-slate-400'}`}>
+                  {sendReview ? 'Sends right after you complete this' : 'No review request will be sent'}
+                </p>
+              </div>
+              <Star
+                className={`w-4 h-4 shrink-0 ${sendReview ? 'text-emerald-500' : 'text-slate-300'}`}
+                fill={sendReview ? 'currentColor' : 'none'}
+              />
+            </button>
+          </div>
+        )}
+
         {/* Actions */}
         <div
           className="px-5 pb-6 pt-2 grid grid-cols-2 gap-3"
@@ -247,8 +288,8 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
           >
             Go Back
           </button>
-          <button
-            onClick={onConfirm}
+         <button
+            onClick={() => onConfirm(sendReview && !alreadySent)}
             className={`py-3.5 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-[0.97] ${
               allPassed
                 ? 'bg-emerald-600 hover:bg-emerald-500'

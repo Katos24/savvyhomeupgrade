@@ -32,6 +32,8 @@ const cardVariants: Variants = {
 };
 
 // Clean status dot & text mappings
+/* Must cover every colour PipelineTab offers — a stage set to one that's
+   missing here silently renders blue, so New and Active looked identical. */
 const statusColorMap: Record<string, { dot: string; textDark: string; textLight: string }> = {
   blue: { dot: 'bg-blue-500', textDark: 'text-blue-400', textLight: 'text-blue-600' },
   green: { dot: 'bg-emerald-500', textDark: 'text-emerald-400', textLight: 'text-emerald-600' },
@@ -40,6 +42,8 @@ const statusColorMap: Record<string, { dot: string; textDark: string; textLight:
   orange: { dot: 'bg-orange-500', textDark: 'text-orange-400', textLight: 'text-orange-600' },
   red: { dot: 'bg-rose-500', textDark: 'text-rose-400', textLight: 'text-rose-600' },
   gray: { dot: 'bg-slate-500', textDark: 'text-slate-400', textLight: 'text-slate-600' },
+  indigo: { dot: 'bg-indigo-500', textDark: 'text-indigo-400', textLight: 'text-indigo-600' },
+  pink: { dot: 'bg-pink-500', textDark: 'text-pink-400', textLight: 'text-pink-600' },
 };
 
 // Helper: Check if payment/invoice is past due
@@ -57,7 +61,9 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
   const quoteAccepted = lead.project_quote_accepted_at || lead.quote_accepted_at;
 
   // Invoice & Payment Logic
+  const paidAmount = parseFloat(lead.payment_amount || '0');
   const isPaid = lead.payment_status === 'paid';
+  const isPartial = !isPaid && (lead.payment_status === 'partially_paid' || paidAmount > 0);
   const invoiceSent = lead.invoice_status === 'sent' || lead.invoice_sent_at;
   const pastDue = !isPaid && (lead.is_past_due || isPastDue(lead.invoice_due_date || lead.due_date));
 
@@ -99,7 +105,7 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
         </span>
       </div>
 
-      {/* 3. Invoice & Payment Status */}
+      {/* 3. Invoice & Payment Status (Single source of truth) */}
       <div className="flex items-center gap-1.5 min-w-0 justify-end">
         {isPaid ? (
           <span className="flex items-center gap-1 text-xs font-semibold text-emerald-500 truncate">
@@ -109,8 +115,12 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
           <span className="flex items-center gap-1 text-xs font-bold text-rose-500 truncate animate-pulse">
             <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Past Due
           </span>
-        ) : invoiceSent ? (
+        ) : isPartial ? (
           <span className="flex items-center gap-1 text-xs font-semibold text-amber-500 truncate">
+            <Clock className="w-3.5 h-3.5 shrink-0" /> Partial
+          </span>
+        ) : invoiceSent ? (
+          <span className="flex items-center gap-1 text-xs font-semibold text-blue-500 truncate">
             <Clock className="w-3.5 h-3.5 shrink-0" /> Awaiting
           </span>
         ) : (
@@ -149,7 +159,6 @@ export default function UltraReadableCardsView({
             : null;
 
         const isPaid = lead.payment_status === 'paid';
-        const invoiceSent = lead.invoice_status === 'sent' || lead.invoice_sent_at;
         const pastDue = !isPaid && (lead.is_past_due || isPastDue(lead.invoice_due_date || lead.due_date));
 
         return (
@@ -178,7 +187,6 @@ export default function UltraReadableCardsView({
               </div>
 
               <div className="flex items-center gap-2">
-                {/* Immediate Warning Tag if Past Due */}
                 {pastDue ? (
                   <span className="flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md">
                     <AlertCircle className="w-3 h-3" /> Payment Past Due
@@ -222,7 +230,7 @@ export default function UltraReadableCardsView({
               )}
             </div>
 
-            {/* Category Subtitle + Invoice Indicator Note */}
+            {/* Category Subtitle */}
             <div className="flex items-center justify-between gap-2 mb-3">
               <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {lead.category?.replace(/_/g, ' ') || 'General Project'}
@@ -230,16 +238,9 @@ export default function UltraReadableCardsView({
                   <> • <Camera className="w-3 h-3 inline" /> {lead.file_urls.length}</>
                 )}
               </span>
-
-              {/* Quick Status Sub-note */}
-              {!isPaid && invoiceSent && !pastDue && (
-                <span className="text-[11px] font-semibold text-amber-500">
-                  Awaiting Payment
-                </span>
-              )}
             </div>
 
-            {/* Progress Bar (Minimalist Row) */}
+            {/* Progress Bar (Single location for Invoice status) */}
             <div className="mb-3">
               <CleanProgressTracker lead={lead} isDark={isDark} />
             </div>

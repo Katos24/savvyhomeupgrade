@@ -21,9 +21,9 @@ type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos'
 type LeadModalProps = {
   lead: any;
   onClose: () => void;
-  onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
+onUpdateStatus: (id: number, status: string, oldStatus: string, sendReview?: boolean) => Promise<boolean>;
   onAddNote: (id: number, noteText: string) => Promise<boolean>;
-  onDeleteLead: (id: number) => Promise<boolean>;
+    onDeleteLead: (id: number) => Promise<boolean>;
   onRefresh: () => Promise<void>;
   currentUser: any;
   statusOptions: any[];
@@ -96,13 +96,13 @@ export default function LeadModal({
 
   const getStatusConfig = (val: string) => statusOptions.find(s => s.value === val) || statusOptions[0];
 
-  const handleStatusChange = async (newStatus: string) => {
+  const handleStatusChange = async (newStatus: string, sendReview = true) => {
     const oldStatus = lead.status || statusOptions[0]?.value;
     if (isUpdatingStatus || newStatus === oldStatus) return;
     setIsUpdatingStatus(true);
     setSelectedStatus(newStatus);
     try {
-      const success = await onUpdateStatus(lead.id, newStatus, oldStatus);
+      const success = await onUpdateStatus(lead.id, newStatus, oldStatus, sendReview);
       if (success) {
         const oldLabel = getStatusConfig(oldStatus)?.label || oldStatus;
         const newLabel = getStatusConfig(newStatus)?.label || newStatus;
@@ -461,7 +461,7 @@ export default function LeadModal({
         {showCompletionSummary && (
           <CompletionSummaryModal
             lead={lead}
-            onConfirm={() => { setShowCompletionSummary(false); handleStatusChange(selectedStatus); }}
+onConfirm={(sendReview) => { setShowCompletionSummary(false); handleStatusChange(selectedStatus, sendReview); }}
             onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}
           />
         )}
