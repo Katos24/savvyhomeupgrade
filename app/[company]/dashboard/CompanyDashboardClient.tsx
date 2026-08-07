@@ -387,6 +387,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       });
       const data = await res.json();
       if (data.success && data.lead) {
+        console.log('refreshModalLead status:', data.lead.status);
         setSelectedLead(data.lead);
         setSelectedLeadPayments(data.payments || []);
         setSelectedLeadActivity(data.activity || []);
