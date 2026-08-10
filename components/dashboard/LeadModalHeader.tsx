@@ -233,9 +233,11 @@ export default function LeadModalHeader({
           </div>
         )}
 
-        {/* ── TABS ── */}
+        {/* ── TABS — desktop/tablet only now. Mobile uses the fixed bottom
+              tab bar (MobileTabBar) rendered by the parent modal instead,
+              matching a native app bottom-nav pattern. ── */}
         {tabs.length > 1 && (
-          <div className="py-1.5">
+          <div className="hidden sm:block py-1.5">
             <div
               className="flex items-center overflow-x-auto rounded-[10px] bg-white/5 p-[3px] gap-0.5"
               style={{ scrollbarWidth: 'none' }}
