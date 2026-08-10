@@ -17,7 +17,7 @@ import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
 import FaqModal from '@/components/FaqModal';
 
-// Real sections you already have code for — confirmed via `find`, not guessed.
+// Real sections you already have code for
 import CategoriesTab from '@/app/[company]/admin/settings/tabs/CategoriesTab';
 import PaymentsTab from '@/app/[company]/admin/settings/tabs/PaymentsTab';
 import FormTab from '@/app/[company]/admin/settings/tabs/FormTab';
@@ -311,15 +311,30 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     reviews: 'Reviews',
   };
 
-  const navItems = [
-    { key: 'overview', label: sectionLabels.overview, icon: LayoutGrid },
-    { key: 'form', label: sectionLabels.form, icon: FileText },
-    { key: 'categories', label: sectionLabels.categories, icon: Tags, locked: categoriesLocked },
-    { key: 'payments', label: sectionLabels.payments, icon: CreditCard, locked: paymentsLocked },
+  // Mobile Bottom Bar items including Google Reviews & Settings Link
+  const mobileBottomNavItems = [
+    { key: 'overview', label: 'Overview', icon: LayoutGrid, isSection: true },
+    { key: 'form', label: 'Form', icon: FileText, isSection: true },
+    { key: 'categories', label: 'Categories', icon: Tags, isSection: true, locked: categoriesLocked },
+    { key: 'payments', label: 'Payments', icon: CreditCard, isSection: true, locked: paymentsLocked },
+    { 
+      key: 'reviews', 
+      label: 'Reviews', 
+      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg', 
+      isSection: true, 
+      locked: reviewsLocked 
+    },
+    { 
+      key: 'settings', 
+      label: 'Settings', 
+      icon: SettingsIcon, 
+      isSection: false, 
+      href: `/${company.slug}/admin/settings` 
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row pb-16 lg:pb-0">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row pb-20 lg:pb-0">
 
       {/* ── MOBILE TOP BAR ── */}
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-slate-900 text-white px-4 py-3 shadow-sm">
@@ -521,24 +536,43 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         </div>
       </main>
 
-      {/* ── MOBILE BOTTOM NAVIGATION BAR ── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 flex items-center justify-around px-2 py-1.5 shadow-lg">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeSection === item.key;
-          return (
-            <button
-              key={item.key}
-              onClick={() => setActiveSection(item.key as SectionKey)}
-              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
-                isActive ? 'text-[#4ade80]' : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px]">{item.label}</span>
-            </button>
-          );
-        })}
+      {/* ── HORIZONTALLY SCROLLABLE MOBILE BOTTOM NAV BAR ── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 shadow-lg">
+        <div className="flex items-center gap-1 overflow-x-auto px-2 py-2 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
+         {mobileBottomNavItems.map((item) => {
+  const isActive = activeSection === item.key;
+
+  if (!item.isSection && item.href) {
+    return (
+      <a
+        key={item.key}
+        href={item.href}
+        className="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 shrink-0 min-w-[68px] transition-colors"
+      >
+        {item.icon && <item.icon className="w-5 h-5" />}
+        <span className="text-[10px] whitespace-nowrap">{item.label}</span>
+      </a>
+    );
+  }
+
+  return (
+    <button
+      key={item.key}
+      onClick={() => setActiveSection(item.key as SectionKey)}
+      className={`flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-lg text-xs font-medium shrink-0 min-w-[68px] transition-colors ${
+        isActive ? 'text-[#4ade80]' : 'text-slate-400 hover:text-slate-200'
+      }`}
+    >
+      {item.imageUrl ? (
+        <img src={item.imageUrl} className="w-5 h-5" alt="" />
+      ) : item.icon ? (
+        <item.icon className="w-5 h-5" />
+      ) : null}
+      <span className="text-[10px] whitespace-nowrap">{item.label}</span>
+    </button>
+  );
+})}
+        </div>
       </nav>
 
       {/* ── FAQ MODAL ── */}
