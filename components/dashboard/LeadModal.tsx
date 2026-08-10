@@ -15,15 +15,14 @@ import CompletionSummaryModal from './CompletionSummaryModal';
 import { canDeleteLead, can, type PlanTier } from '@/lib/permissions';
 import LockedTabsPreview from '@/components/dashboard/LockedTabsPreview';
 
-
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 
 type LeadModalProps = {
   lead: any;
   onClose: () => void;
-onUpdateStatus: (id: number, status: string, oldStatus: string, sendReview?: boolean) => Promise<boolean>;
+  onUpdateStatus: (id: number, status: string, oldStatus: string, sendReview?: boolean) => Promise<boolean>;
   onAddNote: (id: number, noteText: string) => Promise<boolean>;
-    onDeleteLead: (id: number) => Promise<boolean>;
+  onDeleteLead: (id: number) => Promise<boolean>;
   onRefresh: () => Promise<void>;
   currentUser: any;
   statusOptions: any[];
@@ -36,7 +35,6 @@ onUpdateStatus: (id: number, status: string, oldStatus: string, sendReview?: boo
   activity?: any[];
 };
 
-
 export default function LeadModal({
   lead,
   onClose,
@@ -48,7 +46,7 @@ export default function LeadModal({
   statusOptions,
   categories = [],
   company,
- companySlug,
+  companySlug,
   teamMembers = [],
   payments,
   activity,
@@ -84,9 +82,7 @@ export default function LeadModal({
       .then(r => r.json())
       .then(data => { if (data.leads?.length) setRelatedLeads(data.leads); })
       .catch(() => {});
-  }, [lead.id]);
-
-
+  }, [lead.id, lead.name, lead.city, lead.company_id, lead.email]);
 
   const customerPhotos = useMemo(() =>
     Array.isArray(lead.file_urls)
@@ -139,11 +135,6 @@ export default function LeadModal({
     else toast.error('Failed to delete lead');
   };
 
-  {/* Locked preview for free plan non-project leads */}
-{!isProject && activeTab !== 'overview' && activeTab !== 'activity' && activeTab !== 'ai' && (
-  <LockedTabsPreview companySlug={companySlug} activeTab={activeTab} />
-)}
-
   const renderProjectTab = () => {
     if (activeTab === 'overview' || activeTab === 'activity' || activeTab === 'ai' || !isProject) return null;
 
@@ -165,7 +156,8 @@ export default function LeadModal({
       reminders: { locked: !can(planTier, 'scheduling') },
     };
 
-    if (tabs[activeTab]?.locked) {
+    const currentTabInfo = tabs[activeTab];
+    if (currentTabInfo && currentTabInfo.locked) {
       const info = lockedInfo[activeTab] || { title: 'Upgrade Required', description: 'This feature requires a higher plan.', plan: 'Basic' };
       return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
@@ -191,7 +183,7 @@ export default function LeadModal({
         statusOptions={statusOptions}
         onUpdateStatus={onUpdateStatus}
         companySlug={companySlug}
-       defaultTab={activeTab}
+        defaultTab={activeTab}
         teamMembers={teamMembers}
         payments={payments}
         activity={activity}
@@ -325,6 +317,11 @@ export default function LeadModal({
           className="flex-1 overflow-y-auto bg-gray-50"
           style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
+          {/* Locked preview for free plan non-project leads */}
+          {!isProject && activeTab !== 'overview' && activeTab !== 'activity' && activeTab !== 'ai' && (
+            <LockedTabsPreview companySlug={companySlug} activeTab={activeTab} />
+          )}
+
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
@@ -340,7 +337,6 @@ export default function LeadModal({
                   lead={lead}
                   company={company}
                   statusOptions={statusOptions}
-
                   currentUser={currentUser}
                   categories={categories}
                   companySlug={companySlug}
@@ -396,8 +392,6 @@ export default function LeadModal({
             </motion.div>
           </AnimatePresence>
         </div>
-
-  
       </motion.div>
 
       {/* ── REPEAT CUSTOMER HISTORY DRAWER ── */}
@@ -461,7 +455,7 @@ export default function LeadModal({
         {showCompletionSummary && (
           <CompletionSummaryModal
             lead={lead}
-onConfirm={(sendReview) => { setShowCompletionSummary(false); handleStatusChange(selectedStatus, sendReview); }}
+            onConfirm={(sendReview) => { setShowCompletionSummary(false); handleStatusChange(selectedStatus, sendReview); }}
             onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}
           />
         )}
