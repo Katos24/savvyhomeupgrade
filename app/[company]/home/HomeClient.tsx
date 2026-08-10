@@ -10,7 +10,6 @@ import {
   FileText,
   Tags,
   CreditCard,
-  Star,
   Settings as SettingsIcon,
   Menu,
 } from 'lucide-react';
@@ -24,12 +23,6 @@ import PaymentsTab from '@/app/[company]/admin/settings/tabs/PaymentsTab';
 import FormTab from '@/app/[company]/admin/settings/tabs/FormTab';
 import GoogleReviewsTab from '@/app/[company]/admin/settings/tabs/GoogleReviewsTab';
 import OverviewTab from '@/app/[company]/admin/settings/tabs/OverviewTab';
-
-// Settings has no single "SettingsTab" file — it's CompanySettingsClient composing
-// Pipeline / Email templates / Team / Billing as nested tabs. Bigger wire-in than the
-// others; confirm before I drop it in, since it may expect its own internal tab nav
-// that could visually double up with this sidebar.
-// import CompanySettingsClient from '@/app/[company]/admin/settings/???';
 
 type Company = {
   id: number;
@@ -83,49 +76,39 @@ function formatPhone(value: string) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
- function normalizeUrl(raw: string) {
-      const trimmed = raw.trim();
-      if (!trimmed) return trimmed;
-      if (/^http:\/\//i.test(trimmed)) return trimmed.replace(/^http:\/\//i, 'https://');
-      if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
-      return trimmed;
-    }
- 
-    // iPhone photos are 3-5MB and often HEIC. Vercel caps request bodies near
-    // 4.5MB, and a truncated multipart body is what produces:
-    //   "expected a value starting with -- and the boundary"
-    // Re-encoding in the browser fixes the size and the format in one pass.
-    const LOGO_MAX_DIMENSION = 512;
- 
-    async function prepareLogo(file: File): Promise<Blob> {
-      let bitmap: ImageBitmap;
-      try {
-        bitmap = await createImageBitmap(file);
-      } catch {
-        throw new Error("Couldn't read that image. Try saving it as a JPG or PNG first.");
-      }
- 
-      const scale = Math.min(1, LOGO_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
- 
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.round(bitmap.width * scale);
-      canvas.height = Math.round(bitmap.height * scale);
- 
-      const ctx = canvas.getContext('2d');
-      if (!ctx) throw new Error('Could not process that image.');
-      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-      bitmap.close();
- 
-      return new Promise<Blob>((resolve, reject) =>
-        canvas.toBlob(
-          (blob) => (blob ? resolve(blob) : reject(new Error('Could not process that image.'))),
-          'image/png'
-        )
-      );
-    }
- 
-    function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
- 
+function normalizeUrl(raw: string) {
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+  if (/^http:\/\//i.test(trimmed)) return trimmed.replace(/^http:\/\//i, 'https://');
+  if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
+  return trimmed;
+}
+
+const LOGO_MAX_DIMENSION = 512;
+async function prepareLogo(file: File): Promise<Blob> {
+  let bitmap: ImageBitmap;
+  try {
+    bitmap = await createImageBitmap(file);
+  } catch {
+    throw new Error("Couldn't read that image. Try saving it as a JPG or PNG first.");
+  }
+  const scale = Math.min(1, LOGO_MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Could not process that image.');
+  ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise<Blob>((resolve, reject) =>
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error('Could not process that image.'))),
+      'image/png'
+    )
+  );
+}
+
+function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
   icon?: any; imageUrl?: string; label: string; active: boolean; locked?: boolean; onClick: () => void;
 }) {
   return (
@@ -156,24 +139,24 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const [showQrModal, setShowQrModal] = useState(false);
   const [qrStyle, setQrStyle] = useState<'standard' | 'brand' | 'dark'>('standard');
   const [includeLogo, setIncludeLogo] = useState(true);
-const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [showFaqModal, setShowFaqModal] = useState(false);
   const [isEditingBrand, setIsEditingBrand] = useState(false);
- const [brandSaving, setBrandSaving] = useState(false);
+  const [brandSaving, setBrandSaving] = useState(false);
   const [brandSaved, setBrandSaved] = useState(false);
   const [brandError, setBrandError] = useState<string | null>(null);
   const [logoPreview, setLogoPreview] = useState(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const [companyName, setCompanyName] = useState(company.name || '');
-const [companyEmail, setCompanyEmail] = useState(company.email || '');
-const [companyPhone, setCompanyPhone] = useState(
-  formatPhone(company.phone || '')
-);
-const [companyWebsite, setCompanyWebsite] = useState(company.website || '');
+  const [companyEmail, setCompanyEmail] = useState(company.email || '');
+  const [companyPhone, setCompanyPhone] = useState(
+    formatPhone(company.phone || '')
+  );
+  const [companyWebsite, setCompanyWebsite] = useState(company.website || '');
 
-const [color1, setColor1] = useState(company.email_brand_color_1 || '#0B3C6D');
-const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
+  const [color1, setColor1] = useState(company.email_brand_color_1 || '#0B3C6D');
+  const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
 
   useEffect(() => {
     if (typeof window !== 'undefined') setPublicLink(`${window.location.origin}/${company.slug}`);
@@ -193,96 +176,79 @@ const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
     generate();
   }, [publicLink, qrStyle, color1]);
 
-
-
-const handleSaveBranding = async () => {
-  setBrandSaving(true);
-  setBrandError(null);
-  const normalizedWebsite = normalizeUrl(companyWebsite);
- 
-  try {
-    let finalLogoUrl = company.logo_url;
- 
-    if (logoFile) {
-      // Shrink and convert before it ever hits the wire.
-      const processed = await prepareLogo(logoFile);
- 
-      const fd = new FormData();
-      fd.append('logo', processed, 'logo.png');
-      fd.append('companySlug', company.slug);
- 
-      // No headers — the browser must set the multipart boundary itself.
-      const uploadRes = await fetch('/api/upload-logo', {
-        method: 'POST',
-        body: fd,
-      });
- 
-      // A non-JSON body here means the route crashed; don't let .json() throw
-      // an unhelpful parse error over the real one.
-      const uploadData = await uploadRes.json().catch(() => ({}));
- 
-      if (!uploadRes.ok || !uploadData.success) {
-        // Stop here. Continuing would save "Saved" with no logo attached.
-        throw new Error(uploadData.error || 'Logo upload failed. Try again.');
+  const handleSaveBranding = async () => {
+    setBrandSaving(true);
+    setBrandError(null);
+    const normalizedWebsite = normalizeUrl(companyWebsite);
+    try {
+      let finalLogoUrl = company.logo_url;
+      if (logoFile) {
+        const processed = await prepareLogo(logoFile);
+        const fd = new FormData();
+        fd.append('logo', processed, 'logo.png');
+        fd.append('companySlug', company.slug);
+        const uploadRes = await fetch('/api/upload-logo', {
+          method: 'POST',
+          body: fd,
+        });
+        const uploadData = await uploadRes.json().catch(() => ({}));
+        if (!uploadRes.ok || !uploadData.success) {
+          throw new Error(uploadData.error || 'Logo upload failed. Try again.');
+        }
+        finalLogoUrl = uploadData.logoUrl;
       }
- 
-      finalLogoUrl = uploadData.logoUrl;
+      await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-general',
+          data: {
+            name: companyName,
+            email: companyEmail,
+            phone: companyPhone,
+            website: normalizedWebsite,
+          },
+        }),
+      });
+      await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-branding',
+          data: {
+            logo_url: finalLogoUrl,
+            email_brand_color_1: color1,
+            email_brand_color_2: color2,
+          },
+        }),
+      });
+      if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
+      setCompanyWebsite(normalizedWebsite);
+      setCompany((prev) => ({
+        ...prev,
+        name: companyName,
+        email: companyEmail,
+        phone: companyPhone,
+        website: normalizedWebsite,
+        logo_url: finalLogoUrl ?? prev.logo_url,
+        email_brand_color_1: color1,
+        email_brand_color_2: color2,
+      }));
+      setLogoFile(null);
+      setIsEditingBrand(false);
+      setBrandSaved(true);
+      setTimeout(() => setBrandSaved(false), 2000);
+    } catch (err) {
+      console.error(err);
+      setBrandError(
+        err instanceof Error ? err.message : 'Something went wrong. Try again.'
+      );
+    } finally {
+      setBrandSaving(false);
     }
- 
-    await fetch(`/api/company/${company.slug}/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'update-general',
-        data: {
-          name: companyName,
-          email: companyEmail,
-          phone: companyPhone,
-          website: normalizedWebsite,
-        },
-      }),
-    });
- 
-    await fetch(`/api/company/${company.slug}/settings`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'update-branding',
-        data: {
-          logo_url: finalLogoUrl,
-          email_brand_color_1: color1,
-          email_brand_color_2: color2,
-        },
-      }),
-    });
- 
-    if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
-    setCompanyWebsite(normalizedWebsite);
-    setCompany((prev) => ({
-      ...prev,
-      name: companyName,
-      email: companyEmail,
-      phone: companyPhone,
-      website: normalizedWebsite,
-      logo_url: finalLogoUrl ?? prev.logo_url,
-      email_brand_color_1: color1,
-      email_brand_color_2: color2,
-    }));
-    setLogoFile(null);
-    setIsEditingBrand(false);
-    setBrandSaved(true);
-    setTimeout(() => setBrandSaved(false), 2000);
-  } catch (err) {
-    console.error(err);
-    setBrandError(
-      err instanceof Error ? err.message : 'Something went wrong. Try again.'
-    );
-  } finally {
-    setBrandSaving(false);
-  }
-};
+  };
 
-const planTier = (company.plan_tier || 'free') as PlanTier;
+  const planTier = (company.plan_tier || 'free') as PlanTier;
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
   const categoriesLocked = !can(planTier, 'categories');
@@ -330,198 +296,209 @@ const planTier = (company.plan_tier || 'free') as PlanTier;
     qrImg.src = qrCodeUrl;
   };
 
-const checklistSteps: ChecklistStep[] = [
+  const checklistSteps: ChecklistStep[] = [
     { label: 'Upload your logo', description: 'Make your booking page and emails look professional', done: !!company.logo_url, kind: 'section', section: 'overview' },
-        { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, kind: 'section', section: 'form' },
-
+    { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, kind: 'section', section: 'form' },
     { label: 'Connect payments', description: 'So customers can actually pay you online', done: company.stripe_payment_status === 'active', kind: 'section', section: 'payments' },
     { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
   ];
 
-  const doneCount = checklistSteps.filter(s => s.done).length;
-
   const sectionLabels: Record<SectionKey, string> = {
     overview: 'Overview',
     form: 'Booking form',
-    categories: 'Categories & pricing',
-    payments: 'Customer payments',
-    reviews: 'Google reviews',
+    categories: 'Categories',
+    payments: 'Payments',
+    reviews: 'Reviews',
   };
-  const dashboardLabel = 'Dashboard';
-  const settingsLabel = 'Settings';
+
+  const navItems = [
+    { key: 'overview', label: sectionLabels.overview, icon: LayoutGrid },
+    { key: 'form', label: sectionLabels.form, icon: FileText },
+    { key: 'categories', label: sectionLabels.categories, icon: Tags, locked: categoriesLocked },
+    { key: 'payments', label: sectionLabels.payments, icon: CreditCard, locked: paymentsLocked },
+  ];
 
   return (
-<div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row pb-16 lg:pb-0">
 
-        {/* ── MOBILE TOP BAR ── */}
-        <div className="lg:hidden sticky top-0 z-30 flex items-center gap-3 bg-white border-b border-slate-200 px-4 py-3">
-          <button
-            onClick={() => setMobileNavOpen(true)}
-            className="p-2 -ml-2 rounded-lg hover:bg-slate-100 transition"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5 text-slate-700" />
-          </button>
-          <span className="text-sm font-semibold text-slate-900 truncate">{companyName}</span>
+      {/* ── MOBILE TOP BAR ── */}
+      <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-slate-900 text-white px-4 py-3 shadow-sm">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-7 h-7 rounded-md bg-[#3e4046] flex items-center justify-center shrink-0">
+            {logoPreview ? (
+              <img src={logoPreview} className="w-full h-full object-cover rounded-md" alt="" />
+            ) : (
+              <span className="font-semibold text-xs text-white">{companyName?.charAt(0)}</span>
+            )}
+          </div>
+          <span className="text-sm font-semibold truncate">{companyName}</span>
         </div>
 
-        {/* ── MOBILE OVERLAY ── */}
-        {mobileNavOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
-            onClick={() => setMobileNavOpen(false)}
+        <div className="flex items-center gap-2">
+          <a
+            href={`/${company.slug}/dashboard`}
+            className="p-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs font-medium flex items-center gap-1.5"
+          >
+            <LayoutDashboard className="w-4 h-4 text-[#4ade80]" />
+            <span className="hidden sm:inline">Dashboard</span>
+          </a>
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="p-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        </div>
+      </header>
+
+      {/* ── MOBILE OVERLAY ── */}
+      {mobileNavOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
+      {/* ── SIDEBAR ── */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#2b2d31] border-r border-[#3e4046] flex flex-col text-white transform transition-transform duration-300 ease-in-out
+        ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:static lg:translate-x-0 lg:w-64 lg:min-h-screen lg:shrink-0`}>
+
+        {/* Header */}
+        <div className="p-4 border-b border-[#3e4046]">
+          <div className="flex items-center gap-3 px-2 py-1">
+            <div className="w-8 h-8 rounded-lg bg-[#3e4046] flex items-center justify-center shrink-0">
+              {logoPreview ? (
+                <img src={logoPreview} className="w-full h-full object-cover rounded-lg" alt="" />
+              ) : (
+                <span className="font-semibold text-xs text-white">{companyName?.charAt(0)}</span>
+              )}
+            </div>
+            <span className="text-sm font-semibold text-white truncate">{companyName}</span>
+            <button
+              onClick={() => setShowFaqModal(true)}
+              className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/30 text-[11px] font-bold text-white hover:bg-[#3e4046]"
+              aria-label="How Lead2Project works"
+            >
+              ?
+            </button>
+            <button
+              onClick={() => setMobileNavOpen(false)}
+              className="p-1.5 rounded-lg hover:bg-[#3e4046] lg:hidden"
+              aria-label="Close menu"
+            >
+              <X className="w-4 h-4 text-white" />
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
+          {/* Dashboard Section */}
+          <nav className="space-y-0.5">
+            <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Home</p>
+            <a
+              href={`/${company.slug}/dashboard`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </a>
+          </nav>
+
+          {/* Management Navigation */}
+          <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
+            <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Management</p>
+            <div className="space-y-0.5">
+              <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => { setActiveSection('overview'); setMobileNavOpen(false); }} />
+              <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => { setActiveSection('form'); setMobileNavOpen(false); }} />
+              <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => { setActiveSection('categories'); setMobileNavOpen(false); }} />
+              <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => { setActiveSection('payments'); setMobileNavOpen(false); }} />
+              <SidebarItem 
+                imageUrl="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
+                label={sectionLabels.reviews} 
+                active={activeSection === 'reviews'} 
+                locked={reviewsLocked} 
+                onClick={() => { setActiveSection('reviews'); setMobileNavOpen(false); }} 
+              />
+            </div>
+          </nav>
+
+          {/* System Section */}
+          <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
+            <p className="px-3 text-[10px] font-bold text-white/50 uppercase tracking-wider mb-2">
+              System Settings
+            </p>
+            <a
+              href={`/${company.slug}/admin/settings`}
+              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
+            >
+              <SettingsIcon className="w-4 h-4 text-white" />
+              Settings
+            </a>
+
+            <div className="mt-1 space-y-1 pl-10 pr-3 pb-2">
+              <ul className="text-[12px] text-white/60 space-y-1">
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-white/30" /> Pipeline
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-white/30" /> Email Templates
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-white/30" /> Team Access
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-white/30" /> Billing
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-white/30" /> Notifications
+                </li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </aside>
+
+      {/* ── CONTENT ── */}
+      <main className="flex-1 min-w-0">
+        {activeSection === 'overview' && (
+          <OverviewTab
+            company={company}
+            color1={color1}
+            color2={color2}
+            logoPreview={logoPreview}
+            isEditingBrand={isEditingBrand}
+            setIsEditingBrand={setIsEditingBrand}
+            companyName={companyName}
+            setCompanyName={setCompanyName}
+            companyEmail={companyEmail}
+            setCompanyEmail={setCompanyEmail}
+            companyPhone={companyPhone}
+            setCompanyPhone={setCompanyPhone}
+            formatPhone={formatPhone}
+            companyWebsite={companyWebsite}
+            setCompanyWebsite={setCompanyWebsite}
+            setLogoFile={setLogoFile}
+            setLogoPreview={setLogoPreview}
+            setColor1={setColor1}
+            setColor2={setColor2}
+            brandSaving={brandSaving}
+            brandSaved={brandSaved}
+            brandError={brandError}
+            onSaveBranding={handleSaveBranding}
+            qrCodeUrl={qrCodeUrl}
+            onShowQrModal={() => setShowQrModal(true)}
+            publicLink={publicLink}
+            copied={copied}
+            onCopy={handleCopy}
+            checklistSteps={checklistSteps}
+            onNavigateSection={(section) => setActiveSection(section as SectionKey)}
           />
         )}
-
-        {/* ── SIDEBAR ── */}
-<aside className={`fixed inset-y-0 left-0 z-50 w-72 bg-[#2b2d31] border-r border-[#3e4046] flex flex-col text-white transform transition-transform duration-300 ease-in-out
-  ${mobileNavOpen ? 'translate-x-0' : '-translate-x-full'}
-  lg:static lg:translate-x-0 lg:w-64 lg:min-h-screen lg:shrink-0`}>
-
-  {/* Header */}
-  <div className="p-4 border-b border-[#3e4046]">
-    <div className="flex items-center gap-3 px-2 py-1">
-      <div className="w-8 h-8 rounded-lg bg-[#3e4046] flex items-center justify-center shrink-0">
-        {logoPreview ? (
-          <img src={logoPreview} className="w-full h-full object-cover rounded-lg" alt="" />
-        ) : (
-          <span className="font-semibold text-xs text-white">{companyName?.charAt(0)}</span>
-        )}
-      </div>
-     <span className="text-sm font-semibold text-white truncate">{companyName}</span>
-      <button
-        onClick={() => setShowFaqModal(true)}
-        className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/30 text-[11px] font-bold text-white hover:bg-[#3e4046]"
-        aria-label="How Lead2Project works"
-      >
-        ?
-      </button>
-      <button
-        onClick={() => setMobileNavOpen(false)}
-        className="p-1.5 rounded-lg hover:bg-[#3e4046] lg:hidden"
-        aria-label="Close menu"
-      >
-        <X className="w-4 h-4 text-white" />
-      </button>
-    </div>
-  </div>
-
-{/* Navigation */}
-<div className="flex-1 px-3 py-4 space-y-6">
-  
-  {/* Dashboard Section (Opens in new tab) */}
-  <nav className="space-y-0.5">
-    <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Home</p>
-    <a
-      href={`/${company.slug}/dashboard`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
-    >
-      <LayoutDashboard className="w-4 h-4" />
-      Dashboard
-    </a>
-  </nav>
-
-  {/* Management Navigation (Stays in current page) */}
-  <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
-    <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Management</p>
-    
-   <div className="space-y-0.5">
-  <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => { setActiveSection('overview'); setMobileNavOpen(false); }} />
-  <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => { setActiveSection('form'); setMobileNavOpen(false); }} />
-  <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => { setActiveSection('categories'); setMobileNavOpen(false); }} />
-  <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => { setActiveSection('payments'); setMobileNavOpen(false); }} />
-  
-  {/* Updated Google Reviews Item */}
-  <SidebarItem 
-    imageUrl="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
-    label={sectionLabels.reviews} 
-    active={activeSection === 'reviews'} 
-    locked={reviewsLocked} 
-    onClick={() => { setActiveSection('reviews'); setMobileNavOpen(false); }} 
-  />
-</div>
-  </nav>
-
-  {/* System Section (Opens in new tab) */}
-{/* ── SYSTEM SECTION ── */}
-<nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
-  <p className="px-3 text-[10px] font-bold text-white/50 uppercase tracking-wider mb-2">
-    System Settings
-  </p>
-  
-  {/* The main button that opens your settings page */}
-  <a
-    href={`/${company.slug}/admin/settings`}
-    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
-  >
-    <SettingsIcon className="w-4 h-4 text-white" />
-    Settings
-  </a>
-
-  {/* Static list of what's inside - no links */}
-  <div className="mt-1 space-y-1 pl-10 pr-3 pb-2">
-    <ul className="text-[12px] text-white/60 space-y-1">
-      <li className="flex items-center gap-2">
-        <span className="w-1 h-1 rounded-full bg-white/30" /> Pipeline
-      </li>
-      <li className="flex items-center gap-2">
-        <span className="w-1 h-1 rounded-full bg-white/30" /> Email Templates
-      </li>
-      <li className="flex items-center gap-2">
-        <span className="w-1 h-1 rounded-full bg-white/30" /> Team Access
-      </li>
-      <li className="flex items-center gap-2">
-        <span className="w-1 h-1 rounded-full bg-white/30" /> Billing
-      </li>
-      <li className="flex items-center gap-2">
-        <span className="w-1 h-1 rounded-full bg-white/30" /> Notifications
-      </li>
-    </ul>
-  </div>
-</nav>
-</div>
-</aside>
-
-
-
-{/* ── CONTENT ── */}
-<main className="flex-1 min-w-0">
-{activeSection === 'overview' && (
-  <OverviewTab
-    company={company}
-    color1={color1}
-    color2={color2}
-    logoPreview={logoPreview}
-    isEditingBrand={isEditingBrand}
-    setIsEditingBrand={setIsEditingBrand}
-    companyName={companyName}
-    setCompanyName={setCompanyName}
-    companyEmail={companyEmail}
-    setCompanyEmail={setCompanyEmail}
-    companyPhone={companyPhone}
-    setCompanyPhone={setCompanyPhone}
-    formatPhone={formatPhone}
-    companyWebsite={companyWebsite}
-    setCompanyWebsite={setCompanyWebsite}
-    setLogoFile={setLogoFile}
-    setLogoPreview={setLogoPreview}
-    setColor1={setColor1}
-    setColor2={setColor2}
-  brandSaving={brandSaving}
-    brandSaved={brandSaved}
-    brandError={brandError}
-    onSaveBranding={handleSaveBranding}
-    qrCodeUrl={qrCodeUrl}
-    onShowQrModal={() => setShowQrModal(true)}
-    publicLink={publicLink}
-    copied={copied}
-    onCopy={handleCopy}
-    checklistSteps={checklistSteps}
-    onNavigateSection={(section) => setActiveSection(section as SectionKey)}
-  />
-)}
 
         <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'form' ? 'block' : 'none' }}>
           <FormTab company={company} currentUser={currentUser} />
@@ -542,10 +519,29 @@ const checklistSteps: ChecklistStep[] = [
         <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'reviews' ? 'block' : 'none' }}>
           <GoogleReviewsTab company={company} locked={reviewsLocked} />
         </div>
-
       </main>
 
-   {/* ── FAQ MODAL ── */}
+      {/* ── MOBILE BOTTOM NAVIGATION BAR ── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 flex items-center justify-around px-2 py-1.5 shadow-lg">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeSection === item.key;
+          return (
+            <button
+              key={item.key}
+              onClick={() => setActiveSection(item.key as SectionKey)}
+              className={`flex flex-col items-center gap-1 py-1 px-3 rounded-lg text-xs font-medium transition-colors ${
+                isActive ? 'text-[#4ade80]' : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px]">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* ── FAQ MODAL ── */}
       {showFaqModal && <FaqModal onClose={() => setShowFaqModal(false)} />}
 
       {/* ── QR MODAL ── */}
@@ -594,15 +590,6 @@ const checklistSteps: ChecklistStep[] = [
   );
 }
 
-function PlaceholderSection({ label, note }: { label: string; note: string }) {
-  return (
-    <div className="max-w-3xl mx-auto py-16 text-center border border-dashed border-slate-300 rounded-lg">
-      <p className="text-sm font-medium text-slate-500">{label} goes here</p>
-      <p className="text-xs text-slate-400 mt-1 px-6">{note}</p>
-    </div>
-  );
-}
-
 function LockedSection({ label, companySlug }: { label: string; companySlug: string }) {
   return (
     <div className="max-w-3xl mx-auto py-16 text-center bg-white border border-slate-200 rounded-lg">
@@ -612,16 +599,5 @@ function LockedSection({ label, companySlug }: { label: string; companySlug: str
         Upgrade to Basic
       </a>
     </div>
-  );
-}
-
-function SidebarSubItem({ label, href }: { label: string; href: string }) {
-  return (
-    <a
-      href={href}
-      className="flex items-center gap-3 px-3 py-2 text-[13px] text-slate-300 hover:text-white hover:bg-[#3e4046]/50 rounded-lg transition-colors pl-8"
-    >
-      {label}
-    </a>
   );
 }
