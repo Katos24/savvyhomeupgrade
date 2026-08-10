@@ -246,6 +246,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       .then(r => r.json())
       .then(data => {
         if (data.success && data.lead) {
+                  console.log('refreshModalLead status:', data.lead.status);
+
           setSelectedLead(data.lead);
           setSelectedLeadPayments(data.payments || []);
           setSelectedLeadActivity(data.activity || []);
