@@ -80,20 +80,20 @@ export default function MobileTabBar({ lead, company, activeTab, onTabChange, on
     return (
       <button
         onClick={() => handleSelect(tab)}
-        className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0"
+        className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-w-0"
       >
         <div className="relative">
           <Icon
-            className="w-5 h-5"
-            style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.4)' }}
+            className="w-6 h-6"
+            style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
           />
           {tab.locked && (
-            <Sparkles className="w-2.5 h-2.5 text-yellow-400 absolute -top-1 -right-1.5" />
+            <Sparkles className="w-3 h-3 text-yellow-400 absolute -top-1 -right-1.5" />
           )}
         </div>
         <span
-          className="text-[10px] font-medium truncate max-w-full"
-          style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.4)' }}
+          className="text-[11px] font-medium truncate max-w-full"
+          style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
         >
           {LABELS[tab.id]}
         </span>
@@ -157,15 +157,15 @@ export default function MobileTabBar({ lead, company, activeTab, onTabChange, on
         {overflow.length > 0 && (
           <button
             onClick={() => setShowMore(true)}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1.5 min-w-0"
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-w-0"
           >
             <MoreHorizontal
-              className="w-5 h-5"
-              style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.4)' }}
+              className="w-6 h-6"
+              style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
             />
             <span
-              className="text-[10px] font-medium"
-              style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.4)' }}
+              className="text-[11px] font-medium"
+              style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
             >
               More
             </span>

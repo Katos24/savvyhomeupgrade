@@ -2,26 +2,21 @@
 
 import React from 'react';
 import { useState } from 'react';
-import {
-  ChevronDown, X, MoreVertical, Sparkles, User, Calendar, FileText,
-  CreditCard, ListChecks, ImageIcon, MessageCircle, Bell,
-} from 'lucide-react';
+import { ChevronDown, X, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { can, type PlanTier } from '@/lib/permissions';
 
 type LeadModalHeaderProps = {
   lead: any;
   company?: any;
   currentUser?: any;
   statusOptions: any[];
+  /** Still needed here — drives the mobile-only snapshot-row visibility. */
   activeTab: string;
-  onTabChange: (tab: string) => void;
   onClose: () => void;
   onMoreMenu?: () => void;
   onStatusChange: (status: string) => void;
   isUpdatingStatus?: boolean;
   companySlug: string;
-  onLockedTab?: (tabId: string) => void;
 };
 
 const fmt = (n: number) =>
@@ -50,20 +45,16 @@ const STATUS_HEX: Record<string, string> = {
 
 export default function LeadModalHeader({
   lead,
-  company,
   statusOptions,
   activeTab,
-  onTabChange,
   onClose,
   onMoreMenu,
   onStatusChange,
   isUpdatingStatus,
   companySlug,
-  onLockedTab,
 }: LeadModalHeaderProps) {
   const [showStatusMenu, setShowStatusMenu] = useState(false);
 
-  const planTier = (company?.plan_tier || 'free') as PlanTier;
   const isProject = !!lead.project_id;
 
   const currentStatus = statusOptions.find(s => s.value === lead.status) || statusOptions[0];
@@ -105,17 +96,6 @@ export default function LeadModalHeader({
   // the Quote tab leads with the quote, Invoice with the balance. Only worth
   // the ~40px on Overview.
   const showSnapshotOnMobile = activeTab === 'overview';
-
-  const tabs = [
-    { id: 'overview',  label: 'Overview',  icon: User,          show: true, locked: false },
-    { id: 'quote',     label: 'Quote',     icon: FileText,      show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
-    { id: 'schedule',  label: 'Schedule',  icon: Calendar,      show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
-    { id: 'payment',   label: 'Invoice',   icon: CreditCard,    show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
-    { id: 'tasks',     label: 'Tasks',     icon: ListChecks,    show: isProject || !can(planTier, 'custom_tasks'), locked: !can(planTier, 'custom_tasks') },
-    { id: 'photos',    label: 'Media',     icon: ImageIcon,     show: isProject || !can(planTier, 'docs_on_card'), locked: !can(planTier, 'docs_on_card') },
-    { id: 'reminders', label: 'Reminders', icon: Bell,          show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
-    { id: 'activity',  label: 'Activity',  icon: MessageCircle, show: isProject, locked: false },
-  ].filter(t => t.show);
 
   const categoryLabel =
     lead.category_label ||
@@ -233,41 +213,9 @@ export default function LeadModalHeader({
           </div>
         )}
 
-        {/* ── TABS — desktop/tablet only now. Mobile uses the fixed bottom
-              tab bar (MobileTabBar) rendered by the parent modal instead,
-              matching a native app bottom-nav pattern. ── */}
-        {tabs.length > 1 && (
-          <div className="hidden sm:block py-1.5">
-            <div
-              className="flex items-center overflow-x-auto rounded-[10px] bg-white/5 p-[3px] gap-0.5"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              {tabs.map(tab => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => {
-                      if (tab.locked) { onLockedTab?.(tab.id); return; }
-                      onTabChange(tab.id);
-                    }}
-                    className={`flex-shrink-0 flex items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-1 text-[11px] transition-colors ${
-                      isActive
-                        ? 'bg-white font-semibold text-slate-900'
-                        : tab.locked
-                        ? 'font-medium text-blue-400 hover:bg-white/5'
-                        : 'font-medium text-white/45 hover:bg-white/5 hover:text-white/70'
-                    }`}
-                  >
-                    <tab.icon className="hidden sm:block w-3 h-3 flex-shrink-0" />
-                    {tab.label}
-                    {tab.locked && <Sparkles className="w-2.5 h-2.5 text-yellow-400" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        {/* Tab navigation now lives outside the header entirely:
+              MobileTabBar (bottom, mobile-only) and DesktopSidebarNav
+              (left rail, sm and up), both rendered by the parent modal. */}
 
       </div>
     </div>

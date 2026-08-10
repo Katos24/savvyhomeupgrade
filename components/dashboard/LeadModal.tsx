@@ -10,6 +10,7 @@ import ProjectSection from '@/components/dashboard/ProjectSection';
 import AiBriefTab from '@/components/dashboard/AiBriefTab';
 import LeadModalHeader from '@/components/dashboard/LeadModalHeader';
 import MobileTabBar from '@/components/dashboard/MobileTabBar';
+import DesktopSidebarNav from '@/components/dashboard/DesktopSidebarNav';
 import LeadOverviewTab from '@/components/dashboard/LeadOverviewTab';
 import LeadActivityTab from '@/components/dashboard/LeadActivityTab';
 import CompletionSummaryModal from './CompletionSummaryModal';
@@ -267,24 +268,21 @@ export default function LeadModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-white w-full sm:max-w-4xl sm:rounded-2xl shadow-2xl flex flex-col"
+        className="bg-white w-full sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl sm:rounded-2xl shadow-2xl flex flex-col"
         style={{ maxHeight: '95vh', height: '95vh' }}
         onClick={e => e.stopPropagation()}
       >
         {/* ── HEADER ── */}
         <LeadModalHeader
           lead={{ ...lead, status: selectedStatus }}
-          company={company}
           currentUser={currentUser}
           statusOptions={statusOptions}
           activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab as TopTab)}
           onClose={onClose}
           onMoreMenu={canDelete ? () => setShowMoreMenu(v => !v) : undefined}
           onStatusChange={handleSaveStatusWithCheck}
           isUpdatingStatus={isUpdatingStatus}
           companySlug={companySlug}
-          onLockedTab={setLockedFeatureModal}
         />
 
         {/* ── MORE MENU ── */}
@@ -321,87 +319,98 @@ export default function LeadModal({
           )}
         </AnimatePresence>
 
-        {/* ── BODY ── */}
-        <div
-          className="flex-1 overflow-y-auto bg-gray-50"
-        >
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={{ duration: 0.18 }}
-              className="p-5 sm:p-7 space-y-6"
-            >
-              {/* Overview */}
-              {activeTab === 'overview' && (
-                <LeadOverviewTab
-                  lead={lead}
-                  company={company}
-                  statusOptions={statusOptions}
+        {/* ── BODY — left nav rail (sm+) + scrollable content pane.
+              overflow-hidden on the row lets each side scroll independently
+              instead of the whole row growing with the content. ── */}
+        <div className="flex-1 flex overflow-hidden">
+          <DesktopSidebarNav
+            lead={lead}
+            company={company}
+            activeTab={activeTab}
+            onTabChange={(tab) => setActiveTab(tab as TopTab)}
+            onLockedTab={setLockedFeatureModal}
+          />
 
-                  currentUser={currentUser}
-                  categories={categories}
-                  companySlug={companySlug}
-                  onRefresh={onRefresh}
-                  onAddNote={onAddNote}
-                  relatedLeads={relatedLeads}
-                  onShowHistory={() => setShowHistoryDrawer(true)}
-                  quoteTemplates={quoteTemplates}
-                />
-              )}
+          <div className="flex-1 overflow-y-auto bg-gray-50">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeTab}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -6 }}
+                transition={{ duration: 0.18 }}
+                className="p-5 sm:p-7 space-y-6"
+              >
+                {/* Overview */}
+                {activeTab === 'overview' && (
+                  <LeadOverviewTab
+                    lead={lead}
+                    company={company}
+                    statusOptions={statusOptions}
 
-              {/* Activity */}
-              {activeTab === 'activity' && (
-                <LeadActivityTab
-                  lead={lead}
-                  currentUser={currentUser}
-                  onAddNote={onAddNote}
-                  onRefresh={onRefresh}
-                />
-              )}
+                    currentUser={currentUser}
+                    categories={categories}
+                    companySlug={companySlug}
+                    onRefresh={onRefresh}
+                    onAddNote={onAddNote}
+                    relatedLeads={relatedLeads}
+                    onShowHistory={() => setShowHistoryDrawer(true)}
+                    quoteTemplates={quoteTemplates}
+                  />
+                )}
 
-              {/* AI Brief */}
-              {activeTab === 'ai' && (
-                can(company?.plan_tier as PlanTier, 'ai_brief') ? (
-                  <AiBriefTab
+                {/* Activity */}
+                {activeTab === 'activity' && (
+                  <LeadActivityTab
                     lead={lead}
                     currentUser={currentUser}
-                    company={company}
-                    customerPhotos={customerPhotos}
-                    relatedLeads={relatedLeads}
-                    isProject={isProject}
+                    onAddNote={onAddNote}
                     onRefresh={onRefresh}
                   />
-                ) : (
-                  <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-                    <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-                      <Sparkles className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <h3 className="text-base font-semibold text-gray-900 mb-2">AI brief</h3>
-                    <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
-                      Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
-                    </p>
-                    <a href={`/${companySlug}/admin/settings`}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
-                      Upgrade to Pro — $79.99/mo
-                    </a>
-                  </div>
-                )
-              )}
+                )}
 
-              {/* Project tabs */}
-              {renderProjectTab()}
-            </motion.div>
-          </AnimatePresence>
+                {/* AI Brief */}
+                {activeTab === 'ai' && (
+                  can(company?.plan_tier as PlanTier, 'ai_brief') ? (
+                    <AiBriefTab
+                      lead={lead}
+                      currentUser={currentUser}
+                      company={company}
+                      customerPhotos={customerPhotos}
+                      relatedLeads={relatedLeads}
+                      isProject={isProject}
+                      onRefresh={onRefresh}
+                    />
+                  ) : (
+                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+                      <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
+                        <Sparkles className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <h3 className="text-base font-semibold text-gray-900 mb-2">AI brief</h3>
+                      <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
+                        Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
+                      </p>
+                      <a href={`/${companySlug}/admin/settings`}
+                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
+                        Upgrade to Pro — $79.99/mo
+                      </a>
+                    </div>
+                  )
+                )}
+
+                {/* Project tabs */}
+                {renderProjectTab()}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* ── MOBILE BOTTOM TAB BAR ──
               Sits as a normal flex child at the bottom of the modal shell
               (not position:fixed to the viewport), so it stays inside the
               modal's own rounded/bounded frame instead of the whole screen.
-              Desktop/tablet keeps using the tab strip in the header instead. */}
+              Desktop/tablet uses DesktopSidebarNav (left rail) instead —
+              exactly one nav mechanism is visible at any given width. ── */}
         <MobileTabBar
           lead={lead}
           company={company}
