@@ -8,18 +8,24 @@ import { toast } from 'sonner';
 type Props = {
   isOpen: boolean;
   onClose: () => void;
-  onSelectDateTime: (date: string, time: string) => void;
+  onSelectDateTime: (date: string, time: string, endTime?: string) => void;
   companySlug: string;
   currentScheduledDate?: string;
   currentScheduledTime?: string;
-  selectedTeamMember?: string;
+  currentScheduledEndTime?: string;
+  selectedAssignees?: string[];
+  currentLeadId?: number;
+  bufferMinutes?: number;
+  showEndTime?: boolean;
 };
 
 const TIME_SLOTS = [
-  '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
+  '06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30',
   '10:00', '10:30', '11:00', '11:30', '12:00', '12:30',
   '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
-  '16:00', '16:30', '17:00', '17:30', '18:00',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30',
+  '19:00', '19:30', '20:00', '20:30', '21:00', '21:30',
+  '22:00', '22:30', '23:00',
 ];
 
 function formatTime(time: string) {
@@ -40,11 +46,16 @@ export default function SchedulingCalendarModal({
   companySlug,
   currentScheduledDate,
   currentScheduledTime,
-  selectedTeamMember,
+  currentScheduledEndTime,
+  selectedAssignees = [],
+  currentLeadId,
+  bufferMinutes = 0,
+  showEndTime = false,
 }: Props) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string>('');
+  const [selectedEndTime, setSelectedEndTime] = useState<string>('');
   const [scheduledJobs, setScheduledJobs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -53,8 +64,18 @@ export default function SchedulingCalendarModal({
     setLoading(true);
     fetch(`/api/company/${companySlug}/leads`)
       .then(r => r.json())
-      .then(data => {
-        const jobs = (data.leads || []).filter((l: any) => l.scheduled_date && !l.deleted);
+     .then(data => {
+        const jobs = (data.leads || []).filter((l: any) =>
+          l.scheduled_date && !l.deleted && l.id !== currentLeadId
+        ).map((l: any) => {
+          let extra: string[] = [];
+          try {
+            const raw = l.additional_assignees;
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            extra = Array.isArray(parsed) ? parsed : [];
+          } catch {}
+          return { ...l, all_assignees: [l.assigned_to, ...extra].filter(Boolean) };
+        });
         setScheduledJobs(jobs);
       })
       .catch(() => toast.error('Failed to load schedule'))
@@ -66,7 +87,8 @@ export default function SchedulingCalendarModal({
       setSelectedDate(new Date(y, m - 1, d));
       setCurrentMonth(new Date(y, m - 1, 1));
     }
-    if (currentScheduledTime) setSelectedTime(currentScheduledTime);
+  if (currentScheduledTime) setSelectedTime(currentScheduledTime);
+    if (currentScheduledEndTime) setSelectedEndTime(currentScheduledEndTime);
   }, [isOpen]);
 
   const getJobsForDateStr = (dateStr: string) =>
@@ -84,15 +106,21 @@ export default function SchedulingCalendarModal({
   const toDateStr = (d: Date) =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
-  const handleConfirm = () => {
+const handleConfirm = () => {
     if (!selectedDate || !selectedTime) {
       toast.error('Pick a date and time');
       return;
     }
-    onSelectDateTime(toDateStr(selectedDate), selectedTime);
+    if (showEndTime && selectedEndTime) {
+      const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+      if (toMins(selectedEndTime) <= toMins(selectedTime)) {
+        toast.error('End time must be after start time');
+        return;
+      }
+    }
+    onSelectDateTime(toDateStr(selectedDate), selectedTime, showEndTime ? selectedEndTime : undefined);
     onClose();
   };
-
   if (!isOpen) return null;
 
   return (
@@ -128,10 +156,10 @@ export default function SchedulingCalendarModal({
               <div className="w-8 h-8 rounded-xl bg-[#0F1F3D] flex items-center justify-center">
                 <Calendar size={14} className="text-white" />
               </div>
-              <div>
+            <div>
                 <p className="text-[11px] font-black text-[#0F1F3D] uppercase tracking-widest">Pick Date & Time</p>
-                {selectedTeamMember && (
-                  <p className="text-[9px] text-slate-400 font-bold">{selectedTeamMember}</p>
+                {selectedAssignees.length > 0 && (
+                  <p className="text-[9px] text-slate-400 font-bold">{selectedAssignees.join(', ')}</p>
                 )}
               </div>
             </div>
@@ -192,6 +220,7 @@ export default function SchedulingCalendarModal({
                   const jobs = getJobsForDateStr(dateStr);
                   const hasJobs = jobs.length > 0;
 
+
                   return (
                     <button
                       key={day}
@@ -230,9 +259,18 @@ export default function SchedulingCalendarModal({
                 const dateStr = toDateStr(selectedDate);
                 const jobsOnDay = getJobsForDateStr(dateStr);
 
-                const getConflict = (time: string) => {
+              const getConflict = (time: string) => {
+                  if (bufferMinutes <= 0 || selectedAssignees.length === 0) return null;
                   const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-                  return jobsOnDay.find(j => j.scheduled_time && Math.abs(toMins(time) - toMins(j.scheduled_time)) < 60) || null;
+                  const newStart = toMins(time);
+                  return jobsOnDay.find((j: any) => {
+                    if (!j.scheduled_time) return false;
+                    const overlap = (j.all_assignees || []).some((n: string) => selectedAssignees.includes(n));
+                    if (!overlap) return false;
+                    const existingStart = toMins(j.scheduled_time);
+                    const existingEnd = j.scheduled_end_time ? toMins(j.scheduled_end_time) : existingStart;
+                    return newStart < existingEnd + bufferMinutes && newStart + bufferMinutes > existingStart;
+                  }) || null;
                 };
 
                 const selectedConflict = selectedTime ? getConflict(selectedTime) : null;
@@ -282,6 +320,29 @@ export default function SchedulingCalendarModal({
                       })}
                     </div>
 
+                   {showEndTime && selectedTime && (
+                      <div className="mt-4">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                          End time
+                        </p>
+                        <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                          {TIME_SLOTS.filter(t => t > selectedTime).map(time => (
+                            <button
+                              key={time}
+                              onClick={() => setSelectedEndTime(time)}
+                              className={`shrink-0 px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95 ${
+                                selectedEndTime === time
+                                  ? 'bg-[#1a6645] text-white shadow-lg shadow-[#1a6645]/20'
+                                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                              }`}
+                            >
+                              {formatTime(time)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     {/* Conflict warning */}
                     <AnimatePresence>
                       {selectedConflict && (
@@ -309,7 +370,7 @@ export default function SchedulingCalendarModal({
 
           {/* Footer */}
           <div className="px-4 py-4 border-t border-slate-100 bg-white">
-            {selectedDate && selectedTime ? (
+            {selectedDate && selectedTime && (!showEndTime || selectedEndTime) ? (
               <motion.button
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -318,10 +379,11 @@ export default function SchedulingCalendarModal({
               >
                 <Check size={14} strokeWidth={3} />
                 Confirm — {formatDateDisplay(selectedDate)} at {formatTime(selectedTime)}
+                {showEndTime && selectedEndTime ? ` – ${formatTime(selectedEndTime)}` : ''}
               </motion.button>
             ) : (
               <div className="w-full py-4 bg-slate-100 text-slate-400 rounded-2xl text-[11px] font-black uppercase tracking-widest text-center">
-                {!selectedDate ? 'Select a date' : 'Select a time'}
+                {!selectedDate ? 'Select a date' : !selectedTime ? 'Select a time' : 'Select an end time'}
               </div>
             )}
           </div>

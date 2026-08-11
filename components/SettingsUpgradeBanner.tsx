@@ -57,12 +57,12 @@ export default function SettingsUpgradeBanner({ planLabel, price, message, compa
             </p>
 
             <a
-              href={`/${companySlug}/admin/settings`}
-              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-400 transition-colors hover:text-blue-300"
-            >
-              Go to Settings <span className="opacity-60">→</span> Billing to upgrade your plan
-              <ArrowRight className="h-3 w-3" />
-            </a>
+         href={`/${companySlug}/home?section=billing`}
+className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-blue-400 transition-colors hover:text-blue-300"
+>
+              Go to Billing to upgrade your plan
+<ArrowRight className="h-3 w-3" />
+</a>
           </div>
         </div>
       </div>

@@ -124,7 +124,7 @@ function UpgradeCard({ title, description, planLabel, priceLabel, features, comp
       )}
 
       <a
-        href={`/${companySlug}/admin/settings`}
+        href={`/${companySlug}/home?section=billing`}
         onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
         className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:opacity-90 transition"
       >
@@ -156,7 +156,7 @@ export function InlineLockBanner({ title, description, planLabel, priceLabel, co
         <p className="text-xs text-white mt-0.5">{description}</p>
       </div>
       <a
-        href={`/${companySlug}/admin/settings`}
+        href={`/${companySlug}/home?section=billing`}
         onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
         className="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-black transition whitespace-nowrap"
       >

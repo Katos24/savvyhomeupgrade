@@ -15,6 +15,7 @@ export const dynamic = 'force-dynamic';
 
 interface Company {
   id: number;
+  business_type?: string;
   name: string;
   slug: string;
   email: string;
@@ -69,9 +70,9 @@ export async function generateMetadata(
 
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
-  const rows = await sql`
+const rows = await sql`
 SELECT
-      id, name, slug, email, phone, website, logo_url, created_at,
+      id, name, slug, email, phone, website, logo_url, created_at, business_type,
       email_brand_color_1, email_brand_color_2,
       subscription_status, trial_ends_at, plan_tier,
       status_options, form_categories, custom_questions,

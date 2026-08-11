@@ -23,7 +23,7 @@ export default function StandaloneUpgradeOverlay({
         <p className="text-[13px] text-slate-500 mb-6 leading-relaxed">{prompt.description}</p>
       )}
       <a
-        href={`/${companySlug}/admin/settings`}
+        href={`/${companySlug}/home?section=billing`}
         className="inline-flex flex-wrap items-center justify-center gap-1.5 px-5 py-2.5 rounded-lg text-[13px] font-medium text-white bg-indigo-600 hover:bg-indigo-700 transition"
       >
         <span>Upgrade to {config.label}</span>

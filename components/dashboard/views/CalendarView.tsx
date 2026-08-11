@@ -61,6 +61,20 @@ function timeRank(timeStr?: string): number {
   return h * 60 + (m || 0);
 }
 
+/** Primary assignee plus any additional staff, for display. Handles
+ *  additional_assignees arriving as a JSON string or already-parsed array —
+ *  JSONB columns come back inconsistently in this codebase. */
+function allAssignees(lead: any): string[] {
+  const names: string[] = [];
+  if (lead?.assigned_to) names.push(lead.assigned_to);
+  try {
+    const raw = lead?.additional_assignees;
+    const extra = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (Array.isArray(extra)) names.push(...extra.filter(Boolean));
+  } catch {}
+  return names;
+}
+
 export default function CalendarView({
   leads,
   onSelectLead,
@@ -397,10 +411,10 @@ export default function CalendarView({
                       <div className={`mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[12px] ${textBody}`}>
                         <span className="truncate">{lead.category?.replace(/_/g, ' ') || 'General'}</span>
                         <span className="opacity-60">{label}</span>
-                        {lead.assigned_to && (
+                       {allAssignees(lead).length > 0 && (
                           <span className="inline-flex items-center gap-1 truncate">
                             <User className="w-3 h-3 shrink-0" />
-                            {lead.assigned_to}
+                            {allAssignees(lead).join(', ')}
                           </span>
                         )}
                         {address && (

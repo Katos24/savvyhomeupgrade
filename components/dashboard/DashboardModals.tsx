@@ -445,7 +445,7 @@ export function LockedFeatureModal({ featureKey, companySlug, onClose }: LockedF
             Maybe Later
           </button>
           <a
-            href={`/${companySlug}/admin/settings`}
+            href={`/${companySlug}/home?section=billing`}
             className="py-4 text-white font-black text-sm rounded-xl transition text-center shadow-lg active:scale-[0.97]"
             style={{
               background: 'linear-gradient(135deg, #3b82f6, #6366f1)',

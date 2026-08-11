@@ -1,7 +1,7 @@
 'use client';
 
-import { useRef } from 'react';
-import {
+import { useRef, useState, useEffect } from 'react';
+import { getSchedulingConfig } from '@/lib/schedulingConfig';import {
   MapPin,
   Home,
   HelpCircle,
@@ -33,6 +33,8 @@ type FieldConfig = {
 };
 
 interface StepTwoProps {
+  companySlug?: string;
+  businessType?: string;
   formData: {
     address_line_1: string;
     address_line_2: string;
@@ -41,6 +43,7 @@ interface StepTwoProps {
     lead_source: string;
     preferred_date: string;
     preferred_time: string;
+    preferred_end_time: string;
   };
   customAnswers: Record<string, any>;
   customQuestions: CustomQuestion[];
@@ -76,6 +79,8 @@ const inputClass =
   'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50';
 
 export default function UploadFormStepTwo({
+  companySlug,
+  businessType,
   formData,
   customAnswers,
   customQuestions,
@@ -108,6 +113,52 @@ const inputRef = useRef<HTMLInputElement | null>(null);
   const showAddress = fieldConfig.address.enabled;
   const showDate = fieldConfig.preferred_date.enabled;
   const showTime = fieldConfig.preferred_time.enabled;
+
+ const showEndTime = showTime && getSchedulingConfig(businessType).showEndTime;
+
+  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+
+  const [endSlots, setEndSlots] = useState<{ time: string; available: boolean }[]>([]);
+  const [endSlotsLoading, setEndSlotsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!showTime || !formData.preferred_date || !companySlug) {
+      setSlots([]);
+      return;
+    }
+    setSlotsLoading(true);
+    fetch(`/api/company/${companySlug}/availability?date=${formData.preferred_date}`)
+      .then((r) => r.json())
+      .then((data) => setSlots(data.success ? data.slots : []))
+      .catch(() => setSlots([]))
+      .finally(() => setSlotsLoading(false));
+  }, [formData.preferred_date, companySlug, showTime]);
+
+  // Refetch end-time options whenever the chosen start changes. A previously
+  // picked end time can become invalid if the start changes — clearing it
+  // rather than leaving a stale, unvalidated value in the form.
+  useEffect(() => {
+    if (!showEndTime || !formData.preferred_date || !formData.preferred_time || !companySlug) {
+      setEndSlots([]);
+      return;
+    }
+    onChange('preferred_end_time', '');
+    setEndSlotsLoading(true);
+    fetch(`/api/company/${companySlug}/availability?date=${formData.preferred_date}&start=${formData.preferred_time}`)
+      .then((r) => r.json())
+      .then((data) => setEndSlots(data.success ? data.slots : []))
+      .catch(() => setEndSlots([]))
+      .finally(() => setEndSlotsLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.preferred_time, formData.preferred_date, companySlug, showEndTime]);
+
+  const formatSlotLabel = (t: string) => {
+    const [h, m] = t.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const hour = h % 12 || 12;
+    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+  };
   const showLeadSource = fieldConfig.lead_source.enabled;
   const showFileUpload = fieldConfig.file_upload.enabled;
 
@@ -222,17 +273,69 @@ const inputRef = useRef<HTMLInputElement | null>(null);
 />
                 </div>
               )}
-              {showTime && (
-                <div>
+             {showTime && (
+                <div className={showDate && showTime ? 'col-span-2' : ''}>
                   <label className={labelClass}>Preferred Time</label>
-                  <input
-                    type="text"
-                    value={formData.preferred_time}
-                    onChange={e => onChange('preferred_time', e.target.value)}
-                    className={`${inputClass} mt-2`}
-                    placeholder="Morning, 2PM..."
-                    disabled={disabled}
-                  />
+                  {!formData.preferred_date ? (
+                    <p className="mt-2 text-sm font-medium text-gray-400">Pick a date first to see open times.</p>
+                  ) : slotsLoading ? (
+                    <p className="mt-2 text-sm font-medium text-gray-400">Checking availability...</p>
+                  ) : (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {slots.map((slot) => {
+                        const selected = formData.preferred_time === slot.time;
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            disabled={disabled || !slot.available}
+                            onClick={() => onChange('preferred_time', slot.time)}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+                              !slot.available
+                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed line-through'
+                                : selected
+                                ? 'text-white border-transparent shadow-sm bg-blue-600'
+                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {formatSlotLabel(slot.time)}
+                          </button>
+                        );
+                      })}
+                   </div>
+                  )}
+                </div>
+              )}
+
+              {showEndTime && formData.preferred_time && (
+                <div className={showDate && showTime ? 'col-span-2' : ''}>
+                  <label className={labelClass}>Preferred End Time</label>
+                  {endSlotsLoading ? (
+                    <p className="mt-2 text-sm font-medium text-gray-400">Checking availability...</p>
+                  ) : (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {endSlots.map((slot) => {
+                        const selected = formData.preferred_end_time === slot.time;
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            disabled={disabled || !slot.available}
+                            onClick={() => onChange('preferred_end_time', slot.time)}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+                              !slot.available
+                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed line-through'
+                                : selected
+                                ? 'text-white border-transparent shadow-sm bg-blue-600'
+                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {formatSlotLabel(slot.time)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
+import { getSchedulingConfig } from '@/lib/schedulingConfig';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 
 function getStripeState(company: any): 'active' | 'pending' | 'restricted' | 'none' {
@@ -157,8 +158,7 @@ type OverviewTabProps = {
   publicLink: string;
   copied: boolean;
   onCopy: () => void;
-  checklistSteps: ChecklistStep[];
-  onNavigateSection: (section: string) => void;
+ onNavigateSection: (section: string) => void;
 };
 
 function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refreshToken?: number }) {
@@ -283,7 +283,6 @@ export default function OverviewTab({
   publicLink,
   copied,
   onCopy,
-  checklistSteps,
   onNavigateSection,
 }: OverviewTabProps) {
   const [emailError, setEmailError] = useState('');
@@ -297,8 +296,38 @@ export default function OverviewTab({
   const [bccEnabled, setBccEnabled] = useState(company.bcc_sender_on_email ?? false);
   const [bccSaving, setBccSaving] = useState(false);
 
-  const doneCount = checklistSteps.filter((s) => s.done).length;
-  const isFreePlan = planTier === 'free';
+  const showBookingSettings = getSchedulingConfig(company.business_type).showEndTime;
+  const [maxConcurrent, setMaxConcurrent] = useState(String(company.max_concurrent_bookings || 1));
+  const [maxConcurrentSaving, setMaxConcurrentSaving] = useState(false);
+  const [maxConcurrentSaved, setMaxConcurrentSaved] = useState(false);
+  const [maxConcurrentError, setMaxConcurrentError] = useState('');
+
+  const handleSaveCapacity = async () => {
+    const val = parseInt(maxConcurrent, 10);
+    if (isNaN(val) || val < 1) {
+      setMaxConcurrentError('Enter a number of 1 or more.');
+      return;
+    }
+    setMaxConcurrentError('');
+    setMaxConcurrentSaving(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-capacity', data: { max_concurrent_bookings: val } }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to save');
+      setMaxConcurrentSaved(true);
+      setTimeout(() => setMaxConcurrentSaved(false), 2000);
+    } catch (err) {
+      setMaxConcurrentError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setMaxConcurrentSaving(false);
+    }
+  };
+
+ const isFreePlan = planTier === 'free';
   const missingLogo = !company.logo_url && !logoPreview;
 
   useEffect(() => {
@@ -428,55 +457,7 @@ export default function OverviewTab({
           </Link>
         </div>
 
-        {/* 1. Setup Checklist - Utility Bar Layout */}
-        {doneCount < checklistSteps.length && (
-          <div className="rounded border border-slate-300 bg-white">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2.5">
-              <span className="text-[10px] font-black uppercase tracking-wider text-slate-600">
-                Setup Progress ({doneCount}/{checklistSteps.length})
-              </span>
-              <div className="h-1.5 w-32 rounded-full bg-slate-200 overflow-hidden">
-                <div
-                  className="h-full bg-slate-900 transition-all duration-300"
-                  style={{ width: `${(doneCount / checklistSteps.length) * 100}%` }}
-                />
-              </div>
-            </div>
-
-            <div className="divide-y divide-slate-100">
-              {checklistSteps.map((step) => {
-                const content = (
-                  <div className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition group">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                        step.done ? 'border-emerald-600 bg-emerald-600 text-white' : 'border-slate-300 bg-white'
-                      }`}>
-                        {step.done && <Check className="h-3 w-3 stroke-[3]" />}
-                      </div>
-                      <div>
-                        <p className={`text-xs font-bold ${step.done ? 'text-slate-400 line-through' : 'text-slate-900'}`}>
-                          {step.label}
-                        </p>
-                        <p className="text-[11px] text-slate-500">{step.description}</p>
-                      </div>
-                    </div>
-                    {!step.done && <ChevronRight className="h-4 w-4 text-slate-400 group-hover:text-slate-700" />}
-                  </div>
-                );
-
-                return step.kind === 'link' ? (
-                  <a key={step.label} href={step.href} className="block">
-                    {content}
-                  </a>
-                ) : (
-                  <button key={step.label} onClick={() => onNavigateSection(step.section)} className="w-full text-left">
-                    {content}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+     
 
         {/* 2. Main Company Profile Card */}
         <div className="rounded border border-slate-200 bg-white">
@@ -750,6 +731,50 @@ export default function OverviewTab({
                 </div>
               </div>
             </div>
+
+            {/* Booking Settings — only for business types with start/end time scheduling */}
+            {showBookingSettings && (
+              <div className="border-t border-slate-200 pt-5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Bell className="h-4 w-4 text-slate-700" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-900">
+                    Booking Settings
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500 mb-3">
+                  How many bookings your team can run at the same time. This controls what shows as available on your public booking form.
+                </p>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 rounded border border-slate-200 bg-slate-50/50 p-4">
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-slate-900">Simultaneous bookings</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">
+                      e.g. if your team can staff 3 events at once, set this to 3.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <input
+                      type="number"
+                      min="1"
+                      value={maxConcurrent}
+                      onChange={(e) => { setMaxConcurrent(e.target.value); setMaxConcurrentError(''); }}
+                      className="w-20 rounded border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-slate-900"
+                    />
+                    <button
+                      onClick={handleSaveCapacity}
+                      disabled={maxConcurrentSaving}
+                      className="inline-flex items-center gap-1.5 rounded bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      {maxConcurrentSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : maxConcurrentSaved ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
+                      {maxConcurrentSaved ? 'Saved' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+                {maxConcurrentError && (
+                  <p className="mt-1.5 text-xs font-bold text-rose-600">{maxConcurrentError}</p>
+                )}
+              </div>
+            )}
 
             {/* Public Booking Link Card */}
             <div className="border-t border-slate-200 pt-5">

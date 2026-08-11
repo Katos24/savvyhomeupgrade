@@ -106,7 +106,7 @@ const SHARE_SPOTS: ShareSpot[] = [
 function UpgradePill({ companySlug }: { companySlug: string }) {
   return (
     <a
-      href={`/${companySlug}/admin/settings`}
+      href={`/${companySlug}/home?section=billing`}
       className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-2 text-white transition hover:bg-amber-700"
     >
       <Lock className="h-3 w-3" />
@@ -125,7 +125,7 @@ function UpgradeNotice({ companySlug, feature }: { companySlug: string; feature:
         </p>
       </div>
       <a
-        href={`/${companySlug}/admin/settings`}
+        href={`/${companySlug}/home?section=billing`}
         className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-amber-700"
       >
         Upgrade <ArrowUpRight className="h-3.5 w-3.5" />

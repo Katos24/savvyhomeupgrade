@@ -13,6 +13,7 @@ import {
   DollarSign,
   Clock,
   CheckCircle2,
+  Users,
   LucideIcon 
 } from 'lucide-react';
 
@@ -46,7 +47,8 @@ export const BUSINESS_TYPES: BusinessType[] = [
   { value: 'home_services', label: 'Home Services', icon: Home },
   { value: 'cleaning_services', label: 'Cleaning Services', icon: Brush },
   { value: 'auto_services', label: 'Auto Services', icon: Car },
-  { value: 'tech_services', label: 'Tech Services', icon: Laptop },
+{ value: 'tech_services', label: 'Tech Services', icon: Laptop },
+  { value: 'staffing', label: 'Staffing & Event Services', icon: Users },
   { value: 'general', label: 'General Services', icon: FileText },
   { value: 'other', label: 'Other', icon: PlusCircle },
 ];
@@ -103,6 +105,7 @@ export const ADDRESS_CONFIG: Record<string, { show: boolean; required: boolean }
   cleaning_services: { show: true, required: true },
   auto_services: { show: true, required: false },
   tech_services: { show: false, required: false },
+  staffing: { show: true, required: true }, // event/venue address matters for staffing bookings
   general: { show: false, required: false },
   other: { show: false, required: false },
 };
@@ -171,6 +174,13 @@ export const CATEGORY_MAP: Record<string, Category[]> = {
     { value: 'repair', label: 'Hardware Repair' },
     { value: 'other', label: 'Other' },
   ],
+  staffing: [
+    { value: 'waitstaff', label: 'Waitstaff' },
+    { value: 'bartending', label: 'Bartending' },
+    { value: 'event_staff', label: 'Event Staff' },
+    { value: 'security_staff', label: 'Security Staff' },
+    { value: 'other', label: 'Other' },
+  ],
   general: [
     { value: 'consultation', label: 'Consultation' },
     { value: 'repair', label: 'General Repair' },
@@ -191,6 +201,7 @@ export const DESCRIPTION_PLACEHOLDERS: Record<string, string> = {
   cleaning_services: "e.g. Deep clean of a 3BR/2BA home...",
   auto_services: "e.g. 2018 Honda Accord brake issue...",
   tech_services: "e.g. Laptop won't turn on...",
+  staffing: "e.g. Need 3 waitstaff for a wedding reception, 5pm-11pm...",
   general: "e.g. Describe what you need done...",
   other: "e.g. Describe what you need done...",
 };

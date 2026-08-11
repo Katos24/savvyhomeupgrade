@@ -190,6 +190,7 @@ export default function ProjectSection({
           {planningTab === 'schedule' && (
             <SchedulingSection
               lead={lead}
+              company={company}
               currentUser={currentUser}
               onRefresh={onRefresh}
               hasProject={hasProject}

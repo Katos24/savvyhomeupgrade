@@ -960,26 +960,28 @@ ${invoiceNumber} · ${fmt(invoiceTotal)}${isDepositCollection ? ` · ${fmt(payBu
 
 export async function sendScheduleConfirmation({
   customerEmail,
-  customerName,
-  companyName,
-  companyPhone,
-  companyId,
-  scheduledDate,
-  scheduledTime,
-  serviceAddress,
-  assignedTo,
-  contractorEmail,
+customerName,
+companyName,
+companyPhone,
+companyId,
+scheduledDate,
+scheduledTime,
+scheduledEndTime,
+serviceAddress,
+assignedTo,
+contractorEmail,
 }: {
-  customerEmail: string;
-  customerName: string;
-  companyName: string;
-  companyPhone?: string;
-  companyId: number;
-  scheduledDate: string;
-  scheduledTime?: string;
-  serviceAddress?: string;
-  assignedTo?: string;
-  contractorEmail?: string;
+customerEmail: string;
+customerName: string;
+companyName: string;
+companyPhone?: string;
+companyId: number;
+scheduledDate: string;
+scheduledTime?: string;
+scheduledEndTime?: string;
+serviceAddress?: string;
+assignedTo?: string;
+contractorEmail?: string;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -991,13 +993,17 @@ export async function sendScheduleConfirmation({
       weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
     });
 
-    let formattedTime = scheduledTime || 'TBD';
-    if (scheduledTime) {
-      const [hours, minutes] = scheduledTime.split(':');
-      const hour = parseInt(hours);
-      const ampm = hour >= 12 ? 'PM' : 'AM';
-      const hour12 = hour % 12 || 12;
-      formattedTime = `${hour12}:${minutes} ${ampm}`;
+   const format12Hour = (t: string) => {
+const [hours, minutes] = t.split(':');
+const hour = parseInt(hours);
+const ampm = hour >= 12 ? 'PM' : 'AM';
+const hour12 = hour % 12 || 12;
+return `${hour12}:${minutes} ${ampm}`;
+    };
+
+let formattedTime = scheduledTime ? format12Hour(scheduledTime) : 'TBD';
+if (scheduledEndTime) {
+formattedTime += ` – ${format12Hour(scheduledEndTime)}`;
     }
 
     const variables = {

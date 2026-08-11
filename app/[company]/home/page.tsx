@@ -86,7 +86,7 @@ async function verifyAuth(companySlug: string): Promise<any> {
   const sql = neon(process.env.DATABASE_URL!);
 
   const access = await sql`
-    SELECT c.slug
+    SELECT c.slug, u.role
     FROM users u
     JOIN companies c ON u.company_id = c.id
     WHERE u.id = ${decoded.userId}
@@ -105,7 +105,7 @@ async function verifyAuth(companySlug: string): Promise<any> {
     redirect(own.length ? `/${own[0].slug}/home` : '/login');
   }
 
-  return decoded;
+  return { ...decoded, role: access[0].role };
 }
 
 // ---------------------------------------------------------------------------
@@ -124,5 +124,5 @@ export default async function CompanyHomePage({
   const company = await getHomeData(companySlug);
   if (!company) notFound();
 
-  return <HomeClient company={company as any} currentUser={{ id: decoded.userId }} />;
+  return <HomeClient company={company as any} currentUser={{ id: decoded.userId, role: decoded.role }} />;
 }

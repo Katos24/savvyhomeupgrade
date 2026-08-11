@@ -74,9 +74,9 @@ export default function UploadForm({
   const [step1Data, setStep1Data] = useState({
     name: '', email: '', phone: '', category: '', description: '',
   });
-  const [step2Data, setStep2Data] = useState({
+ const [step2Data, setStep2Data] = useState({
     address_line_1: '', address_line_2: '', city: '', zip_code: '',
-    lead_source: '', preferred_date: '', preferred_time: '',
+    lead_source: '', preferred_date: '', preferred_time: '', preferred_end_time: '',
   });
   const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
   const [files, setFiles] = useState<File[]>([]);
@@ -293,8 +293,9 @@ export default function UploadForm({
           city: step2Data.city || null,
           zip_code: step2Data.zip_code || null,
           lead_source: step2Data.lead_source || null,
-          preferred_date: step2Data.preferred_date || null,
+         preferred_date: step2Data.preferred_date || null,
           preferred_time: step2Data.preferred_time || null,
+          preferred_end_time: step2Data.preferred_end_time || null,
           custom_answers: customAnswers,
           file_urls: uploadedFiles,
         }),
@@ -373,8 +374,10 @@ export default function UploadForm({
         )}
       </main>
 
-      {step === 2 && (
+     {step === 2 && (
         <UploadFormStepTwo
+          companySlug={finalCompanySlug}
+          businessType={businessType}
           formData={step2Data}
           customAnswers={customAnswers}
           customQuestions={customQuestions}

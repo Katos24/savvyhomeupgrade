@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, CheckSquare, Trash2, Save, AlertTriangle, Layers, DollarSign,
-  AlertCircle, Lock, Check, Percent, HandCoins,
+  AlertCircle, Lock, Check, Percent, HandCoins, Clock,
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -64,7 +64,7 @@ function LockedCategoriesSection({ companySlug }: { companySlug: string }) {
           <Lock className="mx-auto mb-3 h-6 w-6 text-stone-300" />
           <p className="text-sm font-bold text-stone-800">Categories &amp; pricing is on the Basic plan</p>
           <a
-            href={`/${companySlug}/admin/settings`}
+            href={`/${companySlug}/home?section=billing`}
             className="mt-4 inline-block rounded-lg bg-stone-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-stone-800"
           >
             Upgrade to Basic
@@ -94,10 +94,12 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [newCatError, setNewCatError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; label: string } | null>(null);
 
-  const [taskEditorCatIndex, setTaskEditorCatIndex] = useState<number | null>(null);
+ const [taskEditorCatIndex, setTaskEditorCatIndex] = useState<number | null>(null);
   const [editingTasks, setEditingTasks] = useState<TaskTemplate[]>([]);
   const [newTaskLabel, setNewTaskLabel] = useState('');
   const [taskInputError, setTaskInputError] = useState(false);
+
+ 
 
   const [quoteTemplates, setQuoteTemplates] = useState<QuoteTemplate[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
@@ -350,6 +352,8 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     setTaskEditorCatIndex(null);
     setIsDirty(false);
   };
+
+
 
   const openQuoteEditor = (catValue: string) => {
     const existing = quoteTemplates.find(t => t.category === catValue);
@@ -737,7 +741,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                     <DollarSign className="h-3 w-3" />
                     {quoteTemplate ? `${quoteTemplate.items.length} Item${quoteTemplate.items.length !== 1 ? 's' : ''}` : 'No Pricing'}
                   </span>
-                  {hasDeposit && (
+                 {hasDeposit && (
                     <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-400">
                       <HandCoins className="h-3 w-3" />
                       {quoteTemplate!.deposit_type === 'percent'
@@ -747,7 +751,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => openTaskEditor(index)}
                     className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-[11px] font-black uppercase tracking-widest text-gray-400 transition-all hover:border-indigo-600 hover:bg-indigo-600 hover:text-white"
@@ -876,6 +880,8 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
             </div>
           </div>
         )}
+
+    
 
         {/* ── PRICING TEMPLATE MODAL ── */}
         {quoteEditorOpen && (

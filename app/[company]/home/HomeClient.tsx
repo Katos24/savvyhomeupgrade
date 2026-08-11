@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   LayoutDashboard,
   Lock,
@@ -12,10 +13,15 @@ import {
   CreditCard,
   Settings as SettingsIcon,
   Menu,
+  Rocket,
+  Workflow,
+  Mail,
+  Users,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
 import FaqModal from '@/components/FaqModal';
+
 
 // Real sections you already have code for
 import CategoriesTab from '@/app/[company]/admin/settings/tabs/CategoriesTab';
@@ -23,6 +29,11 @@ import PaymentsTab from '@/app/[company]/admin/settings/tabs/PaymentsTab';
 import FormTab from '@/app/[company]/admin/settings/tabs/FormTab';
 import GoogleReviewsTab from '@/app/[company]/admin/settings/tabs/GoogleReviewsTab';
 import OverviewTab from '@/app/[company]/admin/settings/tabs/OverviewTab';
+import SetupTab from '@/app/[company]/admin/settings/tabs/SetupTab';
+import PipelineTab from '@/app/[company]/admin/settings/tabs/PipelineTab';
+import EmailTemplatesTab from '@/app/[company]/admin/settings/tabs/EmailTemplatesTab';
+import TeamTab from '@/app/[company]/admin/settings/tabs/TeamTab';
+import BillingTab from '@/app/[company]/admin/settings/tabs/BillingTab';
 
 type Company = {
   id: number;
@@ -48,7 +59,7 @@ type Company = {
   stripe_connect_onboarded: boolean;
   stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
 };
-type SectionKey = 'overview' | 'form' | 'categories' | 'payments' | 'reviews';
+type SectionKey = 'setup' | 'overview' | 'form' | 'categories' | 'payments' | 'reviews' | 'pipeline' | 'email-templates' | 'team' | 'billing';
 
 type ChecklistStep =
   | { label: string; description: string; done: boolean; kind: 'section'; section: SectionKey }
@@ -130,8 +141,10 @@ function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
 }
 
 export default function HomeClient({ company: initialCompany, currentUser }: { company: Company; currentUser?: any }) {
-  const [company, setCompany] = useState(initialCompany);
-  const [activeSection, setActiveSection] = useState<SectionKey>('overview');
+ const [company, setCompany] = useState(initialCompany);
+  const searchParams = useSearchParams();
+  const initialSection = (searchParams.get('section') as SectionKey) || 'overview';
+  const [activeSection, setActiveSection] = useState<SectionKey>(initialSection);
 
   const [publicLink, setPublicLink] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -303,16 +316,37 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
   ];
 
-  const sectionLabels: Record<SectionKey, string> = {
+const sectionLabels: Record<SectionKey, string> = {
+    setup: 'Setup',
     overview: 'Overview',
     form: 'Booking form',
     categories: 'Categories',
     payments: 'Payments',
     reviews: 'Reviews',
+    pipeline: 'Pipeline',
+    'email-templates': 'Email Templates',
+    team: 'Team',
+    billing: 'Billing',
   };
 
+  const isAdminOrOwner = currentUser?.role === 'owner' || currentUser?.role === 'admin';
+  // BillingTab itself hard-blocks anyone but owner — gating the nav entry
+  // the same way avoids sending admins to a dead-end screen.
+  const isOwner = currentUser?.role === 'owner';
+
   // Mobile Bottom Bar items including Google Reviews & Settings Link
-  const mobileBottomNavItems = [
+ type MobileNavItem = {
+    key: string;
+    label: string;
+    icon?: React.ElementType;
+    imageUrl?: string;
+    isSection: boolean;
+    locked?: boolean;
+    href?: string;
+  };
+
+  const mobileBottomNavItems: MobileNavItem[] = [
+    { key: 'setup', label: 'Setup', icon: Rocket, isSection: true },
     { key: 'overview', label: 'Overview', icon: LayoutGrid, isSection: true },
     { key: 'form', label: 'Form', icon: FileText, isSection: true },
     { key: 'categories', label: 'Categories', icon: Tags, isSection: true, locked: categoriesLocked },
@@ -324,13 +358,14 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
       isSection: true, 
       locked: reviewsLocked 
     },
-    { 
-      key: 'settings', 
-      label: 'Settings', 
-      icon: SettingsIcon, 
-      isSection: false, 
-      href: `/${company.slug}/admin/settings` 
-    },
+    ...(isAdminOrOwner ? [
+      { key: 'pipeline', label: 'Pipeline', icon: Workflow, isSection: true, locked: !can(planTier, 'settings_pipeline') },
+      { key: 'email-templates', label: 'Email', icon: Mail, isSection: true, locked: !can(planTier, 'settings_email_templates') },
+      { key: 'team', label: 'Team', icon: Users, isSection: true, locked: !can(planTier, 'settings_team') },
+    ] : []),
+    ...(isOwner ? [
+      { key: 'billing', label: 'Billing', icon: CreditCard, isSection: true },
+    ] : []),
   ];
 
   return (
@@ -428,10 +463,21 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
             <p className="px-3 text-[10px] font-bold text-white uppercase tracking-wider mb-2">Management</p>
             <div className="space-y-0.5">
+              <SidebarItem icon={Rocket} label={sectionLabels.setup} active={activeSection === 'setup'} onClick={() => { setActiveSection('setup'); setMobileNavOpen(false); }} />
               <SidebarItem icon={LayoutGrid} label={sectionLabels.overview} active={activeSection === 'overview'} onClick={() => { setActiveSection('overview'); setMobileNavOpen(false); }} />
               <SidebarItem icon={FileText} label={sectionLabels.form} active={activeSection === 'form'} onClick={() => { setActiveSection('form'); setMobileNavOpen(false); }} />
               <SidebarItem icon={Tags} label={sectionLabels.categories} active={activeSection === 'categories'} locked={categoriesLocked} onClick={() => { setActiveSection('categories'); setMobileNavOpen(false); }} />
               <SidebarItem icon={CreditCard} label={sectionLabels.payments} active={activeSection === 'payments'} locked={paymentsLocked} onClick={() => { setActiveSection('payments'); setMobileNavOpen(false); }} />
+              {isAdminOrOwner && (
+                <>
+                  <SidebarItem icon={Workflow} label={sectionLabels.pipeline} active={activeSection === 'pipeline'} locked={!can(planTier, 'settings_pipeline')} onClick={() => { setActiveSection('pipeline'); setMobileNavOpen(false); }} />
+                  <SidebarItem icon={Mail} label={sectionLabels['email-templates']} active={activeSection === 'email-templates'} locked={!can(planTier, 'settings_email_templates')} onClick={() => { setActiveSection('email-templates'); setMobileNavOpen(false); }} />
+                  <SidebarItem icon={Users} label={sectionLabels.team} active={activeSection === 'team'} locked={!can(planTier, 'settings_team')} onClick={() => { setActiveSection('team'); setMobileNavOpen(false); }} />
+                </>
+              )}
+              {isOwner && (
+                <SidebarItem icon={CreditCard} label={sectionLabels.billing} active={activeSection === 'billing'} onClick={() => { setActiveSection('billing'); setMobileNavOpen(false); }} />
+              )}
               <SidebarItem 
                 imageUrl="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" 
                 label={sectionLabels.reviews} 
@@ -442,45 +488,17 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             </div>
           </nav>
 
-          {/* System Section */}
-          <nav className="space-y-0.5 pt-4 border-t border-[#3e4046]">
-            <p className="px-3 text-[10px] font-bold text-white/50 uppercase tracking-wider mb-2">
-              System Settings
-            </p>
-            <a
-              href={`/${company.slug}/admin/settings`}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-white hover:bg-[#3e4046] transition-colors"
-            >
-              <SettingsIcon className="w-4 h-4 text-white" />
-              Settings
-            </a>
-
-            <div className="mt-1 space-y-1 pl-10 pr-3 pb-2">
-              <ul className="text-[12px] text-white/60 space-y-1">
-                <li className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-white/30" /> Pipeline
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-white/30" /> Email Templates
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-white/30" /> Team Access
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-white/30" /> Billing
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-white/30" /> Notifications
-                </li>
-              </ul>
-            </div>
-          </nav>
+       
         </div>
       </aside>
 
       {/* ── CONTENT ── */}
       <main className="flex-1 min-w-0">
-        {activeSection === 'overview' && (
+        {activeSection === 'setup' && (
+          <SetupTab checklistSteps={checklistSteps} onNavigateSection={(section) => setActiveSection(section as SectionKey)} />
+        )}
+
+       {activeSection === 'overview' && (
           <OverviewTab
             company={company}
             color1={color1}
@@ -510,7 +528,6 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             publicLink={publicLink}
             copied={copied}
             onCopy={handleCopy}
-            checklistSteps={checklistSteps}
             onNavigateSection={(section) => setActiveSection(section as SectionKey)}
           />
         )}
@@ -531,9 +548,29 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           )}
         </div>
 
-        <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'reviews' ? 'block' : 'none' }}>
+       <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'reviews' ? 'block' : 'none' }}>
           <GoogleReviewsTab company={company} locked={reviewsLocked} />
         </div>
+
+        {isAdminOrOwner && (
+          <>
+            <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'pipeline' ? 'block' : 'none' }}>
+              <PipelineTab company={company} currentUser={currentUser} />
+            </div>
+            <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'email-templates' ? 'block' : 'none' }}>
+              <EmailTemplatesTab company={company} currentUser={currentUser} />
+            </div>
+           <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'team' ? 'block' : 'none' }}>
+              <TeamTab company={company} currentUser={currentUser} />
+            </div>
+          </>
+        )}
+
+        {isOwner && (
+          <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'billing' ? 'block' : 'none' }}>
+            <BillingTab company={company} currentUser={currentUser} />
+          </div>
+        )}
       </main>
 
       {/* ── HORIZONTALLY SCROLLABLE MOBILE BOTTOM NAV BAR ── */}
@@ -629,7 +666,7 @@ function LockedSection({ label, companySlug }: { label: string; companySlug: str
     <div className="max-w-3xl mx-auto py-16 text-center bg-white border border-slate-200 rounded-lg">
       <Lock className="w-5 h-5 text-slate-300 mx-auto mb-3" />
       <p className="text-sm font-medium text-slate-700">{label} is on the Basic plan</p>
-      <a href={`/${companySlug}/admin/settings`} className="inline-block mt-3 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-colors">
+      <a href={`/${companySlug}/home?section=billing`} className="inline-block mt-3 px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-semibold transition-colors">
         Upgrade to Basic
       </a>
     </div>

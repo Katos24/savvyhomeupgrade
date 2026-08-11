@@ -2,30 +2,20 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  Workflow, Mail, ArrowLeft, Users, CreditCard, ChevronRight,
-  Trash2,  Check, Lock,  Sparkles,
+  ArrowLeft, CreditCard, ChevronRight,
+  Trash2, Check, Lock, Sparkles,
 } from 'lucide-react';
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, UPGRADE_PROMPTS, type PlanTier } from '@/lib/permissions';
 import Link from 'next/link';
-import PipelineTab from './tabs/PipelineTab';
-import EmailTemplatesTab from './tabs/EmailTemplatesTab';
-import TeamTab from './tabs/TeamTab';
 import BillingTab from './tabs/BillingTab';
 
-type Tab = 'pipeline' | 'email-templates' | 'team' | 'billing';
+type Tab = 'billing';
 
 const TAB_LABELS: Record<Tab, string> = {
-  pipeline: 'Pipeline',
-  'email-templates': 'Email Templates',
-  team: 'Team Access',
   billing: 'Subscription Billing',
 };
 
-const TAB_FEATURE_MAP: Partial<Record<Tab, Parameters<typeof can>[1]>> = {
-  pipeline: 'settings_pipeline',
-  'email-templates': 'settings_email_templates',
-  team: 'settings_team',
-};
+const TAB_FEATURE_MAP: Partial<Record<Tab, Parameters<typeof can>[1]>> = {};
 
 function UpgradeOverlay({ feature, companySlug }: { feature: string; companySlug: string }) {
   const prompt = UPGRADE_PROMPTS[feature];
@@ -48,7 +38,7 @@ function UpgradeOverlay({ feature, companySlug }: { feature: string; companySlug
           ))}
         </ul>
       )}
-      <a href={`/${companySlug}/admin/settings`}
+      <a href={`/${companySlug}/home?section=billing`}
         onClick={e => { e.preventDefault(); window.location.href = `/${companySlug}/admin/settings`; }}
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition">
         Upgrade to {config.label}
@@ -147,9 +137,6 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
   const renderUnlockedTab = (tab: Tab, data: any) => {
     switch (tab) {
-      case 'pipeline': return <PipelineTab company={data} currentUser={currentUser} />;
-      case 'email-templates': return <EmailTemplatesTab company={data} currentUser={currentUser} />;
-      case 'team': return <TeamTab company={data} currentUser={currentUser} />;
       case 'billing': return <BillingTab company={data} currentUser={currentUser} />;
       default: return null;
     }
@@ -250,15 +237,7 @@ export default function CompanySettingsClient({ company, currentUser }: { compan
 
    
 
-        {/* ── SYSTEM CONFIGURATION ── */}
-        <div>
-          <p className="text-[11px] font-medium text-white/40 mb-2.5 px-1">System configuration</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            <MenuCard icon={Workflow} label="Pipeline" desc="Customize your lead stages and workflow." color="#f59e0b" onClick={() => openTab('pipeline')} locked={!can(planTier, 'settings_pipeline')} requiredPlan="Basic" />
-            <MenuCard icon={Mail} label="Email Templates" desc="Personalize the emails customers receive." color="#3b82f6" onClick={() => openTab('email-templates')} locked={!can(planTier, 'settings_email_templates')} requiredPlan="Pro" />
-            <MenuCard icon={Users} label="Team" desc="Invite your crew and assign leads." color="#0ea5e9" onClick={() => openTab('team')} locked={!can(planTier, 'settings_team')} requiredPlan="Basic" />
-          </div>
-        </div>
+
 
         {/* ── FOOTER ── */}
         <div className="flex justify-end">

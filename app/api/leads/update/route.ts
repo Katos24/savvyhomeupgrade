@@ -8,6 +8,8 @@ import { formatPhone } from '@/lib/emailTemplates';
 import { stripe } from '@/lib/stripe'
 import { autoAdvanceStatus } from '@/lib/statusAutomation';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
+import { getSchedulingConfig } from '@/lib/schedulingConfig';
+
 
 export async function POST(request: Request) {
   try {
@@ -48,7 +50,10 @@ if (!publicActions.includes(body.action)) {
       payment_amount,
       scheduled_date,
       scheduled_time,
+     scheduled_end_time,
+      event_location,
       assigned_to,
+      additional_assignees,
       estimated_hours,
       actual_hours,
       quote_data,
@@ -267,6 +272,9 @@ if (action === 'update_status') {
           notes,
           before_photos,
           after_photos,
+          scheduled_date,
+          scheduled_time,
+          scheduled_end_time,
           created_at,
           updated_at
         ) VALUES (
@@ -286,6 +294,9 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
           ${JSON.stringify(leadNotes)},
           '[]'::jsonb,
           '[]'::jsonb,
+          ${leadData.preferred_date || null},
+          ${leadData.preferred_time || null},
+          ${leadData.preferred_end_time || null},
           NOW(),
           NOW()
         )
@@ -405,7 +416,7 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
       return NextResponse.json({ success: true });
     }
 
-    // ==================== UPDATE PROJECT ====================
+   // ==================== UPDATE PROJECT ====================
     else if (action === 'update_project') {
       
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${id}`;
@@ -418,12 +429,67 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         }, { status: 400 });
       }
 
-      await sql`
+      // ── Buffer conflict check (industry-gated) ──────────────────
+      // Only runs when SCHEDULING_CONFIG has a buffer > 0 for this company's
+      // business_type. Reads it server-side rather than trusting the client
+      // to send it — the buffer value is a business rule, not user input.
+     if (assigned_to && scheduled_date && scheduled_time) {
+        const companyRow = await sql`
+          SELECT c.business_type, p.company_id
+          FROM projects p
+          JOIN companies c ON c.id = p.company_id
+          WHERE p.id = ${projectId}
+        `;
+        const companyId = companyRow[0]?.company_id;
+        const { bufferMinutes: defaultBufferMinutes } = getSchedulingConfig(companyRow[0]?.business_type);
+
+        if (defaultBufferMinutes > 0) {
+          const sameDay = await sql`
+            SELECT id, scheduled_time, scheduled_end_time
+            FROM projects
+            WHERE company_id = ${companyId}
+              AND assigned_to = ${assigned_to}
+              AND id != ${projectId}
+              AND scheduled_date::date = ${scheduled_date}::date
+              AND status != 'cancelled'
+          `;
+
+          const toMinutes = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+          };
+
+          const newStart = toMinutes(scheduled_time);
+          const newEnd = scheduled_end_time ? toMinutes(scheduled_end_time) : newStart;
+
+          const conflict = sameDay.find((row: any) => {
+            const existingStart = toMinutes(row.scheduled_time);
+            const existingEnd = row.scheduled_end_time ? toMinutes(row.scheduled_end_time) : existingStart;
+            return (
+              newStart < existingEnd + defaultBufferMinutes &&
+              newEnd + defaultBufferMinutes > existingStart
+            );
+          });
+
+          if (conflict) {
+            return NextResponse.json({
+              success: false,
+              error: `${assigned_to} already has a booking too close to this time (needs a ${defaultBufferMinutes}-minute buffer).`,
+              conflict_project_id: conflict.id,
+            }, { status: 409 });
+          }
+        }
+      }
+
+    await sql`
         UPDATE projects 
         SET 
           scheduled_date = ${scheduled_date || null},
           scheduled_time = ${scheduled_time || null},
+         scheduled_end_time = ${scheduled_end_time || null},
+          event_location = ${event_location || null},
           assigned_to = ${assigned_to || null},
+          additional_assignees = ${JSON.stringify(additional_assignees || [])}::jsonb,
           estimated_hours = ${estimated_hours || null},
           actual_hours = ${actual_hours || null},
           follow_up_date = ${body.follow_up_date !== undefined ? body.follow_up_date : sql`follow_up_date`},
@@ -447,7 +513,6 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
 
       await addActivityToProject(id, projectUpdateEntry);
 
-      // Only when a date is actually being set, not on every project edit.
       if (scheduled_date) {
         const movedTo = await autoAdvanceStatus(sql, id, 'job_scheduled');
         if (movedTo) {
@@ -463,7 +528,7 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
 
       return NextResponse.json({ success: true });
     }
-
+    
     // ==================== SAVE QUOTE ====================
     else if (action === 'save_quote') {
       
@@ -776,11 +841,12 @@ await sql`UPDATE projects
     // ==================== SEND SCHEDULE TO CUSTOMER 📅 ====================
     else if (action === 'send_schedule_to_customer') {
   
- const result = await sql`
+const result = await sql`
   SELECT 
     l.id, l.name, l.email, l.address_line_1, l.address_line_2, l.city, l.zip_code, l.project_id,
     p.scheduled_date::text as scheduled_date,
     p.scheduled_time::text as scheduled_time,
+    p.scheduled_end_time::text as scheduled_end_time,
     p.assigned_to,
     c.name as company_name,
     c.phone as company_phone,
@@ -827,6 +893,7 @@ const emailResult = await sendScheduleConfirmation({
   companyId: lead.company_id,
   scheduledDate: lead.scheduled_date,
   scheduledTime: lead.scheduled_time || undefined,
+  scheduledEndTime: lead.scheduled_end_time || undefined,
   serviceAddress: serviceAddress || undefined,
   assignedTo: lead.assigned_to || undefined,
   contractorEmail: lead.company_email,
@@ -997,6 +1064,7 @@ else if (action === 'update_lead_step2') {
     lead_source,
     preferred_date,
     preferred_time,
+    preferred_end_time,
     custom_answers,
     file_urls,
   } = body;
@@ -1022,6 +1090,7 @@ else if (action === 'update_lead_step2') {
       lead_source    = COALESCE(${lead_source || null}, lead_source),
       preferred_date = COALESCE(${preferred_date || null}, preferred_date),
       preferred_time = COALESCE(${preferred_time || null}, preferred_time),
+      preferred_end_time = COALESCE(${preferred_end_time || null}, preferred_end_time),
       custom_answers = COALESCE(${custom_answers ? JSON.stringify(custom_answers) : null}::jsonb, custom_answers),
       file_urls      = ${JSON.stringify(mergedFiles)},
       updated_at     = NOW()

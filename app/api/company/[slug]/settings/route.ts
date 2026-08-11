@@ -256,6 +256,21 @@ case 'update-deposit-default': {
         `;
         break;
 
+        case 'update-capacity': {
+        const val = parseInt(data.max_concurrent_bookings, 10);
+        if (isNaN(val) || val < 1) {
+          return NextResponse.json({ success: false, error: 'Capacity must be at least 1.' }, { status: 400 });
+        }
+        await sql`
+          UPDATE companies
+          SET max_concurrent_bookings = ${val}
+          WHERE id = ${company.id}
+        `;
+        break;
+      }
+
+
+
       case 'update-categories':
         await sql`
           UPDATE companies

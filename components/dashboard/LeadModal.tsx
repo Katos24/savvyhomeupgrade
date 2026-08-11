@@ -390,7 +390,7 @@ export default function LeadModal({
                       <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
                         Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
                       </p>
-                      <a href={`/${companySlug}/admin/settings`}
+                      <a href={`/${companySlug}/home?section=billing`}
                         className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
                         Upgrade to Pro — $79.99/mo
                       </a>

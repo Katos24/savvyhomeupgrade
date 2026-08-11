@@ -11,9 +11,12 @@ import {
 } from 'lucide-react';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
+import { getSchedulingConfig } from '@/lib/schedulingConfig';
+
 
 type SchedulingSectionProps = {
   lead: any;
+  company: any;
   currentUser: any;
   onRefresh: () => Promise<void>;
   hasProject: boolean;
@@ -23,6 +26,7 @@ type SchedulingSectionProps = {
 
 export default function SchedulingSection({ 
   lead, 
+  company,
   currentUser, 
   onRefresh, 
   hasProject, 
@@ -38,9 +42,16 @@ export default function SchedulingSection({
   const [timeHour, setTimeHour] = useState('');
   const [timeMinute, setTimeMinute] = useState('');
   const [timeAmPm, setTimeAmPm] = useState('AM');
-  const [assignedTo, setAssignedTo] = useState('');
-  const [showCustomAssignee, setShowCustomAssignee] = useState(false);
-  const [customAssignee, setCustomAssignee] = useState('');
+const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
+  const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
+  const [customNameInput, setCustomNameInput] = useState('');
+
+  // First selected = primary. Everything that only understands a single
+  // "assigned_to" string (calendar view, filters, the schedule email,
+  // the buffer-conflict message) reads this derived value — nothing
+  // downstream needs to know the picker is now multi-select.
+  const assignedTo = selectedAssignees[0] || '';
+  const additionalAssignees = selectedAssignees.slice(1);
   const [estimatedHours, setEstimatedHours] = useState('');
   const [actualHours, setActualHours] = useState('');
   
@@ -49,6 +60,24 @@ export default function SchedulingSection({
   const [outboxLog, setOutboxLog] = useState<any[]>([]);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [clockOpen, setClockOpen] = useState(false);
+  const [scheduledEndTime, setScheduledEndTime] = useState('');
+  const [eventLocation, setEventLocation] = useState('');
+const [endTimeHour, setEndTimeHour] = useState('');
+const [endTimeMinute, setEndTimeMinute] = useState('');
+const [endTimeAmPm, setEndTimeAmPm] = useState('PM');
+
+useEffect(() => {
+  setScheduledEndTime(lead?.scheduled_end_time ? lead.scheduled_end_time : '');
+    setEventLocation(lead?.event_location || '');
+  if (lead?.scheduled_end_time) {
+    const { hour, minute, ampm } = parseTimeString(lead.scheduled_end_time);
+    setEndTimeHour(hour); setEndTimeMinute(minute); setEndTimeAmPm(ampm);
+  }
+}, [lead]);
+
+useEffect(() => {
+  setScheduledEndTime(buildTimeString(endTimeHour, endTimeMinute, endTimeAmPm));
+}, [endTimeHour, endTimeMinute, endTimeAmPm]);
 
   const scheduleEmailLog = useMemo(() => {
     try {
@@ -57,6 +86,8 @@ export default function SchedulingSection({
       return Array.isArray(parsed) ? [...parsed].reverse() : [];
     } catch { return []; }
   }, [lead?.schedule_emails]);
+
+const schedulingConfig = getSchedulingConfig(company?.business_type);
 
   const lastEmailSentAt = scheduleEmailLog.length > 0 ? scheduleEmailLog[0].sent_at : null;
 
@@ -105,29 +136,34 @@ export default function SchedulingSection({
     } else {
       setTimeHour(''); setTimeMinute(''); setTimeAmPm('AM'); setScheduledTime('');
     }
-    setAssignedTo(lead?.assigned_to || '');
-    setEstimatedHours(lead?.estimated_hours || '');
+   setEstimatedHours(lead?.estimated_hours || '');
     setActualHours(lead?.actual_hours || '');
+    let extra: string[] = [];
+    try {
+      const raw = lead?.additional_assignees;
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      extra = Array.isArray(parsed) ? parsed : [];
+    } catch { extra = []; }
+    setSelectedAssignees([lead?.assigned_to, ...extra].filter(Boolean));
   }, [lead]);
 
   useEffect(() => {
     setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
   }, [timeHour, timeMinute, timeAmPm]);
 
-  const handleSave = async (overrideAssignee?: string) => {
+  const handleSave = async () => {
     setSaving(true);
     try {
-      const finalAssignee = overrideAssignee || (showCustomAssignee ? customAssignee : assignedTo);
-      if (finalAssignee) {
-        const knownNames = teamMembers.map((m: any) => m.name);
-        if (!knownNames.includes(finalAssignee)) {
-          fetch('/api/team/save-assignee', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: finalAssignee }),
-          }).catch(() => {});
-        }
-      }
+      const knownNames = teamMembers.map((m: any) => m.name);
+      const newNames = selectedAssignees.filter((n) => !knownNames.includes(n));
+      newNames.forEach((name) => {
+        fetch('/api/team/save-assignee', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name }),
+        }).catch(() => {});
+      });
+
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,34 +172,28 @@ export default function SchedulingSection({
           action: 'update_project',
           scheduled_date: scheduledDate || null,
           scheduled_time: scheduledTime || null,
-          assigned_to: finalAssignee || null,
+          scheduled_end_time: scheduledEndTime || null,
+          event_location: eventLocation || null,
+          assigned_to: assignedTo || null,
+          additional_assignees: additionalAssignees,
           estimated_hours: estimatedHours || null,
           actual_hours: actualHours || null,
         }),
       });
 
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+
+      if (res.ok && data.success) {
         toast.success('Schedule updated');
-        if (finalAssignee) setAssignedTo(finalAssignee);
-        setShowCustomAssignee(false);
-        setCustomAssignee('');
         await onRefresh();
       } else {
-        toast.error('Failed to save');
+        toast.error(data.error || 'Failed to save');
       }
     } catch { 
       toast.error('Failed to save'); 
     } finally { 
       setSaving(false); 
     }
-  };
-
-  const handleAddCustomName = () => {
-    if (!customAssignee.trim()) { 
-      toast.error('Please enter a name'); 
-      return; 
-    }
-    handleSave(customAssignee);
   };
 
   return (
@@ -243,49 +273,102 @@ export default function SchedulingSection({
         </div>
 
         <div className="p-4 space-y-3">
-          {/* ASSIGNED TO */}
-          <div>
+         {/* ASSIGNED TO */}
+          <div className="relative">
             <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 mb-1.5">
               <User size={11} /> Assigned to
             </label>
-            {!showCustomAssignee ? (
-              <div className="relative">
-                <select
-                  value={assignedTo}
-                  onChange={(e) => e.target.value === '__custom__' ? setShowCustomAssignee(true) : setAssignedTo(e.target.value)}
-                  disabled={teamLoading}
-                  className={`w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none appearance-none cursor-pointer ${teamLoading ? 'opacity-50' : ''}`}
+
+            <button
+              type="button"
+              onClick={() => setAssigneePickerOpen((o) => !o)}
+              className="w-full flex flex-wrap items-center gap-1.5 min-h-[42px] px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-left"
+            >
+              {selectedAssignees.length === 0 ? (
+                <span className="text-sm font-medium text-slate-400">Choose staff...</span>
+              ) : (
+                selectedAssignees.map((name, i) => (
+                  <span
+                    key={name}
+                    className={`flex items-center gap-1 pl-2.5 pr-1.5 py-1 rounded-lg text-xs font-medium ${
+                      i === 0 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {i === 0 && <span className="text-[9px] font-bold uppercase tracking-wide opacity-70">Primary</span>}
+                    {name}
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedAssignees((prev) => prev.filter((n) => n !== name));
+                      }}
+                      className="p-0.5 hover:bg-black/10 rounded-md cursor-pointer"
+                    >
+                      <X size={10} />
+                    </span>
+                  </span>
+                ))
+              )}
+              <ChevronDown className="ml-auto w-4 h-4 text-slate-400 shrink-0" />
+            </button>
+
+            {assigneePickerOpen && (
+              <div className="absolute z-10 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-lg p-2 max-h-56 overflow-y-auto">
+                {teamMembers.map((m: any) => {
+                  const checked = selectedAssignees.includes(m.name);
+                  return (
+                    <label
+                      key={m.id}
+                      className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-sm font-medium text-slate-700"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => {
+                          setSelectedAssignees((prev) =>
+                            checked ? prev.filter((n) => n !== m.name) : [...prev, m.name]
+                          );
+                        }}
+                        className="w-4 h-4 accent-blue-600"
+                      />
+                      {m.name}
+                    </label>
+                  );
+                })}
+                <div className="flex gap-1.5 mt-1.5 pt-1.5 border-t border-slate-100">
+                  <input
+                    type="text"
+                    placeholder="Custom name..."
+                    value={customNameInput}
+                    onChange={(e) => setCustomNameInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      const val = customNameInput.trim();
+                      if (e.key === 'Enter' && val && !selectedAssignees.includes(val)) {
+                        setSelectedAssignees((prev) => [...prev, val]);
+                        setCustomNameInput('');
+                      }
+                    }}
+                    className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 outline-none focus:border-blue-400"
+                  />
+                  <button
+                    onClick={() => {
+                      const val = customNameInput.trim();
+                      if (val && !selectedAssignees.includes(val)) {
+                        setSelectedAssignees((prev) => [...prev, val]);
+                        setCustomNameInput('');
+                      }
+                    }}
+                    className="px-2.5 bg-slate-900 text-white rounded-lg text-xs font-medium"
+                  >
+                    Add
+                  </button>
+                </div>
+                <button
+                  onClick={() => setAssigneePickerOpen(false)}
+                  className="w-full mt-1.5 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
                 >
-                  <option value="">{teamLoading ? 'Loading team...' : 'Choose team member...'}</option>
-                  {teamMembers.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
-                  {assignedTo && !teamMembers.find(m => m.name === assignedTo) && (
-                    <option value={assignedTo}>{assignedTo}</option>
-                  )}
-                  {!teamLoading && <option value="__custom__">+ Add custom name</option>}
-                </select>
-                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  Done
+                </button>
               </div>
-            ) : (
-              <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="flex gap-2">
-                <input
-                  type="text" 
-                  autoFocus 
-                  placeholder="Enter full name..."
-                  value={customAssignee}
-                  onChange={(e) => setCustomAssignee(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddCustomName()}
-                  className="flex-1 px-3 py-2.5 bg-white border-2 border-blue-400 rounded-xl text-sm font-medium text-slate-900 outline-none"
-                />
-                <button onClick={handleAddCustomName} className="px-4 bg-slate-900 text-white rounded-xl text-xs font-medium">
-                  Add
-                </button>
-                <button 
-                  onClick={() => { setShowCustomAssignee(false); setCustomAssignee(''); }} 
-                  className="p-2.5 bg-slate-100 text-slate-400 rounded-xl hover:bg-red-50 hover:text-red-500 transition-colors"
-                >
-                  <X size={16} />
-                </button>
-              </motion.div>
             )}
           </div>
 
@@ -321,6 +404,39 @@ export default function SchedulingSection({
             </div>
           </div>
 
+          {schedulingConfig.showEndTime && (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+    <div /> {/* spacer to align under Date column */}
+    <div>
+      <label className="text-[11px] font-medium text-slate-400 mb-1.5 block">End Time</label>
+      <div className="flex items-center px-2.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl gap-1 focus-within:border-blue-400 focus-within:bg-white transition-all">
+        <select value={endTimeHour} onChange={(e) => setEndTimeHour(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
+          <option value="">HH</option>
+          {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
+        </select>
+        <span className="text-slate-300 text-xs">:</span>
+        <select value={endTimeMinute} onChange={(e) => setEndTimeMinute(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
+          <option value="">MM</option>
+          {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+        <select value={endTimeAmPm} onChange={(e) => setEndTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-1.5 py-0.5 rounded-lg text-[11px] font-medium text-blue-600 outline-none">
+          <option value="AM">AM</option>
+          <option value="PM">PM</option>
+        </select>
+      </div>
+    </div>
+    <div className="mt-2">
+      <label className="text-[11px] font-medium text-slate-400 mb-1.5 block">Event Location</label>
+      <input
+        type="text"
+        value={eventLocation}
+        onChange={(e) => setEventLocation(e.target.value)}
+        placeholder="Venue name and address..."
+        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+      />
+    </div>
+  </div>
+)}
           {/* SENT HISTORY */}
           {outboxLog.length > 0 && (
             <div className="pt-3 border-t border-slate-100 -mx-4 px-4 pb-1 bg-slate-50">
@@ -491,20 +607,30 @@ export default function SchedulingSection({
       </AnimatePresence>
 
       {/* MODALS */}
-      <SchedulingCalendarModal
+   <SchedulingCalendarModal
         isOpen={showCalendarModal}
         onClose={() => setShowCalendarModal(false)}
-        onSelectDateTime={(d, t) => {
+        onSelectDateTime={(d, t, endT) => {
           setScheduledDate(d);
           const { hour, minute, ampm } = parseTimeString(t);
           setTimeHour(hour); 
           setTimeMinute(minute); 
           setTimeAmPm(ampm);
+          if (endT) {
+            const end = parseTimeString(endT);
+            setEndTimeHour(end.hour);
+            setEndTimeMinute(end.minute);
+            setEndTimeAmPm(end.ampm);
+          }
         }}
         companySlug={companySlug}
         currentScheduledDate={scheduledDate}
         currentScheduledTime={scheduledTime}
-        selectedTeamMember={assignedTo}
+        currentScheduledEndTime={scheduledEndTime}
+        selectedAssignees={selectedAssignees}
+        currentLeadId={lead?.id}
+        bufferMinutes={schedulingConfig.bufferMinutes}
+        showEndTime={schedulingConfig.showEndTime}
       />
 
       <SendEmailModal
