@@ -152,7 +152,6 @@ export default function SchedulingSection({
     const assignees = [lead?.assigned_to, ...extra].filter(Boolean);
     setSelectedAssignees(assignees);
 
-    // Save initial state to calculate unsaved status
     setInitialState({
       date: sDate,
       time: sTime,
@@ -168,7 +167,6 @@ export default function SchedulingSection({
     setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
   }, [timeHour, timeMinute, timeAmPm]);
 
-  // Determine if user has made unsaved changes
   const isDirty = useMemo(() => {
     return (
       scheduledDate !== initialState.date ||
@@ -227,7 +225,7 @@ export default function SchedulingSection({
   };
 
   return (
-    <div className="max-w-4xl mx-auto w-full space-y-4">
+    <div className="max-w-4xl mx-auto w-full space-y-4 pb-20 md:pb-0">
       {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
         {previewHtml && (
@@ -269,13 +267,13 @@ export default function SchedulingSection({
 
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
         {/* HEADER */}
-        <div className="px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+        <div className="px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Schedule Overview
             </h3>
             {lastEmailSentAt && (
-              <div className="flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
+              <div className="hidden sm:flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                 <CheckCircle2 size={11} className="text-emerald-500" />
                 <p className="text-[11px] text-emerald-700 font-medium">
                   Sent {new Date(lastEmailSentAt).toLocaleDateString()}
@@ -292,7 +290,7 @@ export default function SchedulingSection({
         </div>
 
         {/* MAIN BODY: SPLIT FORM & ACTION SIDEBAR */}
-        <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
           
           {/* LEFT 2 COLS: ASSIGNEE, DATE & TIME */}
           <div className="md:col-span-2 space-y-4">
@@ -465,7 +463,7 @@ export default function SchedulingSection({
             )}
           </div>
 
-          {/* RIGHT 1 COL: QUICK ACTIONS SIDEBAR (CALENDAR & JOB HOURS) */}
+          {/* RIGHT 1 COL: QUICK CONTROLS SIDEBAR */}
           <div className="space-y-3 bg-slate-50/60 p-3.5 rounded-2xl border border-slate-100 h-full flex flex-col justify-between">
             <div className="space-y-2">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Quick Controls</p>
@@ -514,9 +512,9 @@ export default function SchedulingSection({
 
         </div>
 
-        {/* SENT HISTORY (Collapsed list) */}
+        {/* SENT HISTORY */}
         {outboxLog.length > 0 && (
-          <div className="px-5 py-3 bg-slate-50/50 border-t border-slate-100">
+          <div className="px-4 sm:px-5 py-3 bg-slate-50/50 border-t border-slate-100">
             <div className="flex items-center gap-1.5 mb-2">
               <History size={12} className="text-slate-400" />
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
@@ -549,8 +547,8 @@ export default function SchedulingSection({
           </div>
         )}
 
-        {/* NEW CLEAN FOOTER WITH PROMINENT SAVE ACTION */}
-        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between">
+        {/* DESKTOP FOOTER */}
+        <div className="hidden md:flex px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 items-center justify-between">
           <div className="flex items-center gap-2">
             {isDirty ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-lg text-xs font-medium">
@@ -596,6 +594,50 @@ export default function SchedulingSection({
               <span>Send Schedule</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* MOBILE STICKY BOTTOM ACTION BAR */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 px-4 flex items-center justify-between gap-2 md:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+        <div>
+          {isDirty ? (
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md text-[11px] font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              Unsaved
+            </span>
+          ) : (
+            <span className="text-[11px] text-slate-400 font-medium">Saved</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              if (!hasProject) {
+                toast.error('Create a project first');
+                return;
+              }
+              if (!scheduledDate) {
+                toast.error('Add a date to send the schedule');
+                return;
+              }
+              setShowEmailModal(true);
+            }}
+            disabled={!hasProject || !scheduledDate}
+            className="flex items-center gap-1 px-3 py-2 border border-slate-200 bg-white text-slate-700 rounded-xl text-xs font-semibold shadow-sm disabled:opacity-40"
+          >
+            <Mail className="w-3.5 h-3.5 text-blue-600" />
+            <span>Send</span>
+          </button>
+          <button
+            onClick={() => handleSave()}
+            disabled={saving}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition shadow-sm ${
+              isDirty ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white'
+            } disabled:opacity-50`}
+          >
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+            {saving ? 'Saving...' : isDirty ? 'Save changes' : 'Save'}
+          </button>
         </div>
       </div>
 
