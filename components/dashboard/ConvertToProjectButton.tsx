@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Lock } from 'lucide-react';
+import { Lock, Sparkles, ArrowRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
@@ -26,29 +26,38 @@ export default function ConvertToProjectButton({
   const pathname = usePathname();
   const companySlug = pathname?.split('/')[1] || '';
 
-if (lead.project_id) return null;
+  if (lead.project_id) return null;
 
   if (!can(planTier as PlanTier, 'convert_to_project')) {
-    const requiredPlan = FEATURE_PLAN_MAP['convert_to_project'];
-    const config = PLAN_CONFIG[requiredPlan as keyof typeof PLAN_CONFIG];
-   return (
-      <div className="w-full flex items-center gap-3 px-4 py-3 bg-blue-50 border border-blue-100 rounded-2xl">
-        <div className="w-9 h-9 bg-blue-100 rounded-xl flex items-center justify-center shrink-0">
-          <Lock className="w-4 h-4 text-blue-500" />
+    return (
+      <div className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 bg-gradient-to-r from-blue-50/80 via-indigo-50/50 to-white border border-blue-100 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20">
+            <Lock className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-semibold text-slate-900">Unlock Project Conversion</p>
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md text-[10px] font-bold">
+                <Sparkles size={10} /> Pro feature
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">Create projects, send professional quotes, schedule jobs, and track payments.</p>
+          </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-slate-900">Upgrade to create projects</p>
-          <p className="text-[11px] text-slate-500">Unlock quotes, scheduling, tasks & payment tracking</p>
-      </div>
         
-        <a 
-          href={`/${companySlug}/admin/settings#billing`}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-medium hover:bg-blue-700 transition active:scale-95"
-        >
-          Upgrade plan
-        </a>
-        
-        <p className="text-[11px] text-slate-400 mt-1">Starting at $49.99/mo</p>
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+          <div className="text-right hidden md:block">
+            <span className="text-[11px] font-medium text-slate-400 block">Starting at</span>
+            <span className="text-xs font-bold text-slate-800">$49.99/mo</span>
+          </div>
+          <a 
+            href={`/${companySlug}/admin/settings#billing`}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4.5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold shadow-sm transition active:scale-95 shrink-0"
+          >
+            Upgrade plan <ArrowRight size={13} />
+          </a>
+        </div>
       </div>
     );
   }
@@ -151,24 +160,25 @@ if (lead.project_id) return null;
   return (
     <>
       {/* Trigger button */}
-     <button
-  onClick={() => setShowConfirm(true)}
-  disabled={isConverting}
-  className="
-    flex items-center justify-center gap-2
-    w-full sm:w-auto
-    px-5 py-3
-    bg-emerald-600
-    hover:bg-emerald-700
-    text-white font-medium text-sm
-    rounded-xl
-    transition-all duration-200 ease-out
-    active:scale-[0.98]
-    disabled:opacity-50 disabled:cursor-not-allowed
-  "
->
-  {isConverting ? 'Converting...' : 'Convert to project'}
-</button>
+      <button
+        onClick={() => setShowConfirm(true)}
+        disabled={isConverting}
+        className="
+          flex items-center justify-center gap-2
+          w-full sm:w-auto
+          px-4.5 py-2.5
+          bg-emerald-600
+          hover:bg-emerald-700
+          text-white font-semibold text-xs
+          rounded-xl
+          transition-all duration-200 ease-out
+          active:scale-[0.98]
+          disabled:opacity-50 disabled:cursor-not-allowed
+          shadow-sm
+        "
+      >
+        {isConverting ? 'Converting...' : 'Convert to project'}
+      </button>
 
       {/* Confirm modal */}
       {showConfirm && (
@@ -182,16 +192,16 @@ if (lead.project_id) return null;
           >
             {/* Header */}
             <div className="px-6 pt-8 pb-5 text-center">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base font-semibold text-gray-900">
                 Create project
               </h3>
 
-              <p className="text-sm text-gray-500 mt-2">
+              <p className="text-xs text-gray-500 mt-1">
                 For <span className="font-medium text-gray-800">{lead.name}</span>
               </p>
 
               {categoryDisplay && (
-                <div className="mt-4 inline-block px-3 py-1.5 bg-gray-100 border border-gray-200 rounded-xl text-xs font-medium text-gray-700">
+                <div className="mt-3 inline-block px-3 py-1 bg-gray-100 border border-gray-200 rounded-xl text-xs font-medium text-gray-700">
                   {categoryDisplay}
                 </div>
               )}
@@ -203,9 +213,9 @@ if (lead.project_id) return null;
                 onClick={() => setShowConfirm(false)}
                 disabled={isConverting}
                 className="
-                  py-3
+                  py-2.5
                   bg-gray-100 hover:bg-gray-200
-                  text-gray-700 font-medium text-sm
+                  text-gray-700 font-medium text-xs
                   rounded-xl
                   transition
                   disabled:opacity-50
@@ -218,9 +228,9 @@ if (lead.project_id) return null;
                 onClick={handleConvert}
                 disabled={isConverting}
                 className="
-                  py-3
+                  py-2.5
                   bg-blue-600 hover:bg-blue-700
-                  text-white font-medium text-sm
+                  text-white font-medium text-xs
                   rounded-xl
                   transition
                   disabled:opacity-50

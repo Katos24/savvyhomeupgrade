@@ -814,53 +814,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 <span className="font-semibold text-slate-800">Categories & Pricing</span>.
               </p>
             </div>
-          </div>
-        </div>
 
-        {/* --- DEDICATED BOOKING LINK CARD (PLACED ABOVE DISTRIBUTION LOCATIONS) --- */}
-        <div
-          className="overflow-hidden rounded-xl shadow-xs text-white"
-          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-        >
-          <div className="p-6 lg:p-8">
-            <div className="flex items-center gap-2">
-              <Link2 className="h-5 w-5 text-white/90" />
-              <h2 className="text-lg font-bold tracking-tight text-white">Your Live Booking Link</h2>
-            </div>
-            <p className="mt-1 max-w-2xl text-xs font-medium text-white/80 leading-relaxed">
-              Share this URL with prospective clients. Any form submission immediately populates on your project board.
-            </p>
-
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 backdrop-blur-xs">
-                <code className="whitespace-nowrap font-mono text-xs font-bold text-white">
-                  {publicUrl}
-                </code>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(publicUrl);
-                    setLinkCopied(true);
-                    setTimeout(() => setLinkCopied(false), 1800);
-                  }}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-xs transition hover:bg-slate-100"
-                >
-                  {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : null}
-                  {linkCopied ? 'Copied' : 'Copy Link'}
-                </button>
-
-                <a
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/20"
-                >
-                  Open <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-            </div>
+   
           </div>
         </div>
 
