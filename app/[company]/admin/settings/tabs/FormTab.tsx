@@ -126,7 +126,7 @@ function UpgradePill({ companySlug }: { companySlug: string }) {
   return (
     <a
       href={`/${companySlug}/home?section=billing`}
-      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-amber-700 shadow-sm"
+      className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-bold text-white transition hover:bg-amber-700 shadow-xs"
     >
       <Lock className="h-3 w-3" />
       <span>{REQUIRED_PLAN.label}</span>
@@ -136,7 +136,7 @@ function UpgradePill({ companySlug }: { companySlug: string }) {
 
 function UpgradeNotice({ companySlug, feature }: { companySlug: string; feature: string }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4 sm:flex-row sm:items-center sm:justify-between shadow-sm">
+    <div className="flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-4 sm:flex-row sm:items-center sm:justify-between shadow-xs">
       <div className="flex items-start gap-3">
         <Lock className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
         <p className="text-xs font-semibold leading-relaxed text-amber-900">
@@ -145,7 +145,7 @@ function UpgradeNotice({ companySlug, feature }: { companySlug: string; feature:
       </div>
       <a
         href={`/${companySlug}/home?section=billing`}
-        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700 shadow-sm"
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-700 shadow-xs"
       >
         Upgrade <ArrowUpRight className="h-3.5 w-3.5" />
       </a>
@@ -166,7 +166,7 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
       }`}
     >
       <span
-        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
           enabled ? 'translate-x-5' : 'translate-x-0'
         }`}
       />
@@ -179,7 +179,7 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
 function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-[320px]">
-      <div className="relative h-[560px] rounded-[2.25rem] border-[8px] border-slate-900 bg-slate-900 shadow-xl">
+      <div className="relative h-[540px] rounded-[2.25rem] border-[8px] border-slate-900 bg-slate-900 shadow-lg">
         <div className="absolute left-1/2 top-1.5 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-slate-900" />
         <div className="h-full overflow-y-auto rounded-[1.6rem] bg-white">{children}</div>
       </div>
@@ -246,7 +246,7 @@ function ControlRow({
         planLocked
           ? 'border-amber-200/80 bg-amber-50/40'
           : enabled
-          ? 'border-slate-200 bg-white shadow-sm'
+          ? 'border-slate-200 bg-white shadow-xs'
           : 'border-slate-200 bg-slate-50/60'
       }`}
     >
@@ -517,7 +517,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           ))}
 
         <div
-          className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white shadow-sm"
+          className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs"
           style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
         >
           Submit Request
@@ -527,8 +527,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 px-6 py-10 lg:px-12 font-sans text-slate-900 antialiased">
-      <div className="mx-auto max-w-6xl space-y-8 pb-16">
+    <div className="min-h-screen bg-slate-50/50 px-6 py-8 lg:px-12 font-sans text-slate-900 antialiased">
+      <div className="mx-auto max-w-6xl space-y-6 pb-16">
 
         {company.plan_tier === 'free' && (
           <SettingsUpgradeBanner
@@ -540,7 +540,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         )}
 
         {/* Page Title & Controls */}
-        <div className="pb-2 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="pb-4 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="text-2xl font-bold tracking-tight text-slate-900">Booking Form Editor</h1>
@@ -556,22 +556,44 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
 
           <div className="flex items-center gap-2">
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
-            >
-              <Eye className="h-3.5 w-3.5 text-slate-500" /> Preview Live
-            </a>
             <button
               onClick={handleSaveAll}
               disabled={loading}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
             >
               {loading && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
               {loading ? 'Saving...' : 'Save Changes'}
             </button>
+          </div>
+        </div>
+
+        {/* Subtle Public URL Bar */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <div className="flex items-center gap-2 min-w-0">
+            <Link2 className="h-4 w-4 shrink-0 text-slate-400" />
+            <span className="text-xs font-semibold text-slate-500">Live URL:</span>
+            <code className="truncate font-mono text-xs font-bold text-slate-800">{publicUrl}</code>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(publicUrl);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 1800);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+            >
+              {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : null}
+              {linkCopied ? 'Copied' : 'Copy'}
+            </button>
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+            >
+              Preview <ArrowUpRight className="h-3.5 w-3.5" />
+            </a>
           </div>
         </div>
 
@@ -593,54 +615,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           )}
         </AnimatePresence>
 
-        {/* Highlighted Banner with Public Link */}
-        <div
-          className="overflow-hidden rounded-xl shadow-sm text-white"
-          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-        >
-          <div className="p-6 lg:p-8">
-            <div className="flex items-center gap-2">
-              <Link2 className="h-5 w-5 text-white/90" />
-              <h2 className="text-lg font-bold tracking-tight text-white">Your Live Booking Link</h2>
-            </div>
-            <p className="mt-1 max-w-2xl text-xs font-medium text-white/80 leading-relaxed">
-              Share this URL with prospective clients. Any form submission immediately populates on your project board.
-            </p>
-
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
-              <div className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 backdrop-blur-sm">
-                <code className="whitespace-nowrap font-mono text-xs font-bold text-white">
-                  {publicUrl}
-                </code>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(publicUrl);
-                    setLinkCopied(true);
-                    setTimeout(() => setLinkCopied(false), 1800);
-                  }}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-sm transition hover:bg-slate-100"
-                >
-                  {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : null}
-                  {linkCopied ? 'Copied' : 'Copy Link'}
-                </button>
-
-                <a
-                  href={publicUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/20"
-                >
-                  Open <ArrowUpRight className="h-3.5 w-3.5" />
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Mobile Single Phone View Toggle */}
+        {/* --- PHONE PREVIEWS (PRIMARY FOCUS) --- */}
         <div className="lg:hidden">
           <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-white p-1">
             <button
@@ -685,7 +660,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         {/* Desktop Dual Phone View */}
         <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8">
           <div>
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
               <Lock className="h-4 w-4 shrink-0 text-slate-400" />
               <div>
                 <p className="text-xs font-bold text-slate-900">Standard Required Fields</p>
@@ -696,7 +671,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
 
           <div>
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 px-4 py-3 shadow-sm">
+            <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 px-4 py-3 shadow-xs">
               <Eye className="h-4 w-4 shrink-0 text-emerald-600" />
               <div>
                 <p className="text-xs font-bold text-emerald-900">Optional Fields & Custom Questions</p>
@@ -711,7 +686,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         <div className="space-y-6 pt-4">
 
           {/* Optional Toggles */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-sm">
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
               Optional Intake Fields
             </h2>
@@ -767,7 +742,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
 
           {/* Custom Questions Card */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-sm">
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <HelpCircle className="h-4 w-4 text-slate-400" />
@@ -797,13 +772,13 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                         setEditingQuestionId(q.id);
                         setShowAddQuestion(true);
                       }}
-                      className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:bg-slate-50"
+                      className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-xs transition hover:bg-slate-50"
                     >
                       <Edit2 className="h-3.5 w-3.5" />
                     </button>
                     <button
                       onClick={() => setCustomQuestions(customQuestions.filter((x) => x.id !== q.id))}
-                      className="rounded-lg border border-slate-200 bg-white p-1.5 text-rose-600 shadow-sm transition hover:bg-rose-50"
+                      className="rounded-lg border border-slate-200 bg-white p-1.5 text-rose-600 shadow-xs transition hover:bg-rose-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -828,7 +803,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
 
           {/* Pricing Notice */}
-          <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+          <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
               <Tag className="h-4 w-4" />
             </div>
@@ -842,8 +817,55 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
+        {/* --- DEDICATED BOOKING LINK CARD (PLACED ABOVE DISTRIBUTION LOCATIONS) --- */}
+        <div
+          className="overflow-hidden rounded-xl shadow-xs text-white"
+          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+        >
+          <div className="p-6 lg:p-8">
+            <div className="flex items-center gap-2">
+              <Link2 className="h-5 w-5 text-white/90" />
+              <h2 className="text-lg font-bold tracking-tight text-white">Your Live Booking Link</h2>
+            </div>
+            <p className="mt-1 max-w-2xl text-xs font-medium text-white/80 leading-relaxed">
+              Share this URL with prospective clients. Any form submission immediately populates on your project board.
+            </p>
+
+            <div className="mt-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 backdrop-blur-xs">
+                <code className="whitespace-nowrap font-mono text-xs font-bold text-white">
+                  {publicUrl}
+                </code>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(publicUrl);
+                    setLinkCopied(true);
+                    setTimeout(() => setLinkCopied(false), 1800);
+                  }}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-xs transition hover:bg-slate-100"
+                >
+                  {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                  {linkCopied ? 'Copied' : 'Copy Link'}
+                </button>
+
+                <a
+                  href={publicUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/20"
+                >
+                  Open <ArrowUpRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Links & Distribution Locations */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-sm">
+        <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
             Where to Publish Your Link
           </h2>
@@ -855,7 +877,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             {SHARE_SPOTS.map((spot) => (
               <div
                 key={spot.id}
-                className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3.5 py-3 shadow-sm"
+                className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-white px-3.5 py-3 shadow-xs"
               >
                 <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-slate-200 bg-slate-50">
                   {spot.useCompanyLogo && company.logo_url ? (
@@ -890,7 +912,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 <button
                   onClick={handleSaveAll}
                   disabled={loading}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 transition"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition"
                 >
                   {loading && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
                   {loading ? 'Saving...' : 'Save Changes'}
@@ -937,7 +959,7 @@ function QuestionModal({
   onCancel: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm" onClick={onCancel}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-xs" onClick={onCancel}>
       <div
         className="w-full max-w-md overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
@@ -1037,7 +1059,7 @@ function QuestionModal({
                       onOptionChange('');
                     }
                   }}
-                  className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800"
+                  className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800"
                 >
                   Add
                 </button>
@@ -1056,7 +1078,7 @@ function QuestionModal({
             <button
               type="button"
               onClick={onSave}
-              className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition"
+              className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition"
             >
               {isEditing ? 'Update Question' : 'Save Question'}
             </button>

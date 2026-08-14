@@ -1,7 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  motion,
+  AnimatePresence,
+  Reorder,
+  useDragControls,
+} from 'framer-motion';
 import {
   Plus,
   X,
@@ -19,7 +24,6 @@ import {
 } from 'lucide-react';
 import {
   DEFAULT_STATUSES,
-  LOCKED_STAGES,
   STAGE_TRIGGERS,
   type StatusOption,
 } from '@/lib/formCategories';
@@ -38,6 +42,159 @@ const COLOR_OPTIONS = [
 
 const spring = { type: 'spring' as const, damping: 25, stiffness: 300 };
 
+/* ── SUB-COMPONENT FOR REORDERABLE ROW ── */
+interface StatusRowProps {
+  status: StatusOption;
+  index: number;
+  locked: boolean;
+  activeColorPicker: number | null;
+  setActiveColorPicker: (index: number | null) => void;
+  getColorHex: (color: string) => string;
+  updateStatusColor: (index: number, color: string) => void;
+  updateStatusLabel: (index: number, label: string) => void;
+  handleRemoveStatus: (index: number) => void;
+}
+
+function StatusRow({
+  status,
+  index,
+  locked,
+  activeColorPicker,
+  setActiveColorPicker,
+  getColorHex,
+  updateStatusColor,
+  updateStatusLabel,
+  handleRemoveStatus,
+}: StatusRowProps) {
+  const dragControls = useDragControls();
+
+  return (
+    <Reorder.Item
+      value={status}
+      dragListener={false}
+      dragControls={dragControls}
+      className={`group relative flex items-center gap-3 bg-white px-4 py-3.5 transition-colors ${
+        locked ? 'bg-slate-50/60' : 'hover:bg-slate-50/60'
+      }`}
+    >
+      {/* Drag Handle (Disabled only for 'new' and 'completed') */}
+      <div
+        style={{ touchAction: 'none' }}
+        onPointerDown={(e) => {
+          if (!locked) dragControls.start(e);
+        }}
+        className={`flex h-10 w-8 items-center justify-center text-slate-300 touch-none select-none ${
+          locked
+            ? 'cursor-not-allowed opacity-20'
+            : 'cursor-grab active:cursor-grabbing hover:text-slate-500'
+        }`}
+      >
+        <GripVertical className="h-5 w-5" />
+      </div>
+
+      {/* Color Swatch Picker Toggle */}
+      <div className="relative">
+        <button
+          type="button"
+          disabled={locked}
+          onClick={() =>
+            setActiveColorPicker(activeColorPicker === index ? null : index)
+          }
+          className={`group/picker flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-xs transition-transform ${
+            locked ? 'cursor-not-allowed opacity-90' : 'hover:scale-105'
+          }`}
+          style={{ backgroundColor: getColorHex(status.color) }}
+        >
+          {!locked && (
+            <Palette className="h-3.5 w-3.5 text-white/90 opacity-0 transition-opacity group-hover/picker:opacity-100" />
+          )}
+        </button>
+
+        {/* Color Popover Menu */}
+        <AnimatePresence>
+          {activeColorPicker === index && !locked && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 5 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 5 }}
+              className="absolute left-0 top-10 z-30 w-48 rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
+            >
+              <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
+                <span className="text-[11px] font-semibold text-slate-500">
+                  Change Color
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setActiveColorPicker(null)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                {COLOR_OPTIONS.map((c) => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => updateStatusColor(index, c.value)}
+                    className={`h-6 w-6 rounded-full border-2 border-white transition hover:scale-110 ${
+                      status.color === c.value
+                        ? 'ring-2 ring-indigo-500 ring-offset-1'
+                        : ''
+                    }`}
+                    style={{ backgroundColor: c.hex }}
+                  />
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Stage Title Input */}
+      <div className="flex-1 min-w-0">
+        <input
+          type="text"
+          value={status.label}
+          readOnly={locked}
+          onChange={(e) => updateStatusLabel(index, e.target.value)}
+          className={`w-full rounded-md border border-transparent px-1.5 py-0.5 text-sm font-semibold text-slate-800 transition ${
+            locked
+              ? 'cursor-not-allowed bg-transparent focus:outline-none'
+              : 'bg-transparent focus:border-indigo-300 focus:bg-white focus:outline-none'
+          }`}
+        />
+        <div className="ml-1.5 flex items-center gap-1.5">
+          {locked ? (
+            <>
+              <Lock className="h-3 w-3 shrink-0 text-slate-400" />
+              <span className="text-[11px] font-medium text-slate-400">
+                System Fixed Stage
+              </span>
+            </>
+          ) : (
+            <span className="text-[11px] font-medium text-slate-400">
+              {STAGE_TRIGGERS[status.value] || 'Custom Stage'}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Delete Action (Available for ALL stages except New/Completed) */}
+      {!locked && (
+        <button
+          type="button"
+          onClick={() => handleRemoveStatus(index)}
+          className="rounded-lg p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 sm:p-1.5 sm:text-slate-300 sm:opacity-0 sm:group-hover:opacity-100"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+    </Reorder.Item>
+  );
+}
+
+/* ── MAIN PIPELINE TAB COMPONENT ── */
 export default function PipelineTab({
   company,
 }: {
@@ -56,19 +213,39 @@ export default function PipelineTab({
   const [newLabel, setNewLabel] = useState('');
   const [newColor, setNewColor] = useState('blue');
 
-  const [statuses, setStatuses] = useState<StatusOption[]>(() => {
+  // Deep copy initial statuses reference from company prop
+  const initialStatuses = useMemo<StatusOption[]>(() => {
     const saved = company.status_options;
-    return Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_STATUSES;
-  });
+    const list = Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_STATUSES;
+    return JSON.parse(JSON.stringify(list));
+  }, [company.status_options]);
+
+  const [statuses, setStatuses] = useState<StatusOption[]>(() =>
+    JSON.parse(JSON.stringify(initialStatuses))
+  );
+
+  // Precise dirty check
+  const isDirty = useMemo(() => {
+    return JSON.stringify(statuses) !== JSON.stringify(initialStatuses);
+  }, [statuses, initialStatuses]);
+
+  // Alert user before navigating away if there are unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   const getColorHex = (name: string) =>
     COLOR_OPTIONS.find((c) => c.value === name)?.hex || '#3b82f6';
 
-  /* Lock helpers for 'new' and 'completed' */
+  /* ONLY 'new' and 'completed' are locked in place and protected */
   const isLockedStage = (s: StatusOption) =>
-    s.value === 'new' || s.value === 'completed' || LOCKED_STAGES.includes(s.value);
-
-  const isFixedPosition = (s: StatusOption) =>
     s.value === 'new' || s.value === 'completed';
 
   const showError = (msg: string) => {
@@ -106,7 +283,7 @@ export default function PipelineTab({
     if (statuses.some((s) => s.value === value))
       return showError('A stage with this name already exists');
 
-    const updated = [...statuses];
+    const updated = statuses.map((s) => ({ ...s }));
     // Insert right before 'completed'
     updated.splice(updated.length - 1, 0, {
       value,
@@ -119,11 +296,18 @@ export default function PipelineTab({
     setShowAddForm(false);
   };
 
+  const updateStatusLabel = (index: number, label: string) => {
+    if (isLockedStage(statuses[index])) return;
+    setStatuses((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, label } : s))
+    );
+  };
+
   const updateStatusColor = (index: number, color: string) => {
     if (isLockedStage(statuses[index])) return;
-    const updated = [...statuses];
-    updated[index] = { ...updated[index], color };
-    setStatuses(updated);
+    setStatuses((prev) =>
+      prev.map((s, i) => (i === index ? { ...s, color } : s))
+    );
     setActiveColorPicker(null);
   };
 
@@ -169,20 +353,47 @@ export default function PipelineTab({
 
         <button
           onClick={handleSave}
-          disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50 sm:text-sm"
+          disabled={loading || !isDirty}
+          className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-xs transition sm:text-sm ${
+            isDirty
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 cursor-pointer'
+              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+          }`}
         >
           {loading ? (
             <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           ) : (
             <Save className="h-4 w-4" />
           )}
-          {loading ? 'Saving Changes...' : 'Save Pipeline'}
+          {loading
+            ? 'Saving Changes...'
+            : isDirty
+            ? 'Save Changes'
+            : 'Saved'}
         </button>
       </div>
 
       {/* ── ALERTS ── */}
       <AnimatePresence>
+        {isDirty && !success && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-6 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-xs font-medium text-amber-800 shadow-xs sm:text-sm"
+          >
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+              <span>You have unsaved changes in your pipeline workflow.</span>
+            </div>
+            <button
+              onClick={() => setStatuses(JSON.parse(JSON.stringify(initialStatuses)))}
+              className="text-xs font-semibold text-amber-900 underline hover:text-amber-700 cursor-pointer"
+            >
+              Reset
+            </button>
+          </motion.div>
+        )}
         {success && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -232,7 +443,7 @@ export default function PipelineTab({
                   setShowAddForm(true);
                   setActiveColorPicker(null);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:scale-95"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:scale-95 cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5" /> Add Stage
               </button>
@@ -256,7 +467,7 @@ export default function PipelineTab({
                       <button
                         type="button"
                         onClick={() => setShowAddForm(false)}
-                        className="rounded-md p-1 text-slate-400 hover:text-slate-600"
+                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -282,7 +493,7 @@ export default function PipelineTab({
                             key={c.value}
                             type="button"
                             onClick={() => setNewColor(c.value)}
-                            className={`h-7 w-7 rounded-full transition ${
+                            className={`h-7 w-7 rounded-full transition cursor-pointer ${
                               newColor === c.value
                                 ? 'scale-110 ring-2 ring-indigo-500 ring-offset-2'
                                 : 'opacity-60 hover:opacity-100'
@@ -297,14 +508,14 @@ export default function PipelineTab({
                       <button
                         type="button"
                         onClick={handleAddStatus}
-                        className="flex-1 rounded-xl bg-indigo-600 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700"
+                        className="flex-1 rounded-xl bg-indigo-600 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 cursor-pointer"
                       >
                         Create Stage
                       </button>
                       <button
                         type="button"
                         onClick={() => setShowAddForm(false)}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                        className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
                       >
                         Cancel
                       </button>
@@ -321,134 +532,20 @@ export default function PipelineTab({
               onReorder={handleReorder}
               className="divide-y divide-slate-100"
             >
-              {statuses.map((status, index) => {
-                const locked = isLockedStage(status);
-                const fixed = isFixedPosition(status);
-
-                return (
-                  <Reorder.Item
-                    key={status.value}
-                    value={status}
-                    dragListener={!fixed}
-                    className={`group relative flex items-center gap-3 bg-white px-4 py-3.5 transition-colors ${
-                      locked ? 'bg-slate-50/60' : 'hover:bg-slate-50/60'
-                    }`}
-                  >
-                    {/* Drag Handle */}
-                    <div
-                      className={`flex h-8 w-5 items-center justify-center text-slate-300 ${
-                        fixed
-                          ? 'cursor-not-allowed opacity-20'
-                          : 'cursor-grab active:cursor-grabbing hover:text-slate-500'
-                      }`}
-                    >
-                      <GripVertical className="h-4 w-4" />
-                    </div>
-
-                    {/* Color Swatch Picker Toggle */}
-                    <div className="relative">
-                      <button
-                        type="button"
-                        disabled={locked}
-                        onClick={() =>
-                          setActiveColorPicker(
-                            activeColorPicker === index ? null : index
-                          )
-                        }
-                        className={`group/picker flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-xs transition-transform ${
-                          locked ? 'cursor-not-allowed opacity-90' : 'hover:scale-105'
-                        }`}
-                        style={{ backgroundColor: getColorHex(status.color) }}
-                      >
-                        {!locked && (
-                          <Palette className="h-3.5 w-3.5 text-white/90 opacity-0 transition-opacity group-hover/picker:opacity-100" />
-                        )}
-                      </button>
-
-                      {/* Color Popover Menu */}
-                      <AnimatePresence>
-                        {activeColorPicker === index && !locked && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 5 }}
-                            animate={{ opacity: 1, scale: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95, y: 5 }}
-                            className="absolute left-0 top-10 z-30 w-48 rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
-                          >
-                            <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
-                              <span className="text-[11px] font-semibold text-slate-500">
-                                Change Color
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => setActiveColorPicker(null)}
-                                className="text-slate-400 hover:text-slate-600"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                            <div className="grid grid-cols-4 gap-2">
-                              {COLOR_OPTIONS.map((c) => (
-                                <button
-                                  key={c.value}
-                                  type="button"
-                                  onClick={() => updateStatusColor(index, c.value)}
-                                  className={`h-6 w-6 rounded-full border-2 border-white transition hover:scale-110 ${
-                                    status.color === c.value
-                                      ? 'ring-2 ring-indigo-500 ring-offset-1'
-                                      : ''
-                                  }`}
-                                  style={{ backgroundColor: c.hex }}
-                                />
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Stage Title Input */}
-                    <div className="flex-1 min-w-0">
-                      <input
-                        type="text"
-                        value={status.label}
-                        readOnly={locked}
-                        onChange={(e) => {
-                          if (locked) return;
-                          const updated = [...statuses];
-                          updated[index].label = e.target.value;
-                          setStatuses(updated);
-                        }}
-                        className={`w-full rounded-md border border-transparent px-1.5 py-0.5 text-sm font-semibold text-slate-800 transition ${
-                          locked
-                            ? 'cursor-not-allowed bg-transparent focus:outline-none'
-                            : 'bg-transparent focus:border-indigo-300 focus:bg-white focus:outline-none'
-                        }`}
-                      />
-                      <div className="ml-1.5 flex items-center gap-1.5">
-                        {locked && (
-                          <Lock className="h-3 w-3 shrink-0 text-slate-400" />
-                        )}
-                        <span className="text-[11px] font-medium text-slate-400">
-                          {locked
-                            ? STAGE_TRIGGERS[status.value] || 'System Required Stage'
-                            : 'Custom Stage'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Delete Action */}
-                    {!locked && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveStatus(index)}
-                        className="rounded-lg p-1.5 text-slate-300 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </Reorder.Item>
-                );
-              })}
+              {statuses.map((status, index) => (
+                <StatusRow
+                  key={status.value}
+                  status={status}
+                  index={index}
+                  locked={isLockedStage(status)}
+                  activeColorPicker={activeColorPicker}
+                  setActiveColorPicker={setActiveColorPicker}
+                  getColorHex={getColorHex}
+                  updateStatusColor={updateStatusColor}
+                  updateStatusLabel={updateStatusLabel}
+                  handleRemoveStatus={handleRemoveStatus}
+                />
+              ))}
             </Reorder.Group>
           </div>
         </div>
@@ -525,14 +622,14 @@ export default function PipelineTab({
                 <button
                   type="button"
                   onClick={() => setDeleteConfirm(null)}
-                  className="rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  className="rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={confirmRemove}
-                  className="rounded-xl bg-rose-600 py-2.5 text-xs font-semibold text-white transition hover:bg-rose-700"
+                  className="rounded-xl bg-rose-600 py-2.5 text-xs font-semibold text-white transition hover:bg-rose-700 cursor-pointer"
                 >
                   Delete
                 </button>

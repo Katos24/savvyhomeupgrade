@@ -13,7 +13,8 @@ import {
   Receipt,
   CheckCircle2,
   Save,
-  Eye, XCircle,
+  Eye,
+  XCircle,
   ArrowRightLeft,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
@@ -56,12 +57,12 @@ export default function QuoteSection({
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
- const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
   const [markingAccepted, setMarkingAccepted] = useState(false);
   const [editingTax, setEditingTax] = useState(false);
   const taxInputRef = useRef<HTMLInputElement | null>(null);
 
- const newRowRef = useRef<HTMLDivElement | null>(null);
+  const newRowRef = useRef<HTMLDivElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -111,7 +112,7 @@ export default function QuoteSection({
     setQuoteData(lead?.quote_data || []);
     setTaxRate(lead?.quote_tax_rate ?? 0);
     setTemplateBannerDismissed(false);
-  }, [lead?.quote_data, lead?.quote_tax_rate]);
+  }, [lead?.quote_data, lead?.quote_tax_rate, isDirty]);
 
   useEffect(() => {
     onDirtyChange?.(isDirty);
@@ -201,8 +202,6 @@ export default function QuoteSection({
     doSave(quoteData, taxRate);
   };
 
-  /* A customer who says yes on the phone should land in the same place as
-     one who clicks Accept in the email — same timestamp, same pipeline move. */
   const handleMarkAccepted = async () => {
     setMarkingAccepted(true);
     try {
@@ -258,27 +257,28 @@ export default function QuoteSection({
   };
 
   const handleRemoveRow = (id: number) => {
-    setQuoteData(quoteData.filter((item: any) => item.id !== id));
+    setQuoteData((prev) => prev.filter((item: any) => item.id !== id));
     setIsDirty(true);
   };
 
   const handleAddRow = () => {
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
-    setQuoteData([...quoteData, newItem]);
+    setQuoteData((prev) => [...prev, newItem]);
     setIsDirty(true);
   };
 
-  // Mobile opens the sheet immediately; desktop focuses the inline field.
   const handleAddRowMobile = () => {
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
-    setQuoteData([...quoteData, newItem]);
+    setQuoteData((prev) => [...prev, newItem]);
     setEditingItem(newItem);
     setIsDirty(true);
   };
 
   const handleDoneEditing = () => {
     if (!editingItem) return;
-    setQuoteData(quoteData.map((item: any) => (item.id === editingItem.id ? editingItem : item)));
+    setQuoteData((prev) =>
+      prev.map((item: any) => (item.id === editingItem.id ? { ...editingItem } : item))
+    );
     setEditingItem(null);
     setIsDirty(true);
   };
@@ -298,10 +298,6 @@ export default function QuoteSection({
   const total = subtotal + taxAmount;
   const lastAddedId = quoteData.length > 0 ? quoteData[quoteData.length - 1].id : null;
 
-  // Read-only here. Deposit terms are a payment decision, edited in Billing
-  // where "Send deposit request" lives — but a contractor pricing the job
-  // should see that a share of it is due up front. Recomputes against the
-  // unsaved total so the number tracks while line items are edited.
   const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;
   const depositValue = parseFloat(lead?.deposit_value || '0');
   const depositAmount =
@@ -322,8 +318,6 @@ export default function QuoteSection({
   const dateOnly = (d: string) =>
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
-  /* Declined was invisible everywhere — the chip only knew sent and accepted,
-     so a customer saying no looked identical to one who hadn't replied. */
   const quoteState = quoteDeclined
     ? { label: `Declined ${declinedAt ? dateOnly(declinedAt) : ''}`, cls: 'bg-rose-50 text-rose-700 border-rose-200' }
     : quoteAccepted
@@ -332,27 +326,20 @@ export default function QuoteSection({
     ? { label: `Sent ${sentAt ? dateOnly(sentAt) : ''}`, cls: 'bg-blue-50 text-blue-700 border-blue-200' }
     : { label: 'Not sent yet', cls: 'bg-gray-100 text-gray-500 border-gray-200' };
 
-  /* Borderless until touched — the box appears on hover/focus so a row reads
-     as a line of a quote rather than a row of form fields. */
   const cellInput =
     'w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-right text-[15px] font-medium text-gray-900 tabular-nums outline-none transition-colors hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100';
 
-  /* ── One line-item card, used at every width ──────────────────────────
-     Below md it's a tappable summary that opens the bottom sheet. At md and
-     up the same card exposes inline inputs, so a contractor at a desk can
-     tab straight through a ten-line quote. Previously this was a desktop
-     <table> and a separate mobile card list — two implementations of the
-     same thing, which is why every change had to be made twice.          */
   const renderLineItem = (item: any) => {
     const isNew = item.id === lastAddedId && !item.description;
     return (
       <div
+        key={item.id}
         ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
         className="rounded-xl border border-gray-200 bg-white transition-colors hover:border-gray-300"
       >
-        {/* Mobile: tap anywhere to edit */}
+        {/* Mobile View */}
         <button
-          onClick={() => setEditingItem(item)}
+          onClick={() => setEditingItem({ ...item })}
           className="w-full text-left p-4 md:hidden active:bg-gray-50 rounded-xl transition-colors"
         >
           <div className="flex items-start justify-between gap-3">
@@ -368,7 +355,6 @@ export default function QuoteSection({
           </p>
         </button>
 
-        {/* Mobile delete sits outside the tap target so it can't fire by accident */}
         <div className="md:hidden px-4 pb-3 -mt-1 flex justify-end">
           <button
             onClick={() => handleRemoveRow(item.id)}
@@ -379,8 +365,8 @@ export default function QuoteSection({
           </button>
         </div>
 
-        {/* Desktop: inline fields */}
-<div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:items-center md:gap-1 md:p-1.5">
+        {/* Desktop View */}
+        <div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:items-center md:gap-1 md:p-1.5">
           <input
             ref={isNew ? newRowInputRef : undefined}
             type="text"
@@ -428,7 +414,7 @@ export default function QuoteSection({
 
   return (
     <>
-      {/* ── EMAIL PREVIEW MODAL ── */}
+      {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
         {previewHtml && (
           <motion.div
@@ -470,13 +456,13 @@ export default function QuoteSection({
         )}
       </AnimatePresence>
 
-      {/* ── MAIN CONTAINER ── */}
+      {/* MAIN CONTAINER */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl border border-gray-200 shadow-sm"
       >
-        {/* ── HEADER ── */}
+        {/* HEADER */}
         <div className="px-4 sm:px-5 py-4 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 bg-gray-100 text-gray-600 rounded-xl shrink-0">
@@ -489,7 +475,7 @@ export default function QuoteSection({
               </p>
             </div>
 
-           <span
+            <span
               className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium shrink-0 ${quoteState.cls}`}
             >
               {quoteDeclined ? (
@@ -552,16 +538,13 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* ── ITEMS + TOTALS ──
-             One grid. Below lg the rail stacks under the items; at lg and up
-             it sits beside them, so the money stops competing with subtotal,
-             tax, and deposit for a single crowded row. */}
+        {/* ITEMS + TOTALS */}
         <div className="px-4 sm:px-5 pb-5 grid gap-4 lg:grid-cols-[1fr_240px] lg:items-start">
-          {/* Items */}
+          {/* Items List */}
           <div className="min-w-0">
             {quoteData.length > 0 && (
-<div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:gap-1 px-3 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                  <span>Item</span>
+              <div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:gap-1 px-3 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                <span>Item</span>
                 <span className="text-right pr-2">Unit price</span>
                 <span className="text-center">Qty</span>
                 <span className="text-right pr-2">Amount</span>
@@ -572,7 +555,7 @@ export default function QuoteSection({
             {quoteData.length === 0 ? (
               <button
                 onClick={handleAddRowMobile}
-                className="w-full rounded-xl border border-dashed border-gray-300 py-12 flex flex-col items-center justify-center gap-3 hover:border-gray-400 hover:bg-gray-50 transition-all group"
+                className="w-full rounded-xl border border-dashed border-gray-300 py-12 flex flex-col items-center justify-center gap-3 hover:border-gray-400 hover:bg-gray-50 transition-all group cursor-pointer"
               >
                 <div className="w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center transition-transform group-active:scale-95">
                   <Plus className="w-5 h-5 text-white" />
@@ -583,16 +566,15 @@ export default function QuoteSection({
               <div className="flex flex-col gap-2">
                 {quoteData.map((item: any) => renderLineItem(item))}
 
-                {/* Desktop appends and focuses inline; mobile opens the sheet. */}
                 <button
                   onClick={handleAddRow}
-                  className="hidden md:flex w-full rounded-xl border border-dashed border-gray-300 py-3 items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 hover:border-gray-400 hover:bg-gray-50 transition-all"
+                  className="hidden md:flex w-full rounded-xl border border-dashed border-gray-300 py-3 items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 hover:border-gray-400 hover:bg-gray-50 transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Add item
                 </button>
                 <button
                   onClick={handleAddRowMobile}
-                  className="md:hidden w-full rounded-xl border border-dashed border-gray-300 py-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 active:bg-gray-50 transition-all"
+                  className="md:hidden w-full rounded-xl border border-dashed border-gray-300 py-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 active:bg-gray-50 transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Add line item
                 </button>
@@ -600,7 +582,7 @@ export default function QuoteSection({
             )}
           </div>
 
-          {/* Totals rail */}
+          {/* Totals Rail */}
           <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 lg:sticky lg:top-4">
             <p className="text-[11px] text-gray-400">
               Total
@@ -620,7 +602,7 @@ export default function QuoteSection({
                 <span className="text-gray-500">Subtotal</span>
                 <span className="text-gray-700 tabular-nums">{fmt(subtotal)}</span>
               </div>
-             <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Tax</span>
                 {editingTax ? (
                   <div className="flex items-center gap-1">
@@ -631,9 +613,15 @@ export default function QuoteSection({
                       min="0"
                       max="100"
                       value={taxRate}
-                      onChange={(e) => { setTaxRate(parseFloat(e.target.value) || 0); setIsDirty(true); }}
+                      onKeyDown={(e) => {
+                        handleNumericKeyDown(e, true);
+                        if (e.key === 'Enter') setEditingTax(false);
+                      }}
+                      onChange={(e) => {
+                        setTaxRate(parseFloat(e.target.value) || 0);
+                        setIsDirty(true);
+                      }}
                       onBlur={() => setEditingTax(false)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') setEditingTax(false); }}
                       className={`w-20 rounded-md border border-blue-400 bg-white px-2 py-1 text-xs font-medium text-gray-900 text-right tabular-nums outline-none ring-2 ring-blue-100 ${noSpinners}`}
                     />
                     <span className="text-gray-400">%</span>
@@ -641,7 +629,7 @@ export default function QuoteSection({
                 ) : (
                   <button
                     onClick={() => setEditingTax(true)}
-                    className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600 transition-colors"
+                    className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600 transition-colors cursor-pointer"
                   >
                     <span className="tabular-nums">{taxRate}%</span>
                     <span className="text-gray-400 tabular-nums">· {fmt(taxAmount)}</span>
@@ -666,7 +654,7 @@ export default function QuoteSection({
               <button
                 onClick={handleManualSave}
                 disabled={!hasProject || quoteData.length === 0 || saving}
-                className={`inline-flex items-center justify-center gap-2 px-4 h-11 text-[13px] font-medium rounded-lg transition disabled:opacity-40 ${
+                className={`inline-flex items-center justify-center gap-2 px-4 h-11 text-[13px] font-medium rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                   isDirty ? 'bg-gray-900 text-white hover:bg-gray-800' : 'text-gray-500 border border-gray-200 bg-white'
                 }`}
               >
@@ -680,10 +668,10 @@ export default function QuoteSection({
                 {isDirty ? 'Save quote' : 'Saved'}
               </button>
 
-             <button
+              <button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!hasProject || quoteData.length === 0}
-                className="inline-flex items-center justify-center gap-2 px-4 h-11 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition disabled:opacity-40"
+                className="inline-flex items-center justify-center gap-2 px-4 h-11 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Mail className="w-4 h-4" />
                 Send to customer
@@ -692,7 +680,7 @@ export default function QuoteSection({
               {!quoteAccepted && quoteData.length > 0 && (
                 <button
                   onClick={() => setShowAcceptConfirm(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 h-10 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-emerald-700 transition"
+                  className="inline-flex items-center justify-center gap-2 px-4 h-10 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-emerald-700 transition cursor-pointer"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   Mark accepted
@@ -702,7 +690,7 @@ export default function QuoteSection({
           </div>
         </div>
 
-        {/* ── BOTTOM SHEET EDITOR (mobile) ── */}
+        {/* BOTTOM SHEET EDITOR (Mobile) */}
         <AnimatePresence>
           {editingItem && (
             <>
@@ -735,13 +723,13 @@ export default function QuoteSection({
                         }
                         setEditingItem(null);
                       }}
-                      className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors"
+                      className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleDoneEditing}
-                      className="px-4 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors hover:bg-gray-800"
+                      className="px-4 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors hover:bg-gray-800 cursor-pointer"
                     >
                       Done
                     </button>
@@ -773,7 +761,11 @@ export default function QuoteSection({
                           onKeyDown={(e) => handleNumericKeyDown(e, true)}
                           onChange={(e) => {
                             const unitPrice = parseFloat(e.target.value) || 0;
-                            setEditingItem({ ...editingItem, unitPrice, amount: unitPrice * (editingItem.quantity || 0) });
+                            setEditingItem({
+                              ...editingItem,
+                              unitPrice,
+                              amount: unitPrice * (editingItem.quantity || 0),
+                            });
                           }}
                           placeholder="0.00"
                           className={`flex-1 bg-transparent text-[15px] font-medium text-gray-900 outline-none placeholder-gray-300 tabular-nums ${noSpinners}`}
@@ -789,7 +781,11 @@ export default function QuoteSection({
                         onKeyDown={(e) => handleNumericKeyDown(e, true)}
                         onChange={(e) => {
                           const quantity = parseFloat(e.target.value) || 0;
-                          setEditingItem({ ...editingItem, quantity, amount: (editingItem.unitPrice || 0) * quantity });
+                          setEditingItem({
+                            ...editingItem,
+                            quantity,
+                            amount: (editingItem.unitPrice || 0) * quantity,
+                          });
                         }}
                         placeholder="1"
                         className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[15px] font-medium text-gray-900 text-center tabular-nums outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
@@ -845,7 +841,7 @@ export default function QuoteSection({
                   {entry.html_body && (
                     <button
                       onClick={() => setPreviewHtml(entry.html_body)}
-                      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg text-[11px] font-medium transition-colors"
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg text-[11px] font-medium transition-colors cursor-pointer"
                     >
                       <Eye className="w-3 h-3" /> Preview
                     </button>
@@ -857,7 +853,7 @@ export default function QuoteSection({
         )}
       </motion.div>
 
-      {/* ── AI MODAL ── */}
+      {/* AI MODAL */}
       <AnimatePresence>
         {showAI && (
           <motion.div
@@ -890,7 +886,7 @@ export default function QuoteSection({
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setShowAI(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
+                <button onClick={() => setShowAI(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition cursor-pointer">
                   <X className="w-4 h-4 text-gray-500" />
                 </button>
               </div>
@@ -909,7 +905,7 @@ export default function QuoteSection({
         )}
       </AnimatePresence>
 
-      {/* ── PENDING AI ITEMS MODAL ── */}
+      {/* PENDING AI ITEMS MODAL */}
       <AnimatePresence>
         {pendingAiItems && (
           <motion.div
@@ -939,12 +935,12 @@ export default function QuoteSection({
               <div className="flex flex-col gap-2.5">
                 <button
                   onClick={() => {
-                    setQuoteData([...quoteData, ...pendingAiItems]);
+                    setQuoteData((prev) => [...prev, ...pendingAiItems]);
                     setPendingAiItems(null);
                     setShowAI(false);
                     setIsDirty(true);
                   }}
-                  className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition"
+                  className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition cursor-pointer"
                 >
                   Add to existing
                 </button>
@@ -955,13 +951,13 @@ export default function QuoteSection({
                     setShowAI(false);
                     setIsDirty(true);
                   }}
-                  className="w-full py-3.5 bg-white border border-gray-200 text-rose-600 rounded-xl font-medium text-sm hover:bg-rose-50 transition"
+                  className="w-full py-3.5 bg-white border border-gray-200 text-rose-600 rounded-xl font-medium text-sm hover:bg-rose-50 transition cursor-pointer"
                 >
                   Replace all
                 </button>
                 <button
                   onClick={() => setPendingAiItems(null)}
-                  className="mt-1 text-xs font-medium text-gray-400 hover:text-gray-600 transition"
+                  className="mt-1 text-xs font-medium text-gray-400 hover:text-gray-600 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -971,7 +967,7 @@ export default function QuoteSection({
         )}
       </AnimatePresence>
 
-      {/* ── EMAIL COMPOSER MODAL ── */}
+      {/* EMAIL COMPOSER MODAL */}
       {showEmailModal && (
         <SendEmailModal
           open={showEmailModal}
@@ -992,6 +988,7 @@ export default function QuoteSection({
         />
       )}
 
+      {/* ACCEPT MODAL */}
       <AnimatePresence>
         {showAcceptConfirm && (
           <motion.div
@@ -1023,14 +1020,14 @@ export default function QuoteSection({
                 <button
                   onClick={() => setShowAcceptConfirm(false)}
                   disabled={markingAccepted}
-                  className="py-3 border border-gray-200 text-gray-600 font-medium text-[13px] rounded-xl hover:bg-gray-50 transition disabled:opacity-50"
+                  className="py-3 border border-gray-200 text-gray-600 font-medium text-[13px] rounded-xl hover:bg-gray-50 transition cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleMarkAccepted}
                   disabled={markingAccepted}
-                  className="inline-flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[13px] rounded-xl transition disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[13px] rounded-xl transition cursor-pointer disabled:opacity-50"
                 >
                   {markingAccepted ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Mark accepted
