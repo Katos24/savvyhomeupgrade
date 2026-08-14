@@ -74,7 +74,7 @@ export default function DashboardStats({
     // 4-across at every breakpoint now. gap grows with screen size so the
     // row reads as "evenly spaced across the screen" on desktop rather than
     // than bunched to one side.
-    <section className="mb-4 grid w-full grid-cols-4 gap-1.5 sm:mb-5 sm:gap-2.5 lg:gap-4">
+    <section className="mb-4 hidden w-full grid-cols-4 gap-1.5 sm:mb-5 sm:grid sm:gap-2.5 lg:gap-4">
       {stats.map((s) => {
         const isHighlight = s.tone === 'highlight';
 
