@@ -197,11 +197,14 @@ export default function LeadOverviewTab({
         </motion.div>
       )}
 
-      {/* Main Grid Layout */}
+     {/* Main Grid Layout — on mobile, the customer's request needs to be
+           visible without scrolling past the whole client-info card first.
+           order-* flips which stacks on top below lg; lg:order-* pins the
+           original desktop layout back so nothing there changes. */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
         
         {/* LEFT COLUMN: Main Client Details (2 cols) */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="order-2 lg:order-1 lg:col-span-2 space-y-5">
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
@@ -367,7 +370,7 @@ export default function LeadOverviewTab({
         </div>
 
         {/* RIGHT COLUMN: Customer Message OVER Internal Notes (1 col) */}
-        <div className="space-y-5">
+        <div className="order-1 lg:order-2 space-y-5">
           {/* Customer Message */}
           <motion.div
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
