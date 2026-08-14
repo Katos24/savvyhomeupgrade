@@ -3,8 +3,22 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Plus, X, CheckSquare, Trash2, Save, AlertTriangle, Layers, DollarSign,
-  AlertCircle, Lock, Check, Percent, HandCoins, Clock,
+  Plus,
+  X,
+  CheckSquare,
+  Trash2,
+  Save,
+  AlertTriangle,
+  Layers,
+  DollarSign,
+  AlertCircle,
+  Lock,
+  Check,
+  Percent,
+  HandCoins,
+  Pencil,
+  Eye,
+  ChevronRight,
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -35,9 +49,6 @@ const clean = (v: any): number => {
   return isNaN(n) ? 0 : n;
 };
 
-// Deposit is calculated on the grand total, tax included — that's what the
-// customer is actually being asked to put down. Capped at the total so a
-// fixed $500 deposit on a $300 job can't exceed the job.
 const depositFor = (total: number, type: DepositType | null | undefined, value: number | null | undefined): number => {
   const v = Number(value) || 0;
   if (!type || v <= 0 || total <= 0) return 0;
@@ -58,14 +69,19 @@ const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appear
 
 function LockedCategoriesSection({ companySlug }: { companySlug: string }) {
   return (
-    <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
+    <div className="min-h-screen bg-slate-50/50 px-4 py-12 sm:px-8">
       <div className="mx-auto max-w-4xl">
-        <div className="rounded-2xl border-2 border-stone-300 bg-white py-16 text-center shadow-sm">
-          <Lock className="mx-auto mb-3 h-6 w-6 text-stone-300" />
-          <p className="text-sm font-bold text-stone-800">Categories &amp; pricing is on the Basic plan</p>
+        <div className="rounded-2xl border border-slate-200 bg-white py-16 px-6 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 text-slate-400">
+            <Lock className="h-6 w-6" />
+          </div>
+          <h3 className="text-base font-bold text-slate-900">Categories & Pricing Templates</h3>
+          <p className="mt-1 text-sm text-slate-500">
+            Custom category checklists and automatic line-item pricing are available on the Basic plan.
+          </p>
           <a
             href={`/${companySlug}/home?section=billing`}
-            className="mt-4 inline-block rounded-lg bg-stone-900 px-4 py-2.5 text-xs font-bold text-white transition-colors hover:bg-stone-800"
+            className="mt-6 inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 shadow-sm"
           >
             Upgrade to Basic
           </a>
@@ -94,12 +110,10 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [newCatError, setNewCatError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; label: string } | null>(null);
 
- const [taskEditorCatIndex, setTaskEditorCatIndex] = useState<number | null>(null);
+  const [taskEditorCatIndex, setTaskEditorCatIndex] = useState<number | null>(null);
   const [editingTasks, setEditingTasks] = useState<TaskTemplate[]>([]);
   const [newTaskLabel, setNewTaskLabel] = useState('');
   const [taskInputError, setTaskInputError] = useState(false);
-
- 
 
   const [quoteTemplates, setQuoteTemplates] = useState<QuoteTemplate[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
@@ -110,19 +124,17 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [newDesc, setNewDesc] = useState('');
   const [newPrice, setNewPrice] = useState('');
   const [newQty, setNewQty] = useState('1');
-  const [addingItem, setAddingItem] = useState(false);
   const [lineItemError, setLineItemError] = useState('');
   const [quoteSaving, setQuoteSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
   const [showQuotePreview, setShowQuotePreview] = useState(false);
 
-  // Per-template values being edited in the pricing modal. Moved up here with
-  // the rest of the state — it was previously declared mid-component.
+  // Per-template values in pricing modal
   const [editingTaxRateValue, setEditingTaxRateValue] = useState<number>(0);
   const [editingDepositType, setEditingDepositType] = useState<DepositType | null>(null);
   const [editingDepositValue, setEditingDepositValue] = useState<number>(0);
 
-  // Company-wide defaults.
+  // Company-wide defaults
   const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
   const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState(String(company.default_tax_rate ?? 0));
@@ -136,7 +148,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [depositSaving, setDepositSaving] = useState(false);
   const [depositError, setDepositError] = useState('');
 
-  // Which default is being offered for backfill onto existing templates.
+  // Target default offered for backfill onto existing templates
   const [applyTarget, setApplyTarget] = useState<'tax' | 'deposit' | null>(null);
   const [applyingToAll, setApplyingToAll] = useState(false);
 
@@ -187,7 +199,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         setEditingDepositDefault(false);
         if (quoteTemplates.length > 0) setApplyTarget('deposit');
       } else {
-        setDepositError(result.error || 'Could not save the deposit default.');
+        setDepositError(result.error || 'Could not save default deposit.');
       }
     } catch {
       setDepositError('Network error. Try again.');
@@ -196,15 +208,11 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     }
   };
 
-  // Pushes one company default onto every saved template. Deliberately touches
-  // a single field so applying a deposit can't quietly reset tax rates.
   const applyDefaultToAllTemplates = async (target: 'tax' | 'deposit') => {
     setApplyingToAll(true);
     setSaveError('');
 
     try {
-      // Normalize items the way openQuoteEditor does. Stored items don't
-      // reliably carry `amount`, so summing it directly yields NaN totals.
       const updatedTemplates = quoteTemplates.map((t) => {
         const normalizedItems = t.items.map((item: any, i: number) => {
           const qty = clean(item.quantity ?? item.qty ?? 1) || 1;
@@ -220,20 +228,14 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           };
         });
 
-       const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
+        const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
         const nextTaxRate = target === 'tax' ? taxRate : (t.tax_rate ?? 0);
-        // Applying a deposit shouldn't rewrite pricing. Only recompute the
-        // total when the tax rate is what changed.
-        const nextTotal =
-          target === 'tax' ? subtotal + subtotal * (nextTaxRate / 100) : t.total;
+        const nextTotal = target === 'tax' ? subtotal + subtotal * (nextTaxRate / 100) : t.total;
 
-       return {
+        return {
           ...t,
           items: normalizedItems,
           tax_rate: nextTaxRate,
-          // Both columns go null together — deposit_value of 0 alongside a
-          // null type violates the paired CHECK constraint and throws the
-          // whole batch.
           deposit_type: target === 'deposit' ? depositType : (t.deposit_type ?? null),
           deposit_value:
             target === 'deposit'
@@ -243,8 +245,6 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         };
       });
 
-      // One request, one statement server-side. The old version fired N
-      // parallel updates that overwrote each other.
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -257,18 +257,11 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         return;
       }
 
-      if (data.updated !== data.requested) {
-        setSaveError(
-          `Only ${data.updated} of ${data.requested} templates updated. Refresh and try again.`
-        );
-      }
-
       setQuoteTemplates(data.templates || updatedTemplates);
       setApplyTarget(null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
-      console.error('Apply default to all failed:', err);
       setSaveError('Network error applying the change. Try again.');
     } finally {
       setApplyingToAll(false);
@@ -353,8 +346,6 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     setIsDirty(false);
   };
 
-
-
   const openQuoteEditor = (catValue: string) => {
     const existing = quoteTemplates.find(t => t.category === catValue);
     const mapped: LineItem[] = existing
@@ -366,14 +357,11 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
       : [];
     setEditingLineItems(mapped);
     setEditingQuoteId(existing?.id || null);
-    // New templates inherit the company's current tax rate and deposit terms.
-    // Existing templates keep whatever they were saved with — changing a
-    // company default later doesn't retroactively touch saved templates.
     setEditingTaxRateValue(existing ? (existing.tax_rate ?? 0) : taxRate);
     setEditingDepositType(existing ? (existing.deposit_type ?? null) : depositType);
     setEditingDepositValue(existing ? (existing.deposit_value ?? 0) : depositValue);
     setNewDesc(''); setNewPrice(''); setNewQty('1');
-    setAddingItem(false); setLineItemError(''); setQuoteError('');
+    setLineItemError(''); setQuoteError('');
     setQuoteEditorCatValue(catValue);
     setQuoteEditorOpen(true);
   };
@@ -384,7 +372,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     if (!newPrice || price === 0) { setLineItemError('Enter a valid price.'); return; }
     const qty = clean(newQty) || 1;
     setEditingLineItems(prev => [...prev, { id: `item_${Date.now()}`, description: newDesc.trim(), quantity: qty, unitPrice: price, amount: qty * price }]);
-    setNewDesc(''); setNewPrice(''); setNewQty('1'); setLineItemError(''); setAddingItem(false);
+    setNewDesc(''); setNewPrice(''); setNewQty('1'); setLineItemError('');
   };
 
   const updateLineItem = (id: string, field: 'description' | 'quantity' | 'unitPrice', value: string) => {
@@ -451,346 +439,334 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const quoteEditorDeposit = depositFor(quoteEditorTotal, editingDepositType, editingDepositValue);
   const quoteEditorBalance = quoteEditorTotal - quoteEditorDeposit;
 
-  // Plan gate lives after every hook above, so hook order never changes
-  // between renders regardless of plan_tier.
   if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
     return <LockedCategoriesSection companySlug={company.slug} />;
   }
 
   return (
-    <div className="bg-[#F3F2FB] px-4 py-8 sm:px-8">
-      <div className="mx-auto max-w-4xl pb-24">
-      {/* ── TITLE + ACTIONS ── */}
-       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-2xl font-bold tracking-tight text-stone-900">Service categories</h2>
+    <div className="min-h-screen bg-slate-50/50 px-4 py-8 sm:px-8 font-sans text-slate-900 antialiased">
+      <div className="mx-auto max-w-5xl space-y-8 pb-32">
+        
+        {/* ── HEADER SECTION ── */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-5">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Service Categories</h1>
+              {isDirty && (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-700 border border-amber-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Unsaved changes
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-sm text-slate-500">
+              Configure job categories, automatic task checklists, and estimate line-item pricing.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowQuotePreview(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <Eye className="h-3.5 w-3.5 text-slate-500" /> Preview In Action
+            </button>
             {isDirty && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-800">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> Unsaved changes
-              </span>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 transition"
+              >
+                <Save className="h-3.5 w-3.5" />
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
             )}
           </div>
-          {isDirty && (
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" />
-              {saving ? 'Saving...' : 'Save changes'}
-            </button>
-          )}
         </div>
 
-{/* ── HEADLINE ── */}
-        <div className="mb-6">
-          <h3 className="text-[18px] font-bold leading-snug text-stone-900">
-            Set up your estimate templates to create invoices faster
-          </h3>
-          <ul className="mt-3 space-y-1.5 text-[14px] font-medium leading-relaxed text-stone-600">
-            <li>Adjust quantity and price per job — templates are just a starting point.</li>
-            <li>Add or remove line items whenever a job needs it.</li>
-            <li>Set a deposit and the quote splits into an amount due on signing and a balance.</li>
-          </ul>
-          <button
-            onClick={() => setShowQuotePreview(true)}
-            className="mt-3 text-[12px] font-semibold text-stone-500 underline hover:text-stone-700"
-          >
-            See where this shows up
-          </button>
-        </div>
+        {/* ── NOTIFICATIONS & ALERTS ── */}
+        {saveSuccess && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-semibold text-emerald-800">
+            <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+            Changes saved successfully.
+          </div>
+        )}
+        {saveError && (
+          <div className="flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800">
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            {saveError}
+          </div>
+        )}
 
-        {/* ── APPLY A CHANGED DEFAULT TO EXISTING TEMPLATES ── */}
+        {/* ── APPLY DEFAULT PROMPT ── */}
         {applyTarget && (
-          <div className="mb-4 flex flex-col gap-3 rounded-lg border-2 border-emerald-300 bg-emerald-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm font-bold text-emerald-800">
-              Apply {applyTarget === 'tax' ? `${taxRate}% tax` : depositLabel(depositType, depositValue).toLowerCase()} to your{' '}
-              {quoteTemplates.length} existing pricing template{quoteTemplates.length !== 1 ? 's' : ''} too?
+          <div className="flex flex-col gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs font-semibold text-indigo-950">
+              Apply <span className="font-bold">{applyTarget === 'tax' ? `${taxRate}% tax` : depositLabel(depositType, depositValue)}</span> to your{' '}
+              {quoteTemplates.length} existing pricing template{quoteTemplates.length !== 1 ? 's' : ''}?
             </p>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => applyDefaultToAllTemplates(applyTarget)}
                 disabled={applyingToAll}
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:opacity-60"
+                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50 shadow-sm transition"
               >
-                {applyingToAll ? 'Applying...' : 'Apply to all'}
+                {applyingToAll ? 'Applying...' : 'Apply to All Templates'}
               </button>
               <button
                 onClick={() => setApplyTarget(null)}
-                className="text-xs font-bold text-emerald-700 hover:underline"
+                className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
               >
-                No, just new ones
+                New Ones Only
               </button>
             </div>
           </div>
         )}
 
-        {/* ── STATUS ── */}
-        {saveSuccess && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border-2 border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-800">
-            <Check className="h-4 w-4 shrink-0" /> Saved successfully.
-          </div>
-        )}
-        {saveError && (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border-2 border-rose-300 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-800">
-            <AlertCircle className="h-4 w-4 shrink-0" /> {saveError}
-          </div>
-        )}
+        {/* ── GLOBAL DEFAULTS & CATEGORY CONTROLS ── */}
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+              <Layers className="h-4 w-4" /> Global Settings & Additions
+            </h2>
 
-       {/* ── ADD CATEGORY + COMPANY DEFAULTS ── */}
-        <div className="mb-6">
+            {!showAddForm && (
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"
+              >
+                <Plus className="h-3.5 w-3.5" /> Add Category
+              </button>
+            )}
+          </div>
+
           <AnimatePresence mode="wait">
             {showAddForm ? (
               <motion.div
                 key="form"
-                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring}
-                className="flex flex-col gap-2 sm:flex-row"
+                initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring}
+                className="flex flex-col gap-2.5 sm:flex-row sm:items-center bg-slate-50 p-3 rounded-lg border border-slate-200"
               >
                 <input
                   autoFocus
                   value={newCatLabel}
                   onChange={e => { setNewCatLabel(e.target.value); setNewCatError(''); }}
                   onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-                  placeholder="e.g. Plumbing, HVAC, Roofing..."
-                  className={`flex-1 rounded-lg border-2 px-4 py-2.5 text-sm font-bold outline-none transition ${
-                    newCatError ? 'border-rose-400 bg-rose-50' : 'border-stone-300 bg-white focus:border-stone-900'
+                  placeholder="Category Name (e.g., Plumbing, Roofing, HVAC)"
+                  className={`flex-1 rounded-lg border px-3.5 py-2 text-sm font-medium text-slate-900 outline-none transition ${
+                    newCatError ? 'border-rose-300 focus:border-rose-500' : 'border-slate-200 focus:border-slate-900 bg-white'
                   }`}
                 />
-                <div className="flex gap-2">
+                <div className="flex items-center gap-2">
                   <button
                     onClick={handleAddCategory}
-                    className="flex-1 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-blue-700 sm:flex-none"
+                    className="rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition"
                   >
-                    Add
+                    Add Category
                   </button>
                   <button
                     onClick={() => { setShowAddForm(false); setNewCatLabel(''); setNewCatError(''); }}
-                    className="flex-1 rounded-lg border-2 border-stone-300 bg-white px-4 py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-50 sm:flex-none"
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
                   >
                     Cancel
                   </button>
                 </div>
               </motion.div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                <motion.button
-                  key="trigger"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  onClick={() => setShowAddForm(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 px-4 py-2 text-[12px] font-bold text-blue-700 transition-colors hover:bg-blue-100"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Add category
-                </motion.button>
-
-                {editingTaxRate ? (
-                  <div className="flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-2 py-1">
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      max="100"
-                      value={taxRateDraft}
-                      onChange={(e) => setTaxRateDraft(e.target.value)}
-                      autoFocus
-                      className="w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none"
-                    />
-                    <span className="text-xs font-bold text-stone-500">%</span>
-                    <button
-                      onClick={saveTaxRate}
-                      disabled={taxRateSaving}
-                      className="rounded-md bg-stone-900 px-2 py-1 text-[11px] font-bold text-white hover:bg-stone-800"
-                    >
-                      {taxRateSaving ? '...' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => { setEditingTaxRate(false); setTaxRateDraft(String(taxRate)); }}
-                      className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingTaxRate(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2 text-[12px] font-bold text-stone-700 hover:border-stone-400"
-                  >
-                    <Percent className="h-3.5 w-3.5" />
-                    Tax rate: {taxRate}%
-                  </button>
-                )}
-
-                {editingDepositDefault ? (
-                  <div className="flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-2 py-1">
-                    <div className="flex overflow-hidden rounded-md border border-stone-300">
-                      {(['percent', 'fixed'] as DepositType[]).map((t) => (
-                        <button
-                          key={t}
-                          onClick={() => setDepositTypeDraft(t)}
-                          className={`px-2 py-1 text-[11px] font-bold transition-colors ${
-                            depositTypeDraft === t ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'
-                          }`}
-                        >
-                          {t === 'percent' ? '%' : '$'}
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      max={depositTypeDraft === 'percent' ? 100 : undefined}
-                      value={depositValueDraft}
-                      onChange={(e) => { setDepositValueDraft(e.target.value); setDepositError(''); }}
-                      placeholder={depositTypeDraft === 'percent' ? '50' : '500'}
-                      autoFocus
-                      className={`w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none ${noSpinners}`}
-                    />
-                    <button
-                      onClick={() => saveDepositDefault(false)}
-                      disabled={depositSaving}
-                      className="rounded-md bg-stone-900 px-2 py-1 text-[11px] font-bold text-white hover:bg-stone-800 disabled:opacity-60"
-                    >
-                      {depositSaving ? '...' : 'Save'}
-                    </button>
-                    {depositType && (
-                      <button
-                        onClick={() => saveDepositDefault(true)}
-                        disabled={depositSaving}
-                        className="text-[11px] font-bold text-rose-500 hover:text-rose-700"
-                      >
-                        Clear
-                      </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        setEditingDepositDefault(false);
-                        setDepositTypeDraft(depositType ?? 'percent');
-                        setDepositValueDraft(String(depositValue || ''));
-                        setDepositError('');
-                      }}
-                      className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingDepositDefault(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2 text-[12px] font-bold text-stone-700 hover:border-stone-400"
-                  >
-                    <HandCoins className="h-3.5 w-3.5" />
-                    {depositType ? `Deposit: ${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}` : 'Deposit: none'}
-                  </button>
-                )}
-              </div>
-            )}
+            ) : null}
           </AnimatePresence>
-          {newCatError && (
-            <p className="mt-2 flex items-center gap-1 text-xs font-bold text-rose-600">
-              <AlertCircle className="h-3 w-3" /> {newCatError}
-            </p>
-          )}
-          {depositError && (
-            <p className="mt-2 flex items-center gap-1 text-xs font-bold text-rose-600">
-              <AlertCircle className="h-3 w-3" /> {depositError}
-            </p>
-          )}
+
+          {/* Quick Defaults Pills */}
+          <div className="flex flex-wrap items-center gap-3 pt-1">
+            {/* Tax Rate Setting */}
+            {editingTaxRate ? (
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+                <span className="text-xs font-semibold text-slate-600 pl-2">Tax:</span>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  max="100"
+                  value={taxRateDraft}
+                  onChange={(e) => setTaxRateDraft(e.target.value)}
+                  autoFocus
+                  className="w-16 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-900 outline-none"
+                />
+                <span className="text-xs font-bold text-slate-400">%</span>
+                <button
+                  onClick={saveTaxRate}
+                  disabled={taxRateSaving}
+                  className="rounded-md bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white hover:bg-slate-800"
+                >
+                  {taxRateSaving ? '...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => { setEditingTaxRate(false); setTaxRateDraft(String(taxRate)); }}
+                  className="px-1 text-xs font-semibold text-slate-400 hover:text-slate-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingTaxRate(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+              >
+                <Percent className="h-3.5 w-3.5 text-slate-400" />
+                Default Tax: <span className="font-bold text-slate-900">{taxRate}%</span>
+              </button>
+            )}
+
+            {/* Deposit Terms Setting */}
+            {editingDepositDefault ? (
+              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 p-1.5">
+                <div className="flex rounded-md border border-slate-200 bg-white p-0.5">
+                  {(['percent', 'fixed'] as DepositType[]).map((t) => (
+                    <button
+                      key={t}
+                      onClick={() => setDepositTypeDraft(t)}
+                      className={`px-2 py-0.5 text-xs font-semibold rounded ${
+                        depositTypeDraft === t ? 'bg-slate-900 text-white' : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                    >
+                      {t === 'percent' ? '%' : '$'}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  max={depositTypeDraft === 'percent' ? 100 : undefined}
+                  value={depositValueDraft}
+                  onChange={(e) => { setDepositValueDraft(e.target.value); setDepositError(''); }}
+                  placeholder={depositTypeDraft === 'percent' ? '50' : '500'}
+                  autoFocus
+                  className={`w-16 rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-900 outline-none ${noSpinners}`}
+                />
+                <button
+                  onClick={() => saveDepositDefault(false)}
+                  disabled={depositSaving}
+                  className="rounded-md bg-slate-900 px-2.5 py-1 text-xs font-semibold text-white hover:bg-slate-800"
+                >
+                  {depositSaving ? '...' : 'Save'}
+                </button>
+                {depositType && (
+                  <button
+                    onClick={() => saveDepositDefault(true)}
+                    disabled={depositSaving}
+                    className="px-1 text-xs font-semibold text-rose-600 hover:text-rose-800"
+                  >
+                    Clear
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    setEditingDepositDefault(false);
+                    setDepositTypeDraft(depositType ?? 'percent');
+                    setDepositValueDraft(String(depositValue || ''));
+                    setDepositError('');
+                  }}
+                  className="px-1 text-xs font-semibold text-slate-400 hover:text-slate-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setEditingDepositDefault(true)}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition"
+              >
+                <HandCoins className="h-3.5 w-3.5 text-slate-400" />
+                Default Deposit:{' '}
+                <span className="font-bold text-slate-900">
+                  {depositType ? (depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)) : 'None'}
+                </span>
+              </button>
+            )}
+          </div>
+          {depositError && <p className="text-xs font-semibold text-rose-600">{depositError}</p>}
         </div>
 
-        {/* ── CATEGORY GRID ── */}
-        <p className="mb-2 text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
-          Update your categories, tasks, and templates below
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {categories.map((cat, index) => {
+        {/* ── CATEGORY LIST GRID ── */}
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden divide-y divide-slate-100">
+          <div className="px-6 py-4 bg-slate-50/50 flex items-center justify-between border-b border-slate-100">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Category Name</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Templates & Actions</span>
+          </div>
+
+          {categories.map((cat, idx) => {
+            const hasQuote = quoteTemplates.some(q => q.category === cat.value);
             const taskCount = cat.task_templates?.length || 0;
-            const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
-            const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate.deposit_value ?? 0) > 0;
+
             return (
-              <motion.div
-                key={cat.value}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="group rounded-2xl border border-gray-800 bg-[#0F172A] p-5 shadow-sm transition-all duration-300 hover:border-indigo-500/50 hover:shadow-indigo-500/10"
+              <div
+                key={cat.value || idx}
+                className="flex flex-col sm:flex-row sm:items-center justify-between px-6 py-4 gap-4 hover:bg-slate-50/50 transition"
               >
-                <div className="mb-4 flex items-start justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-800">
-                    <Layers className="h-5 w-5 text-indigo-400" />
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-slate-900">{cat.label}</span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                  {/* Task Checklist Button */}
                   <button
-                    onClick={() => setDeleteConfirm({ index, label: cat.label })}
-                    className="rounded-lg p-2 text-gray-600 transition-all hover:bg-red-500/10 hover:text-red-400"
-                    aria-label={`Delete ${cat.label}`}
+                    onClick={() => openTaskEditor(idx)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                      taskCount > 0
+                        ? 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        : 'border-dashed border-slate-300 text-slate-400 hover:border-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    <CheckSquare className={`h-3.5 w-3.5 ${taskCount > 0 ? 'text-emerald-600' : 'text-slate-400'}`} />
+                    {taskCount > 0 ? `${taskCount} Tasks` : '+ Task Checklist'}
+                  </button>
+
+                  {/* Pricing Template Button */}
+                  <button
+                    onClick={() => openQuoteEditor(cat.value)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${
+                      hasQuote
+                        ? 'border-indigo-200 bg-indigo-50/50 text-indigo-700 hover:bg-indigo-100/50'
+                        : 'border-dashed border-slate-300 text-slate-400 hover:border-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    <DollarSign className={`h-3.5 w-3.5 ${hasQuote ? 'text-indigo-600' : 'text-slate-400'}`} />
+                    {hasQuote ? 'Pricing Configured' : '+ Line Item Pricing'}
+                  </button>
+
+                  {/* Remove Category */}
+                  <button
+                    onClick={() => setDeleteConfirm({ index: idx, label: cat.label })}
+                    className="p-1.5 text-slate-300 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition"
+                    title="Remove Category"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
-
-                <h3 className="mb-3 text-sm font-black text-white">{cat.label}</h3>
-
-                <div className="mb-4 flex flex-wrap gap-2">
-                  <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
-                    taskCount > 0 ? 'border-indigo-500/20 bg-indigo-500/10 text-indigo-400' : 'border-gray-700 bg-gray-800/50 text-gray-600'
-                  }`}>
-                    <CheckSquare className="h-3 w-3" />
-                    {taskCount > 0 ? `${taskCount} Task${taskCount !== 1 ? 's' : ''}` : 'No Tasks'}
-                  </span>
-                  <span className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider ${
-                    quoteTemplate ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400' : 'border-gray-700 bg-gray-800/50 text-gray-600'
-                  }`}>
-                    <DollarSign className="h-3 w-3" />
-                    {quoteTemplate ? `${quoteTemplate.items.length} Item${quoteTemplate.items.length !== 1 ? 's' : ''}` : 'No Pricing'}
-                  </span>
-                 {hasDeposit && (
-                    <span className="inline-flex items-center gap-1 rounded-lg border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-400">
-                      <HandCoins className="h-3 w-3" />
-                      {quoteTemplate!.deposit_type === 'percent'
-                        ? `${quoteTemplate!.deposit_value}% Down`
-                        : `${fmt(quoteTemplate!.deposit_value ?? 0)} Down`}
-                    </span>
-                  )}
-                </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => openTaskEditor(index)}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-[11px] font-black uppercase tracking-widest text-gray-400 transition-all hover:border-indigo-600 hover:bg-indigo-600 hover:text-white"
-                  >
-                    <Plus className="h-3 w-3" /> Tasks
-                  </button>
-                  <button
-                    onClick={() => openQuoteEditor(cat.value)}
-                    className="flex items-center justify-center gap-1.5 rounded-xl border border-gray-700 bg-gray-800 py-2.5 text-[11px] font-black uppercase tracking-widest text-gray-400 transition-all hover:border-emerald-600 hover:bg-emerald-600 hover:text-white"
-                  >
-                    <Plus className="h-3 w-3" /> Pricing
-                  </button>
-                </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
 
-        {/* ── STICKY UNSAVED-CHANGES PROMPT ── */}
+        {/* ── STICKY UNSAVED CHANGE BAR ── */}
         <AnimatePresence>
           {isDirty && (
             <motion.div
-              initial={{ y: 80, opacity: 0 }}
+              initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              className="sticky bottom-0 z-40 border-t-2 border-stone-300 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]"
+              exit={{ y: 50, opacity: 0 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-lg px-4"
             >
-              <div className="mx-auto flex max-w-4xl flex-col items-stretch gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                <p className="flex items-center gap-1.5 text-[13px] font-bold text-stone-800">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+              <div className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900 p-4 shadow-2xl text-white">
+                <p className="text-xs font-semibold flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-amber-400 animate-ping" />
                   You have unsaved changes.
                 </p>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-stone-900 px-4 py-2 text-[13px] font-bold text-white transition-colors hover:bg-stone-800 disabled:opacity-60 sm:w-auto"
+                  className="rounded-lg bg-white px-4 py-2 text-xs font-bold text-slate-900 shadow-sm hover:bg-slate-100 disabled:opacity-50 transition shrink-0"
                 >
-                  {saving && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
-                  {saving ? 'Saving...' : 'Save changes'}
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </motion.div>
@@ -800,275 +776,211 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         {/* ── TASK EDITOR MODAL ── */}
         {taskEditorCatIndex !== null && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/70 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
             onClick={() => { setTaskEditorCatIndex(null); setTaskInputError(false); }}
           >
             <div
-              className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-lg bg-white"
+              className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b-2 border-stone-200 px-5 py-4">
-                <span className="text-[15px] font-extrabold text-stone-900">
-                  {categories[taskEditorCatIndex]?.label} tasks
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
+                <span className="text-sm font-bold text-slate-900">
+                  {categories[taskEditorCatIndex]?.label} Checklist
                 </span>
                 <button
                   onClick={() => { setTaskEditorCatIndex(null); setTaskInputError(false); }}
-                  className="rounded-full p-1 text-stone-500 hover:bg-stone-100"
-                  aria-label="Close"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="flex-1 space-y-4 overflow-y-auto p-5">
-                <div className={`flex gap-2 rounded-lg border-2 p-1 transition-colors ${
-                  taskInputError ? 'border-rose-400 bg-rose-50' : 'border-stone-300 bg-stone-50'
-                }`}>
+                <div className="flex gap-2">
                   <input
                     value={newTaskLabel}
                     onChange={e => { setNewTaskLabel(e.target.value); setTaskInputError(false); }}
                     onKeyDown={e => e.key === 'Enter' && addTask()}
-                    placeholder="Type a task step..."
-                    className="flex-1 bg-transparent px-3 py-2 text-sm font-semibold text-stone-900 outline-none"
+                    placeholder="Add checklist step..."
+                    className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium text-slate-900 outline-none transition ${
+                      taskInputError ? 'border-rose-300 bg-rose-50' : 'border-slate-200 focus:border-slate-900'
+                    }`}
                   />
                   <button
                     onClick={addTask}
-                    className="rounded-lg bg-blue-600 p-2.5 text-white transition-colors hover:bg-blue-700"
-                    aria-label="Add task"
+                    className="rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
 
                 {taskInputError && (
-                  <p className="flex items-center gap-1 text-[12px] font-bold text-rose-700">
-                    <AlertCircle className="h-3 w-3" /> Click the + button to add your task before saving.
-                  </p>
+                  <p className="text-xs font-semibold text-rose-600">Click the + button to append this task.</p>
                 )}
 
-                <div className="space-y-2">
+                <div className="space-y-2 pt-2">
                   {editingTasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-3 rounded-lg border-2 border-stone-200 bg-stone-50 px-4 py-2.5">
-                      <div className="h-4 w-4 shrink-0 rounded border-2 border-blue-300" />
-                      <span className="flex-1 text-sm font-bold text-stone-800">{task.label}</span>
+                    <div key={task.id} className="flex items-center gap-3 rounded-lg border border-slate-100 bg-slate-50/60 px-3 py-2.5">
+                      <CheckSquare className="h-4 w-4 text-emerald-600 shrink-0" />
+                      <span className="flex-1 text-xs font-semibold text-slate-800">{task.label}</span>
                       <button
                         onClick={() => setEditingTasks(editingTasks.filter(t => t.id !== task.id))}
-                        className="text-stone-400 hover:text-rose-600"
-                        aria-label={`Remove ${task.label}`}
+                        className="text-slate-300 hover:text-rose-600 transition"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
+                  {editingTasks.length === 0 && (
+                    <p className="text-center py-6 text-xs text-slate-400 font-medium">No tasks configured for this category.</p>
+                  )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 border-t-2 border-stone-200 p-4">
+              <div className="flex items-center justify-end gap-2 border-t border-slate-100 p-4 bg-slate-50/50">
                 <button
                   onClick={() => setTaskEditorCatIndex(null)}
-                  className="rounded-lg border-2 border-stone-300 bg-white py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-50"
+                  className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={saveTaskTemplates}
-                  className="rounded-lg bg-stone-900 py-2.5 text-sm font-bold text-white transition-colors hover:bg-stone-800"
+                  className="rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition"
                 >
-                  Save checklist
+                  Save Checklist
                 </button>
               </div>
             </div>
           </div>
         )}
 
-    
-
         {/* ── PRICING TEMPLATE MODAL ── */}
         {quoteEditorOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-md"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
             onClick={() => setQuoteEditorOpen(false)}
           >
             <div
-              className="flex h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-[#0F172A] shadow-2xl"
+              className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex shrink-0 items-center justify-between border-b border-white/10 bg-[#1E293B] px-6 py-5">
+              {/* Modal Header */}
+              <div className="flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-50/50 px-6 py-4">
                 <div>
-                  <p className="text-lg font-black text-white">Pricing Template</p>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    {activeQuoteEditorCat?.label}
-                  </p>
+                  <h3 className="text-sm font-bold text-slate-900">Line Item Pricing Template</h3>
+                  <p className="text-xs font-semibold text-indigo-600">{activeQuoteEditorCat?.label}</p>
                 </div>
                 <button
                   onClick={() => setQuoteEditorOpen(false)}
-                  className="rounded-xl bg-white/5 p-2 transition hover:bg-white/10"
-                  aria-label="Close"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
                 >
-                  <X className="h-5 w-5 text-white" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
 
-              {/* Table headers, desktop only */}
-              <div className="hidden shrink-0 grid-cols-[1fr_120px_80px_100px_40px] gap-0 border-b border-white/10 bg-[#020617] px-6 py-3 sm:grid">
-                {['Item Description', 'Unit Price', 'Qty', 'Total', ''].map((h, i) => (
-                  <span
-                    key={i}
-                    className={`text-[10px] font-black uppercase tracking-widest text-gray-400 ${i > 0 && i < 4 ? 'text-right' : ''}`}
-                  >
-                    {h}
-                  </span>
-                ))}
-              </div>
+              {/* Line Items List */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="space-y-2">
+                  <div className="hidden sm:grid sm:grid-cols-[1fr_100px_70px_90px_32px] gap-3 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    <span>Item Description</span>
+                    <span className="text-right">Unit Price</span>
+                    <span className="text-center">Qty</span>
+                    <span className="text-right">Total</span>
+                    <span></span>
+                  </div>
 
-              <div className="flex-1 divide-y divide-white/[0.05] overflow-y-auto pb-24 sm:pb-0">
-                {editingLineItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="relative flex flex-col gap-3 p-5 hover:bg-white/[0.02] sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:gap-0 sm:p-0"
-                  >
-                    <div className="sm:px-6">
-                      <span className="mb-1 block text-[10px] font-black uppercase text-indigo-400 sm:hidden">
-                        Description
-                      </span>
+                  {editingLineItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex flex-col sm:grid sm:grid-cols-[1fr_100px_70px_90px_32px] gap-2 sm:gap-3 items-center rounded-lg border border-slate-200 p-3 bg-white"
+                    >
                       <input
                         value={item.description}
                         onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                        className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-bold text-white outline-none focus:ring-1 focus:ring-indigo-500 sm:border-none sm:bg-transparent sm:py-4"
+                        placeholder="Item Description"
+                        className="w-full rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-900 outline-none focus:border-slate-900"
                       />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 sm:contents">
-                      <div className="flex flex-col sm:border-l sm:border-white/5 sm:px-4">
-                        <span className="mb-1 block text-center text-[10px] font-black uppercase text-indigo-400 sm:hidden">Price</span>
-                        <div className="flex items-center rounded-lg border border-white/10 bg-white/5 px-2 sm:justify-end sm:border-none sm:bg-transparent">
-                          <span className="text-xs text-gray-500">$</span>
-                          <input
-                            type="number"
-                            value={item.unitPrice || ''}
-                            onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                            className={`w-full border-none bg-transparent py-2 text-sm font-black text-white outline-none focus:ring-0 sm:text-right ${noSpinners}`}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:border-l sm:border-white/5 sm:px-4">
-                        <span className="mb-1 block text-center text-[10px] font-black uppercase text-indigo-400 sm:hidden">Qty</span>
+                      <div className="flex items-center gap-1 w-full sm:w-auto">
+                        <span className="text-xs font-medium text-slate-400">$</span>
                         <input
                           type="number"
-                          value={item.quantity || ''}
-                          onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
-                          className={`w-full rounded-lg border border-white/10 bg-white/5 py-2 text-center text-sm font-bold text-white outline-none focus:ring-0 sm:border-none sm:bg-transparent sm:text-right ${noSpinners}`}
+                          value={item.unitPrice || ''}
+                          onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
+                          className={`w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs font-semibold text-slate-900 text-right outline-none focus:border-slate-900 ${noSpinners}`}
                         />
                       </div>
-
-                      <div className="flex flex-col sm:border-l sm:border-white/5 sm:px-4">
-                        <span className="mb-1 block text-center text-[10px] font-black uppercase text-indigo-400 sm:hidden">Total</span>
-                        <div className="flex h-full items-center justify-center text-center text-sm font-black text-emerald-400 sm:justify-end sm:py-4 sm:text-right">
-                          {fmt(item.amount)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="absolute right-4 top-4 sm:static sm:flex sm:items-center sm:justify-center">
+                      <input
+                        type="number"
+                        value={item.quantity || ''}
+                        onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
+                        className={`w-full rounded-md border border-slate-200 px-2 py-1.5 text-xs font-semibold text-slate-900 text-center outline-none focus:border-slate-900 ${noSpinners}`}
+                      />
+                      <span className="text-xs font-bold text-slate-900 text-right w-full sm:w-auto">
+                        {fmt(item.amount)}
+                      </span>
                       <button
                         onClick={() => setEditingLineItems(prev => prev.filter(x => x.id !== item.id))}
-                        className="rounded-lg bg-white/5 p-2 text-gray-500 hover:text-red-400 sm:bg-transparent"
-                        aria-label="Remove item"
+                        className="p-1 text-slate-300 hover:text-rose-600 transition"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
 
-                {/* Add new item */}
-                <div className={`border-t border-dashed border-white/10 p-5 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:p-0 ${
-                  lineItemError ? 'bg-red-500/5' : 'bg-emerald-500/5'
-                }`}>
-                  <div className="mb-3 sm:mb-0 sm:px-6">
+                {/* Add New Line Item Row */}
+                <div className="rounded-lg border border-dashed border-slate-300 p-3 bg-slate-50/50 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Add New Item</span>
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       value={newDesc}
                       onChange={e => { setNewDesc(e.target.value); setLineItemError(''); }}
                       onKeyDown={e => e.key === 'Enter' && addLineItem()}
-                      placeholder="Item name (e.g. Labor)"
-                      className="w-full rounded-xl border border-white/10 bg-white/10 px-4 py-3 text-sm font-black text-white outline-none placeholder:text-gray-600 focus:ring-1 focus:ring-emerald-500 sm:border-none sm:bg-transparent sm:py-4"
+                      placeholder="Line item description (e.g. Labor, Materials)"
+                      className="flex-1 rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-900 outline-none focus:border-slate-900 bg-white"
                     />
-                  </div>
-
-                  <div className="grid grid-cols-[1fr_80px_60px] gap-2 sm:contents">
-                    <div className="flex items-center rounded-xl border border-white/10 bg-white/10 px-3 sm:border-none sm:bg-transparent sm:px-4">
-                      <span className="mr-1 text-xs text-emerald-500">$</span>
+                    <div className="flex items-center gap-2">
                       <input
                         type="number"
                         value={newPrice}
                         onChange={e => { setNewPrice(e.target.value); setLineItemError(''); }}
-                        placeholder="0.00"
-                        className={`w-full border-none bg-transparent py-3 text-sm font-black text-white outline-none focus:ring-0 sm:text-right ${noSpinners}`}
+                        placeholder="Price ($)"
+                        className={`w-20 rounded-md border border-slate-200 px-2 py-1.5 text-xs font-semibold text-slate-900 outline-none focus:border-slate-900 bg-white ${noSpinners}`}
                       />
-                    </div>
-                    <div className="sm:border-l sm:border-white/10 sm:px-4">
                       <input
                         type="number"
                         value={newQty}
                         onChange={e => setNewQty(e.target.value)}
-                        className={`w-full rounded-xl border border-white/10 bg-white/10 py-3 text-center text-sm font-bold text-white outline-none focus:ring-0 sm:border-none sm:bg-transparent sm:text-right ${noSpinners}`}
+                        placeholder="Qty"
+                        className={`w-14 rounded-md border border-slate-200 px-2 py-1.5 text-xs font-semibold text-slate-900 text-center outline-none focus:border-slate-900 bg-white ${noSpinners}`}
                       />
-                    </div>
-                    <div className="flex items-center justify-center sm:border-l sm:border-white/10">
                       <button
                         onClick={addLineItem}
-                        className="flex h-full w-full items-center justify-center rounded-xl bg-emerald-600 text-white shadow-lg shadow-emerald-900/20 transition active:scale-90 sm:h-10 sm:w-10"
-                        aria-label="Add item"
+                        className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition shrink-0"
                       >
-                        <Plus className="h-5 w-5" />
+                        <Plus className="h-4 w-4" />
                       </button>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Footer */}
-              <div className="shrink-0 border-t border-white/10 bg-[#020617] p-6">
-                {lineItemError && (
-                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-[10px] font-black text-red-400">
-                    <AlertCircle className="h-4 w-4 shrink-0" /> {lineItemError}
-                  </div>
-                )}
-                {quoteError && (
-                  <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-500/50 bg-red-500/20 p-3 text-[10px] font-black text-red-400">
-                    <AlertCircle className="h-4 w-4 shrink-0" /> {quoteError}
-                  </div>
-                )}
+                {lineItemError && <p className="text-xs font-semibold text-rose-600">{lineItemError}</p>}
+                {quoteError && <p className="text-xs font-semibold text-rose-600">{quoteError}</p>}
 
-                {/* ── SUBTOTAL & TOTAL DISPLAY ── */}
-                <div className="mb-4 space-y-1.5 px-1">
-                  <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                {/* Subtotal & Totals Grid */}
+                <div className="border-t border-slate-100 pt-4 space-y-3">
+                  <div className="flex justify-between text-xs font-semibold text-slate-600">
                     <span>Subtotal</span>
                     <span>{fmt(quoteEditorSubtotal)}</span>
                   </div>
-                  {editingTaxRateValue > 0 && (
-                    <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                      <span>Tax ({editingTaxRateValue}%)</span>
-                      <span>{fmt(quoteEditorTaxAmount)}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between border-t border-white/10 pt-2">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">Total estimate</span>
-                    <span className="text-2xl font-black text-emerald-400">{fmt(quoteEditorTotal)}</span>
-                  </div>
-                </div>
 
-                {/* ── TAX RATE & DEPOSIT GRID (LEFT TO RIGHT) ── */}
-                <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  
-                  {/* Tax Rate Block */}
-                  <div className="flex flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-gray-300">
-                        <Percent className="h-3.5 w-3.5 text-emerald-400" />
-                        Tax Rate
-                      </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    {/* Tax Settings */}
+                    <div className="rounded-lg border border-slate-200 p-3 bg-slate-50/50 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                        <Percent className="h-3.5 w-3.5 text-slate-400" /> Tax Rate
+                      </span>
                       <div className="flex items-center gap-1">
                         <input
                           type="number"
@@ -1077,33 +989,25 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                           max="100"
                           value={editingTaxRateValue}
                           onChange={(e) => setEditingTaxRateValue(parseFloat(e.target.value) || 0)}
-                          className="w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-16 rounded border border-slate-200 px-2 py-1 text-xs font-bold text-slate-900 text-right bg-white"
                         />
-                        <span className="text-xs font-bold text-gray-400">%</span>
+                        <span className="text-xs font-bold text-slate-400">%</span>
                       </div>
                     </div>
-                    <div className="border-t border-white/5 pt-2 text-[11px] font-semibold text-gray-400">
-                      Amount: <span className="font-bold text-white">{fmt(quoteEditorTaxAmount)}</span>
-                    </div>
-                  </div>
 
-                  {/* Deposit Terms Block */}
-                  <div className="flex flex-col justify-between space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="flex items-center gap-1.5 text-xs font-bold text-gray-300">
-                        <HandCoins className="h-3.5 w-3.5 text-amber-400" />
-                        Deposit
-                      </label>
+                    {/* Deposit Settings */}
+                    <div className="rounded-lg border border-slate-200 p-3 bg-slate-50/50 flex items-center justify-between">
+                      <span className="text-xs font-semibold text-slate-700 flex items-center gap-1">
+                        <HandCoins className="h-3.5 w-3.5 text-slate-400" /> Deposit
+                      </span>
                       <div className="flex items-center gap-1">
-                        <div className="flex overflow-hidden rounded-lg border border-white/10">
+                        <div className="flex rounded border border-slate-200 bg-white p-0.5">
                           {(['percent', 'fixed'] as DepositType[]).map((t) => (
                             <button
                               key={t}
                               onClick={() => setEditingDepositType(t)}
-                              className={`px-2 py-1 text-[11px] font-black transition-colors ${
-                                editingDepositType === t
-                                  ? 'bg-amber-500 text-black'
-                                  : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                              className={`px-1.5 py-0.5 text-[10px] font-bold rounded ${
+                                editingDepositType === t ? 'bg-slate-900 text-white' : 'text-slate-500'
                               }`}
                             >
                               {t === 'percent' ? '%' : '$'}
@@ -1114,77 +1018,45 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                           type="number"
                           step="0.001"
                           min="0"
-                          max={editingDepositType === 'percent' ? 100 : undefined}
                           value={editingDepositValue || ''}
-                          placeholder="0"
-                          onChange={(e) => {
-                            const v = parseFloat(e.target.value) || 0;
-                            setEditingDepositValue(v);
-                            if (v > 0 && !editingDepositType) setEditingDepositType('percent');
-                          }}
-                          className={`w-16 rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-right text-xs font-bold text-white outline-none focus:ring-1 focus:ring-amber-500 ${noSpinners}`}
+                          onChange={(e) => setEditingDepositValue(parseFloat(e.target.value) || 0)}
+                          className={`w-16 rounded border border-slate-200 px-2 py-1 text-xs font-bold text-slate-900 text-right bg-white ${noSpinners}`}
                         />
-                        {editingDepositValue > 0 && (
-                          <button
-                            onClick={() => { setEditingDepositValue(0); setEditingDepositType(null); }}
-                            className="text-[10px] font-bold text-gray-500 hover:text-red-400"
-                          >
-                            Clear
-                          </button>
-                        )}
                       </div>
                     </div>
-
-                    {quoteEditorDeposit > 0 ? (
-                      <div className="space-y-0.5 border-t border-white/5 pt-2 text-[11px] font-bold">
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-400">Signing:</span>
-                          <span className="text-amber-400">{fmt(quoteEditorDeposit)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-gray-400">Balance:</span>
-                          <span className="text-gray-300">{fmt(quoteEditorBalance)}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="border-t border-white/5 pt-2 text-[11px] font-semibold text-gray-500">
-                        No deposit required.
-                      </p>
-                    )}
                   </div>
 
+                  <div className="flex justify-between items-center border-t border-slate-200 pt-3">
+                    <span className="text-sm font-bold text-slate-900">Total Estimate</span>
+                    <span className="text-base font-bold text-emerald-600">{fmt(quoteEditorTotal)}</span>
+                  </div>
                 </div>
+              </div>
 
-                {editingDepositType === 'fixed' && editingDepositValue > quoteEditorTotal && quoteEditorTotal > 0 && (
-                  <p className="mb-4 flex items-center gap-1.5 text-[11px] font-bold text-amber-400">
-                    <AlertCircle className="h-3 w-3 shrink-0" />
-                    Deposit is more than the estimate. It will be capped at the total.
-                  </p>
-                )}
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between border-t border-slate-100 p-4 bg-slate-50/50">
+                {editingQuoteId ? (
+                  <button
+                    onClick={deleteQuoteTemplate}
+                    className="text-xs font-semibold text-rose-600 hover:text-rose-800 transition"
+                  >
+                    Delete Template
+                  </button>
+                ) : <div />}
 
-                {/* Modal Action Buttons */}
-                <div className="grid grid-cols-2 gap-4">
-                  {editingQuoteId ? (
-                    <button
-                      onClick={deleteQuoteTemplate}
-                      className="rounded-2xl bg-white/5 py-4 text-[10px] font-black uppercase tracking-widest text-red-400 transition hover:bg-red-500/10"
-                    >
-                      Delete Template
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setQuoteEditorOpen(false)}
-                      className="rounded-2xl bg-white/5 py-4 text-[10px] font-black uppercase tracking-widest text-gray-400"
-                    >
-                      Cancel
-                    </button>
-                  )}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setQuoteEditorOpen(false)}
+                    className="rounded-lg border border-slate-200 bg-white px-3.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+                  >
+                    Cancel
+                  </button>
                   <button
                     onClick={saveQuoteTemplate}
                     disabled={quoteSaving}
-                    className="rounded-2xl bg-emerald-600 py-4 text-[10px] font-black uppercase tracking-widest text-white shadow-xl shadow-emerald-900/40 transition active:scale-95 disabled:opacity-60"
+                    className="rounded-lg bg-slate-900 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 transition"
                   >
-                    {quoteSaving ? 'Saving...' : 'Save Changes'}
+                    {quoteSaving ? 'Saving...' : 'Save Template'}
                   </button>
                 </div>
               </div>
@@ -1192,81 +1064,67 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           </div>
         )}
 
-        {/* ── QUOTE SHEET PREVIEW ── */}
+        {/* ── QUOTE PREVIEW MODAL ── */}
         {showQuotePreview && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/70 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
             onClick={() => setShowQuotePreview(false)}
           >
             <div
-              className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg bg-white"
+              className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between border-b-2 border-stone-200 px-5 py-4">
-                <span className="text-[15px] font-extrabold text-stone-900">Your pricing template, on the job</span>
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50">
+                <span className="text-sm font-bold text-slate-900">Estimate Template Preview</span>
                 <button
                   onClick={() => setShowQuotePreview(false)}
-                  className="rounded-full p-1 text-stone-500 hover:bg-stone-100"
-                  aria-label="Close"
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
                 >
-                  <X className="h-5 w-5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
-              <div className="overflow-y-auto p-5">
+              <div className="overflow-y-auto p-5 space-y-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/images/quote-sheet-preview.webp"
-                  alt="Quote sheet with pricing template line items loaded"
-                  className="w-full rounded-lg border-2 border-stone-200"
+                  alt="Quote preview"
+                  className="w-full rounded-lg border border-slate-200 shadow-sm"
                 />
-                <p className="mt-3 text-[13px] font-semibold leading-relaxed text-stone-600">
-                  This is the Quote tab on a job — your estimate builder, not
-                  the invoice. Set a pricing template for a category and
-                  these line items — description, unit price, and quantity —
-                  load in automatically here. Everything stays editable, and
-                  sending the invoice is a separate step once the quote is
-                  approved.
-                </p>
-                <p className="mt-2 text-[13px] font-semibold leading-relaxed text-stone-600">
-                  A deposit on the template carries over as the amount due on
-                  signing, with the rest as the balance. You can change it per
-                  job before the quote goes out.
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Configuring pricing templates allows line items to automatically load when creating quotes for leads.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* ── DELETE CONFIRM ── */}
+        {/* ── DELETE CATEGORY CONFIRMATION MODAL ── */}
         {deleteConfirm && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/70 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm"
             onClick={() => setDeleteConfirm(null)}
           >
             <div
-              className="w-full max-w-sm rounded-lg bg-white p-6 text-center"
+              className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-2xl text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border-2 border-rose-200 bg-rose-50">
-                <AlertTriangle className="h-6 w-6 text-rose-600" />
+              <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-rose-50 text-rose-600">
+                <AlertTriangle className="h-5 w-5" />
               </div>
-              <h3 className="mb-2 text-lg font-extrabold text-stone-900">Remove category?</h3>
-              <p className="mb-2 text-sm font-medium text-stone-600">
-                This will remove <span className="font-bold text-stone-900">&quot;{deleteConfirm.label}&quot;</span>.
+              <h3 className="text-sm font-bold text-slate-900">Remove Category?</h3>
+              <p className="mt-1 text-xs text-slate-500">
+                Are you sure you want to remove <span className="font-semibold text-slate-900">&quot;{deleteConfirm.label}&quot;</span>?
               </p>
-              <p className="mb-6 text-xs font-bold text-amber-700">
-                Task checklists will also be removed. Pricing templates are stored separately.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="mt-6 flex items-center justify-end gap-2">
                 <button
                   onClick={() => setDeleteConfirm(null)}
-                  className="rounded-lg border-2 border-stone-300 bg-white py-2.5 text-sm font-bold text-stone-700 transition-colors hover:bg-stone-50"
+                  className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
                 >
-                  Keep it
+                  Cancel
                 </button>
                 <button
                   onClick={confirmDeleteCategory}
-                  className="rounded-lg bg-rose-600 py-2.5 text-sm font-bold text-white transition-colors hover:bg-rose-700"
+                  className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-semibold text-white hover:bg-rose-700 transition"
                 >
                   Remove
                 </button>
@@ -1274,6 +1132,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
             </div>
           </div>
         )}
+
       </div>
     </div>
   );

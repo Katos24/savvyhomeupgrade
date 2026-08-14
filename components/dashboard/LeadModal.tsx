@@ -268,8 +268,8 @@ export default function LeadModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-white w-full sm:max-w-4xl lg:max-w-5xl xl:max-w-6xl sm:rounded-2xl shadow-2xl flex flex-col"
-        style={{ maxHeight: '95vh', height: '95vh' }}
+        className="bg-white w-full sm:max-w-4xl lg:max-w-5xl xl:max-w-7xl 2xl:max-w-[1600px] sm:rounded-2xl shadow-2xl flex flex-col"
+style={{ maxHeight: '96vh', height: '96vh' }}
         onClick={e => e.stopPropagation()}
       >
         {/* ── HEADER ── */}

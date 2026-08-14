@@ -3,20 +3,34 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Mail, Copy, RotateCcw, Eye, Check, Sparkles,
-  Save, AlertCircle, Calendar, CreditCard, FileText,
-  Receipt, MessageSquare, Star, X, ChevronRight,
+  Mail,
+  Copy,
+  RotateCcw,
+  Check,
+  Sparkles,
+  Save,
+  AlertCircle,
+  Calendar,
+  CreditCard,
+  FileText,
+  Receipt,
+  MessageSquare,
+  Star,
+  X,
+  ChevronRight,
+  ArrowLeft,
+  Eye,
 } from 'lucide-react';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 import EmailPreviewPane from '@/components/dashboard/EmailPreviewPane';
 
-type TemplateKey = 'quote' | 'schedule' | 'payment' | 'invoice' | 'lead_confirmation' | 'job_completion';
-
-const formatPhone = (phone: string) => {
-  const digits = phone.replace(/\D/g, '');
-  if (digits.length === 10) return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
-  return phone;
-};
+type TemplateKey =
+  | 'quote'
+  | 'schedule'
+  | 'payment'
+  | 'invoice'
+  | 'lead_confirmation'
+  | 'job_completion';
 
 const defaultTemplates = {
   quote: {
@@ -80,7 +94,7 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
-lead_confirmation: {
+  lead_confirmation: {
     subject: 'We received your request - {{company_name}}',
     body: `Hi {{customer_name}},
 
@@ -113,24 +127,107 @@ Best regards,
 };
 
 const availableVariables: Record<TemplateKey, string[]> = {
-  quote:             ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{quote_total}}', '{{project_description}}'],
-  schedule:          ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{scheduled_date}}', '{{scheduled_time}}', '{{customer_address}}'],
-  payment:           ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{payment_amount}}', '{{due_date}}'],
-  invoice:           ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{invoice_number}}', '{{invoice_total}}', '{{due_date}}'],
-lead_confirmation: ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{request_summary}}'],
-  job_completion:    ['{{company_name}}', '{{company_phone}}', '{{customer_name}}', '{{google_review_link}}'],
+  quote: [
+    '{{company_name}}',
+    '{{company_phone}}',
+    '{{customer_name}}',
+    '{{quote_total}}',
+    '{{project_description}}',
+  ],
+  schedule: [
+    '{{company_name}}',
+    '{{company_phone}}',
+    '{{customer_name}}',
+    '{{scheduled_date}}',
+    '{{scheduled_time}}',
+    '{{customer_address}}',
+  ],
+  payment: [
+    '{{company_name}}',
+    '{{company_phone}}',
+    '{{customer_name}}',
+    '{{payment_amount}}',
+    '{{due_date}}',
+  ],
+  invoice: [
+    '{{company_name}}',
+    '{{company_phone}}',
+    '{{customer_name}}',
+    '{{invoice_number}}',
+    '{{invoice_total}}',
+    '{{due_date}}',
+  ],
+  lead_confirmation: [
+    '{{company_name}}',
+    '{{company_phone}}',
+    '{{customer_name}}',
+    '{{request_summary}}',
+  ],
+  job_completion: [
+    '{{company_name}}',
+    '{{company_phone}}',
+    '{{customer_name}}',
+    '{{google_review_link}}',
+  ],
 };
 
-const templateConfig: Record<TemplateKey, { icon: React.ReactNode; label: string; description: string; color: string; bg: string }> = {
-  lead_confirmation: { icon: <MessageSquare className="w-5 h-5" />, label: 'Lead Confirmation', description: 'Auto-reply when a customer submits your booking form', color: 'text-pink-600',    bg: 'bg-pink-50'    },
-  schedule:          { icon: <Calendar className="w-5 h-5" />,      label: 'Schedule',          description: 'Sent when you confirm a job appointment',            color: 'text-blue-600',    bg: 'bg-blue-50'    },
-  quote:             { icon: <FileText className="w-5 h-5" />,      label: 'Quote',             description: 'Sent when you send a quote to a customer',           color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  invoice:           { icon: <Receipt className="w-5 h-5" />,       label: 'Invoice',           description: 'Sent when you email an invoice to a customer',       color: 'text-purple-600',  bg: 'bg-purple-50'  },
-  payment:           { icon: <CreditCard className="w-5 h-5" />,    label: 'Payment Reminder',  description: 'Sent to remind customers about outstanding balance',  color: 'text-amber-600',   bg: 'bg-amber-50'   },
-  job_completion:    { icon: <Star className="w-5 h-5" />,          label: 'Job Completion',    description: 'Sent when a job is marked as completed',             color: 'text-orange-600',  bg: 'bg-orange-50'  },
+const templateConfig: Record<
+  TemplateKey,
+  { icon: React.ReactNode; label: string; description: string; color: string; bg: string }
+> = {
+  lead_confirmation: {
+    icon: <MessageSquare className="h-5 w-5" />,
+    label: 'Lead Confirmation',
+    description: 'Auto-reply sent immediately when a lead submits your form',
+    color: 'text-indigo-600',
+    bg: 'bg-indigo-50',
+  },
+  schedule: {
+    icon: <Calendar className="h-5 w-5" />,
+    label: 'Schedule',
+    description: 'Sent when an appointment or job date is confirmed',
+    color: 'text-blue-600',
+    bg: 'bg-blue-50',
+  },
+  quote: {
+    icon: <FileText className="h-5 w-5" />,
+    label: 'Quote',
+    description: 'Sent when delivering an estimate or quote to a customer',
+    color: 'text-emerald-600',
+    bg: 'bg-emerald-50',
+  },
+  invoice: {
+    icon: <Receipt className="h-5 w-5" />,
+    label: 'Invoice',
+    description: 'Sent when delivering an official invoice for payment',
+    color: 'text-slate-700',
+    bg: 'bg-slate-100',
+  },
+  payment: {
+    icon: <CreditCard className="h-5 w-5" />,
+    label: 'Payment Reminder',
+    description: 'Sent to remind customers about pending balances or overdue bills',
+    color: 'text-amber-600',
+    bg: 'bg-amber-50',
+  },
+  job_completion: {
+    icon: <Star className="h-5 w-5" />,
+    label: 'Job Completion',
+    description: 'Sent upon job wrap-up to thank clients and collect reviews',
+    color: 'text-orange-600',
+    bg: 'bg-orange-50',
+  },
 };
 
-export default function EmailTemplatesTab({ company, currentUser }: { company: any; currentUser: any }) {
+const springTransition = { type: 'spring' as const, damping: 25, stiffness: 300 };
+
+export default function EmailTemplatesTab({
+  company,
+  currentUser,
+}: {
+  company: any;
+  currentUser: any;
+}) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -138,14 +235,17 @@ export default function EmailTemplatesTab({ company, currentUser }: { company: a
   const [activeTemplate, setActiveTemplate] = useState<TemplateKey | null>(null);
   const [templates, setTemplates] = useState<Record<TemplateKey, { subject: string; body: string }>>(
     (() => {
-  let saved = {};
-  try {
-    saved = typeof company.email_templates === 'string'
-      ? JSON.parse(company.email_templates)
-      : (company.email_templates || {});
-  } catch { saved = {}; }
-  return { ...defaultTemplates, ...saved };
-})()
+      let saved = {};
+      try {
+        saved =
+          typeof company.email_templates === 'string'
+            ? JSON.parse(company.email_templates)
+            : company.email_templates || {};
+      } catch {
+        saved = {};
+      }
+      return { ...defaultTemplates, ...saved };
+    })()
   );
 
   const isCustomized = (key: TemplateKey) => {
@@ -156,7 +256,10 @@ export default function EmailTemplatesTab({ company, currentUser }: { company: a
 
   const handleUpdateTemplate = (field: 'subject' | 'body', value: string) => {
     if (!activeTemplate) return;
-    setTemplates(prev => ({ ...prev, [activeTemplate]: { ...prev[activeTemplate], [field]: value } }));
+    setTemplates((prev) => ({
+      ...prev,
+      [activeTemplate]: { ...prev[activeTemplate], [field]: value },
+    }));
   };
 
   const handleCopyVariable = (variable: string) => {
@@ -166,22 +269,27 @@ export default function EmailTemplatesTab({ company, currentUser }: { company: a
   };
 
   const handleSave = async () => {
-    setLoading(true); setError(''); setSuccess('');
+    setLoading(true);
+    setError('');
+    setSuccess('');
     try {
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-email-templates', data: { email_templates: templates } }),
+        body: JSON.stringify({
+          action: 'update-email-templates',
+          data: { email_templates: templates },
+        }),
       });
       const data = await res.json();
       if (data.success) {
-        setSuccess('Templates saved!');
+        setSuccess('Template saved successfully!');
         setTimeout(() => setSuccess(''), 3000);
       } else {
-        setError(data.error || 'Failed to save');
+        setError(data.error || 'Failed to save templates');
       }
     } catch {
-      setError('Failed to save email templates');
+      setError('Failed to save email templates due to connection issue');
     } finally {
       setLoading(false);
     }
@@ -189,187 +297,268 @@ export default function EmailTemplatesTab({ company, currentUser }: { company: a
 
   const handleReset = () => {
     if (!activeTemplate) return;
-    if (confirm('Reset this template to default?')) {
-      setTemplates(prev => ({ ...prev, [activeTemplate]: defaultTemplates[activeTemplate] }));
+    if (confirm('Reset this template back to factory defaults?')) {
+      setTemplates((prev) => ({
+        ...prev,
+        [activeTemplate]: defaultTemplates[activeTemplate],
+      }));
     }
   };
 
- 
-
   return (
-    <div className="pb-8">
+    <div className="mx-auto max-w-6xl pb-12">
       {(company.plan_tier === 'free' || company.plan_tier === 'basic') && (
         <SettingsUpgradeBanner
           planLabel="Pro"
           price="$79.99/mo"
-          message="Customize your email templates — upgrade to Pro to send them."
+          message="Customize your automated email templates — upgrade to Pro to start sending."
           companySlug={company.slug}
         />
       )}
 
-      <div className="mb-6">
-        <h2 className="text-2xl font-black text-gray-900 tracking-tight">Email templates</h2>
-        <p className="text-sm text-gray-500 mt-1">Customize every email your customers receive — all branded to you.</p>
+      {/* Header */}
+      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+            Email Templates
+          </h2>
+          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+            Customize every automated email dispatched to customers with your branding.
+          </p>
+        </div>
+
+        {activeTemplate && (
+          <button
+            onClick={handleSave}
+            disabled={loading}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50 sm:text-sm"
+          >
+            {loading ? (
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {loading ? 'Saving Template...' : 'Save Template'}
+          </button>
+        )}
       </div>
 
+      {/* Alerts */}
       <AnimatePresence>
         {success && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="mb-4 p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl text-sm font-bold flex items-center gap-2">
-            <Check className="w-4 h-4" /> {success}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-6 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs font-medium text-emerald-800 shadow-xs sm:text-sm"
+          >
+            <Check className="h-4 w-4 shrink-0 text-emerald-600" /> {success}
           </motion.div>
         )}
         {error && (
-          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            className="mb-4 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> {error}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mb-6 flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-xs font-medium text-rose-700 shadow-xs sm:text-sm"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" /> {error}
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* ── TILES GRID ── */}
+      {/* ── GRID OVERVIEW MODE ── */}
       {!activeTemplate && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {(Object.keys(templateConfig) as TemplateKey[]).map(key => {
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={springTransition}
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
+        >
+          {(Object.keys(templateConfig) as TemplateKey[]).map((key) => {
             const config = templateConfig[key];
             const customized = isCustomized(key);
             return (
-              <motion.button
+              <button
                 key={key}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
                 onClick={() => setActiveTemplate(key)}
-                className="text-left p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md hover:border-gray-200 transition-all group"
+                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-10 h-10 ${config.bg} rounded-xl flex items-center justify-center ${config.color}`}>
-                    {config.icon}
+                <div>
+                  <div className="mb-4 flex items-center justify-between">
+                    <div
+                      className={`flex h-10 w-10 items-center justify-center rounded-xl ${config.bg} ${config.color}`}
+                    >
+                      {config.icon}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {customized && (
+                        <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-600">
+                          Customized
+                        </span>
+                      )}
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600">
+                        <ChevronRight className="h-4 w-4" />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {customized && (
-                      <span className="text-[10px] font-black px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-100 rounded-full">
-                        Customized
-                      </span>
-                    )}
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gray-500 transition-colors" />
-                  </div>
+                  <h3 className="text-sm font-bold text-slate-900">{config.label}</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                    {config.description}
+                  </p>
                 </div>
-                <p className="text-sm font-black text-gray-900 mb-1">{config.label}</p>
-                <p className="text-xs text-gray-400 leading-relaxed">{config.description}</p>
-                <p className="text-[10px] text-gray-300 mt-3 truncate font-mono">
-                  {templates[key].subject}
-                </p>
-              </motion.button>
+
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <p className="truncate font-mono text-[11px] text-slate-400">
+                    <span className="font-semibold text-slate-500">Subj:</span>{' '}
+                    {templates[key].subject}
+                  </p>
+                </div>
+              </button>
             );
           })}
         </motion.div>
       )}
 
-      {/* ── EDITOR ── */}
-      <AnimatePresence>
+      {/* ── TEMPLATE EDITOR MODE ── */}
+      <AnimatePresence mode="wait">
         {activeTemplate && (
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
+            key={activeTemplate}
+            initial={{ opacity: 0, x: 15 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 20 }}
-            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            exit={{ opacity: 0, x: -15 }}
+            transition={springTransition}
+            className="space-y-6"
           >
-            {/* Back button */}
-            <div className="flex items-center gap-3 mb-6">
+            {/* Top Navigation Bar */}
+            <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
               <button
                 onClick={() => setActiveTemplate(null)}
-                className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-gray-900 transition-colors"
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
               >
-                <X className="w-4 h-4" /> Back to templates
+                <ArrowLeft className="h-3.5 w-3.5" /> All Templates
               </button>
-              <span className="text-gray-300">/</span>
-              <div className={`flex items-center gap-2 ${templateConfig[activeTemplate].color}`}>
+
+              <div
+                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${templateConfig[activeTemplate].bg} ${templateConfig[activeTemplate].color}`}
+              >
                 {templateConfig[activeTemplate].icon}
-                <span className="text-sm font-bold text-gray-900">{templateConfig[activeTemplate].label}</span>
+                <span>{templateConfig[activeTemplate].label}</span>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              {/* LEFT — editor */}
-              <div className="space-y-4">
-                {/* Variables */}
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="px-4 py-3 border-b border-slate-800 flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    <p className="text-xs font-bold text-white">Available variables</p>
-                    <p className="text-[10px] text-slate-500 ml-auto">Click to copy</p>
+            {/* Split Screen Workspace */}
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* LEFT — EDITOR */}
+              <div className="space-y-5">
+                {/* Available Dynamic Tags */}
+                <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      <p className="text-xs font-bold text-slate-800">
+                        Dynamic Variables
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-medium text-slate-400">
+                      Click variable to copy
+                    </span>
                   </div>
-                  <div className="px-4 py-3 flex flex-wrap gap-1.5">
-                    {availableVariables[activeTemplate].map(variable => (
+                  <div className="flex flex-wrap gap-1.5 p-4">
+                    {availableVariables[activeTemplate].map((variable) => (
                       <button
                         key={variable}
+                        type="button"
                         onClick={() => handleCopyVariable(variable)}
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-mono transition-all border ${
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] font-medium transition active:scale-95 ${
                           copiedVar === variable
-                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-                            : 'bg-slate-800 border-slate-700 text-slate-300 hover:border-blue-500 hover:bg-blue-500/10 hover:text-blue-400'
+                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'
                         }`}
                       >
                         {variable}
-                        {copiedVar === variable ? <Check className="w-2.5 h-2.5" /> : <Copy className="w-2.5 h-2.5" />}
+                        {copiedVar === variable ? (
+                          <Check className="h-3 w-3 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-3 w-3 text-slate-400" />
+                        )}
                       </button>
                     ))}
                   </div>
                 </div>
 
-                {/* Editor */}
-                <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-                  <div className="px-4 py-3 border-b border-gray-50 flex items-center justify-between">
+                {/* Form Controls */}
+                <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+                  <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 text-blue-500" />
-                      <p className="text-xs font-bold text-gray-700">Edit template</p>
+                      <Mail className="h-4 w-4 text-indigo-500" />
+                      <p className="text-xs font-bold text-slate-800">Email Content</p>
                     </div>
                     <button
+                      type="button"
                       onClick={handleReset}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 bg-gray-50 hover:bg-gray-100 text-gray-500 rounded-lg text-[11px] font-bold transition"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50"
                     >
-                      <RotateCcw className="w-3 h-3" /> Reset
+                      <RotateCcw className="h-3 w-3 text-slate-400" /> Reset Default
                     </button>
                   </div>
-                  <div className="px-4 py-4 space-y-3">
+
+                  <div className="space-y-4 p-4">
                     <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Subject line</label>
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Subject Line
+                      </label>
                       <input
                         type="text"
                         value={templates[activeTemplate].subject}
-                        onChange={e => handleUpdateTemplate('subject', e.target.value)}
-                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition"
+                        onChange={(e) => handleUpdateTemplate('subject', e.target.value)}
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5">Email body</label>
+                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Email Body
+                      </label>
                       <textarea
                         value={templates[activeTemplate].body}
-                        onChange={e => handleUpdateTemplate('body', e.target.value)}
+                        onChange={(e) => handleUpdateTemplate('body', e.target.value)}
                         rows={12}
-                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-mono text-gray-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition resize-none leading-relaxed"
+                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 font-mono text-xs leading-relaxed text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                       />
-                   </div>
+                    </div>
                   </div>
-                <div className="px-4 pb-4">
+
+                  <div className="border-t border-slate-100 bg-slate-50/30 p-4">
                     <button
                       onClick={handleSave}
                       disabled={loading}
-                      className="w-full py-3 bg-gray-900 hover:bg-black disabled:opacity-50 text-white rounded-xl font-black text-xs uppercase tracking-widest transition flex items-center justify-center gap-2"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
                     >
-                      {loading ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                      {loading ? 'Saving...' : 'Save template'}
+                      {loading ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      {loading ? 'Saving Changes...' : 'Save Template'}
                     </button>
                   </div>
                 </div>
               </div>
 
-           <EmailPreviewPane
-  activeTemplate={activeTemplate}
-  subject={templates[activeTemplate].subject}
-  body={templates[activeTemplate].body}
-  companySlug={company.slug}
-/>
+              {/* RIGHT — PREVIEW PANE */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
+                  <Eye className="h-3.5 w-3.5 text-slate-400" /> Live Preview
+                </div>
+                <EmailPreviewPane
+                  activeTemplate={activeTemplate}
+                  subject={templates[activeTemplate].subject}
+                  body={templates[activeTemplate].body}
+                  companySlug={company.slug}
+                />
+              </div>
             </div>
           </motion.div>
         )}

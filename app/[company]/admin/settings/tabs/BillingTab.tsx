@@ -1,17 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CreditCard, Calendar, CheckCircle, AlertCircle, Sparkles,
-  Zap, ArrowRight, Lock, TrendingUp, Clock, X, Loader2
+  CreditCard,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
+  Sparkles,
+  Zap,
+  Lock,
+  TrendingUp,
+  Clock,
+  X,
+  ChevronRight,
+  ShieldCheck,
+  ArrowUpRight,
 } from 'lucide-react';
-import { PLAN_CONFIG, can, type PlanTier } from '@/lib/permissions';
+import { PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
 
-
-
-
-export default function BillingTab({ company, currentUser }: { company: any; currentUser: any }) {
+export default function BillingTab({
+  company,
+  currentUser,
+}: {
+  company: any;
+  currentUser: any;
+}) {
   const [loading, setLoading] = useState(false);
   const [changingPlan, setChangingPlan] = useState(false);
   const [error, setError] = useState('');
@@ -20,18 +34,28 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
   // Modal State
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
-    plan: 'basic' | 'pro' | null
+    plan: 'basic' | 'pro' | null;
   }>({ isOpen: false, plan: null });
 
- const [activePlan, setActivePlan] = useState<'free' | 'basic' | 'pro'>(
-    company.plan_tier === 'pro' ? 'pro' : company.plan_tier === 'basic' ? 'basic' : 'free'
+  const [activePlan, setActivePlan] = useState<'free' | 'basic' | 'pro'>(
+    company.plan_tier === 'pro'
+      ? 'pro'
+      : company.plan_tier === 'basic'
+      ? 'basic'
+      : 'free'
   );
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
 
-  const [pendingDowngrade, setPendingDowngrade] = useState<{ periodEnd: number } | null>(
+  const [pendingDowngrade, setPendingDowngrade] = useState<{
+    periodEnd: number;
+  } | null>(
     company.pending_downgrade_at
-      ? { periodEnd: Math.floor(new Date(company.pending_downgrade_at).getTime() / 1000) }
+      ? {
+          periodEnd: Math.floor(
+            new Date(company.pending_downgrade_at).getTime() / 1000
+          ),
+        }
       : null
   );
 
@@ -72,7 +96,11 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
         const res = await fetch('/api/stripe/create-subscription-checkout', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ companyId: company.id, companyEmail: company.email, plan: newPlan }),
+          body: JSON.stringify({
+            companyId: company.id,
+            companyEmail: company.email,
+            plan: newPlan,
+          }),
         });
         const data = await res.json();
         if (data.url) {
@@ -97,7 +125,7 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
         setSuccess(`Upgraded to Pro! Premium features are now active.`);
       } else {
         setPendingDowngrade({ periodEnd: data.periodEnd });
-        setSuccess("Downgrade scheduled for end of cycle.");
+        setSuccess('Downgrade scheduled for end of cycle.');
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong.');
@@ -108,93 +136,179 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
 
   if (currentUser.role !== 'owner') {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <Lock className="w-12 h-12 text-slate-300 mb-4" />
-        <h3 className="text-xl font-black text-slate-900">Owner Access Only</h3>
+      <div className="mx-auto flex max-w-md flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+          <Lock className="h-6 w-6" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900">Owner Access Only</h3>
+        <p className="mt-1 text-xs text-slate-500">
+          Only the workspace owner can manage billing subscriptions and plan upgrades.
+        </p>
       </div>
     );
   }
 
-  const statusInfo = {
-    active: { icon: CheckCircle, text: 'Active', color: 'text-emerald-700', bg: 'bg-emerald-50', border: 'border-emerald-100' },
-    trialing: { icon: Sparkles, text: 'Free Trial', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' },
-    past_due: { icon: AlertCircle, text: 'Past Due', color: 'text-rose-700', bg: 'bg-rose-50', border: 'border-rose-100' },
-  }[company.subscription_status as 'active' | 'trialing' | 'past_due'] || (
-    company.plan_tier === 'free'
-      ? { icon: Zap, text: 'Free Plan', color: 'text-blue-700', bg: 'bg-blue-50', border: 'border-blue-100' }
-      : { icon: AlertCircle, text: 'Inactive', color: 'text-slate-700', bg: 'bg-slate-50', border: 'border-slate-100' }
-  );
+  const statusInfo =
+    {
+      active: {
+        icon: CheckCircle,
+        text: 'Active',
+        color: 'text-emerald-700',
+        bg: 'bg-emerald-50/60',
+        border: 'border-emerald-200/80',
+        badgeBg: 'bg-emerald-100 text-emerald-800',
+      },
+      trialing: {
+        icon: Sparkles,
+        text: 'Free Trial',
+        color: 'text-blue-700',
+        bg: 'bg-blue-50/60',
+        border: 'border-blue-200/80',
+        badgeBg: 'bg-blue-100 text-blue-800',
+      },
+      past_due: {
+        icon: AlertCircle,
+        text: 'Past Due',
+        color: 'text-rose-700',
+        bg: 'bg-rose-50/60',
+        border: 'border-rose-200/80',
+        badgeBg: 'bg-rose-100 text-rose-800',
+      },
+    }[company.subscription_status as 'active' | 'trialing' | 'past_due'] ||
+    (company.plan_tier === 'free'
+      ? {
+          icon: Zap,
+          text: 'Free Plan',
+          color: 'text-blue-700',
+          bg: 'bg-blue-50/60',
+          border: 'border-blue-200/80',
+          badgeBg: 'bg-blue-100 text-blue-800',
+        }
+      : {
+          icon: AlertCircle,
+          text: 'Inactive',
+          color: 'text-slate-700',
+          bg: 'bg-slate-50',
+          border: 'border-slate-200',
+          badgeBg: 'bg-slate-200 text-slate-700',
+        });
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-16 px-4 sm:px-0">
+    <div className="mx-auto max-w-5xl space-y-6 pb-16 px-4 sm:px-0">
+      {/* ── HEADER ── */}
+      <div>
+        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+          Billing & Subscription
+        </h2>
+        <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+          Manage your subscription tier, billing period, and payment settings.
+        </p>
+      </div>
 
       {/* ── STATUS CARDS ── */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <motion.div
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className={`md:col-span-2 p-6 rounded-[2.5rem] border ${statusInfo.border} ${statusInfo.bg} flex items-center justify-between`}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`flex flex-col justify-between gap-4 rounded-2xl border p-5 shadow-xs md:col-span-2 sm:flex-row sm:items-center ${statusInfo.border} ${statusInfo.bg}`}
         >
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-              <statusInfo.icon className={`w-6 h-6 ${statusInfo.color}`} />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-xs">
+              <statusInfo.icon className={`h-6 w-6 ${statusInfo.color}`} />
             </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Subscription</p>
-              <p className={`text-xl font-black ${statusInfo.color}`}>{statusInfo.text}</p>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Current Plan Status
+              </span>
+              <div className="mt-0.5 flex items-center gap-2">
+                <p className={`text-lg font-bold ${statusInfo.color}`}>
+                  {statusInfo.text}
+                </p>
+                <span className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${statusInfo.badgeBg}`}>
+                  {planTier}
+                </span>
+              </div>
             </div>
           </div>
+
           {company.plan_tier !== 'free' && (
             <button
               onClick={handleManageSubscription}
               disabled={loading}
-              className="px-5 py-3 bg-white text-slate-900 rounded-2xl shadow-sm border border-slate-200 transition-all active:scale-95 font-black text-xs uppercase tracking-wider"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-900 shadow-xs transition hover:bg-slate-50 active:scale-95 disabled:opacity-50"
             >
-              {loading ? '...' : 'Manage'}
+              <CreditCard className="h-3.5 w-3.5 text-slate-500" />
+              {loading ? 'Opening Portal...' : 'Manage Portal'}
             </button>
           )}
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-          className="p-6 rounded-[2.5rem] border border-slate-200 bg-white flex flex-col justify-center"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="flex flex-col justify-center rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs"
         >
-          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Cycle</p>
-          <p className="text-xl font-black text-slate-900 mt-1">Monthly</p>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            <Calendar className="h-3.5 w-3.5" /> Billing Cycle
+          </div>
+          <p className="mt-1.5 text-lg font-bold text-slate-900">Monthly</p>
+          <p className="mt-0.5 text-xs text-slate-500">Renews automatically every month</p>
         </motion.div>
       </div>
 
       {/* ── TRIAL BANNER ── */}
       {isTrialing && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-          className="p-6 rounded-[2.5rem] bg-slate-950 text-white flex flex-col md:flex-row items-center gap-6 shadow-xl relative overflow-hidden"
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-900 to-slate-900 p-6 text-white shadow-md"
         >
-          <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 blur-[80px]" />
-          <div className="w-14 h-14 rounded-2xl bg-blue-600 flex items-center justify-center shrink-0 shadow-lg shadow-blue-600/40">
-            <Sparkles className="w-8 h-8 text-white" />
-          </div>
-          <div className="text-center md:text-left flex-1">
-            <p className="font-black text-lg">Free Trial Active</p>
-            <p className="text-slate-400 text-sm">
-              Ends {new Date(company.trial_ends_at).toLocaleDateString()}.
-              {activePlan === 'pro' ? ' You\'re on the top plan.' : ' You can upgrade anytime.'}
-            </p>
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 backdrop-blur-md text-blue-300 ring-1 ring-blue-400/30">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-white">Free Trial Active</p>
+                <p className="mt-0.5 text-xs text-blue-100/80">
+                  Your trial ends on{' '}
+                  <span className="font-semibold text-white">
+                    {new Date(company.trial_ends_at).toLocaleDateString()}
+                  </span>
+                  .{' '}
+                  {activePlan === 'pro'
+                    ? "You're enjoying full Pro tier features."
+                    : 'Upgrade anytime to maintain seamless feature access.'}
+                </p>
+              </div>
+            </div>
           </div>
         </motion.div>
       )}
 
-
-
       {/* ── FEEDBACK MESSAGES ── */}
       <AnimatePresence>
         {error && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-rose-50 text-rose-700 p-4 rounded-2xl text-sm font-bold border border-rose-100 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4" /> {error}
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-800 shadow-xs"
+          >
+            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+            {error}
           </motion.div>
         )}
         {success && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-emerald-50 text-emerald-700 p-4 rounded-2xl text-sm font-bold border border-emerald-100 flex items-center gap-2">
-            <CheckCircle className="w-4 h-4" /> {success}
+          <motion.div
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs font-medium text-emerald-800 shadow-xs"
+          >
+            <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600" />
+            {success}
           </motion.div>
         )}
       </AnimatePresence>
@@ -202,35 +316,39 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
       {/* ── PENDING DOWNGRADE BANNER ── */}
       {pendingDowngrade && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-          className="p-5 rounded-[2.5rem] bg-amber-50 border border-amber-100 flex items-center gap-4"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between"
         >
-          <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0">
-            <Clock className="w-5 h-5 text-amber-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-black text-amber-900">Plan change scheduled</p>
-            <p className="text-xs text-amber-700 mt-0.5">
-              Your plan switches to Basic on{' '}
-              <strong>
-                {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', {
-                  month: 'long', day: 'numeric', year: 'numeric',
-                })}
-              </strong>
-              . You keep full Pro access until then.
-            </p>
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+              <Clock className="h-4 w-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-amber-900">Plan Downgrade Scheduled</p>
+              <p className="mt-0.5 text-xs text-amber-700">
+                Your subscription transitions to Basic on{' '}
+                <span className="font-bold">
+                  {new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString(
+                    'en-US',
+                    { month: 'long', day: 'numeric', year: 'numeric' }
+                  )}
+                </span>
+                . You keep full Pro capabilities until then.
+              </p>
+            </div>
           </div>
           <button
             onClick={handleManageSubscription}
-            className="px-4 py-2 bg-white text-amber-900 rounded-xl border border-amber-200 text-[10px] font-black uppercase tracking-widest shrink-0"
+            className="inline-flex shrink-0 items-center justify-center rounded-xl border border-amber-300 bg-white px-3.5 py-1.5 text-[11px] font-bold text-amber-900 shadow-xs transition hover:bg-amber-50"
           >
-            Undo
+            Undo Downgrade
           </button>
         </motion.div>
       )}
 
-      {/* ── PLAN SELECTION ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+      {/* ── PLAN SELECTION CARDS ── */}
+      <div className="grid grid-cols-1 gap-6 pt-2 md:grid-cols-2">
         {(['basic', 'pro'] as const).map((planKey, idx) => {
           const config = PLAN_CONFIG[planKey];
           const isCurrent = planKey === activePlan && !pendingDowngrade;
@@ -239,60 +357,107 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
           return (
             <motion.div
               key={planKey}
-              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }}
-              className={`relative p-8 rounded-[3rem] border-2 transition-all duration-300 flex flex-col ${
-                isCurrent ? 'border-blue-600 bg-blue-50/30' : 'border-slate-100 bg-white'
-              } ${isTrialing && !isCurrent && planKey !== 'pro' ? 'opacity-60 grayscale-[0.3]' : ''}`}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.08 }}
+              className={`relative flex flex-col justify-between rounded-2xl border p-6 shadow-xs transition-all duration-200 ${
+                isCurrent
+                  ? 'border-blue-600 bg-white ring-1 ring-blue-600'
+                  : 'border-slate-200/80 bg-white hover:border-slate-300'
+              } ${
+                isTrialing && !isCurrent && planKey !== 'pro'
+                  ? 'opacity-70'
+                  : ''
+              }`}
             >
               {isPro && (
-                <div className="absolute -top-3 right-10 bg-blue-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full shadow-lg">
-                  PRO FEATURES
+                <div className="absolute -top-3 right-6 rounded-full bg-blue-600 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-xs">
+                  Most Popular
                 </div>
               )}
 
-              <div className="flex justify-between items-start mb-6">
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isPro ? 'bg-blue-100' : 'bg-slate-100'}`}>
-                  {isPro ? <Sparkles className="w-7 h-7 text-blue-600" /> : <Zap className="w-7 h-7 text-slate-600" />}
+              <div>
+                <div className="mb-4 flex items-center justify-between">
+                  <div
+                    className={`flex h-11 w-11 items-center justify-center rounded-xl ${
+                      isPro ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-700'
+                    }`}
+                  >
+                    {isPro ? (
+                      <Sparkles className="h-5 w-5" />
+                    ) : (
+                      <Zap className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-3xl font-extrabold text-slate-900">
+                        ${config.price}
+                      </span>
+                      <span className="text-xs font-medium text-slate-400">/mo</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-4xl font-black text-slate-900">${config.price}</p>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">/ month</p>
-                </div>
-              </div>
 
-              <h4 className="text-2xl font-black text-slate-900 mb-4">{config.label}</h4>
-              <ul className="space-y-4 mb-10 flex-1">
-                {config.features.map((f) => (
-                  <li key={f} className="flex items-start gap-3 text-sm text-slate-600 font-bold leading-tight">
-                    <CheckCircle className={`w-5 h-5 shrink-0 ${isPro ? 'text-blue-500' : 'text-slate-400'}`} />
-                    {f}
-                  </li>
-                ))}
-              </ul>
+                <h3 className="text-lg font-bold text-slate-900">{config.label}</h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  {isPro
+                    ? 'Full power suite for growing operations with custom forms.'
+                    : 'Essential tools for scheduling, quoting, and managing work.'}
+                </p>
+
+                <div className="my-6 border-t border-slate-100" />
+
+                <ul className="mb-8 space-y-3">
+                  {config.features.map((f) => (
+                    <li
+                      key={f}
+                      className="flex items-start gap-2.5 text-xs font-medium text-slate-700"
+                    >
+                      <CheckCircle
+                        className={`mt-0.5 h-4 w-4 shrink-0 ${
+                          isPro ? 'text-blue-600' : 'text-slate-400'
+                        }`}
+                      />
+                      <span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
               <button
                 onClick={() => setConfirmModal({ isOpen: true, plan: planKey })}
-                disabled={changingPlan || isCurrent || (!!pendingDowngrade && planKey !== 'pro') || (isTrialing && planKey !== 'pro' && activePlan === 'pro')}
-                className={`w-full py-5 rounded-[2rem] font-black text-sm transition-all active:scale-[0.98] ${
+                disabled={
+                  changingPlan ||
+                  isCurrent ||
+                  (!!pendingDowngrade && planKey !== 'pro') ||
+                  (isTrialing && planKey !== 'pro' && activePlan === 'pro')
+                }
+                className={`flex w-full items-center justify-center rounded-xl py-3 text-xs font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                   isCurrent
-                    ? 'bg-blue-100 text-blue-600 cursor-default'
+                    ? 'border border-blue-200 bg-blue-50 text-blue-700 cursor-default'
                     : isTrialing && planKey !== 'pro'
-                      ? 'bg-slate-50 text-slate-300 cursor-not-allowed'
-                      : isPro
-                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-200'
-                        : 'bg-slate-900 text-white'
+                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                    : isPro
+                    ? 'bg-blue-600 text-white shadow-xs hover:bg-blue-700'
+                    : 'bg-slate-900 text-white shadow-xs hover:bg-slate-800'
                 }`}
               >
                 {isCurrent
                   ? 'Current Plan'
                   : changingPlan
-                    ? '...'
-                    : pendingDowngrade && planKey !== 'pro'
-                      ? `Switching ${new Date(pendingDowngrade.periodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
-                      : activePlan === 'free'
-                        ? `Upgrade to ${config.label}`
-                        : `Select ${config.label}`
-                }              </button>
+                  ? 'Updating...'
+                  : pendingDowngrade && planKey !== 'pro'
+                  ? `Switching ${new Date(
+                      pendingDowngrade.periodEnd * 1000
+                    ).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                    })}`
+                  : activePlan === 'free'
+                  ? `Upgrade to ${config.label}`
+                  : `Select ${config.label}`}
+              </button>
             </motion.div>
           );
         })}
@@ -301,37 +466,57 @@ export default function BillingTab({ company, currentUser }: { company: any; cur
       {/* ── CUSTOM CONFIRM MODAL ── */}
       <AnimatePresence>
         {confirmModal.isOpen && (
-          <>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               onClick={() => setConfirmModal({ isOpen: false, plan: null })}
-              className="fixed inset-0 bg-slate-950/40 backdrop-blur-md z-[100]"
+              className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs"
             />
-            <div className="fixed inset-0 flex items-center justify-center z-[110] p-4 pointer-events-none">
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl pointer-events-auto border border-slate-100"
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl"
+            >
+              <div
+                className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${
+                  confirmModal.plan === 'pro'
+                    ? 'bg-blue-50 text-blue-600'
+                    : 'bg-slate-100 text-slate-700'
+                }`}
               >
-                <div className={`w-16 h-16 rounded-2xl mb-6 flex items-center justify-center ${confirmModal.plan === 'pro' ? 'bg-blue-100' : 'bg-slate-100'}`}>
-                  {confirmModal.plan === 'pro' ? <TrendingUp className="w-8 h-8 text-blue-600" /> : <Clock className="w-8 h-8 text-slate-600" />}
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 mb-2">Confirm Change</h3>
-                <p className="text-slate-500 text-sm font-medium leading-relaxed mb-8">
-                  {confirmModal.plan === 'pro'
-                    ? `Upgrade to Pro ($79.99/mo) and unlock custom forms, photo uploads, and more.`
-                    : `Switching to Basic ($49.99/mo). Your features will change at the end of the current cycle.`}
-                </p>
-                <div className="space-y-3">
-                  <button onClick={executePlanChange} className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-100">
-                    Confirm Change
-                  </button>
-                  <button onClick={() => setConfirmModal({ isOpen: false, plan: null })} className="w-full py-4 text-slate-400 font-black text-sm">
-                    Cancel
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          </>
+                {confirmModal.plan === 'pro' ? (
+                  <TrendingUp className="h-6 w-6" />
+                ) : (
+                  <Clock className="h-6 w-6" />
+                )}
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-900">Confirm Plan Change</h3>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                {confirmModal.plan === 'pro'
+                  ? 'Upgrade to Pro ($79.99/mo) and unlock custom intake forms, job photo uploads, full template customization, and more.'
+                  : 'Switching to Basic ($49.99/mo). Your current feature set will remain active until the end of your billing cycle.'}
+              </p>
+
+              <div className="mt-6 space-y-2">
+                <button
+                  onClick={executePlanChange}
+                  className="w-full rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-blue-700"
+                >
+                  Confirm & Proceed
+                </button>
+                <button
+                  onClick={() => setConfirmModal({ isOpen: false, plan: null })}
+                  className="w-full rounded-xl py-2 text-xs font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

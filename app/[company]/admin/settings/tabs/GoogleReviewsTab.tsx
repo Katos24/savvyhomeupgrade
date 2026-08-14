@@ -1,19 +1,36 @@
 'use client';
 
 import { useState } from 'react';
-import { Save, Check, Loader2, CheckCircle2, Mail, Zap, Link } from 'lucide-react';
+import {
+  Save,
+  Check,
+  Loader2,
+  CheckCircle2,
+  Mail,
+  Zap,
+  Link as LinkIcon,
+  HelpCircle,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react';
 import StandaloneUpgradeOverlay from '@/components/StandaloneUpgradeOverlay';
 
 function FeatureItem({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 text-slate-700">
-      <CheckCircle2 className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
-      <span className="text-[14px] leading-relaxed">{children}</span>
+      <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+      <span className="text-xs font-medium leading-relaxed sm:text-sm">{children}</span>
     </div>
   );
 }
 
-export default function GoogleReviewsTab({ company, locked }: { company: any; locked?: boolean }) {
+export default function GoogleReviewsTab({
+  company,
+  locked,
+}: {
+  company: any;
+  locked?: boolean;
+}) {
   const [url, setUrl] = useState(company.google_review_url || '');
   const [enabled, setEnabled] = useState(company.google_review_enabled ?? false);
   const [saving, setSaving] = useState(false);
@@ -58,111 +75,165 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
   };
 
   const content = (
-    <div className="max-w-5xl mx-auto space-y-8">
-      {/* 1. Hero Section (Kept at the Very Top) */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-5 md:p-10 shadow-sm overflow-hidden">
-        <div className="grid md:grid-cols-12 gap-6 md:gap-8 items-center">
-          <div className="md:col-span-7">
-            <div className="inline-block bg-indigo-600 text-white text-[10px] font-bold tracking-wider uppercase px-3 py-1 rounded-md mb-4">
-              Reviews
+    <div className="mx-auto max-w-5xl space-y-6 pb-12">
+      {/* 1. HERO BANNER */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8 lg:p-10">
+        <div className="grid items-center gap-8 md:grid-cols-12">
+          <div className="space-y-5 md:col-span-7">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700">
+              <Sparkles className="h-3.5 w-3.5 text-blue-600" /> Google Reviews
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-6">Seamless feedback collection from your customers</h1>
-            <div className="space-y-4">
-              <FeatureItem>Automatically dispatch review requests when you mark a job as <strong>Completed</strong>.</FeatureItem>
-              <FeatureItem>Collect and manage ratings from your preferred customers.</FeatureItem>
-              <FeatureItem>Elevate your business reputation with more Google Reviews.</FeatureItem>
-              <FeatureItem>Requires a Google Business profile address.</FeatureItem>
+
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              Automate customer feedback & grow your local reputation
+            </h1>
+
+            <div className="space-y-3 pt-1">
+              <FeatureItem>
+                Automatically send review requests the moment a job is marked as{' '}
+                <strong className="text-slate-900">Completed</strong>.
+              </FeatureItem>
+              <FeatureItem>
+                Direct happy clients straight to your official Google Business profile.
+              </FeatureItem>
+              <FeatureItem>
+                Build social proof, improve SEO rankings, and win more local quotes.
+              </FeatureItem>
             </div>
           </div>
 
-          {/* New Image Showcase Card */}
-          <div className="md:col-span-5 relative flex justify-center items-center">
-            <div className="relative w-full max-w-[340px] rounded-2xl overflow-hidden shadow-2xl border border-slate-900/10 group transition-all duration-300 hover:scale-[1.02]">
+          {/* Phone Showcase Image */}
+          <div className="flex justify-center md:col-span-5">
+            <div className="relative w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-md transition-transform duration-300 hover:scale-[1.02]">
               <img
                 src="/images/GoogleReview.png"
                 alt="Automated Google Review Requests mockup on phone"
-                className="w-full h-auto object-cover block"
+                className="block h-auto w-full object-cover"
               />
             </div>
           </div>
         </div>
       </div>
 
-      {/* 2. Middle Setup Section (With Link directly under the label) */}
-      <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-6">
-        <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-          <div className="flex-1 w-full">
-            <label htmlFor="google-review-url" className="block text-[12px] font-semibold text-slate-700 mb-0.5 ml-1">
-              Google review link
-            </label>
-            <p className="text-[12px] text-slate-500 mb-2 ml-1 leading-normal">
-              Need help?{' '}
-              <a
-                href="https://support.google.com/business/answer/7035772"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-600 font-semibold hover:underline"
-              >
-                See Google&apos;s guide to sharing your review link
-              </a>{' '}
-              or tap <strong>Share review form</strong> in your Google Business Profile app.
-            </p>
-            <div className="flex items-center gap-3">
-              <Link className="w-5 h-5 text-indigo-600 shrink-0" />
-              <input
-                id="google-review-url"
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                placeholder="Enter your Google Business Profile review link..."
-                className="w-full bg-white border border-indigo-200 rounded-lg px-4 py-3 text-sm outline-none focus:ring-2 ring-indigo-200"
-              />
+      {/* 2. SETUP FORM SECTION */}
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+        <div className="mb-4">
+          <label
+            htmlFor="google-review-url"
+            className="block text-xs font-bold uppercase tracking-wider text-slate-700"
+          >
+            Google Review Link
+          </label>
+          <p className="mt-1 text-xs text-slate-500">
+            Need help finding your link?{' '}
+            <a
+              href="https://support.google.com/business/answer/7035772"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-0.5 font-semibold text-blue-600 hover:underline"
+            >
+              Google&apos;s guide <ExternalLink className="h-3 w-3" />
+            </a>{' '}
+            or tap <strong>Share review form</strong> inside your Google Business app.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="relative flex-1">
+            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+              <LinkIcon className="h-4 w-4 text-slate-400" />
             </div>
+            <input
+              id="google-review-url"
+              type="text"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://g.page/r/your-business-id/review"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 font-mono text-xs text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100 sm:text-sm"
+            />
           </div>
 
-          <label className="flex items-center gap-3 px-4 py-3 bg-white border border-indigo-200 rounded-lg cursor-pointer hover:border-indigo-300 w-full md:w-auto md:self-end">
-            <input type="checkbox" checked={enabled} onChange={e => setEnabled(e.target.checked)} className="w-4 h-4 accent-indigo-600" />
-            <span className="text-sm font-semibold text-slate-900 whitespace-nowrap">Auto-send</span>
+          <label className="inline-flex cursor-pointer items-center gap-2.5 rounded-xl border border-slate-200/80 bg-slate-50/50 px-4 py-2.5 transition hover:bg-slate-100/80 active:scale-[0.99]">
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+              className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500"
+            />
+            <span className="text-xs font-bold text-slate-900 whitespace-nowrap">
+              Auto-send on complete
+            </span>
           </label>
 
           <button
             onClick={handleSave}
             disabled={saving}
-            className="w-full md:w-auto flex items-center justify-center gap-2 px-6 py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium text-sm transition-all md:self-end"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-slate-800 active:scale-95 disabled:opacity-50"
           >
-            {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
+            {saving ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : saved ? (
+              <Check className="h-4 w-4 text-emerald-400" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            {saving ? 'Saving...' : saved ? 'Saved' : 'Save Link'}
           </button>
         </div>
 
-        {error && <p className="mt-2 text-xs font-semibold text-red-600 pl-8">{error}</p>}
+        {error && (
+          <p className="mt-2.5 text-xs font-semibold text-rose-600">{error}</p>
+        )}
       </div>
 
-      {/* 3. Details/Workflow Grid */}
-      <div className="grid md:grid-cols-2 gap-4 md:gap-8">
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-          <div className="flex items-center gap-2 mb-4 text-slate-900 font-semibold text-sm">
-            <Mail className="w-4 h-4 text-indigo-600" /> Customer Email Preview
-          </div>
-          <div className="bg-slate-50 rounded-lg p-5 border border-slate-200 text-sm text-slate-700 italic">
-            <p className="mb-3">Hi [Customer Name],</p>
-            <p className="mb-4">&quot;Thanks for choosing us! Could you spare a moment to leave us a Google review?&quot;</p>
-            <div className="inline-flex items-center gap-2 bg-white border border-slate-300 text-slate-700 font-medium text-[13px] px-4 py-2 rounded shadow-sm cursor-default">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" className="w-4 h-4" alt="Google" />
-              Leave a Google review
+      {/* 3. DETAILS & WORKFLOW GRID */}
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Email Preview */}
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-800">
+              <Mail className="h-4 w-4 text-blue-600" /> Email Preview
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-xs leading-relaxed text-slate-700">
+              <p className="mb-2 font-medium">Hi [Customer Name],</p>
+              <p className="mb-4 text-slate-600 italic">
+                &quot;Thanks for choosing us! Could you spare a quick moment to leave us a
+                Google review? It helps us out immensely.&quot;
+              </p>
+              <div className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs">
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
+                  className="h-3.5 w-3.5"
+                  alt="Google Logo"
+                />
+                Leave a Google Review
+              </div>
             </div>
           </div>
-          <p className="text-[11px] text-indigo-600 font-medium mt-3">Pro Tip: Customise this template in Email Settings.</p>
+
+          <p className="mt-4 text-[11px] font-semibold text-blue-600">
+            Pro Tip: Customize this email copy anytime under Email Settings.
+          </p>
         </div>
 
-        <div className="bg-white rounded-2xl border border-slate-200 p-6">
-          <div className="flex items-center gap-2 mb-4 text-slate-900 font-semibold text-sm">
-            <CheckCircle2 className="w-4 h-4 text-indigo-600" /> Trigger: Mark Job Complete
+        {/* Workflow Trigger Showcase */}
+        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+          <div>
+            <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-800">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Automatic Trigger
+            </div>
+            <p className="mb-3 text-xs text-slate-500">
+              When you or your crew tap <strong>Mark Complete</strong> on any job card,
+              the request email is dispatched automatically.
+            </p>
           </div>
-          <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm h-[200px]">
-            <img 
-              src="/images/mark-job-complete.webp" 
-              alt="Mark job as complete" 
-              className="w-full h-full object-cover object-top scale-100"
+
+          <div className="h-[180px] overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+            <img
+              src="/images/mark-job-complete.webp"
+              alt="Mark job as complete interface"
+              className="h-full w-full object-cover object-top"
             />
           </div>
         </div>
@@ -172,10 +243,18 @@ export default function GoogleReviewsTab({ company, locked }: { company: any; lo
 
   return locked ? (
     <div className="relative">
-      <div className="blur-[3px] pointer-events-none select-none opacity-60">{content}</div>
+      <div className="pointer-events-none select-none blur-[3px] opacity-60">
+        {content}
+      </div>
       <div className="absolute inset-0 flex items-center justify-center px-4">
-        <StandaloneUpgradeOverlay feature="google_reviews" companySlug={company.slug} requiredPlan="basic" />
+        <StandaloneUpgradeOverlay
+          feature="google_reviews"
+          companySlug={company.slug}
+          requiredPlan="basic"
+        />
       </div>
     </div>
-  ) : content;
+  ) : (
+    content
+  );
 }
