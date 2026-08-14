@@ -429,11 +429,14 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         }, { status: 400 });
       }
 
-      // ── Buffer conflict check (industry-gated) ──────────────────
-      // Only runs when SCHEDULING_CONFIG has a buffer > 0 for this company's
-      // business_type. Reads it server-side rather than trusting the client
-      // to send it — the buffer value is a business rule, not user input.
-     if (assigned_to && scheduled_date && scheduled_time) {
+     // ── Conflict check — every company, any assignee ─────────────
+      // Runs regardless of business_type; bufferMinutes (staffing gets 60,
+      // others default 0) is extra padding on top of a plain overlap, not
+      // a switch for whether we check at all. Checks assigned_to AND every
+      // name in additional_assignees, on both sides of the comparison.
+      const newAssignees: string[] = [assigned_to, ...(additional_assignees || [])].filter(Boolean);
+
+      if (newAssignees.length > 0 && scheduled_date && scheduled_time) {
         const companyRow = await sql`
           SELECT c.business_type, p.company_id
           FROM projects p
@@ -443,41 +446,62 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         const companyId = companyRow[0]?.company_id;
         const { bufferMinutes: defaultBufferMinutes } = getSchedulingConfig(companyRow[0]?.business_type);
 
-        if (defaultBufferMinutes > 0) {
-          const sameDay = await sql`
-            SELECT id, scheduled_time, scheduled_end_time
-            FROM projects
-            WHERE company_id = ${companyId}
-              AND assigned_to = ${assigned_to}
-              AND id != ${projectId}
-              AND scheduled_date::date = ${scheduled_date}::date
-              AND status != 'cancelled'
-          `;
+        const sameDay = await sql`
+          SELECT id, assigned_to, additional_assignees, scheduled_time, scheduled_end_time
+          FROM projects
+          WHERE company_id = ${companyId}
+            AND id != ${projectId}
+            AND scheduled_date::date = ${scheduled_date}::date
+            AND status != 'cancelled'
+        `;
 
-          const toMinutes = (t: string) => {
-            const [h, m] = t.split(':').map(Number);
-            return h * 60 + m;
-          };
+        const toMinutes = (t: string) => {
+          const [h, m] = t.split(':').map(Number);
+          return h * 60 + m;
+        };
 
-          const newStart = toMinutes(scheduled_time);
-          const newEnd = scheduled_end_time ? toMinutes(scheduled_end_time) : newStart;
+        const parseExtra = (raw: any): string[] => {
+          try {
+            const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+            return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+          } catch { return []; }
+        };
 
-          const conflict = sameDay.find((row: any) => {
-            const existingStart = toMinutes(row.scheduled_time);
-            const existingEnd = row.scheduled_end_time ? toMinutes(row.scheduled_end_time) : existingStart;
-            return (
-              newStart < existingEnd + defaultBufferMinutes &&
-              newEnd + defaultBufferMinutes > existingStart
-            );
-          });
+        const newStart = toMinutes(scheduled_time);
+        const newEnd = scheduled_end_time ? toMinutes(scheduled_end_time) : newStart;
 
-          if (conflict) {
-            return NextResponse.json({
-              success: false,
-              error: `${assigned_to} already has a booking too close to this time (needs a ${defaultBufferMinutes}-minute buffer).`,
-              conflict_project_id: conflict.id,
-            }, { status: 409 });
+        let conflictRow: any = null;
+        let conflictName: string | null = null;
+
+        for (const row of sameDay) {
+          const existingAssignees = [row.assigned_to, ...parseExtra(row.additional_assignees)].filter(Boolean);
+          const overlapName = newAssignees.find((n) => existingAssignees.includes(n));
+          if (!overlapName) continue;
+
+          const existingStart = toMinutes(row.scheduled_time);
+          const existingEnd = row.scheduled_end_time ? toMinutes(row.scheduled_end_time) : existingStart;
+          // Inclusive — with no end time, a booking is a single point, and
+          // two equal points need <= / >= to register (strict < / > never
+          // fires when they're equal, which silently let exact-time
+          // duplicates through before).
+          const timeConflict =
+            newStart <= existingEnd + defaultBufferMinutes &&
+            newEnd + defaultBufferMinutes >= existingStart;
+
+          if (timeConflict) {
+            conflictRow = row;
+            conflictName = overlapName;
+            break;
           }
+        }
+
+        if (conflictRow) {
+          const bufferNote = defaultBufferMinutes > 0 ? ` (needs a ${defaultBufferMinutes}-minute buffer)` : '';
+          return NextResponse.json({
+            success: false,
+            error: `${conflictName} already has a booking at this time${bufferNote}.`,
+            conflict_project_id: conflictRow.id,
+          }, { status: 409 });
         }
       }
 

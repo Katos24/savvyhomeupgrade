@@ -31,8 +31,8 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'date is required' }, { status: 400 });
     }
 
-    const companies = await sql`
-      SELECT id, business_type, max_concurrent_bookings
+   const companies = await sql`
+      SELECT id, business_type
       FROM companies
       WHERE slug = ${slug}
       LIMIT 1
@@ -41,8 +41,18 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     }
     const company = companies[0];
-    const maxConcurrent = company.max_concurrent_bookings || 1;
-    const { bufferMinutes } = getSchedulingConfig(company.business_type);
+    const { bufferMinutes, staffPerBooking } = getSchedulingConfig(company.business_type);
+
+    // Total assignable staff = real logins + no-login roster names, deduped —
+    // same source /api/team/members already combines. Computed live rather
+    // than trusting a stored number, so it can't drift from the real roster.
+    const [userRows, companyRow] = await Promise.all([
+      sql`SELECT name FROM users WHERE company_id = ${company.id} AND is_active = true`,
+      sql`SELECT saved_assignees FROM companies WHERE id = ${company.id} LIMIT 1`,
+    ]);
+    const savedNames: string[] = companyRow[0]?.saved_assignees || [];
+    const totalStaff = new Set([...userRows.map((u: any) => u.name), ...savedNames].filter(Boolean)).size;
+    const maxConcurrent = Math.max(1, Math.floor(totalStaff / staffPerBooking));
 
     const bookings = await sql`
       SELECT scheduled_time, scheduled_end_time

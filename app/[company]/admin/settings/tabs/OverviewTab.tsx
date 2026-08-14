@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
-import { getSchedulingConfig } from '@/lib/schedulingConfig';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 
 function getStripeState(company: any): 'active' | 'pending' | 'restricted' | 'none' {
@@ -296,36 +295,6 @@ export default function OverviewTab({
   const [bccEnabled, setBccEnabled] = useState(company.bcc_sender_on_email ?? false);
   const [bccSaving, setBccSaving] = useState(false);
 
-  const showBookingSettings = getSchedulingConfig(company.business_type).showEndTime;
-  const [maxConcurrent, setMaxConcurrent] = useState(String(company.max_concurrent_bookings || 1));
-  const [maxConcurrentSaving, setMaxConcurrentSaving] = useState(false);
-  const [maxConcurrentSaved, setMaxConcurrentSaved] = useState(false);
-  const [maxConcurrentError, setMaxConcurrentError] = useState('');
-
-  const handleSaveCapacity = async () => {
-    const val = parseInt(maxConcurrent, 10);
-    if (isNaN(val) || val < 1) {
-      setMaxConcurrentError('Enter a number of 1 or more.');
-      return;
-    }
-    setMaxConcurrentError('');
-    setMaxConcurrentSaving(true);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-capacity', data: { max_concurrent_bookings: val } }),
-      });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Failed to save');
-      setMaxConcurrentSaved(true);
-      setTimeout(() => setMaxConcurrentSaved(false), 2000);
-    } catch (err) {
-      setMaxConcurrentError(err instanceof Error ? err.message : 'Failed to save');
-    } finally {
-      setMaxConcurrentSaving(false);
-    }
-  };
 
  const isFreePlan = planTier === 'free';
   const missingLogo = !company.logo_url && !logoPreview;
@@ -732,49 +701,7 @@ export default function OverviewTab({
               </div>
             </div>
 
-            {/* Booking Settings — only for business types with start/end time scheduling */}
-            {showBookingSettings && (
-              <div className="border-t border-slate-200 pt-5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Bell className="h-4 w-4 text-slate-700" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-900">
-                    Booking Settings
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mb-3">
-                  How many bookings your team can run at the same time. This controls what shows as available on your public booking form.
-                </p>
-
-                <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 rounded border border-slate-200 bg-slate-50/50 p-4">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-slate-900">Simultaneous bookings</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      e.g. if your team can staff 3 events at once, set this to 3.
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <input
-                      type="number"
-                      min="1"
-                      value={maxConcurrent}
-                      onChange={(e) => { setMaxConcurrent(e.target.value); setMaxConcurrentError(''); }}
-                      className="w-20 rounded border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-slate-900 outline-none focus:border-slate-900"
-                    />
-                    <button
-                      onClick={handleSaveCapacity}
-                      disabled={maxConcurrentSaving}
-                      className="inline-flex items-center gap-1.5 rounded bg-slate-900 px-3 py-2 text-xs font-bold text-white hover:bg-slate-800 disabled:opacity-50"
-                    >
-                      {maxConcurrentSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : maxConcurrentSaved ? <Check className="h-3 w-3" /> : <Save className="h-3 w-3" />}
-                      {maxConcurrentSaved ? 'Saved' : 'Save'}
-                    </button>
-                  </div>
-                </div>
-                {maxConcurrentError && (
-                  <p className="mt-1.5 text-xs font-bold text-rose-600">{maxConcurrentError}</p>
-                )}
-              </div>
-            )}
+      
 
             {/* Public Booking Link Card */}
             <div className="border-t border-slate-200 pt-5">

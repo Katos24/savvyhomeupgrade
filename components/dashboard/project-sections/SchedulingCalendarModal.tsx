@@ -260,7 +260,7 @@ const handleConfirm = () => {
                 const jobsOnDay = getJobsForDateStr(dateStr);
 
               const getConflict = (time: string) => {
-                  if (bufferMinutes <= 0 || selectedAssignees.length === 0) return null;
+                  if (selectedAssignees.length === 0) return null;
                   const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
                   const newStart = toMins(time);
                   return jobsOnDay.find((j: any) => {
@@ -269,7 +269,7 @@ const handleConfirm = () => {
                     if (!overlap) return false;
                     const existingStart = toMins(j.scheduled_time);
                     const existingEnd = j.scheduled_end_time ? toMins(j.scheduled_end_time) : existingStart;
-                    return newStart < existingEnd + bufferMinutes && newStart + bufferMinutes > existingStart;
+                    return newStart <= existingEnd + bufferMinutes && newStart + bufferMinutes >= existingStart;
                   }) || null;
                 };
 

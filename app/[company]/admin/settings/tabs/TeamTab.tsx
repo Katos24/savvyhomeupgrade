@@ -5,8 +5,11 @@ import {
   Users, UserPlus, Mail, Trash2, Crown, X, 
   CheckCircle2, Loader2, Search, AlertCircle, 
   ShieldCheck, UserCircle2, ArrowRight, ChevronDown,
-  Sparkles, Fingerprint
+  Sparkles, Fingerprint, Save, CalendarClock
 } from 'lucide-react';
+import { getSchedulingConfig } from '@/lib/schedulingConfig';
+
+type SavedStaff = { name: string };
 
 type TeamMember = {
   id: number;
@@ -19,10 +22,14 @@ type TeamMember = {
 };
 
 export default function TeamTab({ company, currentUser }: { company: any; currentUser: any }) {
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [savedStaff, setSavedStaff] = useState<SavedStaff[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [staffSaving, setStaffSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -33,23 +40,99 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
   const [success, setSuccess] = useState('');
   const [emailError, setEmailError] = useState(false);
 
+  const showCapacitySetting = getSchedulingConfig(company.business_type).showEndTime;
+  const [maxConcurrent, setMaxConcurrent] = useState(String(company.max_concurrent_bookings || 1));
+  const [maxConcurrentSaving, setMaxConcurrentSaving] = useState(false);
+  const [maxConcurrentSaved, setMaxConcurrentSaved] = useState(false);
+  const [maxConcurrentError, setMaxConcurrentError] = useState('');
+
+  const handleSaveCapacity = async () => {
+    const val = parseInt(maxConcurrent, 10);
+    if (isNaN(val) || val < 1) {
+      setMaxConcurrentError('Enter a number of 1 or more.');
+      return;
+    }
+    setMaxConcurrentError('');
+    setMaxConcurrentSaving(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-capacity', data: { max_concurrent_bookings: val } }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Failed to save');
+      setMaxConcurrentSaved(true);
+      setTimeout(() => setMaxConcurrentSaved(false), 2000);
+    } catch (err) {
+      setMaxConcurrentError(err instanceof Error ? err.message : 'Failed to save');
+    } finally {
+      setMaxConcurrentSaving(false);
+    }
+  };
+
   useEffect(() => {
     fetchTeamData();
   }, []);
 
-  async function fetchTeamData() {
+ async function fetchTeamData() {
     try {
-      const response = await fetch(`/api/company/${company.slug}/team`);
-      const data = await response.json();
-      if (data.success) {
-        setTeamMembers(data.teamMembers || []);
+      const [teamRes, membersRes] = await Promise.all([
+        fetch(`/api/company/${company.slug}/team`),
+        fetch(`/api/team/members`),
+      ]);
+      const teamData = await teamRes.json();
+      const membersData = await membersRes.json();
+
+      if (teamData.success) {
+        setTeamMembers(teamData.teamMembers || []);
       } else {
         setError('Failed to fetch team');
+      }
+
+      // Names in allAssignees that aren't backed by a real login — the
+      // no-login roster. Same source /api/team/members already builds.
+      if (membersData.success) {
+        const loginNames = new Set((membersData.members || []).map((m: any) => m.name));
+        const staffOnly = (membersData.allAssignees || []).filter((n: string) => !loginNames.has(n));
+        setSavedStaff(staffOnly.map((name: string) => ({ name })));
       }
     } catch (err) {
       setError('Connection lost. Please try again.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleAddStaff() {
+    const name = newStaffName.trim();
+    if (!name) { setError('Enter a name.'); return; }
+    if (savedStaff.some(s => s.name === name) || teamMembers.some(m => m.name === name)) {
+      setError('That name is already on your team.');
+      return;
+    }
+    setStaffSaving(true);
+    setError('');
+    try {
+      const res = await fetch('/api/team/save-assignee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setSuccess(`${name} added.`);
+        setNewStaffName('');
+        setShowAddStaffModal(false);
+        fetchTeamData();
+        setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError('Could not add staff member.');
+      }
+    } catch {
+      setError('Something went wrong.');
+    } finally {
+      setStaffSaving(false);
     }
   }
 
@@ -181,6 +264,13 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
                     className="w-full sm:w-64 pl-11 pr-4 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none"
                 />
             </div>
+           <button
+                onClick={() => setShowAddStaffModal(true)}
+                className="flex items-center justify-center gap-2 px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl text-sm font-black transition-all active:scale-95"
+            >
+                <UserCircle2 className="w-4 h-4" />
+                Add staff
+            </button>
             <button
                 onClick={() => setShowInviteModal(true)}
                 className="flex items-center justify-center gap-2 px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-sm font-black shadow-xl shadow-blue-100 transition-all active:scale-95"
@@ -225,6 +315,28 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
           ))}
         </div>
       </div>
+
+      {/* --- NO-LOGIN STAFF --- */}
+      {savedStaff.length > 0 && (
+        <div className="mb-8">
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">
+            Staff without a login ({savedStaff.length})
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {savedStaff.map((s) => (
+              <span
+                key={s.name}
+                className="inline-flex items-center gap-2 pl-4 pr-2 py-2 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold text-slate-700"
+              >
+                {s.name}
+              </span>
+            ))}
+          </div>
+          <p className="text-[11px] text-slate-400 font-medium mt-2">
+            Assignable to bookings, no dashboard access. Remove access by asking support, or reach out if you'd like a remove button added here.
+          </p>
+        </div>
+      )}
 
       {/* --- CARDS GRID --- */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -293,7 +405,7 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
           );
         })}
 
-        <button 
+       <button 
             onClick={() => setShowInviteModal(true)}
             className="flex flex-col items-center justify-center border-4 border-dashed border-slate-50 rounded-[2.5rem] p-10 hover:border-blue-100 hover:bg-blue-50/20 transition-all group min-h-[280px]"
         >
@@ -303,6 +415,79 @@ export default function TeamTab({ company, currentUser }: { company: any; curren
             <p className="font-black text-slate-900 text-sm uppercase tracking-widest">New Seat</p>
         </button>
       </div>
+
+      {/* --- BOOKING CAPACITY --- */}
+      {showCapacitySetting && (
+        <div className="mt-10 p-7 bg-slate-50 rounded-[2.5rem] border border-slate-100">
+          <div className="flex items-center gap-2 mb-1">
+            <CalendarClock className="w-4 h-4 text-blue-500" />
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-500">Booking capacity</span>
+          </div>
+          <h3 className="text-xl font-black text-slate-900 tracking-tight mb-1">
+            How many events can run at once?
+          </h3>
+          <p className="text-sm text-slate-400 font-bold leading-relaxed mb-5 max-w-lg">
+            You have <span className="text-slate-900">{teamMembers.length} team member{teamMembers.length !== 1 ? 's' : ''}</span> who can be assigned to jobs.
+            This number is about scheduling capacity, not headcount — if a typical event needs 2–3 people, your team
+            may only be able to cover 1 or 2 events happening at the exact same time, even with more people on staff overall.
+            This controls what shows as available on your public booking form.
+          </p>
+
+         <div className="flex items-center gap-3">
+            <div className="px-5 py-3 bg-white rounded-xl text-2xl font-black text-slate-900">
+              {Math.max(1, Math.floor((teamMembers.length + savedStaff.length) / 2))}
+            </div>
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+              simultaneous bookings, based on your {teamMembers.length + savedStaff.length} team member{teamMembers.length + savedStaff.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          <p className="mt-3 text-[11px] text-slate-400 font-bold">
+            Calculated automatically — add or remove staff above to change it.
+          </p>
+        </div>
+      )}
+
+      {/* --- ADD STAFF MODAL --- */}
+      {showAddStaffModal && (
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-slate-900/60 backdrop-blur-sm animate-in fade-in" onClick={() => setShowAddStaffModal(false)}>
+          <div className="bg-white rounded-t-[3rem] sm:rounded-[3rem] p-8 sm:p-12 w-full max-w-lg relative animate-in slide-in-from-bottom-20 sm:zoom-in-95" onClick={e => e.stopPropagation()}>
+            <div className="w-12 h-1.5 bg-slate-100 rounded-full mx-auto mb-8 sm:hidden" />
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-3xl font-black text-slate-900 tracking-tight">Add staff</h3>
+                <button onClick={() => setShowAddStaffModal(false)} className="p-3 bg-slate-50 text-slate-400 hover:text-slate-900 rounded-2xl transition-all">
+                    <X className="w-5 h-5" />
+                </button>
+            </div>
+            <p className="text-sm font-bold text-slate-400 mb-6">
+              No login, no email needed — just makes them assignable to bookings and counted in your capacity.
+            </p>
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Name</label>
+                <div className="relative group">
+                    <UserCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-blue-500 transition-colors" />
+                    <input
+                      autoFocus
+                      type="text"
+                      value={newStaffName}
+                      onChange={e => setNewStaffName(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleAddStaff()}
+                      placeholder="e.g. Sharon Lee"
+                      className="w-full pl-12 pr-5 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold"
+                    />
+                </div>
+              </div>
+              <button
+                onClick={handleAddStaff}
+                disabled={staffSaving}
+                className="w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[1.5rem] font-black text-sm uppercase tracking-widest transition-all active:scale-[0.98] flex items-center justify-center gap-3 disabled:opacity-50"
+              >
+                {staffSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Add to team'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- MODAL --- */}
       {showInviteModal && (

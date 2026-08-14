@@ -79,6 +79,8 @@ export default function BillingSection({
 
   // ── DEPOSIT TERMS ──
   const [showDepositEditor, setShowDepositEditor] = useState(false);
+  const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>(lead?.deposit_type ? 'deposit' : 'full');
+
   const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
   const [depositValueDraft, setDepositValueDraft] = useState('');
   const [savingDeposit, setSavingDeposit] = useState(false);
@@ -178,7 +180,8 @@ export default function BillingSection({
         new Date(depositPayment.paid_on).getTime());
 
   // ── EFFECTS ──
-  useEffect(() => {
+useEffect(() => {
+    setPaymentMode(lead?.deposit_type ? 'deposit' : 'full');
     setDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
     setPaymentMethod(lead?.payment_method || '');
     setPaymentDate(lead?.payment_date ? String(lead.payment_date).split('T')[0] : '');
@@ -402,6 +405,7 @@ export default function BillingSection({
   };
 
   const openDepositEditor = () => {
+    setPaymentMode('deposit');
     setDepositTypeDraft(depositType ?? 'percent');
     setDepositValueDraft(depositValue > 0 ? String(depositValue) : '');
     setShowDepositEditor(true);
@@ -419,15 +423,17 @@ export default function BillingSection({
     );
   }
 
-  // ── ACTION LOGIC ──
-  type ActionKey = 'upgrade' | 'deposit' | 'balance' | 'invoice' | 'reminder' | 'reminder-sent';
+// ── ACTION LOGIC ──
+  // Deposit requests live in the Deposit box now, not here. This only ever
+  // covers the invoice for whatever's currently owed — resending IS the
+  // reminder now, no separate email/template for that anymore.
+  type ActionKey = 'upgrade' | 'invoice';
   const nextAction: {
     key: ActionKey;
     label: string;
     sub: string;
     onClick: () => void;
-    tone: 'primary' | 'muted';
-  } | null = (isClosed && !refundedButOwing) || isPaid
+  } | null = (isClosed && !refundedButOwing) || isPaid || awaitingDeposit
     ? null
     : !canSendInvoice
     ? {
@@ -435,178 +441,105 @@ export default function BillingSection({
         label: 'Upgrade to Send Invoices',
         sub: 'Emailing invoices is available on the Basic plan.',
         onClick: () => (window.location.href = `/${company?.slug}/admin/settings#billing`),
-        tone: 'primary',
-      }
-    : awaitingDeposit
-    ? {
-        key: 'deposit',
-        label: `Send Deposit Request — ${fmt(depositAmount)}`,
-        sub: `Customer pays ${fmt(depositAmount)} now, ${fmt(total - depositAmount)} on completion.`,
-        onClick: () => setShowSendConfirm(true),
-        tone: 'primary',
-      }
-    : balanceNotYetRequested
-    ? {
-        key: 'balance',
-        label: `Send Final Balance Invoice — ${fmt(remaining)}`,
-        sub: 'Bills remaining balance following settled deposit.',
-        onClick: () => setShowSendConfirm(true),
-        tone: 'primary',
-      }
-    : !invoiceSent
-    ? {
-        key: 'invoice',
-        label: `Send Invoice — ${fmt(remaining)}`,
-        sub: hasPayLink
-          ? `Includes ${activeMethodLabel} pay link and attached PDF.`
-          : 'Emails PDF invoice directly to customer.',
-        onClick: () => setShowSendConfirm(true),
-        tone: 'primary',
-      }
-    : daysSinceReminder === 0
-    ? {
-        key: 'reminder-sent',
-        label: 'Reminder Sent Today',
-        sub: 'Follow-up available again tomorrow.',
-        onClick: () => {},
-        tone: 'muted',
       }
     : {
-        key: 'reminder',
-        label: 'Send Payment Reminder',
-        sub: lastReminderSent
-          ? `Last reminder sent ${fmtDate(lastReminderSent)}. ${fmt(remaining)} outstanding.`
-          : `Invoice sent. ${fmt(remaining)} outstanding.`,
-        onClick: () => setShowReminderConfirm(true),
-        tone: 'primary',
+        key: 'invoice',
+        label: `Send Invoice — ${fmt(remaining)}`,
+        sub: !invoiceSent
+          ? hasPayLink
+            ? `Includes ${activeMethodLabel} pay link and attached PDF.`
+            : 'Emails PDF invoice directly to customer.'
+          : `Resends the invoice. ${fmt(remaining)} outstanding.`,
+        onClick: () => setShowSendConfirm(true),
       };
 
-  const secondaryAction: { label: string; onClick: () => void } | null =
-    !nextAction || isPaid || (isClosed && !refundedButOwing)
-      ? null
-      : nextAction.key === 'reminder' || nextAction.key === 'reminder-sent'
-      ? { label: 'Resend Full Invoice', onClick: () => setShowSendConfirm(true) }
-      : (nextAction.key === 'deposit' || nextAction.key === 'balance' || nextAction.key === 'invoice') &&
-        invoiceSent &&
-        daysSinceReminder !== 0
-      ? { label: 'Send Payment Reminder', onClick: () => setShowReminderConfirm(true) }
-      : null;
-
-  const staleInvoiceWarning = awaitingDeposit && invoiceSent && !refundedButOwing;
+  // Small, separate, outside the main card — not a competing CTA.
+  const showReminderLink =
+    canSendInvoice && invoiceSent && !isPaid && (!isClosed || refundedButOwing) && remaining > 0;
 
   return (
     <>
       <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-        {/* ── INVOICE TOP BANNER ── */}
-        <div className="px-5 py-4 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white">
-              <Receipt className="w-4 h-4" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-base font-bold tracking-tight">{invoiceNumber}</span>
-                <span
-                  className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                    invoiceSent ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
-                  }`}
-                >
-                  {invoiceSent ? 'Sent' : 'Draft'}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400">
-                {dueDate ? `Due ${fmtDate(dueDate)}` : 'No due date set'}
-              </p>
-            </div>
-          </div>
-
-          <div className="text-right">
-            <span className="text-[11px] uppercase tracking-wider text-slate-400 block font-semibold">
-              Status
-            </span>
-            <span className="text-xs font-semibold text-slate-200">
-              {isClosed && !refundedButOwing
-                ? 'Refunded'
-                : isPaid
-                ? 'Paid in Full'
-                : awaitingDeposit
-                ? 'Awaiting Deposit'
-                : isPartial
-                ? 'Partially Paid'
-                : 'Outstanding'}
+     {/* ── TOTAL + PAYMENT BREAKDOWN — no dark banner. An empty deposit
+             box IS the "full payment" signal, not an error state. ── */}
+        <div className="px-5 pt-5 pb-4">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Total</span>
+            <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+              invoiceSent ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+            }`}>
+              {invoiceNumber} · {invoiceSent ? 'Sent' : 'Draft'}
             </span>
           </div>
-        </div>
-
-        {/* ── FINANCIAL KPI SUMMARY TILES ── */}
-        <div className="grid grid-cols-3 divide-x divide-slate-100 border-b border-slate-100 bg-slate-50/50">
-          <div className="p-3.5 sm:p-4">
-            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide block">
-              Invoiced Total
-            </span>
-            <span className="text-base sm:text-lg font-bold text-slate-900 tabular-nums">
-              {fmt(total)}
-            </span>
-            {invoiceTaxRate > 0 && (
-              <span className="text-[10px] text-slate-400 block tabular-nums">
-                Incl. {invoiceTaxRate}% tax
-              </span>
-            )}
-          </div>
-
-          <div className="p-3.5 sm:p-4">
-            <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wide block">
-              Paid to Date
-            </span>
-            <span className="text-base sm:text-lg font-bold text-emerald-600 tabular-nums">
-              {fmt(paidAmount)}
-            </span>
-          </div>
-
-          <div className="p-3.5 sm:p-4">
-            <span className="text-[11px] font-semibold text-slate-600 uppercase tracking-wide block">
-              Amount Due
-            </span>
-            <span className="text-base sm:text-lg font-bold text-slate-900 tabular-nums">
-              {fmt(remaining)}
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4 sm:p-5 space-y-4">
-          {/* ── REFUND WARNING BANNER ── */}
-          {refundedButOwing && (
-            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
-              <span>
-                <strong>{fmt(refundedAmount)} refunded</strong>
-                {lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}.{' '}
-                {paidAmount > 0
-                  ? `${fmt(remaining)} remains outstanding on this invoice.`
-                  : 'No collected balance remains on this job.'}
-              </span>
-            </div>
+          <p className="text-3xl font-bold text-slate-900 tabular-nums leading-tight">{fmt(total)}</p>
+          {invoiceTaxRate > 0 && (
+            <p className="text-[11px] text-slate-400 mt-0.5 tabular-nums">Incl. {invoiceTaxRate}% tax</p>
           )}
 
-          {/* ── STAGE MILESTONE TRACKER ── */}
-          {(!isClosed || refundedButOwing) && (
-            <div className="rounded-xl border border-slate-200 bg-slate-50/30 p-3 space-y-3">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                <span>Invoice Milestones</span>
-                {!depositLocked && (
-                  <button
-                    onClick={openDepositEditor}
-                    className="text-brand-700 hover:underline inline-flex items-center gap-1 text-[11px]"
-                  >
-                    <Edit2 className="w-3 h-3" />
-                    {hasDepositTerms ? 'Edit Terms' : 'Set Deposit'}
-                  </button>
-                )}
-              </div>
+          <div className="grid grid-cols-2 gap-2.5 mt-4">
+            {/* LEFT — Deposit */}
+           <div className="rounded-xl border border-slate-200 p-3.5 flex flex-col">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1">Deposit</p>
+              {hasDepositTerms ? (
+                <>
+                  <p className="text-lg font-bold text-slate-900 tabular-nums leading-tight">{fmt(depositAmount)}</p>
+                  <p className="text-[11px] text-slate-500 mt-1 tabular-nums">
+                    {fmt(total - depositAmount)} balance
+                  </p>
+                  {depositPaid ? (
+                    <p className="mt-2.5 text-[11px] font-medium text-emerald-600 flex items-center gap-1">
+                      <CheckCircle className="w-3 h-3" /> Paid {fmtDate(depositPayment?.paid_on)}
+                    </p>
+                  ) : canSendInvoice && (!isClosed || refundedButOwing) ? (
+                    <button
+                      onClick={() => setShowSendConfirm(true)}
+                      className="mt-2.5 w-full h-9 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      Send Deposit
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-[11px] text-slate-300 mt-1">Full payment — no deposit</p>
+              )}
 
-              {showDepositEditor ? (
-                <div className="rounded-lg border-2 border-brand-700 bg-white p-3 space-y-3">
-                  <p className="text-xs font-medium text-slate-600">Configure Deposit Required</p>
+              {!depositLocked && (!isClosed || refundedButOwing) && (
+                <button
+                  onClick={openDepositEditor}
+                  className="mt-2 text-[11px] font-semibold text-brand-700 hover:underline self-start"
+                >
+                  {hasDepositTerms ? 'Edit' : '+ Add deposit'}
+                </button>
+              )}
+            </div>
+
+            {/* RIGHT — Paid / Due, stacked */}
+            <div className="rounded-xl border border-slate-200 divide-y divide-slate-200 overflow-hidden">
+              <div className="p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Paid</p>
+                <p className="text-lg font-bold text-emerald-600 tabular-nums leading-tight">{fmt(paidAmount)}</p>
+              </div>
+              <div className="p-3">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Due</p>
+                <p className="text-lg font-bold text-slate-900 tabular-nums leading-tight">{fmt(remaining)}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Deposit editor — inline under the grid, not a separate tab */}
+          <AnimatePresence>
+            {showDepositEditor && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-3 rounded-lg border-2 border-brand-700 bg-white p-3 space-y-3">
+                  <p className="text-xs font-medium text-slate-600">
+                    {hasDepositTerms ? 'Change the deposit amount' : 'How much is the deposit?'}
+                  </p>
                   <div className="flex items-center gap-2">
                     <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
                       {(['percent', 'fixed'] as const).map((t) => (
@@ -647,112 +580,56 @@ export default function BillingSection({
                       <button
                         onClick={() => handleSaveDepositTerms(true)}
                         disabled={savingDeposit}
-                        className="px-3 py-1.5 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50"
+                        className="px-3 py-1.5 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
                       >
-                        Remove
+                        Remove deposit
                       </button>
                     )}
                     <button
                       onClick={() => handleSaveDepositTerms(false)}
-                      disabled={savingDeposit}
+                      disabled={savingDeposit || !depositValueDraft}
                       className="px-3 py-1.5 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 disabled:opacity-50"
                     >
-                      {savingDeposit ? 'Saving...' : 'Save Terms'}
+                      {savingDeposit ? 'Saving...' : 'Save'}
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  {/* Step 1: Deposit */}
-                  <div
-                    className={`rounded-lg p-2.5 border text-xs ${
-                      depositPaid
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                        : hasDepositTerms
-                        ? 'bg-white border-slate-200 text-slate-900'
-                        : 'bg-white border-dashed border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        1. Deposit
-                      </span>
-                      {depositPaid && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
-                    </div>
-                    <p className="font-bold tabular-nums text-sm">
-                      {hasDepositTerms ? fmt(depositAmount) : 'None set'}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {depositPaid
-                        ? `Paid ${fmtDate(depositPayment?.paid_on)}`
-                        : hasDepositTerms
-                        ? depositType === 'percent'
-                          ? `${depositValue}% required`
-                          : 'Fixed amount'
-                        : 'Optional'}
-                    </p>
-                  </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
-                  {/* Step 2: Final Balance */}
-                  <div
-                    className={`rounded-lg p-2.5 border text-xs ${
-                      isPaid
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
-                        : 'bg-white border-slate-200 text-slate-900'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                        2. Final Balance
-                      </span>
-                      {isPaid && <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />}
-                    </div>
-                    <p className="font-bold tabular-nums text-sm">
-                      {fmt(hasDepositTerms && !depositPaid ? total - depositAmount : remaining)}
-                    </p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
-                      {isPaid ? 'Fully settled' : 'Due on completion'}
-                    </p>
-                  </div>
-                </div>
-              )}
+          {/* ── REFUND WARNING BANNER ── */}
+          {refundedButOwing && (
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
+              <span>
+                <strong>{fmt(refundedAmount)} refunded</strong>
+                {lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}.{' '}
+                {paidAmount > 0
+                  ? `${fmt(remaining)} remains outstanding on this invoice.`
+                  : 'No collected balance remains on this job.'}
+              </span>
             </div>
           )}
 
-          {/* ── PRIMARY ACTION ── */}
+        {/* ── PRIMARY ACTION ── */}
+          {awaitingDeposit && canSendInvoice && (!isClosed || refundedButOwing) && !isPaid && (
+            <p className="text-center text-[12px] text-slate-500 px-2">
+              Collect the deposit above before invoicing the remaining balance.
+            </p>
+          )}
+
           {nextAction && (
             <div className="space-y-2">
               <button
                 onClick={nextAction.onClick}
-                disabled={nextAction.tone === 'muted'}
-                className={`w-full h-11 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 ${
-                  nextAction.tone === 'primary'
-                    ? 'bg-brand-700 text-white hover:bg-brand-800 active:scale-[0.99]'
-                    : 'bg-slate-100 text-slate-400 cursor-default'
-                }`}
+                className="w-full h-11 rounded-xl text-sm font-semibold transition-all shadow-sm flex items-center justify-center gap-2 bg-brand-700 text-white hover:bg-brand-800 active:scale-[0.99]"
               >
                 <Send className="w-4 h-4" />
                 {nextAction.label}
               </button>
               <p className="text-center text-[11px] text-slate-500">{nextAction.sub}</p>
-
-              {secondaryAction && (
-                <button
-                  onClick={secondaryAction.onClick}
-                  className="w-full h-9 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                  {secondaryAction.label}
-                </button>
-              )}
-
-              {staleInvoiceWarning && (
-                <p className="flex items-start gap-1.5 rounded-lg bg-amber-50 border border-amber-200 p-2 text-[11px] text-amber-800">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  <span>
-                    Full invoice previously sent. Requesting deposit emails an updated link for {fmt(depositAmount)}.
-                  </span>
-                </p>
-              )}
             </div>
           )}
 
@@ -766,14 +643,27 @@ export default function BillingSection({
 
         {/* ── SECONDARY ACTION TOOLBAR ── */}
         <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2 bg-slate-50/50">
-          <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all disabled:opacity-50"
-          >
-            {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            Download PDF
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-700 hover:bg-white hover:shadow-sm border border-transparent hover:border-slate-200 transition-all disabled:opacity-50"
+            >
+              {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              Download PDF
+            </button>
+
+            {showReminderLink && (
+              <button
+                onClick={() => setShowReminderConfirm(true)}
+                disabled={daysSinceReminder === 0}
+                className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                <Clock className="w-3 h-3" />
+                {daysSinceReminder === 0 ? 'Reminder sent today' : 'Send reminder'}
+              </button>
+            )}
+          </div>
 
           {(!isClosed || refundedButOwing) && !isPaid && (
             <button
@@ -842,7 +732,7 @@ export default function BillingSection({
                   <span className="font-medium text-slate-900">{activeMethodLabel}</span>
                 ) : (
                   <a
-                    href={`/${company?.slug}/admin/settings#billing`}
+                    href={`/${company?.slug}/admin/settings#payments`}
                     className="text-slate-500 hover:text-slate-900 underline"
                   >
                     Not Configured
@@ -989,7 +879,6 @@ export default function BillingSection({
             )}
           </AnimatePresence>
         </div>
-      </div>
 
       {/* ══════════ MODALS ══════════ */}
 

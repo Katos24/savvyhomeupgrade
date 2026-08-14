@@ -108,13 +108,13 @@ export default function LeadModalHeader({
 
   return (
     <div className="flex-shrink-0 relative" style={{ background: '#0f172a' }}>
-      <div className="px-4 pt-2.5 pb-0">
+<div className="px-5 pt-4 pb-0">
 
         {/* ── TOP ROW — name, status, actions. Category and date moved into
               this row on desktop so they don't cost a line of their own. ── */}
-        <div className="flex items-center gap-2 mb-1.5">
-          <div className="flex-1 min-w-0 flex items-center gap-2">
-            <h2 className="text-base font-semibold text-white leading-tight truncate">{lead.name}</h2>
+       <div className="flex items-center gap-3 mb-2">
+          <div className="flex-1 min-w-0 flex items-center gap-2.5">
+            <h2 className="text-xl font-bold text-white leading-tight truncate">{lead.name}</h2>
 
             <div className="relative flex-shrink-0">
               <button
@@ -154,14 +154,7 @@ export default function LeadModalHeader({
               </AnimatePresence>
             </div>
 
-            {/* Category inline from sm up — saves a whole line on desktop. */}
-            <p className="hidden sm:block text-[11px] truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>
-              {categoryLabel}
-              {isProject && lead.project_number ? ` · #${lead.project_number}` : ''}
-              {' · '}{fmtDate(lead.created_at)}
-            </p>
-          </div>
-
+         </div>
           {/* One close control, not two. The back arrow and the X both called
               onClose — the X is the conventional one for a modal. */}
           <div className="flex items-center gap-1 flex-shrink-0">
@@ -176,38 +169,35 @@ export default function LeadModalHeader({
           </div>
         </div>
 
-        {/* Category line — mobile only, since it's inline above from sm up. */}
-        <p className="sm:hidden text-[11px] mb-1.5 truncate" style={{ color: 'rgba(255,255,255,0.3)' }}>
+       <p className="text-[12px] mb-2.5 truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>
           {categoryLabel}
           {isProject && lead.project_number ? ` · #${lead.project_number}` : ''}
           {' · '}{fmtDate(lead.created_at)}
         </p>
 
-        {/* ── SNAPSHOT ── */}
+       {/* ── SNAPSHOT ── */}
         {isProject && snapshot.length > 0 && (
           <div
-            className={`${showSnapshotOnMobile ? 'flex' : 'hidden sm:flex'} items-start border-t border-white/[0.07] pt-2 pb-1.5`}
+            className={`${showSnapshotOnMobile ? 'flex' : 'hidden sm:flex'} items-start border-t border-white/[0.08] py-3.5`}
           >
             {snapshot.map((item, i) => (
               <div
                 key={item.id}
-                className={`min-w-0 flex-1 ${i > 0 ? 'pl-3 border-l border-white/[0.07]' : ''} ${
-                  // Only the first two fit on a phone; the rest appear from sm.
+                className={`min-w-0 flex-1 ${i > 0 ? 'pl-4 border-l border-white/[0.08]' : ''} ${
                   i > 1 ? 'hidden sm:block' : ''
                 }`}
               >
-                <p className="text-[10px] font-medium truncate" style={{ color: 'rgba(255,255,255,0.35)' }}>
+                <p className="text-[11px] font-medium truncate mb-0.5" style={{ color: 'rgba(255,255,255,0.4)' }}>
                   {item.label}
                 </p>
-                {/* Value and sub on one line instead of two — saves ~14px. */}
-                <p className="text-[12px] font-medium leading-tight truncate">
+                <p className="text-[14px] font-semibold leading-tight truncate">
                   <span style={{ color: item.valueColor || 'white' }}>{item.value || '—'}</span>
-                  {item.sub && (
-                    <span className="ml-1.5" style={{ color: item.subColor || 'rgba(255,255,255,0.3)' }}>
-                      {item.sub}
-                    </span>
-                  )}
                 </p>
+                {item.sub && (
+                  <p className="text-[11px] mt-0.5 truncate" style={{ color: item.subColor || 'rgba(255,255,255,0.35)' }}>
+                    {item.sub}
+                  </p>
+                )}
               </div>
             ))}
           </div>

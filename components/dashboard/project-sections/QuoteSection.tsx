@@ -56,11 +56,17 @@ export default function QuoteSection({
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
   const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
-  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+ const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
   const [markingAccepted, setMarkingAccepted] = useState(false);
+  const [editingTax, setEditingTax] = useState(false);
+  const taxInputRef = useRef<HTMLInputElement | null>(null);
 
-  const newRowRef = useRef<HTMLDivElement | null>(null);
+ const newRowRef = useRef<HTMLDivElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (editingTax) taxInputRef.current?.focus();
+  }, [editingTax]);
 
   // Restrict key presses for numeric fields
   const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, allowDecimal = true) => {
@@ -374,14 +380,15 @@ export default function QuoteSection({
         </div>
 
         {/* Desktop: inline fields */}
-        <div className="hidden md:grid md:grid-cols-[1fr_120px_72px_110px_44px] md:items-center md:gap-1 md:p-1.5">
+<div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:items-center md:gap-1 md:p-1.5">
           <input
             ref={isNew ? newRowInputRef : undefined}
             type="text"
             value={item.description}
             onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
             placeholder="Describe this line…"
-            className="w-full rounded-lg border border-transparent bg-transparent px-3 py-2 text-[15px] font-semibold text-gray-900 outline-none transition-colors placeholder:font-normal placeholder:text-gray-300 hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+            title={item.description}
+            className="w-full min-w-0 truncate rounded-lg border border-transparent bg-transparent px-3 py-2 text-[15px] font-semibold text-gray-900 outline-none transition-colors placeholder:font-normal placeholder:text-gray-300 hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
           />
           <div className="relative">
             <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
@@ -553,8 +560,8 @@ export default function QuoteSection({
           {/* Items */}
           <div className="min-w-0">
             {quoteData.length > 0 && (
-              <div className="hidden md:grid md:grid-cols-[1fr_120px_72px_110px_44px] md:gap-1 px-3 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                <span>Item</span>
+<div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:gap-1 px-3 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                  <span>Item</span>
                 <span className="text-right pr-2">Unit price</span>
                 <span className="text-center">Qty</span>
                 <span className="text-right pr-2">Amount</span>
@@ -613,21 +620,33 @@ export default function QuoteSection({
                 <span className="text-gray-500">Subtotal</span>
                 <span className="text-gray-700 tabular-nums">{fmt(subtotal)}</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
+             <div className="flex items-center justify-between text-xs">
                 <span className="text-gray-500">Tax</span>
-                <div className="flex items-center gap-1">
-                  <input
-                    type="number"
-                    step="0.001"
-                    min="0"
-                    max="100"
-                    value={taxRate}
-                    onChange={(e) => { setTaxRate(parseFloat(e.target.value) || 0); setIsDirty(true); }}
-                    className={`w-14 rounded-md border border-gray-200 bg-white px-1.5 py-1 text-xs font-medium text-gray-900 text-right tabular-nums outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 ${noSpinners}`}
-                  />
-                  <span className="text-gray-400">%</span>
-                  <span className="ml-1 text-gray-700 tabular-nums w-16 text-right">{fmt(taxAmount)}</span>
-                </div>
+                {editingTax ? (
+                  <div className="flex items-center gap-1">
+                    <input
+                      ref={taxInputRef}
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      max="100"
+                      value={taxRate}
+                      onChange={(e) => { setTaxRate(parseFloat(e.target.value) || 0); setIsDirty(true); }}
+                      onBlur={() => setEditingTax(false)}
+                      onKeyDown={(e) => { if (e.key === 'Enter') setEditingTax(false); }}
+                      className={`w-20 rounded-md border border-blue-400 bg-white px-2 py-1 text-xs font-medium text-gray-900 text-right tabular-nums outline-none ring-2 ring-blue-100 ${noSpinners}`}
+                    />
+                    <span className="text-gray-400">%</span>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingTax(true)}
+                    className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600 transition-colors"
+                  >
+                    <span className="tabular-nums">{taxRate}%</span>
+                    <span className="text-gray-400 tabular-nums">· {fmt(taxAmount)}</span>
+                  </button>
+                )}
               </div>
             </div>
 
