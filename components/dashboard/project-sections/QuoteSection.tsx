@@ -16,6 +16,10 @@ import {
   Eye,
   XCircle,
   ArrowRightLeft,
+  DollarSign,
+  Percent,
+  FileText,
+  Info,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
@@ -59,17 +63,11 @@ export default function QuoteSection({
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
   const [markingAccepted, setMarkingAccepted] = useState(false);
-  const [editingTax, setEditingTax] = useState(false);
-  const taxInputRef = useRef<HTMLInputElement | null>(null);
 
-  const newRowRef = useRef<HTMLDivElement | null>(null);
+  const newRowRef = useRef<HTMLTableRowElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    if (editingTax) taxInputRef.current?.focus();
-  }, [editingTax]);
-
-  // Restrict key presses for numeric fields
+  // Keypress restriction for numeric fields
   const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, allowDecimal = true) => {
     if (
       ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
@@ -184,7 +182,7 @@ export default function QuoteSection({
         }),
       });
       if (res.ok) {
-        toast.success('Quote saved');
+        toast.success('Quote saved successfully');
         setIsDirty(false);
         await onRefresh();
       } else {
@@ -217,7 +215,7 @@ export default function QuoteSection({
       });
       const data = await res.json();
       if (data.success) {
-        toast.success('Quote marked accepted');
+        toast.success('Quote marked as accepted');
         setShowAcceptConfirm(false);
         await onRefresh();
       } else {
@@ -319,98 +317,12 @@ export default function QuoteSection({
     new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
   const quoteState = quoteDeclined
-    ? { label: `Declined ${declinedAt ? dateOnly(declinedAt) : ''}`, cls: 'bg-rose-50 text-rose-700 border-rose-200' }
+    ? { label: `Declined (${declinedAt ? dateOnly(declinedAt) : ''})`, cls: 'bg-rose-50 text-rose-700 border-rose-200' }
     : quoteAccepted
-    ? { label: `Approved ${acceptedAt ? dateOnly(acceptedAt) : ''}`, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
+    ? { label: `Approved (${acceptedAt ? dateOnly(acceptedAt) : ''})`, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
     : quoteSent
-    ? { label: `Sent ${sentAt ? dateOnly(sentAt) : ''}`, cls: 'bg-blue-50 text-blue-700 border-blue-200' }
-    : { label: 'Not sent yet', cls: 'bg-gray-100 text-gray-500 border-gray-200' };
-
-  const cellInput =
-    'w-full rounded-lg border border-transparent bg-transparent px-2 py-1.5 text-right text-[15px] font-medium text-gray-900 tabular-nums outline-none transition-colors hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100';
-
-  const renderLineItem = (item: any) => {
-    const isNew = item.id === lastAddedId && !item.description;
-    return (
-      <div
-        key={item.id}
-        ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-        className="rounded-xl border border-gray-200 bg-white transition-colors hover:border-gray-300"
-      >
-        {/* Mobile View */}
-        <button
-          onClick={() => setEditingItem({ ...item })}
-          className="w-full text-left p-4 md:hidden active:bg-gray-50 rounded-xl transition-colors"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <p className="text-[15px] font-semibold text-gray-900 leading-snug min-w-0">
-              {item.description || <span className="font-normal text-gray-300">No description</span>}
-            </p>
-            <p className="text-[15px] font-semibold text-gray-900 tabular-nums shrink-0">
-              {fmt(item.amount || 0)}
-            </p>
-          </div>
-          <p className="mt-1.5 text-xs text-gray-400 tabular-nums">
-            {fmt(item.unitPrice || 0)} × {item.quantity}
-          </p>
-        </button>
-
-        <div className="md:hidden px-4 pb-3 -mt-1 flex justify-end">
-          <button
-            onClick={() => handleRemoveRow(item.id)}
-            className="p-2 -mr-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-            aria-label="Remove item"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Desktop View */}
-        <div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:items-center md:gap-1 md:p-1.5">
-          <input
-            ref={isNew ? newRowInputRef : undefined}
-            type="text"
-            value={item.description}
-            onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-            placeholder="Describe this line…"
-            title={item.description}
-            className="w-full min-w-0 truncate rounded-lg border border-transparent bg-transparent px-3 py-2 text-[15px] font-semibold text-gray-900 outline-none transition-colors placeholder:font-normal placeholder:text-gray-300 hover:border-gray-200 hover:bg-gray-50 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
-          />
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">$</span>
-            <input
-              type="number"
-              step="any"
-              value={item.unitPrice || ''}
-              onKeyDown={(e) => handleNumericKeyDown(e, true)}
-              onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-              placeholder="0.00"
-              className={`${cellInput} pl-6 ${noSpinners}`}
-            />
-          </div>
-          <input
-            type="number"
-            step="any"
-            value={item.quantity || ''}
-            onKeyDown={(e) => handleNumericKeyDown(e, true)}
-            onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-            placeholder="1"
-            className={`${cellInput} text-center ${noSpinners}`}
-          />
-          <p className="px-2 text-right text-[15px] font-semibold text-gray-900 tabular-nums">
-            {fmt(item.amount || 0)}
-          </p>
-          <button
-            onClick={() => handleRemoveRow(item.id)}
-            className="mx-auto p-2 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 transition-colors"
-            aria-label="Remove item"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    );
-  };
+    ? { label: `Sent (${sentAt ? dateOnly(sentAt) : ''})`, cls: 'bg-blue-50 text-blue-700 border-blue-200' }
+    : { label: 'Draft', cls: 'bg-slate-100 text-slate-600 border-slate-200' };
 
   return (
     <>
@@ -431,19 +343,19 @@ export default function QuoteSection({
               className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col shadow-2xl h-[85vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between shrink-0">
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50">
                 <div className="flex items-center gap-2.5">
-                  <Mail className="w-4 h-4 text-gray-400" />
+                  <Mail className="w-4 h-4 text-slate-400" />
                   <div>
-                    <p className="text-xs text-gray-400">Preview</p>
-                    <p className="text-sm font-semibold text-gray-900">Client Proposal</p>
+                    <p className="text-xs text-slate-400 font-medium">Proposal Email Preview</p>
+                    <p className="text-sm font-semibold text-slate-900">{lead?.name || 'Customer'}</p>
                   </div>
                 </div>
-                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-gray-100 rounded-lg transition">
-                  <X className="w-4 h-4 text-gray-500" />
+                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-slate-200 rounded-lg transition cursor-pointer">
+                  <X className="w-4 h-4 text-slate-500" />
                 </button>
               </div>
-              <div className="flex-1 overflow-hidden bg-gray-50 p-3">
+              <div className="flex-1 overflow-hidden bg-slate-100 p-3">
                 <iframe
                   title="Email Preview"
                   srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}</style>`}
@@ -460,44 +372,41 @@ export default function QuoteSection({
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-200 shadow-sm"
+        className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden"
       >
-        {/* HEADER */}
-        <div className="px-4 sm:px-5 py-4 flex items-center justify-between gap-3">
+        {/* HEADER BAR */}
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-4 bg-slate-50/50">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 bg-gray-100 text-gray-600 rounded-xl shrink-0">
+            <div className="w-9 h-9 bg-slate-900 text-white rounded-xl flex items-center justify-center shrink-0 shadow-sm">
               <Receipt className="w-4 h-4" />
             </div>
-            <div className="min-w-0">
-              <h3 className="text-[15px] font-semibold text-gray-900 leading-tight">Quote</h3>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {quoteData.length} item{quoteData.length === 1 ? '' : 's'}
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900 leading-tight">Quote</h3>
+                <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${quoteState.cls}`}>
+                  {quoteState.label}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {quoteData.length} line item{quoteData.length === 1 ? '' : 's'}
+                {isDirty && <span className="ml-2 text-amber-600 font-semibold">• Unsaved changes</span>}
               </p>
             </div>
-
-            <span
-              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-medium shrink-0 ${quoteState.cls}`}
-            >
-              {quoteDeclined ? (
-                <XCircle className="w-3 h-3" />
-              ) : quoteAccepted ? (
-                <CheckCircle2 className="w-3 h-3" />
-              ) : quoteSent ? (
-                <Send className="w-3 h-3" />
-              ) : null}
-              {quoteState.label}
-            </span>
           </div>
 
-          <button
-            onClick={() => setShowAI((v) => !v)}
-            className={`flex items-center gap-1.5 px-3 h-9 rounded-lg text-xs font-medium transition shrink-0 ${
-              showAI ? 'bg-gray-900 text-white' : 'text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            AI draft
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowAI((v) => !v)}
+              className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                showAI
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              AI Draft Generator
+            </button>
+          </div>
         </div>
 
         {/* TEMPLATE BANNER */}
@@ -507,28 +416,33 @@ export default function QuoteSection({
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
+              className="overflow-hidden border-b border-indigo-100 bg-indigo-50/60"
             >
-              <div className="mx-4 sm:mx-5 mb-4 flex items-center justify-between gap-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-gray-900 truncate">
-                    Pricing template for {lead?.category || categoryTemplate.category}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {categoryTemplate.items?.length || 0} standard items ready to load
-                  </p>
+              <div className="px-5 py-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-indigo-950 truncate">
+                      Preset Pricing Template for {lead?.category || categoryTemplate.category}
+                    </p>
+                    <p className="text-xs text-indigo-700 mt-0.5">
+                      Contains {categoryTemplate.items?.length || 0} standard line items with default pricing
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleLoadTemplate}
-                    className="px-3 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg hover:bg-gray-800 transition"
+                    className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition cursor-pointer shadow-xs"
                   >
-                    Load items
+                    Load Items
                   </button>
                   <button
                     onClick={() => setTemplateBannerDismissed(true)}
-                    className="p-2 text-gray-400 hover:text-gray-600 transition"
-                    aria-label="Dismiss"
+                    className="p-1.5 text-indigo-400 hover:text-indigo-600 transition"
+                    aria-label="Dismiss template banner"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -538,124 +452,247 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* ITEMS + TOTALS */}
-        <div className="px-4 sm:px-5 pb-5 grid gap-4 lg:grid-cols-[1fr_240px] lg:items-start">
-          {/* Items List */}
-          <div className="min-w-0">
-            {quoteData.length > 0 && (
-              <div className="hidden md:grid md:grid-cols-[1fr_100px_60px_100px_40px] md:gap-1 px-3 pb-1.5 text-[11px] font-medium uppercase tracking-wider text-gray-400">
-                <span>Item</span>
-                <span className="text-right pr-2">Unit price</span>
-                <span className="text-center">Qty</span>
-                <span className="text-right pr-2">Amount</span>
-                <span />
-              </div>
-            )}
+        {/* MAIN BODY GRID */}
+        <div className="p-5 grid gap-6 lg:grid-cols-[1fr_320px] items-start">
+          
+          {/* LEFT: TABLE & LINE ITEMS */}
+          <div className="space-y-4 min-w-0">
+            {/* Desktop Table */}
+            <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden bg-white">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3 px-4">Item / Description</th>
+                    <th className="py-3 px-3 w-32 text-right">Unit Price</th>
+                    <th className="py-3 px-3 w-20 text-center">Qty</th>
+                    <th className="py-3 px-4 w-32 text-right">Amount</th>
+                    <th className="py-3 px-2 w-10"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {quoteData.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 px-4 text-center">
+                        <p className="text-sm font-semibold text-slate-700">No line items in quote</p>
+                        <p className="text-xs text-slate-400 mt-1">Add items manually below or generate a draft using AI.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    quoteData.map((item: any) => {
+                      const isNew = item.id === lastAddedId && !item.description;
+                      return (
+                        <tr
+                          key={item.id}
+                          ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
+                          className="hover:bg-slate-50/60 transition-colors group"
+                        >
+                          {/* Description */}
+                          <td className="py-2 px-3">
+                            <input
+                              ref={isNew ? newRowInputRef : undefined}
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                              placeholder="Describe line item or service..."
+                              className="w-full px-3 py-1.5 bg-slate-50/50 hover:bg-slate-100/70 focus:bg-white border border-transparent focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10 rounded-lg text-sm font-medium text-slate-900 outline-none transition-all placeholder:font-normal placeholder:text-slate-300"
+                            />
+                          </td>
 
-            {quoteData.length === 0 ? (
-              <button
-                onClick={handleAddRowMobile}
-                className="w-full rounded-xl border border-dashed border-gray-300 py-12 flex flex-col items-center justify-center gap-3 hover:border-gray-400 hover:bg-gray-50 transition-all group cursor-pointer"
-              >
-                <div className="w-11 h-11 rounded-full bg-gray-900 flex items-center justify-center transition-transform group-active:scale-95">
-                  <Plus className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[13px] font-medium text-gray-500">Add the first line item</span>
-              </button>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {quoteData.map((item: any) => renderLineItem(item))}
+                          {/* Unit Price */}
+                          <td className="py-2 px-2">
+                            <div className="relative flex items-center">
+                              <span className="absolute left-2.5 text-xs text-slate-400 font-medium">$</span>
+                              <input
+                                type="number"
+                                step="any"
+                                value={item.unitPrice || ''}
+                                onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                                onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                                placeholder="0.00"
+                                className={`w-full pl-6 pr-2 py-1.5 bg-slate-50/50 hover:bg-slate-100/70 focus:bg-white border border-transparent focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10 rounded-lg text-sm font-semibold text-slate-900 text-right tabular-nums outline-none transition-all ${noSpinners}`}
+                              />
+                            </div>
+                          </td>
 
-                <button
-                  onClick={handleAddRow}
-                  className="hidden md:flex w-full rounded-xl border border-dashed border-gray-300 py-3 items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 hover:border-gray-400 hover:bg-gray-50 transition-all cursor-pointer"
-                >
-                  <Plus className="w-4 h-4" /> Add item
-                </button>
+                          {/* Quantity */}
+                          <td className="py-2 px-2">
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.quantity || ''}
+                              onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                              onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                              placeholder="1"
+                              className={`w-full px-2 py-1.5 bg-slate-50/50 hover:bg-slate-100/70 focus:bg-white border border-transparent focus:border-slate-300 focus:ring-2 focus:ring-slate-900/10 rounded-lg text-sm font-semibold text-slate-900 text-center tabular-nums outline-none transition-all ${noSpinners}`}
+                            />
+                          </td>
+
+                          {/* Amount */}
+                          <td className="py-2 px-4 text-right font-bold text-sm text-slate-900 tabular-nums">
+                            {fmt(item.amount || 0)}
+                          </td>
+
+                          {/* Delete Action */}
+                          <td className="py-2 px-2 text-center">
+                            <button
+                              onClick={() => handleRemoveRow(item.id)}
+                              className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer opacity-0 group-hover:opacity-100"
+                              title="Delete row"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Desktop Add Row Button */}
+            <button
+              onClick={handleAddRow}
+              className="hidden md:flex w-full py-2.5 rounded-xl border border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50/80 items-center justify-center gap-2 text-xs font-semibold text-slate-600 transition cursor-pointer"
+            >
+              <Plus className="w-4 h-4 text-slate-500" />
+              Add Line Item
+            </button>
+
+            {/* Mobile View: Clean Touch Cards */}
+            <div className="md:hidden space-y-2.5">
+              {quoteData.length === 0 ? (
                 <button
                   onClick={handleAddRowMobile}
-                  className="md:hidden w-full rounded-xl border border-dashed border-gray-300 py-3 flex items-center justify-center gap-1.5 text-[13px] font-medium text-gray-500 active:bg-gray-50 transition-all cursor-pointer"
+                  className="w-full py-10 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 active:bg-slate-50 transition cursor-pointer"
                 >
-                  <Plus className="w-4 h-4" /> Add line item
+                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600">Tap to add first line item</span>
                 </button>
-              </div>
-            )}
+              ) : (
+                <>
+                  {quoteData.map((item: any) => (
+                    <div
+                      key={item.id}
+                      className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs space-y-2"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <button
+                          onClick={() => setEditingItem({ ...item })}
+                          className="flex-1 text-left min-w-0"
+                        >
+                          <p className="text-sm font-semibold text-slate-900 leading-snug">
+                            {item.description || <span className="font-normal italic text-slate-400">No description</span>}
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1 font-medium tabular-nums">
+                            {fmt(item.unitPrice || 0)} × {item.quantity || 1}
+                          </p>
+                        </button>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-bold text-slate-900 tabular-nums">
+                            {fmt(item.amount || 0)}
+                          </p>
+                          <button
+                            onClick={() => handleRemoveRow(item.id)}
+                            className="mt-1 p-1 text-slate-300 hover:text-rose-500 rounded transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button
+                    onClick={handleAddRowMobile}
+                    className="w-full py-3 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.99] transition"
+                  >
+                    <Plus className="w-4 h-4" /> Add Line Item
+                  </button>
+                </>
+              )}
+            </div>
           </div>
 
-          {/* Totals Rail */}
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 lg:sticky lg:top-4">
-            <p className="text-[11px] text-gray-400">
-              Total
-              {isDirty && <span className="ml-1.5 text-amber-600 font-medium">Unsaved</span>}
-            </p>
-            <motion.p
-              key={total}
-              initial={{ opacity: 0, y: -3 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-[26px] font-semibold text-gray-900 tabular-nums leading-tight"
-            >
-              {fmt(total)}
-            </motion.p>
-
-            <div className="mt-3 space-y-1.5 border-t border-gray-200 pt-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Subtotal</span>
-                <span className="text-gray-700 tabular-nums">{fmt(subtotal)}</span>
+          {/* RIGHT: SUMMARY, TAX, DEPOSIT & ACTIONS */}
+          <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
+            <div>
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quote Summary</p>
+              <div className="mt-1 flex items-baseline justify-between">
+                <p className="text-2xl font-bold text-slate-900 tabular-nums">{fmt(total)}</p>
+                <span className="text-xs font-medium text-slate-500">Total USD</span>
               </div>
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Tax</span>
-                {editingTax ? (
-                  <div className="flex items-center gap-1">
+            </div>
+
+            {/* BREAKDOWN SECTION */}
+            <div className="space-y-3 border-t border-slate-200/80 pt-4">
+              {/* Subtotal */}
+              <div className="flex items-center justify-between text-xs font-medium text-slate-600">
+                <span>Subtotal</span>
+                <span className="font-semibold text-slate-900 tabular-nums">{fmt(subtotal)}</span>
+              </div>
+
+              {/* Explicit Tax Control */}
+              <div className="p-3 bg-white border border-slate-200/80 rounded-xl space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
+                  <label htmlFor="taxRateInput" className="flex items-center gap-1">
+                    <Percent className="w-3.5 h-3.5 text-slate-400" />
+                    Tax Rate (%)
+                  </label>
+                  <span className="text-slate-900 tabular-nums">+{fmt(taxAmount)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
                     <input
-                      ref={taxInputRef}
+                      id="taxRateInput"
                       type="number"
-                      step="0.001"
+                      step="any"
                       min="0"
                       max="100"
                       value={taxRate}
-                      onKeyDown={(e) => {
-                        handleNumericKeyDown(e, true);
-                        if (e.key === 'Enter') setEditingTax(false);
-                      }}
+                      onKeyDown={(e) => handleNumericKeyDown(e, true)}
                       onChange={(e) => {
                         setTaxRate(parseFloat(e.target.value) || 0);
                         setIsDirty(true);
                       }}
-                      onBlur={() => setEditingTax(false)}
-                      className={`w-20 rounded-md border border-blue-400 bg-white px-2 py-1 text-xs font-medium text-gray-900 text-right tabular-nums outline-none ring-2 ring-blue-100 ${noSpinners}`}
+                      className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-900/10 tabular-nums"
                     />
-                    <span className="text-gray-400">%</span>
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
                   </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingTax(true)}
-                    className="flex items-center gap-1.5 text-gray-700 hover:text-blue-600 transition-colors cursor-pointer"
-                  >
-                    <span className="tabular-nums">{taxRate}%</span>
-                    <span className="text-gray-400 tabular-nums">· {fmt(taxAmount)}</span>
-                  </button>
-                )}
+                </div>
               </div>
+
+              {/* Deposit Card */}
+              {depositAmount > 0 ? (
+                <div className="p-3.5 bg-amber-50/80 border border-amber-200/90 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-amber-900">
+                    <span className="uppercase tracking-wider">Required Deposit ({depositType === 'percent' ? `${depositValue}%` : 'Fixed'})</span>
+                    <span className="text-sm font-extrabold text-amber-950 tabular-nums">{fmt(depositAmount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] font-medium text-amber-800/90 pt-1.5 border-t border-amber-200/60">
+                    <span>Balance Due on Completion</span>
+                    <span className="font-bold tabular-nums">{fmt(total - depositAmount)}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-slate-100/60 border border-slate-200/60 rounded-xl flex items-center justify-between text-xs text-slate-500 font-medium">
+                  <span>Required Deposit</span>
+                  <span className="text-slate-400 italic">None set</span>
+                </div>
+              )}
             </div>
 
-            {depositAmount > 0 && (
-              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5">
-                <p className="text-[11px] text-amber-700">
-                  Deposit{depositType === 'percent' ? ` · ${depositValue}%` : ''}
-                </p>
-                <p className="text-[15px] font-semibold text-amber-900 tabular-nums">{fmt(depositAmount)}</p>
-                <p className="text-[11px] text-amber-700 tabular-nums mt-0.5">
-                  {fmt(total - depositAmount)} on completion
-                </p>
-              </div>
-            )}
-
-            <div className="mt-4 flex flex-col gap-2">
+            {/* ACTION BUTTONS */}
+            <div className="space-y-2 pt-2 border-t border-slate-200/80">
               <button
                 onClick={handleManualSave}
                 disabled={!hasProject || quoteData.length === 0 || saving}
-                className={`inline-flex items-center justify-center gap-2 px-4 h-11 text-[13px] font-medium rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  isDirty ? 'bg-gray-900 text-white hover:bg-gray-800' : 'text-gray-500 border border-gray-200 bg-white'
+                className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isDirty
+                    ? 'bg-slate-900 text-white hover:bg-slate-800'
+                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 {saving ? (
@@ -663,34 +700,34 @@ export default function QuoteSection({
                 ) : isDirty ? (
                   <Save className="w-4 h-4" />
                 ) : (
-                  <CheckCircle2 className="w-4 h-4" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 )}
-                {isDirty ? 'Save quote' : 'Saved'}
+                {isDirty ? 'Save Changes' : 'Saved'}
               </button>
 
               <button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!hasProject || quoteData.length === 0}
-                className="inline-flex items-center justify-center gap-2 px-4 h-11 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-700 hover:bg-gray-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="w-full py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
               >
-                <Mail className="w-4 h-4" />
-                Send to customer
+                <Mail className="w-4 h-4 text-slate-500" />
+                Send Proposal to Customer
               </button>
 
               {!quoteAccepted && quoteData.length > 0 && (
                 <button
                   onClick={() => setShowAcceptConfirm(true)}
-                  className="inline-flex items-center justify-center gap-2 px-4 h-10 rounded-lg border border-gray-200 bg-white text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-emerald-700 transition cursor-pointer"
+                  className="w-full py-2 px-4 text-xs font-semibold text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <CheckCircle2 className="w-4 h-4" />
-                  Mark accepted
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Mark Accepted Manually
                 </button>
               )}
             </div>
           </div>
         </div>
 
-        {/* BOTTOM SHEET EDITOR (Mobile) */}
+        {/* BOTTOM SHEET ITEM EDITOR (Mobile) */}
         <AnimatePresence>
           {editingItem && (
             <>
@@ -699,22 +736,22 @@ export default function QuoteSection({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setEditingItem(null)}
-                className="fixed inset-0 z-[400] bg-black/40 backdrop-blur-sm md:hidden"
+                className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-xs md:hidden"
               />
               <motion.div
                 initial={{ y: '100%' }}
                 animate={{ y: 0 }}
                 exit={{ y: '100%' }}
                 transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-3xl md:hidden"
-                style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+                className="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-3xl md:hidden shadow-2xl border-t border-slate-200"
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
               >
                 <div className="flex justify-center pt-3 pb-1">
-                  <div className="w-10 h-1 rounded-full bg-gray-200" />
+                  <div className="w-10 h-1 rounded-full bg-slate-200" />
                 </div>
 
-                <div className="flex items-center justify-between px-5 py-3 border-b border-gray-100">
-                  <p className="text-sm font-semibold text-gray-900">Edit item</p>
+                <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
+                  <p className="text-sm font-bold text-slate-900">Edit Line Item</p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -723,37 +760,41 @@ export default function QuoteSection({
                         }
                         setEditingItem(null);
                       }}
-                      className="px-4 py-2 text-xs font-medium text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                      className="px-3 py-1.5 text-xs font-semibold text-slate-400 hover:text-slate-600 transition"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleDoneEditing}
-                      className="px-4 py-2 bg-gray-900 text-white text-xs font-medium rounded-lg transition-colors hover:bg-gray-800 cursor-pointer"
+                      className="px-4 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg transition"
                     >
-                      Done
+                      Save
                     </button>
                   </div>
                 </div>
 
-                <div className="px-5 py-4 flex flex-col gap-4">
+                <div className="p-5 space-y-4">
                   <div>
-                    <label className="block text-xs font-medium text-gray-500 mb-1.5">Description</label>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                      Description
+                    </label>
                     <input
                       type="text"
                       value={editingItem.description}
                       onChange={(e) => setEditingItem({ ...editingItem, description: e.target.value })}
-                      placeholder="Item name or description…"
+                      placeholder="Item or service name..."
                       autoFocus
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[15px] font-medium text-gray-900 placeholder-gray-300 outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:bg-white"
                     />
                   </div>
 
-                  <div className="flex gap-3">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">Unit price</label>
-                      <div className="flex items-center gap-1.5 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus-within:border-blue-400 focus-within:bg-white focus-within:ring-2 focus-within:ring-blue-100 transition-all">
-                        <span className="text-[15px] text-gray-400">$</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                        Unit Price
+                      </label>
+                      <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-slate-400 focus-within:bg-white">
+                        <span className="text-xs font-semibold text-slate-400">$</span>
                         <input
                           type="number"
                           step="any"
@@ -768,12 +809,15 @@ export default function QuoteSection({
                             });
                           }}
                           placeholder="0.00"
-                          className={`flex-1 bg-transparent text-[15px] font-medium text-gray-900 outline-none placeholder-gray-300 tabular-nums ${noSpinners}`}
+                          className={`w-full bg-transparent text-sm font-bold text-slate-900 outline-none tabular-nums ${noSpinners}`}
                         />
                       </div>
                     </div>
-                    <div className="w-28">
-                      <label className="block text-xs font-medium text-gray-500 mb-1.5">Qty</label>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                        Quantity
+                      </label>
                       <input
                         type="number"
                         step="any"
@@ -788,14 +832,14 @@ export default function QuoteSection({
                           });
                         }}
                         placeholder="1"
-                        className={`w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-[15px] font-medium text-gray-900 text-center tabular-nums outline-none focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100 transition-all ${noSpinners}`}
+                        className={`w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 text-center outline-none focus:border-slate-400 focus:bg-white tabular-nums ${noSpinners}`}
                       />
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 rounded-xl">
-                    <span className="text-xs font-medium text-gray-500">Line total</span>
-                    <span className="text-lg font-semibold text-gray-900 tabular-nums">
+                  <div className="flex items-center justify-between p-3.5 bg-slate-100/70 rounded-xl">
+                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Line Total</span>
+                    <span className="text-base font-extrabold text-slate-900 tabular-nums">
                       {fmt((editingItem.unitPrice || 0) * (editingItem.quantity || 0))}
                     </span>
                   </div>
@@ -805,45 +849,45 @@ export default function QuoteSection({
           )}
         </AnimatePresence>
 
-        {/* SENT HISTORY */}
+        {/* SENT OUTBOX LOG */}
         {outboxLog.length > 0 && (
-          <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-gray-100 bg-gray-50/60">
-            <div className="flex items-center gap-1.5 mb-2.5">
-              <Mail className="w-3 h-3 text-gray-400" />
-              <span className="text-[11px] text-gray-400">Sent history ({outboxLog.length})</span>
+          <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Mail className="w-3.5 h-3.5 text-slate-400" />
+              <span className="text-xs font-semibold text-slate-500">Proposal Email History ({outboxLog.length})</span>
             </div>
-            <div className="max-h-[160px] overflow-y-auto pr-1 space-y-1.5">
+            <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1">
               {outboxLog.map((entry: any, i: number) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between px-3 py-2.5 bg-white border border-gray-200 rounded-lg gap-3 hover:border-gray-300 transition-all"
+                  className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-xl gap-3 shadow-2xs"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
-                      className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                      className={`w-2 h-2 rounded-full shrink-0 ${
                         entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'
                       }`}
                     />
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[12px] font-medium text-gray-700">
+                        <span className="text-xs font-semibold text-slate-800">
                           {new Date(entry.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
-                        <span className="text-[11px] text-gray-400">
+                        <span className="text-[11px] text-slate-400">
                           {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                       {entry.sent_by_email && (
-                        <p className="text-[11px] text-gray-400 truncate">{entry.sent_by_email}</p>
+                        <p className="text-[11px] text-slate-400 truncate">{entry.sent_by_email}</p>
                       )}
                     </div>
                   </div>
                   {entry.html_body && (
                     <button
                       onClick={() => setPreviewHtml(entry.html_body)}
-                      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg text-[11px] font-medium transition-colors cursor-pointer"
+                      className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-xs font-semibold transition cursor-pointer"
                     >
-                      <Eye className="w-3 h-3" /> Preview
+                      <Eye className="w-3.5 h-3.5 text-slate-400" /> Preview
                     </button>
                   )}
                 </div>
@@ -853,7 +897,7 @@ export default function QuoteSection({
         )}
       </motion.div>
 
-      {/* AI MODAL */}
+      {/* AI GENERATOR MODAL */}
       <AnimatePresence>
         {showAI && (
           <motion.div
@@ -862,32 +906,34 @@ export default function QuoteSection({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center"
           >
-            <motion.div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAI(false)} />
+            <motion.div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={() => setShowAI(false)} />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
               className="relative bg-white w-full sm:max-w-md sm:mx-4 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden"
               style={{ maxHeight: '90vh' }}
             >
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
-                <div className="w-10 h-1 rounded-full bg-gray-200" />
+                <div className="w-10 h-1.5 rounded-full bg-slate-200" />
               </div>
-              <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between shrink-0 bg-white">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
                 <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-gray-500" />
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 leading-tight">AI quote draft</p>
-                    <p className="text-[11px] text-gray-400">
+                    <p className="text-sm font-bold text-slate-900 leading-tight">AI Quote Draft</p>
+                    <p className="text-[11px] text-slate-400">
                       {leadPhotos.length > 0
-                        ? `Description + ${leadPhotos.length} photo${leadPhotos.length > 1 ? 's' : ''}`
-                        : 'Using job description'}
+                        ? `Analysing description + ${leadPhotos.length} photo${leadPhotos.length > 1 ? 's' : ''}`
+                        : 'Generating estimate from job details'}
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setShowAI(false)} className="p-1.5 hover:bg-gray-100 rounded-lg transition cursor-pointer">
-                  <X className="w-4 h-4 text-gray-500" />
+                <button onClick={() => setShowAI(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+                  <X className="w-4 h-4 text-slate-500" />
                 </button>
               </div>
               <div className="flex-1 overflow-y-auto p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
@@ -905,34 +951,34 @@ export default function QuoteSection({
         )}
       </AnimatePresence>
 
-      {/* PENDING AI ITEMS MODAL */}
+      {/* PENDING AI ITEMS CONFIRMATION MODAL */}
       <AnimatePresence>
         {pendingAiItems && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/85 backdrop-blur-sm"
+            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs"
           >
             <motion.div
               initial={{ scale: 0.95, y: 16 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 16 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="bg-white w-full max-w-sm rounded-2xl p-7 text-center shadow-2xl"
+              className="bg-white w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl"
             >
-              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <ArrowRightLeft className="w-6 h-6 text-gray-500" />
+              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <ArrowRightLeft className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Sync AI items?</h3>
-              <p className="text-sm text-gray-500 mb-6 leading-relaxed px-2">
+              <h3 className="text-base font-bold text-slate-900 mb-1">Merge AI Draft?</h3>
+              <p className="text-xs text-slate-500 mb-5 leading-relaxed px-2">
                 You already have{' '}
-                <span className="font-medium text-gray-800">
-                  {quoteData.length} line item{quoteData.length > 1 ? 's' : ''}
+                <span className="font-semibold text-slate-800">
+                  {quoteData.length} item{quoteData.length > 1 ? 's' : ''}
                 </span>
-                . Add AI items to existing, or replace everything?
+                . Would you like to append the new AI items or replace your existing list?
               </p>
-              <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-2">
                 <button
                   onClick={() => {
                     setQuoteData((prev) => [...prev, ...pendingAiItems]);
@@ -940,9 +986,9 @@ export default function QuoteSection({
                     setShowAI(false);
                     setIsDirty(true);
                   }}
-                  className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition cursor-pointer"
+                  className="w-full py-3 bg-slate-900 text-white rounded-xl font-semibold text-xs hover:bg-slate-800 transition cursor-pointer shadow-xs"
                 >
-                  Add to existing
+                  Append to existing items
                 </button>
                 <button
                   onClick={() => {
@@ -951,13 +997,13 @@ export default function QuoteSection({
                     setShowAI(false);
                     setIsDirty(true);
                   }}
-                  className="w-full py-3.5 bg-white border border-gray-200 text-rose-600 rounded-xl font-medium text-sm hover:bg-rose-50 transition cursor-pointer"
+                  className="w-full py-3 bg-white border border-slate-200 text-rose-600 rounded-xl font-semibold text-xs hover:bg-rose-50 transition cursor-pointer"
                 >
-                  Replace all
+                  Replace all current items
                 </button>
                 <button
                   onClick={() => setPendingAiItems(null)}
-                  className="mt-1 text-xs font-medium text-gray-400 hover:text-gray-600 transition cursor-pointer"
+                  className="mt-1 text-xs font-semibold text-slate-400 hover:text-slate-600 transition cursor-pointer py-1"
                 >
                   Cancel
                 </button>
@@ -988,14 +1034,14 @@ export default function QuoteSection({
         />
       )}
 
-      {/* ACCEPT MODAL */}
+      {/* MANUAL ACCEPT CONFIRM MODAL */}
       <AnimatePresence>
         {showAcceptConfirm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
             onClick={() => !markingAccepted && setShowAcceptConfirm(false)}
           >
             <motion.div
@@ -1008,29 +1054,27 @@ export default function QuoteSection({
               <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
               </div>
-              <h3 className="text-base font-semibold text-gray-900 mb-2">
-                Mark this quote accepted?
+              <h3 className="text-base font-bold text-slate-900 mb-1">
+                Mark quote as accepted?
               </h3>
-              <p className="text-[13px] text-gray-500 leading-relaxed mb-5">
-                Use this when {lead?.name?.split(' ')[0] || 'the customer'} said yes by phone or in
-                person. It records the acceptance and moves the job forward, same as if they&apos;d
-                clicked Accept in the email. No email is sent to them.
+              <p className="text-xs text-slate-500 leading-relaxed mb-5">
+                This manually records approval for {lead?.name?.split(' ')[0] || 'the client'} (e.g. verbally over phone or in-person).
               </p>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   onClick={() => setShowAcceptConfirm(false)}
                   disabled={markingAccepted}
-                  className="py-3 border border-gray-200 text-gray-600 font-medium text-[13px] rounded-xl hover:bg-gray-50 transition cursor-pointer disabled:opacity-50"
+                  className="py-2.5 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleMarkAccepted}
                   disabled={markingAccepted}
-                  className="inline-flex items-center justify-center gap-1.5 py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-[13px] rounded-xl transition cursor-pointer disabled:opacity-50"
+                  className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl transition cursor-pointer disabled:opacity-50 shadow-xs"
                 >
                   {markingAccepted ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Mark accepted
+                  Confirm
                 </button>
               </div>
             </motion.div>
