@@ -1,12 +1,12 @@
-import { getJwtSecret } from '@/lib/auth';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
 const VALID_METHODS = ['cash', 'check', 'credit_card', 'zelle', 'venmo', 'paypal', 'stripe', 'other'];
-const VALID_KINDS = ['deposit', 'payment', 'balance'];
-
+// Two collection points per job: deposit, then balance. 'payment' described
+// an arbitrary partial, which the new model doesn't allow. Kind is derived
+// server-side from the job's deposit terms — client input is ignored.
 type AuthResult =
   | { error: NextResponse }
   | { company: any; user: any };
@@ -25,7 +25,7 @@ async function authorize(slug: string, requireWriteRole: boolean): Promise<AuthR
 
   let decoded: any;
   try {
-    decoded = jwt.verify(token, getJwtSecret());
+    decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
   } catch {
     return { error: NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 }) };
   }
@@ -71,6 +71,7 @@ function shape(row: any) {
     recorded_by: row.recorded_by,
     // Non-null means it came from Stripe and can't be deleted here.
     is_stripe: !!row.stripe_payment_intent_id,
+    stripe_payment_intent_id: row.stripe_payment_intent_id,   // ← add this line
     created_at: row.created_at,
   };
 }
@@ -90,10 +91,11 @@ async function loadPayments(projectId: number, companyId: number) {
 /** Confirms the project exists and belongs to this company. */
 async function loadProject(projectId: number, companyId: number) {
   const rows = await sql`
-    SELECT id, company_id, quote_total, payment_amount, payment_status
-    FROM projects
-    WHERE id = ${projectId} AND company_id = ${companyId}
-    LIMIT 1
+    SELECT id, company_id, quote_total, payment_amount, payment_status,
+       deposit_type, deposit_value
+FROM projects
+WHERE id = ${projectId} AND company_id = ${companyId}
+LIMIT 1
   `;
   return rows[0] || null;
 }
@@ -191,15 +193,14 @@ export async function POST(
    // 'deposit' is the first partial, 'balance' is the one that settles it,
     // anything in between is just a payment. Labelling every subsequent
     // payment 'balance' was misleading — $700 against a $3,000 job isn't one.
+    // The job's own deposit terms decide this, not the amount. Inferring
+    // from amount mislabelled a $700 payment on a $3,000 job as a deposit
+    // even when the contractor never set deposit terms.
     const alreadyPaid = Number(project.payment_amount) || 0;
     const total = Number(project.quote_total) || 0;
-    const kind = VALID_KINDS.includes(body.kind)
-      ? body.kind
-      : alreadyPaid === 0 && total > 0 && amount < total
-      ? 'deposit'
-      : total > 0 && alreadyPaid + amount >= total
-      ? 'balance'
-      : 'payment';
+    const hasDepositTerms =
+      !!project.deposit_type && Number(project.deposit_value) > 0;
+    const kind = hasDepositTerms && alreadyPaid === 0 ? 'deposit' : 'balance';
 
     // Guard against fat-fingering an extra zero.
     if (total > 0 && alreadyPaid + amount > total * 1.5) {
@@ -207,6 +208,25 @@ export async function POST(
         {
           success: false,
           error: `That would collect ${(alreadyPaid + amount).toFixed(2)} on a ${total.toFixed(2)} job. Check the amount.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // One deposit + one balance per job. Enforced here rather than as a DB
+    // constraint — change orders will legitimately need a third collection
+    // later, and a CHECK would have to be dropped to allow it. Refund rows
+    // are excluded so refunding a deposit doesn't block re-collecting it.
+    const collectionRows = await sql`
+      SELECT COUNT(*)::int AS n
+      FROM payments
+      WHERE project_id = ${projectId} AND kind IN ('deposit', 'balance')
+    `;
+    if ((collectionRows[0]?.n ?? 0) >= 2) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'This job already has a deposit and a balance recorded.',
         },
         { status: 400 }
       );

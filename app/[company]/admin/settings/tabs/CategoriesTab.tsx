@@ -572,47 +572,51 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                 </div>
               </motion.div>
             ) : (
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
                 <motion.button
                   key="trigger"
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   onClick={() => setShowAddForm(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 px-4 py-2 text-[12px] font-bold text-blue-700 transition-colors hover:bg-blue-100"
+                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-blue-300 bg-blue-50 px-4 py-2.5 text-[12px] font-bold text-blue-700 transition-colors hover:bg-blue-100 sm:w-auto sm:justify-start sm:py-2"
                 >
                   <Plus className="h-3.5 w-3.5" /> Add category
                 </motion.button>
 
                 {editingTaxRate ? (
-                  <div className="flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-2 py-1">
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      max="100"
-                      value={taxRateDraft}
-                      onChange={(e) => setTaxRateDraft(e.target.value)}
-                      autoFocus
-                      className="w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none"
-                    />
-                    <span className="text-xs font-bold text-stone-500">%</span>
-                    <button
-                      onClick={saveTaxRate}
-                      disabled={taxRateSaving}
-                      className="rounded-md bg-stone-900 px-2 py-1 text-[11px] font-bold text-white hover:bg-stone-800"
-                    >
-                      {taxRateSaving ? '...' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => { setEditingTaxRate(false); setTaxRateDraft(String(taxRate)); }}
-                      className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
-                    >
-                      Cancel
-                    </button>
+                  <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border-2 border-stone-300 bg-white px-3 py-2 sm:w-auto">
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        max="100"
+                        value={taxRateDraft}
+                        onChange={(e) => setTaxRateDraft(e.target.value)}
+                        autoFocus
+                        className="w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none"
+                      />
+                      <span className="text-xs font-bold text-stone-500">%</span>
+                    </div>
+                    <div className="ml-auto flex items-center gap-3 sm:ml-0">
+                      <button
+                        onClick={saveTaxRate}
+                        disabled={taxRateSaving}
+                        className="rounded-md bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-stone-800"
+                      >
+                        {taxRateSaving ? '...' : 'Save'}
+                      </button>
+                      <button
+                        onClick={() => { setEditingTaxRate(false); setTaxRateDraft(String(taxRate)); }}
+                        className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button
                     onClick={() => setEditingTaxRate(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2 text-[12px] font-bold text-stone-700 hover:border-stone-400"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2.5 text-[12px] font-bold text-stone-700 hover:border-stone-400 sm:w-auto sm:justify-start sm:py-2"
                   >
                     <Percent className="h-3.5 w-3.5" />
                     Tax rate: {taxRate}%
@@ -620,63 +624,67 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                 )}
 
                 {editingDepositDefault ? (
-                  <div className="flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-2 py-1">
-                    <div className="flex overflow-hidden rounded-md border border-stone-300">
-                      {(['percent', 'fixed'] as DepositType[]).map((t) => (
-                        <button
-                          key={t}
-                          onClick={() => setDepositTypeDraft(t)}
-                          className={`px-2 py-1 text-[11px] font-bold transition-colors ${
-                            depositTypeDraft === t ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'
-                          }`}
-                        >
-                          {t === 'percent' ? '%' : '$'}
-                        </button>
-                      ))}
+                  <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border-2 border-stone-300 bg-white px-3 py-2 sm:w-auto">
+                    <div className="flex items-center gap-2">
+                      <div className="flex overflow-hidden rounded-md border border-stone-300">
+                        {(['percent', 'fixed'] as DepositType[]).map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setDepositTypeDraft(t)}
+                            className={`px-2.5 py-1.5 text-[11px] font-bold transition-colors ${
+                              depositTypeDraft === t ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 hover:bg-stone-50'
+                            }`}
+                          >
+                            {t === 'percent' ? '%' : '$'}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        max={depositTypeDraft === 'percent' ? 100 : undefined}
+                        value={depositValueDraft}
+                        onChange={(e) => { setDepositValueDraft(e.target.value); setDepositError(''); }}
+                        placeholder={depositTypeDraft === 'percent' ? '50' : '500'}
+                        autoFocus
+                        className={`w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none ${noSpinners}`}
+                      />
                     </div>
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      max={depositTypeDraft === 'percent' ? 100 : undefined}
-                      value={depositValueDraft}
-                      onChange={(e) => { setDepositValueDraft(e.target.value); setDepositError(''); }}
-                      placeholder={depositTypeDraft === 'percent' ? '50' : '500'}
-                      autoFocus
-                      className={`w-16 border-none bg-transparent text-sm font-bold text-stone-900 outline-none ${noSpinners}`}
-                    />
-                    <button
-                      onClick={() => saveDepositDefault(false)}
-                      disabled={depositSaving}
-                      className="rounded-md bg-stone-900 px-2 py-1 text-[11px] font-bold text-white hover:bg-stone-800 disabled:opacity-60"
-                    >
-                      {depositSaving ? '...' : 'Save'}
-                    </button>
-                    {depositType && (
+                    <div className="ml-auto flex items-center gap-3 sm:ml-0">
                       <button
-                        onClick={() => saveDepositDefault(true)}
+                        onClick={() => saveDepositDefault(false)}
                         disabled={depositSaving}
-                        className="text-[11px] font-bold text-rose-500 hover:text-rose-700"
+                        className="rounded-md bg-stone-900 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-stone-800 disabled:opacity-60"
                       >
-                        Clear
+                        {depositSaving ? '...' : 'Save'}
                       </button>
-                    )}
-                    <button
-                      onClick={() => {
-                        setEditingDepositDefault(false);
-                        setDepositTypeDraft(depositType ?? 'percent');
-                        setDepositValueDraft(String(depositValue || ''));
-                        setDepositError('');
-                      }}
-                      className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
-                    >
-                      Cancel
-                    </button>
+                      {depositType && (
+                        <button
+                          onClick={() => saveDepositDefault(true)}
+                          disabled={depositSaving}
+                          className="text-[11px] font-bold text-rose-500 hover:text-rose-700"
+                        >
+                          Clear
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setEditingDepositDefault(false);
+                          setDepositTypeDraft(depositType ?? 'percent');
+                          setDepositValueDraft(String(depositValue || ''));
+                          setDepositError('');
+                        }}
+                        className="text-[11px] font-bold text-stone-400 hover:text-stone-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <button
                     onClick={() => setEditingDepositDefault(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2 text-[12px] font-bold text-stone-700 hover:border-stone-400"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border-2 border-stone-300 bg-white px-4 py-2.5 text-[12px] font-bold text-stone-700 hover:border-stone-400 sm:w-auto sm:justify-start sm:py-2"
                   >
                     <HandCoins className="h-3.5 w-3.5" />
                     {depositType ? `Deposit: ${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}` : 'Deposit: none'}
@@ -701,7 +709,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         <p className="mb-2 text-[13px] font-extrabold uppercase tracking-wide text-stone-700">
           Update your categories, tasks, and templates below
         </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5">
           {categories.map((cat, index) => {
             const taskCount = cat.task_templates?.length || 0;
             const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
@@ -1089,12 +1097,12 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
 
                   {/* Deposit Terms Block */}
                   <div className="flex flex-col justify-between space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <label className="flex items-center gap-1.5 text-xs font-bold text-gray-300">
                         <HandCoins className="h-3.5 w-3.5 text-amber-400" />
                         Deposit
                       </label>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <div className="flex overflow-hidden rounded-lg border border-white/10">
                           {(['percent', 'fixed'] as DepositType[]).map((t) => (
                             <button

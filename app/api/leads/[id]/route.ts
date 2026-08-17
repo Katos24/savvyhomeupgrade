@@ -20,6 +20,7 @@ function shapePayment(row: any) {
     recorded_by: row.recorded_by,
     // Non-null means it came from Stripe and can't be deleted in the UI.
     is_stripe: !!row.stripe_payment_intent_id,
+    stripe_payment_intent_id: row.stripe_payment_intent_id,   // ← add this
     created_at: row.created_at,
   };
 }
