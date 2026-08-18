@@ -15,13 +15,21 @@ type Reminder = {
   payment_due_date: string;
   payment_amount: string;
   quote_total: string;
+  /** Deposit-aware amount actually owed right now, computed server-side —
+   *  never derive a displayed amount from payment_amount/quote_total
+   *  directly, they don't account for deposit terms. */
+  amount_due: number;
+  is_deposit: boolean;
   payment_status: string;
   is_overdue: boolean;
   reminder_sent_recently: boolean;
 };
 
 const STORAGE_KEY = 'payment_banner_v2';
-const CACHE_KEY = 'payment_banner_cache_v1';
+// v2: response now includes amount_due/is_deposit. Bumping this key means
+// any cache saved before that field existed is automatically invisible to
+// loadCache below — old-shaped data can never be silently served again.
+const CACHE_KEY = 'payment_banner_cache_v2';
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function loadStorage(): { dismissed: boolean; sentIds: number[]; hiddenIds: number[] } {
@@ -75,6 +83,9 @@ function saveCache(slug: string, reminders: Reminder[]) {
     }));
   } catch {}
 }
+
+const fmtAmount = (n: number | null | undefined) =>
+  n === null || n === undefined ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
 interface PaymentReminderBannerProps {
   slug: string;
@@ -304,7 +315,7 @@ export default function PaymentReminderBanner({ slug, planTier, onSelectLead, al
               <table className="w-full text-left">
                 <thead className="sticky top-0 bg-slate-50/90 backdrop-blur-md border-b border-slate-100 z-10">
                   <tr>
-                    {['Customer & Job', 'Amount', 'Due Date', 'Status', 'Actions'].map(h => (
+                    {['Customer & Job', 'Remaining', 'Due Date', 'Status', 'Actions'].map(h => (
                       <th key={h} className="px-4 py-3 text-[11px] font-bold tracking-wider text-slate-400 uppercase">
                         {h}
                       </th>
@@ -324,8 +335,13 @@ export default function PaymentReminderBanner({ slug, planTier, onSelectLead, al
                         </td>
                         <td className="px-4 py-3">
                           <span className="text-xs font-bold text-slate-900">
-                            ${Number(r.payment_amount || r.quote_total || 0).toLocaleString()}
+                            {fmtAmount(r.amount_due)}
                           </span>
+                          {r.is_deposit && (
+                            <span className="ml-1.5 text-[10px] font-bold uppercase tracking-wide text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded">
+                              Deposit
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold ${
@@ -407,8 +423,13 @@ export default function PaymentReminderBanner({ slug, planTier, onSelectLead, al
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="text-sm font-bold text-slate-900">
-                            ${Number(r.payment_amount || r.quote_total || 0).toLocaleString()}
+                            {fmtAmount(r.amount_due)}
                           </span>
+                          {r.is_deposit && (
+                            <span className="text-[10px] font-bold uppercase tracking-wide text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded">
+                              Deposit
+                            </span>
+                          )}
                           <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded ${
                             r.is_overdue ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-800'
                           }`}>

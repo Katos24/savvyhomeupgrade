@@ -1665,19 +1665,18 @@ from: 'Lead2Project <hello@lead2project.com>',
   }
 }
 
-
-
 export async function sendPaymentReminderEmail({
   customerEmail,
   customerName,
   companyName,
   companyPhone,
   companyId,
-amountDue,
-dueDate,
-isOverdue,
-paymentLinkUrl,
-paymentLinkType,
+  amountDue,
+  dueDate,
+  isOverdue,
+  paymentLinkUrl,
+  paymentLinkType,
+  collectionKind,
 }: {
   customerEmail: string;
   customerName: string;
@@ -1685,19 +1684,26 @@ paymentLinkType,
   companyPhone?: string;
   companyId?: number;
   amountDue: number;
-  dueDate: string | null;  // ← fix the type
- isOverdue: boolean;
-contractorEmail?: string;
-/** Without this the reminder tells the customer they owe money and gives
- *  them no way to pay it. Derived server-side, so after a deposit it
- *  charges only the balance. */
-paymentLinkUrl?: string;
-paymentLinkType?: string;
+  dueDate: string | null;
+  isOverdue: boolean;
+  contractorEmail?: string;
+  paymentLinkUrl?: string;
+  paymentLinkType?: string;
+  /** What this specific reminder is for — undefined means a plain full
+   *  payment with no deposit terms, so no clarifier is needed. */
+  collectionKind?: 'deposit' | 'balance';
 }) {
   try {
     const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-    // ← format only if dueDate is a real value
+    const kindLabel = collectionKind === 'deposit' ? 'Deposit' : collectionKind === 'balance' ? 'Balance' : null;
+    const kindContext =
+      collectionKind === 'deposit'
+        ? 'This is the deposit for your job — the remaining balance is due once the work is scheduled or complete.'
+        : collectionKind === 'balance'
+        ? 'This is the remaining balance on your invoice.'
+        : null;
+
     const formattedDate = dueDate && dueDate !== 'null'
       ? (() => {
           const [year, month, day] = String(dueDate).split('T')[0].split('-').map(Number);
@@ -1722,10 +1728,11 @@ paymentLinkType?: string;
         customer_name: customerName,
         payment_amount: fmt(amountDue),
         amount_due: fmt(amountDue),
-        due_date: formattedDate,  // null if no due date → conditional block strips the line
+        due_date: formattedDate,
+        payment_kind_label: kindLabel,
       };
 
-    const rendered = renderEmailTemplate(paymentTemplate, variables);
+      const rendered = renderEmailTemplate(paymentTemplate, variables);
       subject = rendered.subject;
 
       const rawUrl = paymentLinkUrl || company.payment_link_url || '';
@@ -1739,13 +1746,19 @@ paymentLinkType?: string;
         stripe: 'Pay with Card',
         other: 'Pay Now',
       };
+      const buttonLabel = kindLabel ? `Pay ${kindLabel}` : (payLabels[linkType] || 'Pay Now');
       const btnColor = isOverdue ? '#dc2626' : (company.email_brand_color_1 || '#667eea');
 
+      const kindContextHtml = kindContext
+        ? `<p style="text-align:center;color:#64748b;font-size:13px;margin:0 0 4px 0;">${kindContext}</p>`
+        : '';
+
       const payButtonHtml = payUrl ? `
+        ${kindContextHtml}
         <div style="margin: 8px 0 24px 0; text-align: center;">
           <a href="${payUrl}"
             style="display: inline-block; background-color: ${btnColor}; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 15px;">
-            ${payLabels[linkType] || 'Pay Now'} — ${fmt(amountDue)}
+            ${buttonLabel} — ${fmt(amountDue)}
           </a>
         </div>
       ` : '';
@@ -1763,14 +1776,16 @@ paymentLinkType?: string;
 
     } else {
       const accentColor = isOverdue ? '#dc2626' : '#f59e0b';
+      const subjectKind = kindLabel ? `${kindLabel} ` : '';
       subject = isOverdue
-        ? `Payment Overdue - ${companyName}`
-        : `Payment Reminder - ${companyName}`;
+        ? `${subjectKind}Payment Overdue - ${companyName}`
+        : `${subjectKind}Payment Reminder - ${companyName}`;
       emailHtml = `<!DOCTYPE html><html><body style="font-family:sans-serif;padding:40px;">
-        <h2 style="color:${accentColor};">${isOverdue ? 'Payment Overdue' : 'Payment Reminder'}</h2>
+        <h2 style="color:${accentColor};">${isOverdue ? 'Payment Overdue' : (kindLabel || 'Payment') + ' Reminder'}</h2>
         <p>Hi ${customerName},</p>
+        ${kindContext ? `<p style="color:#64748b;">${kindContext}</p>` : ''}
         <p>Amount due: <strong>${fmt(amountDue)}</strong>${formattedDate ? ` by ${formattedDate}` : ''}</p>
-        ${paymentLinkUrl ? `<p><a href="${paymentLinkUrl}" style="display:inline-block;background:${accentColor};color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;">Pay ${fmt(amountDue)}</a></p>` : ''}
+        ${paymentLinkUrl ? `<p><a href="${paymentLinkUrl}" style="display:inline-block;background:${accentColor};color:#fff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;">${kindLabel ? `Pay ${kindLabel}` : 'Pay'} ${fmt(amountDue)}</a></p>` : ''}
         <p>${companyPhone ? `Call us: ${companyPhone}` : ''}</p>
         <p>${companyName}</p>
       </body></html>`;

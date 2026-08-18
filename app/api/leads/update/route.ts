@@ -1334,6 +1334,95 @@ const leadCheck = await sql`
 }
 
 
+// ==================== GET PAYMENT LINK (in-person) 🔗 ====================
+// Deliberately minimal: only calls the checkout helper and returns the URL.
+// No email, no outbox log, no invoice_sent_at update — this is "hand the
+// customer a link right now," not "send an invoice." getOrCreateCheckoutSession
+// still reuses an existing open session for the same amount, so this can
+// never hand out a second, conflicting link if one was already emailed.
+else if (action === 'get_payment_link') {
+  const leadCheck = await sql`
+    SELECT l.id, l.name, l.email, l.project_id,
+           p.quote_total,
+           c.slug as company_slug, c.plan_tier,
+           c.stripe_connect_account_id, c.stripe_payment_status
+    FROM leads l
+    LEFT JOIN projects p ON l.project_id = p.id
+    LEFT JOIN companies c ON l.company_id = c.id
+    WHERE l.id = ${id}
+  `;
+
+  if (!leadCheck[0]) {
+    return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
+  }
+
+  const lead = leadCheck[0];
+
+  // Gated on stripe_connect, not send_invoice_email — this never emails
+  // anything, so it shouldn't require the emailing permission.
+  if (!can((lead.plan_tier ?? 'free') as PlanTier, 'stripe_connect')) {
+    return NextResponse.json({
+      success: false,
+      error: 'Accepting online payments is available on the Basic plan',
+      upgrade_required: true,
+    }, { status: 403 });
+  }
+
+  if (!lead.project_id) {
+    return NextResponse.json({ success: false, error: 'No project exists.' }, { status: 400 });
+  }
+
+  if (lead.stripe_payment_status !== 'active') {
+    return NextResponse.json({
+      success: false,
+      error: 'Stripe is not connected or not active for this company.',
+    }, { status: 400 });
+  }
+
+  const invoiceTotal = parseFloat(lead.quote_total || '0');
+  if (invoiceTotal <= 0) {
+    return NextResponse.json({ success: false, error: 'No quote total to charge.' }, { status: 400 });
+  }
+
+  try {
+    const checkout = await getOrCreateCheckoutSession({
+      projectId: lead.project_id,
+      connectedAccountId: lead.stripe_connect_account_id,
+      customerName: lead.name,
+      customerEmail: lead.email,
+      companySlug: lead.company_slug,
+      contractTotal: invoiceTotal,
+      collect: body.collect === 'full' ? 'full' : undefined,
+    });
+
+    if (!checkout.url) {
+      return NextResponse.json({
+        success: false,
+        error:
+          checkout.reason === 'fully_paid'
+            ? 'This invoice is already fully paid.'
+            : 'Could not generate a payment link.',
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({
+      success: true,
+      url: checkout.url,
+      kind: checkout.kind,
+      amount: checkout.amount,
+    });
+  } catch (stripeErr: any) {
+    console.error('Failed to create in-person Stripe Checkout session:', stripeErr.message);
+    if (stripeErr.code === 'account_invalid' || stripeErr.message?.includes('not enabled')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Your Stripe account needs attention before you can generate payment links. Check your Stripe dashboard or reconnect in Settings.',
+      }, { status: 400 });
+    }
+    return NextResponse.json({ success: false, error: 'Failed to generate payment link.' }, { status: 500 });
+  }
+}
+
 // ==================== SAVE DEPOSIT TERMS 💰 ====================
 else if (action === 'save_deposit_terms') {
   const { deposit_type, deposit_value } = body;

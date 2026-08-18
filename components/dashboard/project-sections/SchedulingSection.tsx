@@ -225,7 +225,7 @@ export default function SchedulingSection({
   };
 
   return (
-    <div className="max-w-4xl mx-auto w-full space-y-4 pb-20 md:pb-0">
+    <div className="max-w-4xl mx-auto w-full space-y-4">
       {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
         {previewHtml && (
@@ -512,41 +512,6 @@ export default function SchedulingSection({
 
         </div>
 
-        {/* SENT HISTORY */}
-        {outboxLog.length > 0 && (
-          <div className="px-4 sm:px-5 py-3 bg-slate-50/50 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 mb-2">
-              <History size={12} className="text-slate-400" />
-              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-                Sent Email History ({outboxLog.length})
-              </span>
-            </div>
-            <div className="max-h-[120px] overflow-y-auto space-y-1.5 pr-1">
-              {outboxLog.map((entry: any, i: number) => (
-                <div key={i} className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200/80 transition hover:bg-slate-50">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500' : 'bg-emerald-500'}`} />
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
-                      {entry.status}
-                    </span>
-                    <p className="text-[11px] font-medium text-slate-700 truncate">
-                      {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                  {entry.html_body && (
-                    <button
-                      onClick={() => setPreviewHtml(entry.html_body)}
-                      className="flex items-center gap-1 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-medium text-blue-600 hover:bg-blue-50 transition shrink-0"
-                    >
-                      <Eye size={10} /> Preview
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* DESKTOP FOOTER */}
         <div className="hidden md:flex px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 items-center justify-between">
           <div className="flex items-center gap-2">
@@ -595,10 +560,48 @@ export default function SchedulingSection({
             </button>
           </div>
         </div>
+
+        {/* SENT HISTORY */}
+        {outboxLog.length > 0 && (
+          <div className="px-4 sm:px-5 py-3 bg-slate-50/50 border-t border-slate-100">
+            <div className="flex items-center gap-1.5 mb-2">
+              <History size={12} className="text-slate-400" />
+              <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                Sent Email History ({outboxLog.length})
+              </span>
+            </div>
+            <div className="max-h-[120px] overflow-y-auto space-y-1.5 pr-1">
+              {outboxLog.map((entry: any, i: number) => (
+                <div key={i} className="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-200/80 transition hover:bg-slate-50">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'failed' ? 'bg-red-500' : 'bg-emerald-500'}`} />
+                    <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded ${entry.status === 'failed' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {entry.status}
+                    </span>
+                    <p className="text-[11px] font-medium text-slate-700 truncate">
+                      {new Date(entry.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} at {new Date(entry.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  {entry.html_body && (
+                    <button
+                      onClick={() => setPreviewHtml(entry.html_body)}
+                      className="flex items-center gap-1 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-medium text-blue-600 hover:bg-blue-50 transition shrink-0"
+                    >
+                      <Eye size={10} /> Preview
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* MOBILE STICKY BOTTOM ACTION BAR */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 px-4 flex items-center justify-between gap-2 md:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+      {/* MOBILE STICKY BOTTOM ACTION BAR — sticky, not fixed: fixed pins to
+          the viewport and collides with MobileTabBar's own bottom bar,
+          which is a normal flex child, not viewport-fixed. Sticky respects
+          the modal's scroll container, so this naturally sits above it. */}
+      <div className="sticky bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 px-4 flex items-center justify-between gap-2 md:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
         <div>
           {isDirty ? (
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md text-[11px] font-medium">
