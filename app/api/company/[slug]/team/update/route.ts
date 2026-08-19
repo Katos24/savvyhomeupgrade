@@ -15,7 +15,6 @@ export async function POST(request: Request, { params }: Props) {
     const body = await request.json();
     const { userId, role } = body;
 
-    // 🔒 CHECK PERMISSION
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
 
@@ -27,14 +26,6 @@ export async function POST(request: Request, { params }: Props) {
     }
 
     const decoded: any = jwt.verify(token, getJwtSecret());
-    const userRole = decoded.role || 'member';
-
-    if (!canChangeRoles(userRole)) {
-      return NextResponse.json(
-        { success: false, error: PERMISSION_ERRORS.CANNOT_CHANGE_ROLES },
-        { status: 403 }
-      );
-    }
 
     // Validate inputs
     if (!userId || !role) {
@@ -52,7 +43,7 @@ export async function POST(request: Request, { params }: Props) {
     }
 
     const sql = neon(process.env.DATABASE_URL!);
-    
+
     // Get company ID
     const companies = await sql`
       SELECT id FROM companies WHERE slug = ${slug}
@@ -67,7 +58,29 @@ export async function POST(request: Request, { params }: Props) {
 
     const companyId = companies[0].id;
 
-    // Verify user belongs to this company and is not owner
+    // 🔒 Verify the CALLER actually belongs to this company, re-fetched
+    // fresh from the DB — not trusted from the JWT. Without this, any
+    // admin/owner from any company could change roles for users in a
+    // company they have no relationship to, just by knowing its slug
+    // and a target user ID.
+    const callers = await sql`
+      SELECT role FROM users WHERE id = ${decoded.userId} AND company_id = ${companyId}
+    `;
+    if (callers.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    if (!canChangeRoles(callers[0].role)) {
+      return NextResponse.json(
+        { success: false, error: PERMISSION_ERRORS.CANNOT_CHANGE_ROLES },
+        { status: 403 }
+      );
+    }
+
+    // Verify target user belongs to this company and is not owner
     const users = await sql`
       SELECT id, role FROM users
       WHERE id = ${userId} AND company_id = ${companyId}
@@ -93,7 +106,6 @@ export async function POST(request: Request, { params }: Props) {
       SET role = ${role}
       WHERE id = ${userId}
     `;
-
 
     return NextResponse.json({
       success: true,

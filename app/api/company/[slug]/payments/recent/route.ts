@@ -17,14 +17,20 @@ export async function GET(
     }
     let decoded: any;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+decoded = jwt.verify(token, process.env.JWT_SECRET!);
     } catch {
       return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
     }
 
-    const companies = await sql`SELECT id FROM companies WHERE slug = ${slug} LIMIT 1`;
-    if (companies.length === 0) {
-      return NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 });
+    const companies = await sql`
+      SELECT c.id
+      FROM companies c
+      JOIN users u ON u.company_id = c.id
+      WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
+      LIMIT 1
+    `;
+    if (!companies[0]) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
     const companyId = companies[0].id;
 

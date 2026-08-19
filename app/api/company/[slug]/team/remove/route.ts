@@ -15,7 +15,6 @@ export async function POST(request: Request, { params }: Props) {
     const body = await request.json();
     const { userId } = body;
 
-    // 🔒 CHECK PERMISSION
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
 
@@ -27,16 +26,7 @@ export async function POST(request: Request, { params }: Props) {
     }
 
     const decoded: any = jwt.verify(token, getJwtSecret());
-    const userRole = decoded.role || 'member';
 
-    if (!canRemoveMembers(userRole)) {
-      return NextResponse.json(
-        { success: false, error: PERMISSION_ERRORS.CANNOT_REMOVE },
-        { status: 403 }
-      );
-    }
-
-    // Validate input
     if (!userId) {
       return NextResponse.json(
         { success: false, error: 'User ID is required' },
@@ -60,7 +50,29 @@ export async function POST(request: Request, { params }: Props) {
 
     const companyId = companies[0].id;
 
-    // Verify user belongs to this company and is not owner
+    // 🔒 Verify the CALLER actually belongs to this company — re-fetched
+    // fresh from the DB, not trusted from the JWT, so a role change after
+    // the token was issued takes effect immediately. Without this check,
+    // any owner/admin from *any* company could remove team members from
+    // *any other* company just by knowing its slug and a target user ID.
+    const callers = await sql`
+      SELECT role FROM users WHERE id = ${decoded.userId} AND company_id = ${companyId}
+    `;
+    if (callers.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    if (!canRemoveMembers(callers[0].role)) {
+      return NextResponse.json(
+        { success: false, error: PERMISSION_ERRORS.CANNOT_REMOVE },
+        { status: 403 }
+      );
+    }
+
+    // Verify target user belongs to this company and is not owner
     const users = await sql`
       SELECT id, role FROM users 
       WHERE id = ${userId} AND company_id = ${companyId}
@@ -85,7 +97,6 @@ export async function POST(request: Request, { params }: Props) {
       DELETE FROM users 
       WHERE id = ${userId}
     `;
-
 
     return NextResponse.json({
       success: true,

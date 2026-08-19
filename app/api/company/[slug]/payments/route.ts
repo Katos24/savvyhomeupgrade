@@ -25,7 +25,7 @@ async function authorize(slug: string, requireWriteRole: boolean): Promise<AuthR
 
   let decoded: any;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-change-this');
+decoded = jwt.verify(token, process.env.JWT_SECRET!);
   } catch {
     return { error: NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 }) };
   }

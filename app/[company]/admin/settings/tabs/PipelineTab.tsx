@@ -4,8 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   motion,
   AnimatePresence,
-  Reorder,
-  useDragControls,
 } from 'framer-motion';
 import {
   Plus,
@@ -17,7 +15,8 @@ import {
   Palette,
   Save,
   Check,
-  GripVertical,
+  ChevronUp,
+  ChevronDown,
   Trash2,
   Sparkles,
   Info,
@@ -28,7 +27,6 @@ import {
   type StatusOption,
 } from '@/lib/formCategories';
 
-/* Purple removed from color options */
 const COLOR_OPTIONS = [
   { value: 'blue', label: 'Blue', hex: '#3b82f6' },
   { value: 'yellow', label: 'Yellow', hex: '#eab308' },
@@ -42,10 +40,11 @@ const COLOR_OPTIONS = [
 
 const spring = { type: 'spring' as const, damping: 25, stiffness: 300 };
 
-/* ── SUB-COMPONENT FOR REORDERABLE ROW ── */
+/* ── SUB-COMPONENT FOR STAGE ROW WITH ARROW CONTROLS ── */
 interface StatusRowProps {
   status: StatusOption;
   index: number;
+  totalCount: number;
   locked: boolean;
   activeColorPicker: number | null;
   setActiveColorPicker: (index: number | null) => void;
@@ -53,11 +52,14 @@ interface StatusRowProps {
   updateStatusColor: (index: number, color: string) => void;
   updateStatusLabel: (index: number, label: string) => void;
   handleRemoveStatus: (index: number) => void;
+  moveUp: (index: number) => void;
+  moveDown: (index: number) => void;
 }
 
 function StatusRow({
   status,
   index,
+  totalCount,
   locked,
   activeColorPicker,
   setActiveColorPicker,
@@ -65,31 +67,56 @@ function StatusRow({
   updateStatusColor,
   updateStatusLabel,
   handleRemoveStatus,
+  moveUp,
+  moveDown,
 }: StatusRowProps) {
-  const dragControls = useDragControls();
+  const canMoveUp = !locked && index > 1;
+  const canMoveDown = !locked && index < totalCount - 2;
 
   return (
-    <Reorder.Item
-      value={status}
-      dragListener={false}
-      dragControls={dragControls}
+    <motion.div
+      layout
+      transition={spring}
       className={`group relative flex items-center gap-3 bg-white px-4 py-3.5 transition-colors ${
         locked ? 'bg-slate-50/60' : 'hover:bg-slate-50/60'
       }`}
     >
-      {/* Drag Handle (Disabled only for 'new' and 'completed') */}
-      <div
-        style={{ touchAction: 'none' }}
-        onPointerDown={(e) => {
-          if (!locked) dragControls.start(e);
-        }}
-        className={`flex h-10 w-8 items-center justify-center text-slate-300 touch-none select-none ${
-          locked
-            ? 'cursor-not-allowed opacity-20'
-            : 'cursor-grab active:cursor-grabbing hover:text-slate-500'
-        }`}
-      >
-        <GripVertical className="h-5 w-5" />
+      {/* Up / Down Arrow Controls */}
+      <div className="flex flex-col items-center justify-center gap-0.5 shrink-0">
+        {locked ? (
+          <div className="flex h-10 w-6 items-center justify-center text-slate-300">
+            <Lock className="h-4 w-4 text-slate-300" />
+          </div>
+        ) : (
+          <>
+            <button
+              type="button"
+              disabled={!canMoveUp}
+              onClick={() => moveUp(index)}
+              className={`rounded-md p-0.5 transition ${
+                canMoveUp
+                  ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer'
+                  : 'text-slate-200 cursor-not-allowed'
+              }`}
+              title="Move Up"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              disabled={!canMoveDown}
+              onClick={() => moveDown(index)}
+              className={`rounded-md p-0.5 transition ${
+                canMoveDown
+                  ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer'
+                  : 'text-slate-200 cursor-not-allowed'
+              }`}
+              title="Move Down"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Color Swatch Picker Toggle */}
@@ -166,12 +193,9 @@ function StatusRow({
         />
         <div className="ml-1.5 flex items-center gap-1.5">
           {locked ? (
-            <>
-              <Lock className="h-3 w-3 shrink-0 text-slate-400" />
-              <span className="text-[11px] font-medium text-slate-400">
-                System Fixed Stage
-              </span>
-            </>
+            <span className="text-[11px] font-medium text-slate-400">
+              System Fixed Stage
+            </span>
           ) : (
             <span className="text-[11px] font-medium text-slate-400">
               {STAGE_TRIGGERS[status.value] || 'Custom Stage'}
@@ -190,7 +214,7 @@ function StatusRow({
           <Trash2 className="h-4 w-4" />
         </button>
       )}
-    </Reorder.Item>
+    </motion.div>
   );
 }
 
@@ -199,7 +223,7 @@ export default function PipelineTab({
   company,
 }: {
   company: any;
-  currentUser: any;
+  currentUser?: any;
 }) {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
@@ -213,23 +237,20 @@ export default function PipelineTab({
   const [newLabel, setNewLabel] = useState('');
   const [newColor, setNewColor] = useState('blue');
 
-  // Deep copy initial statuses reference from company prop
   const initialStatuses = useMemo<StatusOption[]>(() => {
-    const saved = company.status_options;
+    const saved = company?.status_options;
     const list = Array.isArray(saved) && saved.length > 0 ? saved : DEFAULT_STATUSES;
     return JSON.parse(JSON.stringify(list));
-  }, [company.status_options]);
+  }, [company?.status_options]);
 
   const [statuses, setStatuses] = useState<StatusOption[]>(() =>
     JSON.parse(JSON.stringify(initialStatuses))
   );
 
-  // Precise dirty check
   const isDirty = useMemo(() => {
     return JSON.stringify(statuses) !== JSON.stringify(initialStatuses);
   }, [statuses, initialStatuses]);
 
-  // Alert user before navigating away if there are unsaved changes
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
@@ -244,7 +265,6 @@ export default function PipelineTab({
   const getColorHex = (name: string) =>
     COLOR_OPTIONS.find((c) => c.value === name)?.hex || '#3b82f6';
 
-  /* ONLY 'new' and 'completed' are locked in place and protected */
   const isLockedStage = (s: StatusOption) =>
     s.value === 'new' || s.value === 'completed';
 
@@ -253,16 +273,26 @@ export default function PipelineTab({
     setTimeout(() => setError(''), 3500);
   };
 
-  /* Prevent 'new' or 'completed' from being dragged out of position */
-  const handleReorder = (newOrder: StatusOption[]) => {
-    const newIdx = newOrder.findIndex((s) => s.value === 'new');
-    const completedIdx = newOrder.findIndex((s) => s.value === 'completed');
+  const handleMoveUp = (index: number) => {
+    if (index <= 1 || index >= statuses.length - 1) return;
+    setStatuses((prev) => {
+      const next = [...prev];
+      const temp = next[index];
+      next[index] = next[index - 1];
+      next[index - 1] = temp;
+      return next;
+    });
+  };
 
-    if (newIdx !== 0 || completedIdx !== newOrder.length - 1) {
-      return; // Ignore invalid drag attempts
-    }
-
-    setStatuses(newOrder);
+  const handleMoveDown = (index: number) => {
+    if (index < 1 || index >= statuses.length - 2) return;
+    setStatuses((prev) => {
+      const next = [...prev];
+      const temp = next[index];
+      next[index] = next[index + 1];
+      next[index + 1] = temp;
+      return next;
+    });
   };
 
   const handleRemoveStatus = (index: number) => {
@@ -284,7 +314,6 @@ export default function PipelineTab({
       return showError('A stage with this name already exists');
 
     const updated = statuses.map((s) => ({ ...s }));
-    // Insert right before 'completed'
     updated.splice(updated.length - 1, 0, {
       value,
       label: trimmed,
@@ -525,18 +554,14 @@ export default function PipelineTab({
               )}
             </AnimatePresence>
 
-            {/* Reorderable List */}
-            <Reorder.Group
-              axis="y"
-              values={statuses}
-              onReorder={handleReorder}
-              className="divide-y divide-slate-100"
-            >
+            {/* List with Animated Position Swapping */}
+            <div className="divide-y divide-slate-100">
               {statuses.map((status, index) => (
                 <StatusRow
                   key={status.value}
                   status={status}
                   index={index}
+                  totalCount={statuses.length}
                   locked={isLockedStage(status)}
                   activeColorPicker={activeColorPicker}
                   setActiveColorPicker={setActiveColorPicker}
@@ -544,9 +569,11 @@ export default function PipelineTab({
                   updateStatusColor={updateStatusColor}
                   updateStatusLabel={updateStatusLabel}
                   handleRemoveStatus={handleRemoveStatus}
+                  moveUp={handleMoveUp}
+                  moveDown={handleMoveDown}
                 />
               ))}
-            </Reorder.Group>
+            </div>
           </div>
         </div>
 

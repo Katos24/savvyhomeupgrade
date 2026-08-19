@@ -2,29 +2,45 @@ import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+
 type Props = {
   params: Promise<{ slug: string }>;
 };
 
 export async function GET(request: Request, { params }: Props) {
   try {
-const { slug } = await params;
+    const { slug } = await params;
 
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    try { jwt.verify(token, process.env.JWT_SECRET!); }
-    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }    const sql = neon(process.env.DATABASE_URL!);
-    
-    // Get company ID from slug
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const sql = neon(process.env.DATABASE_URL!);
+
+    // 🔒 Verifies the company exists AND that this specific authenticated
+    // user actually belongs to it — previously only the token's signature
+    // was checked, so any logged-in user from any company could list
+    // another company's full team roster (names, emails, roles, active
+    // status) just by knowing its slug.
     const companies = await sql`
-      SELECT id FROM companies WHERE slug = ${slug}
+      SELECT c.id
+      FROM companies c
+      JOIN users u ON u.company_id = c.id
+      WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
+      LIMIT 1
     `;
 
     if (companies.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Company not found' },
-        { status: 404 }
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
       );
     }
 

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { canInviteMembers } from '@/lib/permissions';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -15,13 +16,17 @@ export async function POST(request: Request, { params }: Props) {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    try { jwt.verify(token, process.env.JWT_SECRET!); }
-    catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await request.json();
     const { email, name, password, role } = body;
 
-    // Validate inputs
     if (!email || !name || !password || !role) {
       return NextResponse.json(
         { success: false, error: 'All fields are required' },
@@ -37,8 +42,7 @@ export async function POST(request: Request, { params }: Props) {
     }
 
     const sql = neon(process.env.DATABASE_URL!);
-    
-    // Get company ID
+
     const companies = await sql`
       SELECT id FROM companies WHERE slug = ${slug}
     `;
@@ -52,6 +56,28 @@ export async function POST(request: Request, { params }: Props) {
 
     const companyId = companies[0].id;
 
+    // 🔒 Confirms the caller actually belongs to this company, re-fetched
+    // fresh from the DB — this route previously had no permission check
+    // whatsoever, meaning any logged-in user (any role, any company)
+    // could create a fully active admin account in any other company
+    // just by knowing its slug.
+    const callers = await sql`
+      SELECT role FROM users WHERE id = ${decoded.userId} AND company_id = ${companyId}
+    `;
+    if (callers.length === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    if (!canInviteMembers(callers[0].role)) {
+      return NextResponse.json(
+        { success: false, error: 'Only owners and admins can add team members' },
+        { status: 403 }
+      );
+    }
+
     // Check if email already exists
     const existingUsers = await sql`
       SELECT id FROM users WHERE email = ${email}
@@ -64,10 +90,8 @@ export async function POST(request: Request, { params }: Props) {
       );
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const newUsers = await sql`
       INSERT INTO users (email, name, password, company_id, role, is_active)
       VALUES (${email}, ${name}, ${hashedPassword}, ${companyId}, ${role}, true)
