@@ -44,85 +44,20 @@ function StripeStatusBadge({
 }) {
   const state = getStripeState(company);
   const config = {
-    active: { label: 'Payments Active', pill: 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100', dot: 'bg-emerald-500' },
-    pending: { label: 'In Review', pill: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100', dot: 'bg-amber-500' },
-    restricted: { label: 'Action Needed', pill: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100', dot: 'bg-rose-500' },
-    none: { label: 'Connect Stripe', pill: 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200', dot: 'bg-slate-400' },
+    active: { label: 'Payments Active', pill: 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100', dot: 'bg-emerald-600' },
+    pending: { label: 'In Review', pill: 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100', dot: 'bg-amber-600' },
+    restricted: { label: 'Action Needed', pill: 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100', dot: 'bg-rose-600' },
+    none: { label: 'Connect Stripe', pill: 'bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200', dot: 'bg-slate-500' },
   }[state];
 
   return (
     <button
       onClick={() => onNavigateSection('payments')}
-      className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold transition ${config.pill}`}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-md border px-3 py-1 text-xs font-semibold transition ${config.pill}`}
     >
       <span className={`h-2 w-2 rounded-full ${config.dot}`} />
       {config.label}
     </button>
-  );
-}
-
-type HorizontalFieldProps = {
-  icon?: React.ElementType;
-  label: string;
-  tooltip?: string;
-  editing: boolean;
-  value?: string;
-  onChange?: (v: string) => void;
-  placeholder?: string;
-  display: ReactNode;
-  maxLength?: number;
-  type?: string;
-  error?: string;
-};
-
-function HorizontalField({
-  icon: Icon,
-  label,
-  tooltip,
-  editing,
-  value,
-  onChange,
-  placeholder,
-  display,
-  maxLength,
-  type = 'text',
-  error,
-}: HorizontalFieldProps) {
-  return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 border-b border-slate-100 gap-2 sm:gap-6">
-      <div className="flex items-center gap-2 sm:w-5/12 shrink-0">
-        {Icon && <Icon className="h-4 w-4 text-slate-400 shrink-0" />}
-        <label className="text-sm font-semibold text-slate-800">{label}</label>
-        {tooltip && (
-          <div className="group relative cursor-pointer">
-            <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition" />
-            <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
-              {tooltip}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="sm:w-7/12 w-full">
-        {editing ? (
-          <div>
-            <input
-              type={type}
-              value={value}
-              onChange={(e) => onChange?.(e.target.value)}
-              placeholder={placeholder}
-              maxLength={maxLength}
-              className={`w-full rounded-lg border bg-white px-3 py-1.5 sm:py-2 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 ${
-                error ? 'border-rose-300 focus:border-rose-500 focus:ring-rose-500' : 'border-slate-200'
-              }`}
-            />
-            {error && <p className="mt-1 text-xs font-semibold text-rose-600">{error}</p>}
-          </div>
-        ) : (
-          <div className="text-sm font-semibold text-slate-800 break-all">{display}</div>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -185,27 +120,27 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
       <button
         type="button"
         onClick={() => setExpanded(true)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 shrink-0"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs transition hover:bg-slate-50 shrink-0 cursor-pointer"
       >
-        <Receipt className="h-3.5 w-3.5 text-slate-500" />
+        <Receipt className="h-3.5 w-3.5 text-slate-600" />
         Preview Invoice
       </button>
 
       {expanded && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-3 sm:p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-3 sm:p-4 backdrop-blur-xs"
           onClick={() => setExpanded(false)}
         >
           <div
-            className="flex h-[85vh] max-h-[800px] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-200"
+            className="flex h-[85vh] max-h-[800px] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-300"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3 sm:px-5 sm:py-3.5 bg-slate-50/50">
-              <span className="text-sm font-semibold text-slate-900">Sample Invoice</span>
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3 sm:px-5 bg-slate-50">
+              <span className="text-sm font-bold text-slate-900">Sample Invoice Preview</span>
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
-                className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                className="rounded-lg p-1 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -216,7 +151,7 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
                   {modalTimedOut ? (
                     <p className="text-xs font-medium text-slate-500">Preview failed to load.</p>
                   ) : (
-                    <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+                    <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
                   )}
                 </div>
               )}
@@ -230,13 +165,13 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
             </div>
 
             {!canSendInvoices && (
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-amber-100 bg-amber-50/60 px-4 py-3 sm:px-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-t border-amber-200 bg-amber-50 px-4 py-3 sm:px-5">
                 <p className="text-xs font-medium text-amber-900">
                   Upgrade your plan to send custom branded invoices to clients.
                 </p>
                 <a
                   href={`/${company.slug}/admin/settings#billing`}
-                  className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition shrink-0 shadow-sm text-center"
+                  className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 transition shrink-0 shadow-xs text-center"
                 >
                   Upgrade
                 </a>
@@ -413,18 +348,18 @@ export default function OverviewTab({
         {/* TOP GRID: Company Profile (7 cols) + Automations (5 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           
-          {/* SECTION 1: Company Profile & Branding */}
-          <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 lg:p-8 shadow-sm space-y-1">
+          {/* SECTION 1: Company Profile & Branding (2-Column Table starting with Logo & Name) */}
+          <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-4">
             
-            {/* Header: Title on Top, Badges & Actions Placed Cleanly Below */}
-            <div className="flex flex-col gap-3 pb-4 mb-2 border-b border-slate-100">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-                <Building2 className="h-4 w-4" /> Company Profile & Branding
+            {/* Header: Title, Badges & Actions */}
+            <div className="flex flex-col gap-3 pb-3 border-b border-slate-200">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                <Building2 className="h-4 w-4 text-slate-700" /> Company Profile & Branding
               </h2>
 
               <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] sm:text-xs font-semibold text-slate-600 border border-slate-200 uppercase tracking-wide">
+                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-[10px] sm:text-xs font-bold text-slate-700 border border-slate-300 uppercase tracking-wide">
                     {isFreePlan ? 'Free Tier' : `${company.plan_tier} Tier`}
                   </span>
                   <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
@@ -433,22 +368,22 @@ export default function OverviewTab({
                 {!isEditingBrand ? (
                   <button
                     onClick={() => setIsEditingBrand(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:text-slate-900 shrink-0"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 shrink-0 cursor-pointer"
                   >
-                    <Pencil className="h-3.5 w-3.5" /> Edit Profile
+                    <Pencil className="h-3.5 w-3.5 text-slate-600" /> Edit Profile
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       onClick={handleCancelEdit}
-                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleSaveEdit}
                       disabled={brandSaving}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 transition"
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
                     >
                       {brandSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                       Save
@@ -458,138 +393,193 @@ export default function OverviewTab({
               </div>
             </div>
 
-            {/* Logo & Company Name */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between py-3.5 border-b border-slate-100 gap-3 sm:gap-6">
-              <label className="text-sm font-semibold text-slate-800 sm:w-5/12 shrink-0">Logo & Company</label>
-              <div className="sm:w-7/12 w-full flex items-center gap-3 sm:gap-4">
-                <div className="relative group shrink-0">
-                  <div className={`flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-lg border bg-white shadow-sm overflow-hidden ${
-                    missingLogo ? 'border-amber-300 ring-2 ring-amber-100' : 'border-slate-200'
-                  }`}>
-                    {logoPreview ? (
-                      <img src={logoPreview} className="h-full w-full object-contain p-1.5" alt="Logo" />
-                    ) : (
-                      <span className="text-base font-bold text-slate-400">{companyName?.charAt(0)}</span>
-                    )}
+            {/* TABLE STARTING DIRECTLY WITH LOGO & NAME (NO HEADERS) */}
+            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+              <table className="w-full text-left text-xs sm:text-sm">
+                <tbody className="divide-y divide-slate-200">
+                  {/* ROW 1: LOGO & COMPANY NAME */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="h-4 w-4 text-slate-600 shrink-0" />
+                        <span>Logo & Name</span>
+                      </div>
+                    </td>
+                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                      <div className="flex items-center gap-3">
+                        <div className="relative group shrink-0">
+                          <div className={`flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg border bg-white shadow-xs overflow-hidden ${
+                            missingLogo ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-300'
+                          }`}>
+                            {logoPreview ? (
+                              <img src={logoPreview} className="h-full w-full object-contain p-1" alt="Logo" />
+                            ) : (
+                              <span className="text-base font-bold text-slate-500">{companyName?.charAt(0)}</span>
+                            )}
 
-                    {isEditingBrand && (
-                      <label className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center bg-slate-900/80 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                        <Camera className="h-4 w-4" />
-                        <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
-                      </label>
-                    )}
-                  </div>
-                </div>
+                            {isEditingBrand && (
+                              <label className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center bg-slate-900/80 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                                <Camera className="h-4 w-4" />
+                                <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
+                              </label>
+                            )}
+                          </div>
+                        </div>
 
-                {isEditingBrand ? (
-                  <input
-                    value={companyName}
-                    onChange={(e) => setCompanyName(e.target.value)}
-                    placeholder="Company Name"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-1.5 sm:py-2 text-sm font-semibold text-slate-900 outline-none focus:border-slate-900"
-                  />
-                ) : (
-                  <div className="min-w-0">
-                    <span className="text-base font-bold text-slate-900 block truncate">{companyName}</span>
-                  </div>
-                )}
-              </div>
-            </div>
+                        {isEditingBrand ? (
+                          <input
+                            value={companyName}
+                            onChange={(e) => setCompanyName(e.target.value)}
+                            placeholder="Company Name"
+                            className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                          />
+                        ) : (
+                          <span className="text-sm sm:text-base font-bold text-slate-900 truncate block">{companyName}</span>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
 
-            {/* Reply-To Email */}
-            <HorizontalField
-              icon={Mail}
-              label="Reply-To Email"
-              tooltip="Outbound quotes and invoices will use this email address for customer replies."
-              editing={isEditingBrand}
-              value={companyEmail}
-              onChange={(v) => {
-                setCompanyEmail(v);
-                setEmailError('');
-              }}
-              placeholder="office@company.com"
-              display={company.email || <span className="text-slate-400 italic font-normal">Not configured</span>}
-              error={emailError}
-            />
+                  {/* ROW 2: REPLY-TO EMAIL */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-slate-600 shrink-0" />
+                        <span>Reply-To Email</span>
+                      </div>
+                    </td>
+                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                      {isEditingBrand ? (
+                        <div>
+                          <input
+                            type="email"
+                            value={companyEmail}
+                            onChange={(e) => {
+                              setCompanyEmail(e.target.value);
+                              setEmailError('');
+                            }}
+                            placeholder="office@company.com"
+                            className={`w-full rounded-md border bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 ${
+                              emailError ? 'border-rose-400 focus:border-rose-600' : 'border-slate-300'
+                            }`}
+                          />
+                          {emailError && <p className="mt-1 text-xs font-semibold text-rose-600">{emailError}</p>}
+                        </div>
+                      ) : (
+                        <span className="text-xs sm:text-sm font-semibold text-slate-800 break-all">
+                          {company.email || <span className="text-slate-400 italic font-normal">Not configured</span>}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
 
-            {/* Phone Number */}
-            <HorizontalField
-              icon={Phone}
-              label="Phone Number"
-              editing={isEditingBrand}
-              value={companyPhone}
-              onChange={(v) => setCompanyPhone(formatPhone(v))}
-              placeholder="(555) 000-0000"
-              maxLength={14}
-              display={company.phone ? formatPhone(company.phone) : <span className="text-slate-400 italic font-normal">Not configured</span>}
-            />
+                  {/* ROW 3: PHONE NUMBER */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-slate-600 shrink-0" />
+                        <span>Company Phone</span>
+                      </div>
+                    </td>
+                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                      {isEditingBrand ? (
+                        <input
+                          type="text"
+                          value={companyPhone}
+                          onChange={(e) => setCompanyPhone(formatPhone(e.target.value))}
+                          placeholder="(555) 000-0000"
+                          maxLength={14}
+                          className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                        />
+                      ) : (
+                        <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                          {company.phone ? formatPhone(company.phone) : <span className="text-slate-400 italic font-normal">Not configured</span>}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
 
-            {/* Website */}
-            <HorizontalField
-              icon={Globe}
-              label="Website"
-              editing={isEditingBrand}
-              value={companyWebsite}
-              onChange={setCompanyWebsite}
-              placeholder="https://company.com"
-              display={
-                company.website ? (
-                  <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-slate-900 hover:underline inline-flex items-center gap-1.5 font-semibold break-all">
-                    {company.website.replace(/^https?:\/\//, '')}
-                    <ExternalLink className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                  </a>
-                ) : (
-                  <span className="text-slate-400 italic font-normal">Not configured</span>
-                )
-              }
-            />
+                  {/* ROW 4: WEBSITE */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-slate-600 shrink-0" />
+                        <span>Website URL</span>
+                      </div>
+                    </td>
+                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                      {isEditingBrand ? (
+                        <input
+                          type="text"
+                          value={companyWebsite}
+                          onChange={(e) => setCompanyWebsite(e.target.value)}
+                          placeholder="https://company.com"
+                          className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                        />
+                      ) : company.website ? (
+                        <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-slate-900 hover:underline inline-flex items-center gap-1.5 font-semibold break-all">
+                          {company.website.replace(/^https?:\/\//, '')}
+                          <ExternalLink className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic font-normal">Not configured</span>
+                      )}
+                    </td>
+                  </tr>
 
-            {/* Brand Colors & Invoice Preview */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pt-3.5 gap-3">
-              <div className="flex items-center gap-2 sm:w-5/12 shrink-0">
-                <Palette className="h-4 w-4 text-slate-400 shrink-0" />
-                <label className="text-sm font-semibold text-slate-800">Brand Colors</label>
-              </div>
-              <div className="sm:w-7/12 w-full flex flex-wrap items-center justify-between gap-3">
-                {isEditingBrand ? (
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg p-1 bg-white">
-                      <input
-                        type="color"
-                        value={color1}
-                        onChange={(e) => setColor1(e.target.value)}
-                        className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-                      />
-                      <span className="text-[11px] font-mono font-medium text-slate-700 pr-1">{color1}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 border border-slate-200 rounded-lg p-1 bg-white">
-                      <input
-                        type="color"
-                        value={color2}
-                        onChange={(e) => setColor2(e.target.value)}
-                        className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-                      />
-                      <span className="text-[11px] font-mono font-medium text-slate-700 pr-1">{color2}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 rounded-full border border-black/10 shadow-sm shrink-0" style={{ background: color1 }} />
-                    <div className="h-4 w-4 rounded-full border border-black/10 shadow-sm shrink-0" style={{ background: color2 }} />
-                    <span className="text-xs font-mono text-slate-500 font-medium">{color1} / {color2}</span>
-                  </div>
-                )}
+                  {/* ROW 5: BRAND COLORS */}
+                  <tr className="hover:bg-slate-50/60 transition-colors">
+                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <div className="flex items-center gap-2">
+                        <Palette className="h-4 w-4 text-slate-600 shrink-0" />
+                        <span>Brand Colors</span>
+                      </div>
+                    </td>
+                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        {isEditingBrand ? (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
+                              <input
+                                type="color"
+                                value={color1}
+                                onChange={(e) => setColor1(e.target.value)}
+                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                              />
+                              <span className="text-[11px] font-mono font-bold text-slate-700 pr-1">{color1}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
+                              <input
+                                type="color"
+                                value={color2}
+                                onChange={(e) => setColor2(e.target.value)}
+                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                              />
+                              <span className="text-[11px] font-mono font-bold text-slate-700 pr-1">{color2}</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <div className="h-4 w-4 rounded-md border border-slate-300 shadow-xs shrink-0" style={{ background: color1 }} />
+                            <div className="h-4 w-4 rounded-md border border-slate-300 shadow-xs shrink-0" style={{ background: color2 }} />
+                            <span className="text-xs font-mono text-slate-600 font-bold">{color1} / {color2}</span>
+                          </div>
+                        )}
 
-                <BrandInvoicePreview company={company} refreshToken={invoicePreviewRefreshToken} />
-              </div>
+                        <BrandInvoicePreview company={company} refreshToken={invoicePreviewRefreshToken} />
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
           </div>
 
           {/* SECTION 2: Automations & Copying */}
-          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 lg:p-8 shadow-sm space-y-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 pb-4 mb-2 border-b border-slate-100 flex items-center gap-2">
-              <Bell className="h-4 w-4" /> Automations & Copying
+          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-1">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-4 mb-2 border-b border-slate-200 flex items-center gap-2">
+              <Bell className="h-4 w-4 text-slate-700" /> Automations & Copying
             </h2>
 
             <div className="flex items-center justify-between py-4 border-b border-slate-100 gap-3">
@@ -613,7 +603,7 @@ export default function OverviewTab({
                     }`}
                   >
                     <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
                         digestEnabled ? 'translate-x-5' : 'translate-x-0'
                       }`}
                     />
@@ -621,9 +611,9 @@ export default function OverviewTab({
                 ) : (
                   <button
                     onClick={() => onNavigateSection('billing')}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 border border-blue-200/80 px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-100 transition shrink-0"
+                    className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 border border-slate-300 px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-slate-200 transition shrink-0 cursor-pointer"
                   >
-                    <Sparkles className="h-3 w-3" /> Upgrade
+                    <Sparkles className="h-3 w-3 text-slate-600" /> Upgrade
                   </button>
                 )}
               </div>
@@ -649,7 +639,7 @@ export default function OverviewTab({
                   }`}
                 >
                   <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
                       bccEnabled ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
@@ -661,38 +651,38 @@ export default function OverviewTab({
         </div>
 
         {/* SECTION 3: Booking Link */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 lg:p-8 shadow-sm space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
-            <LinkIcon className="h-4 w-4" /> Lead Intake Link
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
+            <LinkIcon className="h-4 w-4 text-slate-700" /> Lead Intake Link
           </h2>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-1 gap-3 sm:gap-4">
-            <code className="font-mono text-xs sm:text-sm font-semibold text-slate-800 truncate bg-slate-50 px-3.5 py-2 rounded-lg border border-slate-200 flex-1 min-w-0">
+            <code className="font-mono text-xs sm:text-sm font-semibold text-slate-800 truncate bg-slate-50 px-3.5 py-2 rounded-md border border-slate-300 flex-1 min-w-0">
               {publicLink || `lead2project.com/${company.slug}`}
             </code>
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
                 onClick={onCopy}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 transition"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition cursor-pointer"
               >
-                {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-slate-600" />}
                 {copied ? 'Copied' : 'Copy Link'}
               </button>
               <a
                 href={publicLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-slate-800 transition"
+                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition"
               >
                 Open <ExternalLink className="h-3.5 w-3.5" />
               </a>
               <button
                 onClick={onShowQrModal}
-                className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-2 text-slate-700 shadow-sm hover:bg-slate-50 transition shrink-0"
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white p-2 text-slate-800 shadow-xs hover:bg-slate-50 transition shrink-0 cursor-pointer"
                 title="Download QR Code"
               >
-                <Download className="h-4 w-4" />
+                <Download className="h-4 w-4 text-slate-600" />
               </button>
             </div>
           </div>
@@ -720,7 +710,7 @@ export default function OverviewTab({
 
           <a
             href={`/${company.slug}/dashboard/deleted-leads`}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-rose-600 transition"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-rose-600 transition"
           >
             <Trash2 className="h-4 w-4" /> Deleted Leads Archive
           </a>
@@ -730,12 +720,12 @@ export default function OverviewTab({
 
       {/* Daily Digest Modal */}
       {showDigestConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
+          <div className="w-full max-w-sm rounded-xl border border-slate-300 bg-white p-6 shadow-2xl">
             <h3 className="text-sm font-bold text-slate-900">
               {digestEnabled ? 'Turn off daily digest?' : 'Turn on daily digest?'}
             </h3>
-            <p className="mt-1.5 text-xs text-slate-500 leading-relaxed">
+            <p className="mt-1.5 text-xs text-slate-600 leading-relaxed">
               {digestEnabled
                 ? 'Stop receiving the automated 6:00 AM summary email.'
                 : 'Receive a daily 6:00 AM summary email with leads, active jobs, and payment activity.'}
@@ -743,13 +733,13 @@ export default function OverviewTab({
             <div className="mt-6 flex items-center justify-end gap-2">
               <button
                 onClick={() => setShowDigestConfirm(false)}
-                className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleConfirmDigestToggle}
-                className={`rounded-lg px-4 py-2 text-xs font-semibold text-white transition ${
+                className={`rounded-md px-4 py-2 text-xs font-semibold text-white transition cursor-pointer ${
                   digestEnabled ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-900 hover:bg-slate-800'
                 }`}
               >
