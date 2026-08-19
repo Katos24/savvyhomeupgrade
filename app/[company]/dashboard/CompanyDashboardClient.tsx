@@ -21,6 +21,8 @@ import DashboardStats from '@/components/dashboard/DashboardStats';
 import DashboardExportModal from '@/components/dashboard/DashboardExportModal';
 import DashboardLeadsSection from '@/components/dashboard/DashboardLeadsSection';
 import { DEFAULT_STATUSES } from '@/lib/formCategories';
+import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -627,7 +629,7 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
         </aside>
       </div>
 
-      {/* Banners */}
+            {/* Banners */}
       <div className="relative z-10">
         <TrialBanner
           subscriptionStatus={company.subscription_status || 'inactive'}
@@ -637,12 +639,19 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
           subscriptionCancelAt={company.subscription_cancel_at}
           planTier={company.plan_tier || 'free'}
         />
-     <PaymentReminderBanner
-  slug={company.slug}
-  planTier={planTier}
-  onSelectLead={openLead}
-  allLeads={allLeads}
-/>
+        <PaymentReminderBanner
+          slug={company.slug}
+          planTier={planTier}
+          onSelectLead={openLead}
+          allLeads={allLeads}
+        />
+        <PaymentToastPoller
+          slug={company.slug}
+          onSelectLead={(leadId) => {
+            const lead = allLeads.find((l) => l.id === leadId);
+            if (lead) openLead(lead);
+          }}
+        />
       </div>
 
       {/* MAIN */}

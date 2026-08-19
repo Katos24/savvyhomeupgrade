@@ -188,6 +188,7 @@ export default function BillingSection({
     : null;
 
   const depositPayment = payments.find((p: any) => p.kind === 'deposit');
+  const balancePayment = payments.find((p: any) => p.kind === 'balance');
   const depositPaid = hasDepositTerms && paidAmount > 0;
   // The amount actually due right now — deposit only if nothing's been
   // collected yet and deposit terms exist, otherwise the true remaining
@@ -548,7 +549,7 @@ useEffect(() => {
         {
           key: 'balance',
           title: 'Balance',
-          amount: depositPaid ? remaining : total - depositAmount,
+          amount: isPaid ? (balancePayment?.amount ?? remaining) : depositPaid ? remaining : total - depositAmount,
           status: isPaid ? 'done' : !depositPaid ? 'locked' : balanceRequested ? 'sent' : 'ready',
           sub: isPaid
             ? `Paid ${fmtDate(lead?.payment_date)}`
