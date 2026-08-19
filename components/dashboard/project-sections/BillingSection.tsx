@@ -518,7 +518,7 @@ useEffect(() => {
     title: string;
     amount: number;
     status: StepStatus;
-    sub: string;
+    sub?: string;
     action?: { label: string; onClick: () => void };
     needsUpgrade?: boolean;
     editAction?: { label: string; onClick: () => void };
@@ -536,7 +536,7 @@ useEffect(() => {
             : invoiceSent
             ? `Sent ${fmtDate(lead?.invoice_sent_at)} — awaiting payment`
             : canSendInvoice
-            ? 'Ready to send'
+            ? undefined
             : 'Emailing invoices needs the Basic plan',
           action:
             !depositPaid && canSendInvoice
@@ -577,28 +577,21 @@ useEffect(() => {
         {
           key: 'invoice',
           title: 'Invoice',
-          amount: total,
+          amount: paidAmount > 0 ? remaining : total,
           status: isPaid ? 'done' : invoiceSent ? 'sent' : 'ready',
           sub: isPaid
             ? `Paid ${fmtDate(lead?.payment_date)}`
             : invoiceSent
             ? `Sent ${fmtDate(lead?.invoice_sent_at)} — awaiting payment`
             : canSendInvoice
-            ? 'Ready to send'
+            ? undefined
             : 'Emailing invoices needs the Basic plan',
           action:
             !isPaid && canSendInvoice
               ? { label: invoiceSent ? 'Resend Invoice' : 'Send Invoice', onClick: () => setShowSendConfirm(true) }
               : undefined,
           needsUpgrade: !isPaid && !canSendInvoice,
-          editAction: !depositLocked ? { label: 'Split into deposit & balance', onClick: openDepositEditor } : undefined,
-        },
-        {
-          key: 'complete',
-          title: 'Paid in full',
-          amount: total,
-          status: isPaid ? 'done' : 'locked',
-          sub: isPaid ? `Completed ${fmtDate(lead?.payment_date)}` : 'Marks the invoice fully paid',
+          editAction: !depositLocked ? { label: 'Want to collect a deposit first?', onClick: openDepositEditor } : undefined,
         },
       ];
 
@@ -626,11 +619,9 @@ useEffect(() => {
                 <p className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-emerald-600">
                   <CheckCircle className="w-3.5 h-3.5" /> Paid in full
                 </p>
-              ) : remaining > 0 ? (
-                <p className="mt-1.5 text-[13px] font-semibold text-amber-700 tabular-nums">
-                  {fmt(remaining)} remaining
-                </p>
               ) : null}
+
+              <div className="border-t border-slate-100 my-4" />
 
               {wasSettledThenGrew && (
                 <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-[11px] text-blue-800">
@@ -754,19 +745,21 @@ useEffect(() => {
                             <p className={`text-sm font-semibold ${step.status === 'locked' ? 'text-slate-400' : 'text-slate-900'}`}>
                               {step.title}
                             </p>
-                            <p
-                              className={`text-[11px] mt-0.5 ${
-                                step.status === 'done'
-                                  ? 'text-emerald-600 font-medium'
-                                  : step.status === 'sent'
-                                  ? 'text-amber-700 font-medium'
-                                  : step.status === 'ready'
-                                  ? 'text-brand-700 font-medium'
-                                  : 'text-slate-400'
-                              }`}
-                            >
-                              {step.sub}
-                            </p>
+                            {step.sub && (
+                              <p
+                                className={`text-[11px] mt-0.5 ${
+                                  step.status === 'done'
+                                    ? 'text-emerald-600 font-medium'
+                                    : step.status === 'sent'
+                                    ? 'text-amber-700 font-medium'
+                                    : step.status === 'ready'
+                                    ? 'text-brand-700 font-medium'
+                                    : 'text-slate-400'
+                                }`}
+                              >
+                                {step.sub}
+                              </p>
+                            )}
                           </div>
                           <p
                             className={`text-sm font-bold tabular-nums shrink-0 ${
@@ -797,9 +790,10 @@ useEffect(() => {
                         {step.editAction && (
                           <button
                             onClick={step.editAction.onClick}
-                            className="mt-2 ml-3 block text-[11px] font-semibold text-slate-400 hover:text-brand-700 hover:underline"
+                            className="mt-2 ml-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-brand-700 hover:underline"
                           >
                             {step.editAction.label}
+                            <ArrowRight className="w-3 h-3" />
                           </button>
                         )}
 
@@ -1067,10 +1061,15 @@ useEffect(() => {
                 Invoice Settings &amp; Dates
               </p>
               <div className="space-y-2.5 text-xs">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Invoice Number</span>
-                  <span className="font-mono font-medium text-slate-900">{invoiceNumber}</span>
-                </div>
+                {hasDepositTerms && (
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500">Deposit</span>
+                    <span className="font-medium text-slate-900 tabular-nums">
+                      {depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}{' '}
+                      <span className="text-slate-400">({fmt(depositAmount)})</span>
+                    </span>
+                  </div>
+                )}
 
                 <div className="flex justify-between items-center">
                   <span className="text-slate-500">Payment Due Date</span>

@@ -13,6 +13,29 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 
+// ---------------------------------------------------------------------------
+// Helper: Text color contrast & Hex to RGBA conversion (Pure-black fallback)
+// ---------------------------------------------------------------------------
+function getSafeAccentColor(input: string, isDark: boolean): string {
+  let c = input.trim().replace('#', '');
+  if (c.length === 3) {
+    c = c.split('').map((ch) => ch + ch).join('');
+  }
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
+    return isDark ? '#3b82f6' : '#2563eb';
+  }
+
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  if (luminance < 0.08) {
+    return isDark ? '#60a5fa' : '#1e293b';
+  }
+  return input;
+}
+
 interface CardsViewProps {
   leads: any[];
   onSelectLead: (lead: any) => void;
@@ -31,9 +54,6 @@ const cardVariants: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } },
 };
 
-// Clean status dot & text mappings
-/* Must cover every colour PipelineTab offers — a stage set to one that's
-   missing here silently renders blue, so New and Active looked identical. */
 const statusColorMap: Record<string, { dot: string; textDark: string; textLight: string }> = {
   blue: { dot: 'bg-blue-500', textDark: 'text-blue-400', textLight: 'text-blue-600' },
   green: { dot: 'bg-emerald-500', textDark: 'text-emerald-400', textLight: 'text-emerald-600' },
@@ -46,7 +66,6 @@ const statusColorMap: Record<string, { dot: string; textDark: string; textLight:
   pink: { dot: 'bg-pink-500', textDark: 'text-pink-400', textLight: 'text-pink-600' },
 };
 
-// Helper: Check if payment/invoice is past due
 function isPastDue(dueDateStr?: string): boolean {
   if (!dueDateStr) return false;
   const dueDate = new Date(dueDateStr);
@@ -60,7 +79,6 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
   const quoteSent = lead.project_quote_sent_at || lead.quote_sent_at;
   const quoteAccepted = lead.project_quote_accepted_at || lead.quote_accepted_at;
 
-  // Invoice & Payment Logic
   const paidAmount = parseFloat(lead.payment_amount || '0');
   const isPaid = lead.payment_status === 'paid';
   const isPartial = !isPaid && (lead.payment_status === 'partially_paid' || paidAmount > 0);
@@ -73,7 +91,6 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
         isDark ? 'bg-slate-950/40 border-slate-800/80' : 'bg-slate-50 border-slate-200/80'
       }`}
     >
-      {/* 1. Estimate */}
       <div className="flex items-center gap-1.5 min-w-0">
         <FileText className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
         <span
@@ -89,7 +106,6 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
         </span>
       </div>
 
-      {/* 2. Schedule */}
       <div className="flex items-center gap-1.5 min-w-0">
         <CalendarDays className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
         <span
@@ -105,7 +121,6 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
         </span>
       </div>
 
-      {/* 3. Invoice & Payment Status (Single source of truth) */}
       <div className="flex items-center gap-1.5 min-w-0 justify-end">
         {isPaid ? (
           <span className="flex items-center gap-1 text-xs font-semibold text-emerald-500 truncate">
@@ -140,6 +155,8 @@ export default function UltraReadableCardsView({
   isDark = true,
   accentColor = '#2563eb',
 }: CardsViewProps) {
+  const safeAccent = getSafeAccentColor(accentColor, isDark);
+
   return (
     <motion.div
       variants={containerVariants}
@@ -167,13 +184,18 @@ export default function UltraReadableCardsView({
             variants={cardVariants}
             whileHover={{ y: -2 }}
             onClick={() => onSelectLead(lead)}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = safeAccent;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLElement).style.borderColor = '';
+            }}
             className={`group cursor-pointer p-4 rounded-xl border transition-all duration-150 ${
               isDark
-                ? 'bg-slate-900 border-slate-800/90 hover:border-slate-700 hover:bg-slate-900/90'
-                : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
+                ? 'bg-slate-900 border-slate-800/90 hover:bg-slate-900/90'
+                : 'bg-white border-slate-200 hover:shadow-sm'
             }`}
           >
-            {/* Header: Status Indicator + Follow Up / Past Due Notice + Date */}
             <div className="flex items-center justify-between mb-2.5">
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${statusTheme.dot}`} />
@@ -208,7 +230,6 @@ export default function UltraReadableCardsView({
               </div>
             </div>
 
-            {/* Core Info: Title & Amount */}
             <div className="flex items-baseline justify-between gap-2 mb-1">
               <h3 className={`text-base font-bold truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 {lead.name}
@@ -230,7 +251,6 @@ export default function UltraReadableCardsView({
               )}
             </div>
 
-            {/* Category Subtitle */}
             <div className="flex items-center justify-between gap-2 mb-3">
               <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {lead.category?.replace(/_/g, ' ') || 'General Project'}
@@ -240,12 +260,10 @@ export default function UltraReadableCardsView({
               </span>
             </div>
 
-            {/* Progress Bar (Single location for Invoice status) */}
             <div className="mb-3">
               <CleanProgressTracker lead={lead} isDark={isDark} />
             </div>
 
-            {/* Footer */}
             <div
               className={`flex items-center justify-between pt-2.5 border-t ${
                 isDark ? 'border-slate-800/80' : 'border-slate-100'
@@ -259,9 +277,8 @@ export default function UltraReadableCardsView({
               </div>
 
               <div
-                className={`flex items-center gap-0.5 text-xs font-semibold group-hover:translate-x-0.5 transition-transform ${
-                  isDark ? 'text-slate-300' : 'text-slate-700'
-                }`}
+                className="flex items-center gap-0.5 text-xs font-semibold group-hover:translate-x-0.5 transition-transform"
+                style={{ color: safeAccent }}
               >
                 <span>View</span>
                 <ChevronRight className="w-3.5 h-3.5" />

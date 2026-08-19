@@ -77,36 +77,34 @@ export default function DashboardLeadsSection({
 
   return (
     <>
-      {/* New leads notification */}
+      {/* Premium Floating "New Leads" Notification */}
       <AnimatePresence>
         {newLeadCount > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className={`mb-6 rounded-2xl px-4 py-3 flex items-center justify-between cursor-pointer transition-all border backdrop-blur-md ${
-              isDark
-                ? 'bg-[#0A0C14]/80 shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
-                : 'bg-white/90 shadow-xs'
-            }`}
-            style={{ borderColor: `${accentColor}40` }}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className="mb-8 max-w-md mx-auto relative group cursor-pointer"
             onClick={onDismissNewLeads}
           >
-            <div className="flex items-center gap-3">
-              <span
-                className="w-2.5 h-2.5 rounded-full animate-pulse"
-                style={{ backgroundColor: accentColor }}
-              />
-              <p className={`text-xs sm:text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {newLeadCount} new lead{newLeadCount > 1 ? 's' : ''} came in
-              </p>
+            <div 
+              className="absolute -inset-0.5 rounded-full blur-md opacity-30 group-hover:opacity-60 transition-opacity duration-500" 
+              style={{ backgroundColor: accentColor }} 
+            />
+            <div className="relative flex items-center justify-between px-5 py-3 rounded-full bg-[#0b0f17] border border-slate-700/80 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <span className="relative flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: accentColor }} />
+                  <span className="relative inline-flex rounded-full h-3 w-3" style={{ backgroundColor: accentColor }} />
+                </span>
+                <p className="text-sm font-semibold text-white">
+                  {newLeadCount} new lead{newLeadCount > 1 ? 's' : ''} came in
+                </p>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full bg-white/10 text-white group-hover:bg-white/20 transition-colors">
+                Refresh
+              </span>
             </div>
-            <span
-              className="text-xs font-extrabold uppercase tracking-wider"
-              style={{ color: accentColor }}
-            >
-              Tap to refresh
-            </span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -114,33 +112,36 @@ export default function DashboardLeadsSection({
       {/* Leads Display */}
       <section aria-label="Leads" aria-live="polite" className="relative">
         {filteredLeads.length === 0 ? (
-          <div
-            className={`rounded-3xl px-6 py-14 sm:py-24 text-center border border-dashed transition-all backdrop-blur-md ${
-              isDark ? 'bg-[#0A0C14]/40 border-white/10' : 'bg-white/60 border-slate-200/90'
-            }`}
-          >
-            <div
-              className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-2xl mb-5"
-              style={{ backgroundColor: `${accentColor}15` }}
-              aria-hidden
-            >
-              <Inbox className="w-7 h-7 sm:w-8 sm:h-8" style={{ color: accentColor }} />
-            </div>
-            <h2 className={`text-lg sm:text-xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              No leads yet
-            </h2>
-            <p className="text-slate-400 text-xs sm:text-sm max-w-xs mx-auto leading-relaxed font-medium">
-              {hasActiveFilters ? 'No leads match your current filters.' : 'Create your first lead to get started.'}
-            </p>
-            {hasActiveFilters && (
-              <button
-                onClick={clearFilters}
-                style={{ backgroundColor: accentColor, color: buttonTextColor }}
-                className="mt-6 px-5 py-2.5 rounded-xl text-xs font-extrabold hover:opacity-90 transition-all cursor-pointer shadow-xs"
+          // Refined Empty State
+          <div className="rounded-3xl p-1 bg-gradient-to-b from-slate-800/40 to-transparent backdrop-blur-sm">
+            <div className={`rounded-[22px] px-6 py-16 sm:py-24 text-center flex flex-col items-center justify-center transition-all ${
+              isDark ? 'bg-[#0A0C14] shadow-[inset_0_0_40px_rgba(0,0,0,0.4)]' : 'bg-slate-50'
+            }`}>
+              <div
+                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 shadow-inner"
+                style={{ backgroundColor: `${accentColor}15`, border: `1px solid ${accentColor}30` }}
+                aria-hidden
               >
-                Clear filters
-              </button>
-            )}
+                <Inbox className="w-8 h-8" style={{ color: accentColor }} />
+              </div>
+              <h2 className={`text-xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                No leads yet
+              </h2>
+              <p className="text-slate-400 text-sm max-w-sm mx-auto leading-relaxed">
+                {hasActiveFilters 
+                  ? 'We couldn\'t find any leads matching your current filters. Try adjusting them or clearing your search.' 
+                  : 'Your pipeline is empty. Create your first lead to start tracking your opportunities.'}
+              </p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearFilters}
+                  style={{ backgroundColor: accentColor, color: buttonTextColor }}
+                  className="mt-8 px-6 py-3 rounded-xl text-sm font-bold hover:opacity-90 transition-transform active:scale-95 shadow-lg"
+                >
+                  Clear all filters
+                </button>
+              )}
+            </div>
           </div>
         ) : currentView === 'calendar' ? (
           <div className="animate-in fade-in zoom-in-95 duration-500">
@@ -152,82 +153,75 @@ export default function DashboardLeadsSection({
             />
           </div>
         ) : currentView === 'cards' ? (
-          <div className="space-y-7 sm:space-y-9">
+          <div className="space-y-8 sm:space-y-12">
             {groups.map(
               ({ title, leads }) =>
                 leads.length > 0 && (
                   <section key={title} aria-label={`${title} leads`} className="relative">
-                    <div className="flex items-center gap-3 sm:gap-4 mb-4 sm:mb-5 sticky top-20 z-10 py-2.5 backdrop-blur-md">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }} />
-                        <h2 className={`text-xs font-extrabold uppercase tracking-wider ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {/* Group Headers scroll normally with the page */}
+                    <div className="flex items-center gap-4 mb-5 sm:mb-6 py-4 -mx-2 px-2 bg-transparent">
+                      <div className="flex items-center gap-3">
+                        <h2 className="text-sm font-bold uppercase tracking-widest text-slate-100 drop-shadow-sm">
                           {title}
                         </h2>
+                        {title !== 'Older' && (
+                          <span className="px-2.5 py-0.5 rounded-full bg-slate-800/80 text-slate-300 border border-slate-700/80 shadow-inner text-[10px] font-bold">
+                            {leads.length}
+                          </span>
+                        )}
                       </div>
-                      <div className={`h-px flex-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} aria-hidden />
-                      {title !== 'Older' && (
-                        <span
-                          className={`text-xs font-extrabold px-3 py-1 rounded-full ${
-                            isDark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-700'
-                          }`}
-                        >
-                          {leads.length}
-                        </span>
-                      )}
+                      <div className="h-px flex-1 bg-gradient-to-r from-slate-700/80 via-slate-800/40 to-transparent" aria-hidden />
                     </div>
-                    <CardsView
-                      leads={leads}
-                      onSelectLead={onSelectLead}
-                      statusOptions={statusOptions}
-                      isDark={isDark}
-                      accentColor={accentColor}
-                    />
+                    
+                    <div className="pl-1">
+                      <CardsView
+                        leads={leads}
+                        onSelectLead={onSelectLead}
+                        statusOptions={statusOptions}
+                        isDark={isDark}
+                        accentColor={accentColor}
+                      />
+                    </div>
                   </section>
                 )
             )}
           </div>
         ) : (
           <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
-            <div className="mb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
-              <div>
-                <h2 className="text-xs font-extrabold uppercase tracking-wider" style={{ color: accentColor }}>
-                  Database
-                </h2>
-                <p className="text-xs font-bold text-slate-400 mt-0.5">
-                  {filteredLeads.length} total records
-                </p>
+            {/* Structural Table Header */}
+            <div className="mb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
+              <div className="flex items-center gap-4">
+                <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accentColor }} />
+                <div>
+                  <h2 className="text-sm font-bold uppercase tracking-widest text-slate-300">
+                    Database
+                  </h2>
+                  <p className="text-xs font-semibold text-slate-500 mt-1">
+                    Showing {filteredLeads.length} active records
+                  </p>
+                </div>
               </div>
+              
               {can(planTier, 'csv_export') ? (
                 <button
                   onClick={onShowExportModal}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-extrabold rounded-xl transition-all border cursor-pointer ${
-                    isDark
-                      ? 'bg-[#0A0C14]/80 border-white/10 text-white hover:bg-white/10'
-                      : 'bg-white border-slate-200/90 text-slate-800 hover:bg-slate-50 shadow-xs'
-                  }`}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all border bg-slate-800/50 border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white hover:border-slate-600 shadow-sm"
                 >
-                  <Download className="w-3.5 h-3.5 text-slate-400" />
-                  Export
+                  <Download className="w-4 h-4 text-slate-400" />
+                  Export Data
                 </button>
               ) : (
                 <button
                   onClick={() => onLockedFeature('csv_export')}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-extrabold rounded-xl border transition-all cursor-pointer ${
-                    isDark
-                      ? 'bg-white/5 border-white/5 text-slate-500'
-                      : 'bg-slate-100 border-slate-200 text-slate-400'
-                  }`}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all border bg-slate-800/30 border-slate-800 text-slate-500 hover:bg-slate-800/50 cursor-pointer"
                 >
-                  <Lock className="w-3.5 h-3.5 text-amber-500" />
-                  Export (Basic)
+                  <Lock className="w-4 h-4 text-amber-500/70" />
+                  Export (Pro)
                 </button>
               )}
             </div>
-            <div
-              className={`rounded-2xl overflow-hidden border transition-all ${
-                isDark ? 'bg-[#0A0C14]/80 border-white/10 shadow-[0_4px_20px_rgba(0,0,0,0.2)]' : 'bg-white/90 border-slate-200 shadow-xs'
-              }`}
-            >
+
+            <div className="rounded-2xl overflow-hidden border border-slate-800/80 bg-[#0A0C14]/60 shadow-2xl backdrop-blur-md">
               <TableView
                 leads={filteredLeads}
                 onSelectLead={onSelectLead}
@@ -244,20 +238,23 @@ export default function DashboardLeadsSection({
         )}
       </section>
 
-      {/* Load More */}
+      {/* Refined Load More Section */}
       {pagination.page < pagination.pages && (
-        <div className="flex flex-col items-center pt-8 sm:pt-10 pb-8 sm:pb-10 gap-2">
+        <div className="flex flex-col items-center pt-12 pb-10 gap-3 relative">
+          {/* Subtle fade effect for the bottom of the list */}
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-slate-700/50 to-transparent" />
+          
           <button
             onClick={onLoadMore}
-            className={`w-full sm:w-auto px-8 py-3 rounded-2xl text-xs font-extrabold border transition-all cursor-pointer active:scale-95 ${
-              isDark
-                ? 'bg-[#0A0C14]/80 border-white/10 text-white hover:bg-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
-                : 'bg-white border-slate-200/90 text-slate-800 hover:bg-slate-50 shadow-xs'
-            }`}
+            className="group relative inline-flex items-center justify-center px-8 py-3 rounded-2xl text-xs font-bold transition-all border bg-slate-800/40 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white shadow-lg overflow-hidden"
           >
-            Load More
+            <div 
+              className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300"
+              style={{ backgroundColor: accentColor }}
+            />
+            <span className="relative z-10">Load More Records</span>
           </button>
-          <span className="text-[11px] font-bold text-slate-400">
+          <span className="text-[11px] font-semibold text-slate-500 tracking-wide uppercase">
             {pagination.total - allLeads.length} remaining
           </span>
         </div>

@@ -1,8 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2, User, Mail, Phone, Tag, AlignLeft, Plus, ChevronDown, ChevronUp, MapPin, Home, Calendar, Clock, HelpCircle, Megaphone } from 'lucide-react';
+import { 
+  X, Loader2, User, Mail, Phone, Tag, AlignLeft, 
+  Plus, ChevronDown, ChevronUp, MapPin, Home, 
+  Calendar, Clock, Megaphone 
+} from 'lucide-react';
 import { toast } from 'sonner';
+
+// ---------------------------------------------------------------------------
+// Helper: Text color contrast
+// ---------------------------------------------------------------------------
+function isColorTooDark(hex: string): boolean {
+  let c = hex.trim().replace('#', '');
+  if (c.length === 3) c = c.split('').map((ch) => ch + ch).join('');
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return false;
+  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+}
 
 type CreateLeadModalProps = {
   isOpen: boolean;
@@ -12,6 +29,8 @@ type CreateLeadModalProps = {
   companyId: number;
   categories: any[];
   company?: any;
+  isDark?: boolean;
+  accentColor?: string;
 };
 
 export default function CreateLeadModal({
@@ -22,6 +41,8 @@ export default function CreateLeadModal({
   companyId,
   categories,
   company,
+  isDark = false,
+  accentColor = '#2563eb',
 }: CreateLeadModalProps) {
   const [loading, setLoading] = useState(false);
   const [notifyCustomer, setNotifyCustomer] = useState(false);
@@ -44,6 +65,9 @@ export default function CreateLeadModal({
   });
 
   if (!isOpen) return null;
+
+  const isAccentDark = isColorTooDark(accentColor);
+  const accentTextColor = isAccentDark ? '#ffffff' : '#000000';
 
   const fieldConfig = company?.form_field_config || {};
   const customQuestions: any[] = company?.custom_questions || [];
@@ -129,173 +153,236 @@ export default function CreateLeadModal({
     }
   }
 
-  // Softened background slightly, boosted focus states for ultimate readability
-  const inputClass = "w-full bg-white/[0.06] border border-white/10 rounded-2xl px-4 py-3 sm:py-4 text-white placeholder-slate-500 focus:border-blue-500 focus:bg-white/[0.08] focus:outline-none transition-all text-base";
+  // Polished input styling dependent on light/dark mode
+  const inputClass = `w-full rounded-2xl px-4 py-3 sm:py-3.5 border transition-all duration-200 outline-none text-[15px] ${
+    isDark 
+      ? 'bg-white/5 border-white/10 text-white placeholder-slate-500 focus:bg-white/10' 
+      : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400 focus:bg-white'
+  }`;
 
   return (
     <div className="fixed inset-0 z-[150] flex items-end sm:items-center justify-center sm:p-4">
-      <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-300" onClick={onClose} />
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300" 
+        onClick={onClose} 
+      />
 
-      <div className="relative w-full max-w-lg bg-slate-900 border-x border-t sm:border border-white/10 rounded-t-[2rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 max-h-[92vh] flex flex-col">
+      {/* Modal Container */}
+      <div className={`relative w-full max-w-lg border-x border-t sm:border rounded-t-[2rem] sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 sm:zoom-in-95 duration-300 max-h-[92vh] flex flex-col ${
+        isDark ? 'bg-[#0A0C14] border-white/10' : 'bg-white border-slate-100'
+      }`}>
 
+        {/* Mobile Drag Handle */}
         <div className="flex justify-center pt-3 pb-1 sm:hidden">
-          <div className="w-12 h-1.5 bg-white/10 rounded-full" />
+          <div className={`w-12 h-1.5 rounded-full ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
         </div>
 
-        <div className="p-6 sm:p-8 overflow-y-auto">
-          <div className="flex items-start justify-between mb-6 sm:mb-8">
+        <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar">
+          {/* Header */}
+          <div className="flex items-start justify-between mb-6">
             <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-100 tracking-tight">Quick Add Lead</h2>
-              <p className="text-blue-400 text-xs uppercase tracking-wider font-semibold mt-1">Direct Entry</p>
+              <h2 className={`text-2xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Quick Add Lead
+              </h2>
+              <p className="text-xs uppercase tracking-widest font-bold mt-1.5" style={{ color: accentColor }}>
+                Direct Entry
+              </p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-xl transition-colors text-slate-400 hover:text-white">
-              <X className="w-6 h-6" />
+            <button 
+              onClick={onClose} 
+              className={`p-2 rounded-xl transition-colors ${
+                isDark ? 'hover:bg-white/10 text-slate-400 hover:text-white' : 'hover:bg-slate-100 text-slate-500 hover:text-slate-900'
+              }`}
+            >
+              <X className="w-5 h-5" />
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
-
             {/* Name */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Customer Name</label>
-              <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                <input required type="text" placeholder="John Smith" value={formData.name}
+            <div className="space-y-1.5 group">
+              <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 transition-colors ${isDark ? 'text-slate-400 group-focus-within:text-slate-300' : 'text-slate-500 group-focus-within:text-slate-700'}`}>
+                Customer Name
+              </label>
+              <div className="relative">
+                <User className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                <input 
+                  required 
+                  type="text" 
+                  placeholder="John Smith" 
+                  value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className={`${inputClass} pl-12`} />
+                  className={`${inputClass} pl-12 focus:ring-2 focus:ring-offset-0 focus:border-transparent`} 
+                  style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                />
               </div>
             </div>
 
             {/* Email + Phone */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Email <span className="text-red-400">*</span></label>
+              <div className="space-y-1.5 group">
+                <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Email <span className="text-red-400">*</span>
+                </label>
                 <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                  <input required type="email" inputMode="email" placeholder="john@email.com" value={formData.email}
+                  <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <input 
+                    required 
+                    type="email" 
+                    inputMode="email" 
+                    placeholder="john@email.com" 
+                    value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className={`${inputClass} pl-12`} />
+                    className={`${inputClass} pl-12 focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                    style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                  />
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Phone Number</label>
-                <div className="relative group">
-                  <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 group-focus-within:text-blue-500 transition-colors" />
-                  <input type="tel" inputMode="tel" placeholder="(555) 000-0000" value={formData.phone}
+              <div className="space-y-1.5 group">
+                <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <Phone className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <input 
+                    type="tel" 
+                    inputMode="tel" 
+                    placeholder="(555) 000-0000" 
+                    value={formData.phone}
                     onChange={handlePhoneChange}
-                    className={`${inputClass} pl-12 font-mono`} />
+                    className={`${inputClass} pl-12 font-mono focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                    style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                  />
                 </div>
               </div>
             </div>
 
             {/* Category */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Category</label>
+            <div className="space-y-1.5 group">
+              <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Category
+              </label>
               <div className="relative">
-                <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
-                <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className={`${inputClass} pl-12 pr-10 appearance-none cursor-pointer`}>
-                  <option value="" disabled className="bg-slate-900 text-white/40">Select Category</option>
+                <Tag className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none transition-colors ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                <select 
+                  value={formData.category} 
+                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                  className={`${inputClass} pl-12 pr-10 appearance-none cursor-pointer focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                  style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                >
+                  <option value="" disabled className={isDark ? 'bg-slate-900 text-white/40' : 'bg-white text-slate-400'}>
+                    Select Category
+                  </option>
                   {categories.map((cat: any, i: number) => {
                     const val = typeof cat === 'object' ? cat.value : cat;
                     const label = typeof cat === 'object' ? cat.label : cat;
-                    return <option key={`${val}-${i}`} value={val} className="bg-slate-900">{label}</option>;
+                    return <option key={`${val}-${i}`} value={val} className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>{label}</option>;
                   })}
                 </select>
+                <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
               </div>
             </div>
 
             {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Project Details</label>
+            <div className="space-y-1.5 group">
+              <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Project Details
+              </label>
               <div className="relative">
-                <AlignLeft className="absolute left-4 top-4 w-5 h-5 text-slate-500" />
-                <textarea rows={2} placeholder="What needs to be done?" value={formData.description}
+                <AlignLeft className={`absolute left-4 top-3.5 w-5 h-5 transition-colors ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                <textarea 
+                  rows={2} 
+                  placeholder="What needs to be done?" 
+                  value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className={`${inputClass} pl-12 resize-none`} />
+                  className={`${inputClass} pl-12 resize-none focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                  style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                />
               </div>
             </div>
 
-            {/* Optional accordion */}
+            {/* Optional Fields Accordion */}
             {hasOptionalFields && (
-              <div className="rounded-2xl border border-white/10 overflow-hidden">
+              <div className={`rounded-2xl border overflow-hidden transition-all duration-300 ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
                 <button
                   type="button"
                   onClick={() => setShowOptional(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/5 transition-colors"
+                  className={`w-full flex items-center justify-between px-4 py-3.5 transition-colors ${
+                    isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                  }`}
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[12px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                       Additional Details
                     </span>
                     {filledOptional > 0 && (
-                      <span className="text-xs font-bold bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: `${accentColor}20`, color: accentColor }}>
                         {filledOptional} filled
                       </span>
                     )}
                   </div>
-                  {showOptional
-                    ? <ChevronUp className="w-4 h-4 text-slate-400" />
-                    : <ChevronDown className="w-4 h-4 text-slate-400" />
-                  }
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${showOptional ? 'rotate-180' : ''}`} />
                 </button>
 
                 {showOptional && (
-                  <div className="px-4 pb-4 space-y-4 border-t border-white/10 pt-4">
+                  <div className={`px-4 pb-5 space-y-4 border-t pt-4 ${isDark ? 'border-white/10 bg-white/[0.02]' : 'border-slate-100 bg-slate-50/50'}`}>
 
-                    {/* Address with Google Maps autocomplete */}
+                    {/* Address Fields */}
                     {showAddress && (
                       <>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">
-                            Service Address
-                          </label>
+                          <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Service Address</label>
                           <div className="relative">
-                            <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none z-10" />
+                            <MapPin className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none z-10 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                             <input
                               type="text"
                               value={formData.address_line_1}
                               onChange={e => setFormData({ ...formData, address_line_1: e.target.value })}
                               placeholder="123 Main St"
-                              className={`${inputClass} pl-12`}
+                              className={`${inputClass} pl-11 focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                              style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
                             />
                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">City</label>
+                            <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>City</label>
                             <input
                               type="text"
                               value={formData.city}
                               onChange={e => setFormData({ ...formData, city: e.target.value })}
                               placeholder="City"
-                              className={`${inputClass} text-sm`}
+                              className={`${inputClass} text-sm focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                              style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Zip Code</label>
+                            <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Zip Code</label>
                             <div className="relative">
-                              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                              <MapPin className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                               <input
                                 type="text"
                                 value={formData.zip_code}
                                 onChange={e => setFormData({ ...formData, zip_code: e.target.value.replace(/\D/g, '').slice(0, 5) })}
                                 placeholder="12345"
                                 maxLength={5}
-                                className={`${inputClass} pl-10 text-sm`}
+                                className={`${inputClass} pl-9 text-sm focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                                style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
                               />
                             </div>
                           </div>
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Unit / Apt</label>
+                            <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Unit / Apt</label>
                             <div className="relative">
-                              <Home className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                              <Home className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                               <input
                                 type="text"
                                 value={formData.address_line_2}
                                 onChange={e => setFormData({ ...formData, address_line_2: e.target.value })}
                                 placeholder="Apt 4B"
-                                className={`${inputClass} pl-10 text-sm`}
+                                className={`${inputClass} pl-9 text-sm focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                                style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
                               />
                             </div>
                           </div>
@@ -303,29 +390,37 @@ export default function CreateLeadModal({
                       </>
                     )}
 
-                    {/* Date + Time */}
+                    {/* Date & Time */}
                     {(showDate || showTime) && (
                       <div className="grid grid-cols-2 gap-3">
                         {showDate && (
                           <div className="space-y-1.5 min-w-0 overflow-hidden">
-                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Preferred Date</label>
-                            <input
-                              type="date"
-                              value={formData.preferred_date}
-                              onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
-                              style={{ colorScheme: 'dark' }}
-                              className={`${inputClass} text-sm w-full`}
-                            />
+                            <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preferred Date</label>
+                            <div className="relative">
+                              <Calendar className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                              <input
+                                type="date"
+                                value={formData.preferred_date}
+                                onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
+                                style={{ colorScheme: isDark ? 'dark' : 'light', '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                                className={`${inputClass} pl-9 text-sm w-full focus:ring-2 focus:ring-offset-0 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full`}
+                              />
+                            </div>
                           </div>
                         )}
                         {showTime && (
                           <div className="space-y-1.5">
-                            <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">Preferred Time</label>
+                            <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preferred Time</label>
                             <div className="relative">
-                              <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                              <input type="text" placeholder="Morning" value={formData.preferred_time}
+                              <Clock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                              <input 
+                                type="text" 
+                                placeholder="Morning" 
+                                value={formData.preferred_time}
                                 onChange={(e) => setFormData({ ...formData, preferred_time: e.target.value })}
-                                className={`${inputClass} pl-10 text-sm`} />
+                                className={`${inputClass} pl-9 text-sm focus:ring-2 focus:ring-offset-0 focus:border-transparent`} 
+                                style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                              />
                             </div>
                           </div>
                         )}
@@ -335,22 +430,26 @@ export default function CreateLeadModal({
                     {/* Lead Source */}
                     {showLeadSource && (
                       <div className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">How Did They Hear?</label>
+                        <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>How Did They Hear?</label>
                         <div className="relative">
-                          <Megaphone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500 pointer-events-none" />
-                          <select value={formData.lead_source}
+                          <Megaphone className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                          <select 
+                            value={formData.lead_source}
                             onChange={(e) => setFormData({ ...formData, lead_source: e.target.value })}
-                            className={`${inputClass} pl-12 pr-10 appearance-none cursor-pointer`}>
-                            <option value="" className="bg-slate-900">Select...</option>
-                            <option value="website" className="bg-slate-900">Website / Google Search</option>
-                            <option value="facebook" className="bg-slate-900">Facebook</option>
-                            <option value="instagram" className="bg-slate-900">Instagram</option>
-                            <option value="google_ads" className="bg-slate-900">Google Ads</option>
-                            <option value="referral" className="bg-slate-900">Referral</option>
-                            <option value="yard_sign" className="bg-slate-900">Yard Sign</option>
-                            <option value="truck" className="bg-slate-900">Saw your truck</option>
-                            <option value="other" className="bg-slate-900">Other</option>
+                            className={`${inputClass} pl-11 pr-10 appearance-none cursor-pointer focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                            style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                          >
+                            <option value="" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Select...</option>
+                            <option value="website" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Website / Google Search</option>
+                            <option value="facebook" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Facebook</option>
+                            <option value="instagram" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Instagram</option>
+                            <option value="google_ads" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Google Ads</option>
+                            <option value="referral" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Referral</option>
+                            <option value="yard_sign" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Yard Sign</option>
+                            <option value="truck" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Saw your truck</option>
+                            <option value="other" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Other</option>
                           </select>
+                          <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                         </div>
                       </div>
                     )}
@@ -358,34 +457,49 @@ export default function CreateLeadModal({
                     {/* Custom Questions */}
                     {customQuestions.map((q: any) => (
                       <div key={q.id} className="space-y-1.5">
-                        <label className="text-xs font-semibold text-slate-200 uppercase tracking-wider ml-1">
+                        <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                           {q.label} {q.required && <span className="text-red-400">*</span>}
                         </label>
                         {q.type === 'text' && (
-                          <input type="text" placeholder="Enter answer..." value={formData.custom_answers[q.id] || ''}
+                          <input 
+                            type="text" 
+                            placeholder="Enter answer..." 
+                            value={formData.custom_answers[q.id] || ''}
                             onChange={(e) => setFormData({ ...formData, custom_answers: { ...formData.custom_answers, [q.id]: e.target.value } })}
-                            className={inputClass} />
+                            className={`${inputClass} focus:ring-2 focus:ring-offset-0 focus:border-transparent`} 
+                            style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                          />
                         )}
                         {q.type === 'select' && (
-                          <select value={formData.custom_answers[q.id] || ''}
-                            onChange={(e) => setFormData({ ...formData, custom_answers: { ...formData.custom_answers, [q.id]: e.target.value } })}
-                            className={`${inputClass} appearance-none cursor-pointer`}>
-                            <option value="" className="bg-slate-900">Select...</option>
-                            {q.options?.map((opt: string) => (
-                              <option key={opt} value={opt} className="bg-slate-900">{opt}</option>
-                            ))}
-                          </select>
+                          <div className="relative">
+                            <select 
+                              value={formData.custom_answers[q.id] || ''}
+                              onChange={(e) => setFormData({ ...formData, custom_answers: { ...formData.custom_answers, [q.id]: e.target.value } })}
+                              className={`${inputClass} appearance-none cursor-pointer focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                              style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                            >
+                              <option value="" className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>Select...</option>
+                              {q.options?.map((opt: string) => (
+                                <option key={opt} value={opt} className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>{opt}</option>
+                              ))}
+                            </select>
+                            <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                          </div>
                         )}
                         {q.type === 'checkbox' && (
-                          <div className="flex gap-3">
+                          <div className="flex gap-2.5">
                             {['Yes', 'No'].map(opt => (
-                              <button key={opt} type="button"
+                              <button 
+                                key={opt} 
+                                type="button"
                                 onClick={() => setFormData({ ...formData, custom_answers: { ...formData.custom_answers, [q.id]: opt } })}
-                                className={`flex-1 py-3 rounded-2xl border font-bold text-sm transition-all ${
+                                className={`flex-1 py-2.5 rounded-xl border text-sm font-bold transition-all duration-200 ${
                                   formData.custom_answers[q.id] === opt
-                                    ? 'border-blue-500 bg-blue-600 text-white'
-                                    : 'border-white/10 bg-white/5 text-slate-300 hover:border-white/20'
-                                }`}>
+                                    ? 'border-transparent shadow-sm'
+                                    : isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                }`}
+                                style={formData.custom_answers[q.id] === opt ? { backgroundColor: accentColor, color: accentTextColor } : undefined}
+                              >
                                 {opt}
                               </button>
                             ))}
@@ -399,33 +513,57 @@ export default function CreateLeadModal({
               </div>
             )}
 
-            {/* Notifications */}
-            <div className="flex flex-col gap-2.5 pt-1">
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div onClick={() => setNotifyOwner(!notifyOwner)}
-                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyOwner ? 'bg-blue-600' : 'bg-white/10'}`}>
-                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifyOwner ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            {/* Notification Toggles */}
+            <div className="flex flex-col gap-3.5 pt-2 pb-2">
+              <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                <div 
+                  className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 relative border ${
+                    notifyOwner ? 'border-transparent' : isDark ? 'bg-white/10 border-white/5' : 'bg-slate-200 border-slate-300'
+                  }`}
+                  style={notifyOwner ? { backgroundColor: accentColor } : {}}
+                  onClick={() => setNotifyOwner(!notifyOwner)}
+                >
+                  <div className={`absolute top-[2px] bottom-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${notifyOwner ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
                 </div>
-                <span className="text-xs text-slate-300 group-hover:text-white transition-colors">Notify owner</span>
+                <span className={`text-[13px] font-medium transition-colors ${isDark ? 'text-slate-300 group-hover:text-white' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                  Notify team of new lead
+                </span>
               </label>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div onClick={() => setNotifyCustomer(!notifyCustomer)}
-                  className={`w-9 h-5 rounded-full transition-colors flex-shrink-0 relative ${notifyCustomer ? 'bg-blue-600' : 'bg-white/10'}`}>
-                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${notifyCustomer ? 'translate-x-4' : 'translate-x-0.5'}`} />
+
+              <label className="flex items-center gap-3 cursor-pointer group w-fit">
+                <div 
+                  className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 relative border ${
+                    notifyCustomer ? 'border-transparent' : isDark ? 'bg-white/10 border-white/5' : 'bg-slate-200 border-slate-300'
+                  }`}
+                  style={notifyCustomer ? { backgroundColor: accentColor } : {}}
+                  onClick={() => setNotifyCustomer(!notifyCustomer)}
+                >
+                  <div className={`absolute top-[2px] bottom-[2px] w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${notifyCustomer ? 'translate-x-[20px]' : 'translate-x-[2px]'}`} />
                 </div>
-                <span className="text-xs text-slate-300 group-hover:text-white transition-colors">Send confirmation to customer</span>
+                <span className={`text-[13px] font-medium transition-colors ${isDark ? 'text-slate-300 group-hover:text-white' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                  Send confirmation to customer
+                </span>
               </label>
             </div>
 
-            {/* Actions */}
-            <div className="pt-2 flex gap-3 pb-[env(safe-area-inset-bottom)] sm:pb-0">
-              <button type="button" onClick={onClose}
-                className="hidden sm:block flex-1 px-6 py-4 rounded-2xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all active:scale-95">
+            {/* Action Buttons */}
+            <div className="pt-3 flex gap-3 pb-[env(safe-area-inset-bottom)] sm:pb-0">
+              <button 
+                type="button" 
+                onClick={onClose}
+                className={`hidden sm:block flex-1 px-6 py-3.5 rounded-xl border font-bold transition-all active:scale-95 ${
+                  isDark ? 'border-white/10 text-white hover:bg-white/5' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
                 Cancel
               </button>
-              <button type="submit" disabled={loading}
-                className="flex-[3] sm:flex-[2] px-6 py-4 rounded-2xl bg-blue-600 text-white font-bold shadow-xl shadow-blue-600/20 hover:bg-blue-500 disabled:opacity-50 transition-all flex items-center justify-center gap-2 active:scale-95 text-lg sm:text-base">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-6 h-6 sm:w-5 sm:h-5 stroke-[3px]" />}
+              <button 
+                type="submit" 
+                disabled={loading}
+                className="flex-[3] sm:flex-[2] px-6 py-3.5 rounded-xl font-bold transition-all duration-200 flex items-center justify-center gap-2 active:scale-95 text-[15px] shadow-lg disabled:opacity-50 disabled:active:scale-100"
+                style={{ backgroundColor: accentColor, color: accentTextColor, boxShadow: `0 8px 24px ${accentColor}40` }}
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5 stroke-[2.5px]" />}
                 Create Lead
               </button>
             </div>

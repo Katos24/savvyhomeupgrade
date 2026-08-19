@@ -63,63 +63,6 @@ function StripeWordmark() {
   );
 }
 
-// Shared payment cell for both mobile and desktop tables — same signal set
-// as BillingSection: paid/partial/refunded, Stripe-verified (via
-// stripe_payment_intent_id, not the editable payment_method string) vs
-// manually recorded, plus card brand/last4 when available.
-function PaymentCell({ lead, textMutedClass, textEmptyClass, size = 'md' }: {
-  lead: any;
-  textMutedClass: string;
-  textEmptyClass: string;
-  size?: 'sm' | 'md';
-}) {
-  const amountSize = size === 'sm' ? 'text-[12px]' : 'text-sm';
-  const subSize = size === 'sm' ? 'text-[10px]' : 'text-xs';
-
-  const isRefunded = lead.payment_status === 'refunded';
-  const isPartiallyRefunded = lead.payment_status === 'partially_refunded';
-  const isClosed = isRefunded || isPartiallyRefunded;
-  const isStripeVerified = !!lead.stripe_payment_intent_id;
-
-  if (isClosed) {
-    return (
-      <div>
-        <div className={`${amountSize} font-bold text-slate-500`}>
-          {formatCurrency(lead.refunded_amount || lead.payment_amount || 0)}
-        </div>
-        <div className={`${subSize} ${textMutedClass}`}>
-          {isRefunded ? 'Refunded' : 'Partially refunded'}
-        </div>
-      </div>
-    );
-  }
-
-  if (!lead.payment_amount) {
-    return lead.payment_status
-      ? <span className={`${subSize} ${textMutedClass} capitalize`}>{lead.payment_status}</span>
-      : <span className={textEmptyClass}>—</span>;
-  }
-
-  return (
-    <div>
-      <div className={`${amountSize} font-bold text-sky-500`}>{formatCurrency(lead.payment_amount)}</div>
-      <div className={`${subSize} ${textMutedClass} flex items-center gap-1 flex-wrap capitalize`}>
-        {lead.payment_status === 'partial' && <span className="text-amber-500 font-semibold">Partial ·</span>}
-        {isStripeVerified ? (
-          <>
-            <StripeWordmark />
-            {lead.card_brand && lead.card_last4 && (
-              <span className="normal-case">· {lead.card_brand} •••• {lead.card_last4}</span>
-            )}
-          </>
-        ) : (
-          lead.payment_method || 'Manual'
-        )}
-      </div>
-    </div>
-  );
-}
-
 export default function TableView({
   leads, onSelectLead, statusOptions,
   onBulkUpdate, onBulkDelete,
@@ -228,9 +171,6 @@ export default function TableView({
   );
 
   // ── MOBILE TABLE ──────────────────────────────────────────────────────────
-  // Slim 3-col table: Name, Status, Amount. Tap row to open lead.
-  // Edit mode adds checkbox column. Horizontal scroll reveals all other columns.
-
   const MobileTable = () => (
     <div className="lg:hidden">
       <div className="overflow-x-auto">
@@ -241,12 +181,15 @@ export default function TableView({
               <Th label="Name" sortKey="name" />
               <Th label="Status" sortKey="status" />
               <Th label="Quote" sortKey="quote_total" />
-              {/* Extra columns visible on scroll */}
               <Th label="Contact" sortKey="phone" />
               <Th label="Category" sortKey="category" />
               <Th label="Scheduled" sortKey="scheduled_date" />
               <Th label="Assigned" />
               <Th label="Payment" sortKey="payment_amount" />
+              <Th label="Media" sortKey="media" />
+              <Th label="Address" />
+              <Th label="City" sortKey="city" />
+              <Th label="Zip" sortKey="zip_code" />
               <Th label="Created" sortKey="date" />
               <Th label="Source" sortKey="lead_source" />
               {customQuestions.map((q) => (
@@ -264,10 +207,13 @@ export default function TableView({
           </thead>
           <tbody className={`${t.tableDivide} divide-y`}>
             {sortedLeads.map((lead) => {
+              const fileUrls = safeJSONParse(lead.file_urls) || [];
               const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
               const statusHex = getHex(statusConfig.color);
               const isSelected = selectedIds.has(lead.id);
               const customAnswers = lead.custom_answers || {};
+              const imgs = fileUrls.filter((f: any) => f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i));
+              const vids = fileUrls.filter((f: any) => f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i));
 
               return (
                 <tr
@@ -289,33 +235,28 @@ export default function TableView({
                     </td>
                   )}
 
-                  {/* NAME — primary column */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     <div className={`text-[13px] font-bold ${t.textPrimary} truncate max-w-[140px]`}>{lead.name}</div>
                     <div className={`text-[10px] ${t.textMuted}`}>{lead.category ? formatCategory(lead.category) : ''}</div>
                   </td>
 
-                  {/* STATUS */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     <span className="px-1.5 py-0.5 text-[9px] font-black text-white rounded-sm" style={{ backgroundColor: statusHex }}>
                       {statusConfig.label}
                     </span>
                   </td>
 
-                  {/* QUOTE */}
                   <td className="px-3 py-2.5 whitespace-nowrap text-[13px]">
                     {lead.quote_total
                       ? <span className="font-bold text-emerald-500">{formatCurrency(lead.quote_total)}</span>
                       : <span className={t.textEmpty}>—</span>}
                   </td>
 
-                  {/* CONTACT — scroll zone starts here */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     <div className={`text-[12px] ${t.textPrimary}`}>{formatPhone(lead.phone || '')}</div>
                     <div className={`text-[10px] ${t.textMuted} truncate max-w-[140px]`}>{lead.email}</div>
                   </td>
 
-                  {/* CATEGORY */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     {lead.category
                       ? <span className={`px-1.5 py-0.5 text-[9px] font-bold ${isDark ? 'bg-sky-500/20 text-white border border-sky-400/40' : 'bg-sky-100 text-sky-800 border border-sky-300'}`}>
@@ -324,7 +265,6 @@ export default function TableView({
                       : <span className={t.textEmpty}>—</span>}
                   </td>
 
-                  {/* SCHEDULED */}
                   <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
                     {lead.scheduled_date
                       ? <div>
@@ -336,14 +276,12 @@ export default function TableView({
                       : <span className={t.textEmpty}>—</span>}
                   </td>
 
-                  {/* ASSIGNED */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     {lead.assigned_to
                       ? <span className={`px-1.5 py-0.5 text-[9px] font-bold ${isDark ? 'bg-violet-500/20 text-white border border-violet-400/40' : 'bg-violet-100 text-violet-800 border border-violet-300'}`}>{lead.assigned_to}</span>
                       : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
                   </td>
 
-                  {/* PAYMENT */}
                   <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
                     {lead.payment_amount
                       ? <div>
@@ -355,12 +293,34 @@ export default function TableView({
                       : <span className={t.textEmpty}>—</span>}
                   </td>
 
-                  {/* CREATED */}
+                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
+                    {imgs.length > 0 && `${imgs.length} photos`}
+                    {imgs.length > 0 && vids.length > 0 && ' / '}
+                    {vids.length > 0 && `${vids.length} videos`}
+                    {imgs.length === 0 && vids.length === 0 && <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                  <td className="px-3 py-2.5 max-w-[140px]">
+                    {lead.address_line_1
+                      ? <div>
+                          <div className={`text-[12px] ${t.textPrimary} truncate`}>{lead.address_line_1}</div>
+                          {lead.address_line_2 && <div className={`text-[10px] ${t.textMuted} truncate`}>{lead.address_line_2}</div>}
+                        </div>
+                      : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
+                  </td>
+
+                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
+                    {lead.city || <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
+                    {lead.zip_code || <span className={t.textEmpty}>—</span>}
+                  </td>
+
                   <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
                     {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </td>
 
-                  {/* SOURCE */}
                   <td className="px-3 py-2.5 whitespace-nowrap">
                     {lead.lead_source
                       ? <span className={`px-1.5 py-0.5 text-[9px] font-bold capitalize ${isDark ? 'bg-blue-500/20 text-white border border-blue-400/40' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
@@ -369,7 +329,6 @@ export default function TableView({
                       : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
                   </td>
 
-                  {/* CUSTOM QUESTIONS */}
                   {customQuestions.map((q) => {
                     const raw = customAnswers[q.id];
                     const display = formatCustomAnswer(raw, q);
@@ -398,8 +357,6 @@ export default function TableView({
   );
 
   // ── DESKTOP TABLE ─────────────────────────────────────────────────────────
-  // Full table with all columns — unchanged from original.
-
   const DesktopTable = () => (
     <div className="hidden lg:block">
       <div className="overflow-x-auto">
@@ -410,9 +367,6 @@ export default function TableView({
               <Th label="Project #" />
               <Th label="Name" sortKey="name" />
               <Th label="Contact" sortKey="phone" />
-              <Th label="Address" />
-              <Th label="City" sortKey="city" />
-              <Th label="Zip" sortKey="zip_code" />
               <Th label="Category" sortKey="category" />
               <Th label="Status" sortKey="status" />
               <Th label="Type" />
@@ -423,6 +377,9 @@ export default function TableView({
               <Th label="Payment" sortKey="payment_amount" />
               <Th label="Due Date" sortKey="payment_due_date" />
               <Th label="Media" sortKey="media" />
+              <Th label="Address" />
+              <Th label="City" sortKey="city" />
+              <Th label="Zip" sortKey="zip_code" />
               <Th label="Created" sortKey="date" />
               <Th label="Source" sortKey="lead_source" />
               {customQuestions.map((q) => (
@@ -439,7 +396,6 @@ export default function TableView({
               {!editMode && <Th label="Actions" />}
             </tr>
           </thead>
-
           <tbody className={`${t.tableDivide} divide-y`}>
             {sortedLeads.map((lead) => {
               const fileUrls = safeJSONParse(lead.file_urls) || [];
@@ -484,23 +440,6 @@ export default function TableView({
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className={`text-sm ${t.textPrimary}`}>{formatPhone(lead.phone || '')}</div>
                     <div className={`text-xs ${t.textMuted}`}>{lead.email}</div>
-                  </td>
-
-                  <td className="px-4 py-3 max-w-[160px]">
-                    {lead.address_line_1
-                      ? <div>
-                          <div className={`text-sm ${t.textPrimary} truncate`}>{lead.address_line_1}</div>
-                          {lead.address_line_2 && <div className={`text-xs ${t.textMuted} truncate`}>{lead.address_line_2}</div>}
-                        </div>
-                      : <span className={`${t.textEmpty} text-sm`}>—</span>}
-                  </td>
-
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
-                    {lead.city || <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
-                    {lead.zip_code || <span className={t.textEmpty}>—</span>}
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
@@ -596,6 +535,23 @@ export default function TableView({
                         </>
                       );
                     })()}
+                  </td>
+
+                  <td className="px-4 py-3 max-w-[160px]">
+                    {lead.address_line_1
+                      ? <div>
+                          <div className={`text-sm ${t.textPrimary} truncate`}>{lead.address_line_1}</div>
+                          {lead.address_line_2 && <div className={`text-xs ${t.textMuted} truncate`}>{lead.address_line_2}</div>}
+                        </div>
+                      : <span className={`${t.textEmpty} text-sm`}>—</span>}
+                  </td>
+
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
+                    {lead.city || <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
+                    {lead.zip_code || <span className={t.textEmpty}>—</span>}
                   </td>
 
                   <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>

@@ -1,18 +1,5 @@
 'use client';
 
-/** True if the color is so dark that text set in it disappears on a dark background. */
-function isColorTooDark(hex: string): boolean {
-  let c = hex.trim().replace('#', '');
-  if (c.length === 3) c = c.split('').map((ch) => ch + ch).join('');
-
-  const r = parseInt(c.substring(0, 2), 16);
-  const g = parseInt(c.substring(2, 4), 16);
-  const b = parseInt(c.substring(4, 6), 16);
-  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return false;
-
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.25;
-}
-
 const fmtCompact = (n: number) =>
   new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -25,7 +12,11 @@ export default function DashboardStats({
   globalStats,
   allLeads,
   isDark,
-  accentColor = '#2563eb',
+  // Accepted but deliberately unused — the highlight/pending card used to
+  // be styled from this, which was the root cause of the contrast bug.
+  // Kept in the signature so this call site doesn't need to change; safe
+  // to delete from the caller whenever convenient.
+  accentColor,
 }: {
   globalStats: any;
   allLeads: any[];
@@ -37,12 +28,12 @@ export default function DashboardStats({
 
   const stats = [
     {
-      label: 'Leads',
+      label: 'Total Leads',
       value: globalStats?.total_leads ?? allLeads.length,
       tone: 'default' as const,
     },
     {
-      label: 'Active',
+      label: 'Active Jobs',
       value:
         globalStats?.active_jobs ??
         allLeads.filter((l) => !['completed', 'cancelled', 'lost'].includes(l.status)).length,
@@ -50,72 +41,67 @@ export default function DashboardStats({
     },
     { label: 'Revenue', value: fmtCompact(revenue), tone: 'revenue' as const },
     {
+      // Fixed amber, not brand color — same convention used everywhere
+      // else in the app for "money owed" (deposit/balance due, overdue
+      // reminders). Brand color previously drove both this card's
+      // near-transparent background AND its text color, which let the
+      // page's dark backdrop bleed through and produced unreadable
+      // low-contrast text regardless of theme. A brand-independent
+      // semantic color can't have that collision.
       label: 'Pending',
       value: fmtCompact(pending),
-      tone: pending > 0 ? ('highlight' as const) : ('default' as const),
+      tone: pending > 0 ? ('pending' as const) : ('default' as const),
     },
   ];
 
-  // A near-black accent is invisible on the dark theme, so fall back to white.
-  const accent = isDark && isColorTooDark(accentColor) ? '#ffffff' : accentColor;
-
-  // flex-1 (no lg:flex-none / min-w override anymore) so every card takes an
-  // equal share of the row's width at every breakpoint.
-  const cardBase =
-    'relative overflow-hidden rounded-xl border px-2.5 py-2 sm:px-3.5 sm:py-2.5 backdrop-blur-md min-w-0 flex-1';
-  const cardTone = isDark
-    ? 'bg-[#0A0C14]/60 border-white/5'
-    : 'bg-white/80 border-slate-200/80 shadow-xs';
-  const cardHighlight = isDark
-    ? 'bg-[#0A0C14]/80 shadow-[0_4px_20px_rgba(0,0,0,0.2)]'
-    : 'bg-white/90 shadow-[0_2px_10px_rgba(0,0,0,0.03)]';
-
   return (
-    // 4-across at every breakpoint now. gap grows with screen size so the
-    // row reads as "evenly spaced across the screen" on desktop rather than
-    // than bunched to one side.
-    <section className="mb-4 hidden w-full grid-cols-4 gap-1.5 sm:mb-5 sm:grid sm:gap-2.5 lg:gap-4">
+    // Responsive grid: 2 columns on mobile, 4 on desktop.
+    <section className="mb-6 sm:mb-8 grid w-full grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3 lg:gap-4">
       {stats.map((s) => {
-        const isHighlight = s.tone === 'highlight';
+        const isPending = s.tone === 'pending';
+        const isRevenue = s.tone === 'revenue';
 
         return (
           <div
             key={s.label}
-            className={`${cardBase} ${isHighlight ? cardHighlight : cardTone}`}
-            style={isHighlight ? { borderColor: `${accent}60` } : undefined}
+            className={`relative overflow-hidden rounded-2xl border p-3 sm:p-4 backdrop-blur-xl transition-all duration-300 hover:shadow-md group ${
+              isDark
+                ? 'bg-[#0A0C14]/60 border-white/5'
+                : 'bg-white/80 border-slate-200/80 shadow-sm'
+            } ${isPending ? (isDark ? 'border-amber-400/20' : 'border-amber-300/60') : ''}`}
           >
-            {isHighlight && (
-              <span
-                className="absolute inset-x-0 top-0 h-0.5"
-                style={{ backgroundColor: accent }}
+            {/* Subtle corner glow for the pending card — fixed amber, no
+                brand-color dependency */}
+            {isPending && (
+              <div
+                className="absolute -top-4 -right-4 w-16 h-16 rounded-full bg-amber-400 blur-xl opacity-20 pointer-events-none group-hover:opacity-30 transition-opacity"
+                aria-hidden="true"
               />
             )}
 
-            <div className="flex min-w-0 items-center gap-1.5">
+            <div className="relative flex items-center gap-1.5 mb-1 sm:mb-1.5">
               <p
-                className={`truncate text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider ${
-                  isHighlight
-                    ? isDark ? 'text-white' : 'text-slate-900'
-                    : isDark ? 'text-slate-400' : 'text-slate-500'
+                className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wider truncate ${
+                  isDark ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
                 {s.label}
               </p>
-              {isHighlight && (
-                <span
-                  className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full"
-                  style={{ backgroundColor: accent }}
-                />
+              {isPending && (
+                <span className="w-1.5 h-1.5 shrink-0 animate-pulse rounded-full bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
               )}
             </div>
 
             <p
-              className={`mt-0.5 truncate text-sm sm:text-base font-black leading-snug tracking-tight tabular-nums lg:text-lg ${
-                s.tone === 'revenue'
-                  ? 'text-emerald-500'
-                  : isDark ? 'text-white' : 'text-slate-900'
+              className={`relative text-lg sm:text-2xl font-bold tracking-tight truncate tabular-nums ${
+                isRevenue
+                  ? isDark ? 'text-emerald-400' : 'text-emerald-700'
+                  : isPending
+                    ? isDark ? 'text-amber-400' : 'text-amber-700'
+                    : isDark
+                      ? 'text-white'
+                      : 'text-slate-900'
               }`}
-              style={isHighlight ? { color: accent } : undefined}
             >
               {s.value}
             </p>

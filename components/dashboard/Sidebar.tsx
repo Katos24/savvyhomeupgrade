@@ -59,8 +59,6 @@ export default function Sidebar({
   brandColor1 = '#2563eb',
   brandColor2 = '#4f46e5',
 }: SidebarProps) {
-
-
   const pathname = usePathname();
 
   const isActive = (path: string, exactMatch = false) => {
@@ -71,8 +69,7 @@ export default function Sidebar({
   const homeHref = `/${companySlug}/home`;
   const homeActive = isActive(homeHref, true);
 
-  // Analytics and Settings removed — Settings now lives inside Home.
- const navItems = [
+  const navItems = [
     { href: `/${companySlug}/dashboard`,            icon: LayoutGrid, label: 'Dashboard',  exactMatch: true,  color: null },
     { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false, color: '#fbbf24' },
     { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
@@ -120,7 +117,7 @@ export default function Sidebar({
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-            {companyLogoUrl ? (
+              {companyLogoUrl ? (
                 <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-xl overflow-hidden bg-white/5 flex items-center justify-center shrink-0 border border-white/10">
                   <img
                     src={companyLogoUrl}
@@ -153,7 +150,6 @@ export default function Sidebar({
                 onClick={() => {
                   localStorage.removeItem(`tour-completed-${companySlug}`);
                   onClose();
-                  // Navigate with tour param
                   window.location.href = `/${companySlug}/dashboard?tour=1`;
                 }}
                 title="Replay Dashboard Tour"
@@ -164,8 +160,6 @@ export default function Sidebar({
                 }}
               >
                 <Sparkles className="w-4 h-4 text-blue-400 group-hover:text-blue-300" />
-
-                {/* Tooltip desktop only */}
                 <span
                   className="hidden lg:block absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 pointer-events-none transition-all"
                   style={{
@@ -189,45 +183,43 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* HOME — pulled out of the nav list as its own featured hub button,
-            since it's conceptually different from the other pages (it now
-            also holds Settings), not just another item in the list. */}
-   <div className="px-3 pt-3 pb-2 shrink-0">
-          <Link
-            href={homeHref}
-            className="relative flex items-center gap-2.5 overflow-hidden rounded-xl pl-4 pr-3 py-2.5 font-bold text-sm text-white shadow-lg transition-all hover:brightness-110 hover:scale-[1.015]"
-            style={{
-              background: `${brandColor1}26`,
-              border: `1px solid ${brandColor1}59`,
-              boxShadow: homeActive
-                ? `0 4px 16px ${brandColor1}40`
-                : `0 2px 10px ${brandColor1}22`,
-            }}
-          >
-            <div
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full"
-              style={{ background: brandColor1 }}
-            />
-            <div
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-              style={{ background: `${brandColor1}33` }}
-            >
-              <Home className="h-4 w-4" style={{ color: brandColor1 }} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="leading-tight">Home</p>
-            </div>
-            <ChevronRight className="h-3.5 w-3.5 shrink-0 text-white/70" />
-          </Link>
-        </div>
-
         {/* Nav */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-3 mb-3">
+        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1.5">
+          <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-3 mb-2">
             Navigation
           </p>
 
-        {navItems.map((item) => {
+          {/* HOME LINK: Placed securely at the top of the list as a primary navigation item */}
+          <Link
+            href={homeHref}
+            className={`flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-all group relative ${
+              homeActive ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+            }`}
+            style={
+              homeActive
+                ? {
+                    background: `${brandColor1}1f`,
+                    border: `1px solid ${brandColor1}33`,
+                  }
+                : { border: '1px solid transparent' }
+            }
+          >
+            {homeActive && (
+              <div
+                className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
+                style={{ background: brandColor1 }}
+              />
+            )}
+            <Home
+              className="w-4 h-4 shrink-0 transition-colors"
+              style={{ color: homeActive ? brandColor1 : undefined }}
+            />
+            <span className="flex-1">Home</span>
+            {homeActive && <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
+          </Link>
+
+          {/* Regular Navigation List */}
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, item.exactMatch);
             const hasColor = !!item.color;
@@ -239,7 +231,7 @@ export default function Sidebar({
                 className={`flex items-center gap-3 px-3 py-3 rounded-xl font-semibold text-sm transition-all group relative ${
                   active ? 'text-white' : 'text-slate-500 hover:text-white hover:bg-white/5'
                 }`}
-               style={
+                style={
                   active
                     ? hasColor
                       ? {
@@ -287,7 +279,7 @@ export default function Sidebar({
                   border: '1px solid rgba(255,255,255,0.06)',
                 }}
               >
-               <div
+                <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-xs shrink-0"
                   style={{
                     background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})`,

@@ -46,6 +46,7 @@ type DashboardFiltersProps = {
   onLockedFeature: (feature: string) => void;
 };
 
+// Intelligent text contrast evaluator & pure-black/dark color fallback
 function getContrastTextColor(input: string): string {
   let c = input.trim().replace('#', '');
   if (c.length === 3) {
@@ -59,6 +60,29 @@ function getContrastTextColor(input: string): string {
   }
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
   return luminance > 0.6 ? '#0f172a' : '#ffffff';
+}
+
+function getSafeAccentColor(input: string, isDark: boolean): string {
+  let c = input.trim().replace('#', '');
+  if (c.length === 3) {
+    c = c.split('').map((ch) => ch + ch).join('');
+  }
+  const r = parseInt(c.substring(0, 2), 16);
+  const g = parseInt(c.substring(2, 4), 16);
+  const b = parseInt(c.substring(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
+    return isDark ? '#3b82f6' : '#2563eb';
+  }
+
+  // Calculate perceived brightness
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+
+  // If the user picks pure/dark black or near-black (#000000 to ~#1a1a1a) in dark mode, it would blend into the background.
+  // Switch it to a vibrant high-visibility electric blue or white/light gray depending on context.
+  if (luminance < 0.08) {
+    return isDark ? '#60a5fa' : '#1e293b'; // Electric light blue in dark mode, slate dark in light mode
+  }
+  return input;
 }
 
 export default function DashboardFilters({
@@ -76,7 +100,9 @@ export default function DashboardFilters({
 
   const isScheduledTodayActive = timeFilter === 'scheduled_today';
   const isUnpaidActive = filterPayment === 'unpaid';
-  const buttonTextColor = getContrastTextColor(accentColor);
+
+  const safeAccent = getSafeAccentColor(accentColor, isDark);
+  const buttonTextColor = getContrastTextColor(safeAccent);
 
   return (
     <section aria-label="Search and filter leads" className="mb-5 flex flex-col gap-2.5">
@@ -110,7 +136,7 @@ export default function DashboardFilters({
                 : 'bg-white/90 border-slate-200/90 text-slate-900 placeholder-slate-400 shadow-xs'
             }`}
             style={{
-              borderColor: searchQuery.trim() !== '' ? accentColor : undefined,
+              borderColor: searchQuery.trim() !== '' ? safeAccent : undefined,
             }}
           />
           {isSearching && (
@@ -147,7 +173,7 @@ export default function DashboardFilters({
                 onClick={() => locked ? onLockedFeature(v.feature!) : setCurrentView(v.id as ViewMode)}
                 style={
                   active
-                    ? { backgroundColor: accentColor, color: buttonTextColor }
+                    ? { backgroundColor: safeAccent, color: buttonTextColor }
                     : undefined
                 }
                 className={`p-2 rounded-xl transition-all relative cursor-pointer ${
@@ -177,7 +203,7 @@ export default function DashboardFilters({
           onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
           style={
             showAdvancedFilters || hasActiveFilters
-              ? { backgroundColor: accentColor, color: buttonTextColor, borderColor: accentColor }
+              ? { backgroundColor: safeAccent, color: buttonTextColor, borderColor: safeAccent }
               : undefined
           }
           className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold border transition-all cursor-pointer ${
@@ -250,7 +276,7 @@ export default function DashboardFilters({
             >
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: accentColor }}>
+                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: safeAccent }}>
                     <User className="w-3.5 h-3.5" /> Assignee
                   </label>
                   <select
@@ -260,14 +286,14 @@ export default function DashboardFilters({
                       isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   >
-                    <option value="all">Everyone</option>
-                    <option value="unassigned">Unassigned</option>
-                    {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+                    <option value="all" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Everyone</option>
+                    <option value="unassigned" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Unassigned</option>
+                    {teamMembers.map(m => <option key={m.name} value={m.name} className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>{m.name}</option>)}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: accentColor }}>
+                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: safeAccent }}>
                     <Tag className="w-3.5 h-3.5" /> Category
                   </label>
                   <select
@@ -277,15 +303,15 @@ export default function DashboardFilters({
                       isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   >
-                    <option value="all">All categories</option>
-                    {categories.map(c => <option key={c} value={c}>{String(c).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                    <option value="all" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>All categories</option>
+                    {categories.map(c => <option key={c} value={c} className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>{String(c).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 mb-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold" style={{ color: accentColor }}>From</label>
+                  <label className="text-xs font-bold" style={{ color: safeAccent }}>From</label>
                   <input
                     type="date"
                     value={startDate}
@@ -296,7 +322,7 @@ export default function DashboardFilters({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold" style={{ color: accentColor }}>To</label>
+                  <label className="text-xs font-bold" style={{ color: safeAccent }}>To</label>
                   <input
                     type="date"
                     value={endDate}
@@ -309,7 +335,7 @@ export default function DashboardFilters({
               </div>
 
               <div className="space-y-2 mb-4">
-                <label className="text-xs font-bold" style={{ color: accentColor }}>Status</label>
+                <label className="text-xs font-bold" style={{ color: safeAccent }}>Status</label>
                 <div className="flex flex-wrap gap-1.5">
                   {statusOptions.map(s => {
                     const active = filterStatus === s.value;
@@ -319,7 +345,7 @@ export default function DashboardFilters({
                         onClick={() => setFilterStatus(active ? 'all' : s.value)}
                         style={
                           active
-                            ? { backgroundColor: accentColor, color: buttonTextColor, borderColor: accentColor }
+                            ? { backgroundColor: safeAccent, color: buttonTextColor, borderColor: safeAccent }
                             : undefined
                         }
                         className={`px-3 py-1.5 rounded-lg text-xs font-extrabold border transition-all cursor-pointer ${
@@ -344,7 +370,7 @@ export default function DashboardFilters({
                 </button>
                 <button
                   onClick={() => setShowAdvancedFilters(false)}
-                  style={{ backgroundColor: accentColor, color: buttonTextColor }}
+                  style={{ backgroundColor: safeAccent, color: buttonTextColor }}
                   className="flex-1 py-2.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-xs"
                 >
                   Apply
@@ -353,14 +379,14 @@ export default function DashboardFilters({
             </div>
           </div>
 
-          {/* Mobile Bottom Drawer */}
+          {/* Mobile Bottom Sheet Drawer */}
           <div className="sm:hidden fixed inset-0 z-[300] flex flex-col justify-end">
             <div
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setShowAdvancedFilters(false)}
             />
             <div
-              className={`relative rounded-t-3xl px-5 pt-4 pb-8 max-h-[85vh] overflow-y-auto ${
+              className={`relative rounded-t-3xl px-5 pt-4 pb-[calc(2rem+env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto ${
                 isDark ? 'bg-[#0A0C14] border-t border-white/10' : 'bg-white border-t border-slate-200'
               }`}
             >
@@ -368,46 +394,46 @@ export default function DashboardFilters({
 
               <div className="space-y-5">
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: accentColor }}>
+                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: safeAccent }}>
                     <User className="w-3.5 h-3.5" /> Assignee
                   </label>
                   <select
                     value={filterAssignee}
                     onChange={e => setFilterAssignee(e.target.value)}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold border outline-none ${
+                    className={`w-full rounded-xl px-3.5 py-3 text-sm font-bold border outline-none ${
                       isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   >
-                    <option value="all">Everyone</option>
-                    <option value="unassigned">Unassigned</option>
-                    {teamMembers.map(m => <option key={m.name} value={m.name}>{m.name}</option>)}
+                    <option value="all" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Everyone</option>
+                    <option value="unassigned" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>Unassigned</option>
+                    {teamMembers.map(m => <option key={m.name} value={m.name} className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>{m.name}</option>)}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: accentColor }}>
+                  <label className="flex items-center gap-1.5 text-xs font-bold" style={{ color: safeAccent }}>
                     <Tag className="w-3.5 h-3.5" /> Category
                   </label>
                   <select
                     value={filterCategory}
                     onChange={e => setFilterCategory(e.target.value)}
-                    className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold border outline-none ${
+                    className={`w-full rounded-xl px-3.5 py-3 text-sm font-bold border outline-none ${
                       isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                     }`}
                   >
-                    <option value="all">All categories</option>
-                    {categories.map(c => <option key={c} value={c}>{String(c).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
+                    <option value="all" className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>All categories</option>
+                    {categories.map(c => <option key={c} value={c} className={isDark ? 'bg-slate-900 text-white' : 'bg-white text-slate-900'}>{String(c).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</option>)}
                   </select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold" style={{ color: accentColor }}>Date range</label>
+                  <label className="text-xs font-bold" style={{ color: safeAccent }}>Date range</label>
                   <div className="grid grid-cols-2 gap-2">
                     <input
                       type="date"
                       value={startDate}
                       onChange={e => setStartDate(e.target.value)}
-                      className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold border outline-none ${
+                      className={`w-full rounded-xl px-3 py-3 text-sm font-bold border outline-none ${
                         isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                       }`}
                     />
@@ -415,7 +441,7 @@ export default function DashboardFilters({
                       type="date"
                       value={endDate}
                       onChange={e => setEndDate(e.target.value)}
-                      className={`w-full rounded-xl px-3 py-2.5 text-sm font-bold border outline-none ${
+                      className={`w-full rounded-xl px-3 py-3 text-sm font-bold border outline-none ${
                         isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'
                       }`}
                     />
@@ -423,7 +449,7 @@ export default function DashboardFilters({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold" style={{ color: accentColor }}>Status</label>
+                  <label className="text-xs font-bold" style={{ color: safeAccent }}>Status</label>
                   <div className="flex flex-wrap gap-1.5">
                     {statusOptions.map(s => {
                       const active = filterStatus === s.value;
@@ -433,10 +459,10 @@ export default function DashboardFilters({
                           onClick={() => setFilterStatus(active ? 'all' : s.value)}
                           style={
                             active
-                              ? { backgroundColor: accentColor, color: buttonTextColor, borderColor: accentColor }
+                              ? { backgroundColor: safeAccent, color: buttonTextColor, borderColor: safeAccent }
                               : undefined
                           }
-                          className={`px-3 py-2 rounded-xl text-xs font-extrabold border transition-all ${
+                          className={`px-3 py-2.5 rounded-xl text-xs font-extrabold border transition-all ${
                             active
                               ? 'shadow-xs'
                               : isDark ? 'bg-white/5 border-white/10 text-slate-400' : 'bg-slate-100 border-slate-200 text-slate-600'
@@ -453,14 +479,14 @@ export default function DashboardFilters({
               <div className="grid grid-cols-2 gap-2 mt-6">
                 <button
                   onClick={() => { clearFilters(); setShowAdvancedFilters(false); }}
-                  className="py-3 rounded-xl text-xs font-extrabold text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 transition-all cursor-pointer"
+                  className="py-3.5 rounded-xl text-xs font-extrabold text-rose-500 bg-rose-500/10 hover:bg-rose-500/20 transition-all cursor-pointer"
                 >
                   Clear all
                 </button>
                 <button
                   onClick={() => setShowAdvancedFilters(false)}
-                  style={{ backgroundColor: accentColor, color: buttonTextColor }}
-                  className="py-3 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-xs"
+                  style={{ backgroundColor: safeAccent, color: buttonTextColor }}
+                  className="py-3.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer shadow-xs"
                 >
                   Apply
                 </button>

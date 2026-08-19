@@ -440,7 +440,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   const filteredLeads = useMemo(() => allLeads, [allLeads]);
 
-  const groups = useMemo(() => [
+const groups = useMemo(() => [
     { title: 'Today', leads: filteredLeads.filter(l => new Date(l.created_at) >= todayStart) },
     { title: 'Yesterday', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= yesterdayStart && d < todayStart; }) },
     { title: 'Earlier This Week', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= weekStart && d < yesterdayStart; }) },
@@ -582,7 +582,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 const accentColor = company.email_brand_color_1 || '#2563eb';
 
   return (
-<div className="min-h-screen relative selection:bg-blue-500/30 bg-[#334155]">
+<div className="min-h-screen relative selection:bg-blue-500/30 bg-[#0b0f17]">
    <div
         className="pointer-events-none fixed inset-x-0 top-0 h-[480px] z-0"
         style={{
