@@ -8,17 +8,13 @@ import {
   X,
   Mail,
   Loader2,
-  Send,
   Sparkles,
   CheckCircle2,
   Save,
   Eye,
-  XCircle,
   ArrowRightLeft,
-  DollarSign,
-  Percent,
+  Pencil,
   FileText,
-  Info,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
@@ -64,11 +60,11 @@ export default function QuoteSection({
   const [markingAccepted, setMarkingAccepted] = useState(false);
   const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
 
-  const newRowRef = useRef<HTMLDivElement | null>(null);
+  const newRowRef = useRef<HTMLTableRowElement | null>(null);
   const newRowInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Keypress restriction for numeric fields
   const handleNumericKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, allowDecimal = true) => {
     if (
       ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
@@ -78,20 +74,13 @@ export default function QuoteSection({
     ) {
       return;
     }
-
     if (allowDecimal && e.key === '.') {
-      if (e.currentTarget.value.includes('.')) {
-        e.preventDefault();
-      }
+      if (e.currentTarget.value.includes('.')) e.preventDefault();
       return;
     }
-
-    if (!/^[0-9]$/.test(e.key)) {
-      e.preventDefault();
-    }
+    if (!/^[0-9]$/.test(e.key)) e.preventDefault();
   };
 
-  // Load category template
   useEffect(() => {
     if (!lead?.category || !companySlug) return;
     fetch(`/api/company/${companySlug}/quote-templates`)
@@ -105,7 +94,6 @@ export default function QuoteSection({
       .catch(() => {});
   }, [lead?.category, companySlug]);
 
-  // Sync with lead data — only when clean
   useEffect(() => {
     if (isDirty) return;
     setQuoteData(lead?.quote_data || []);
@@ -260,6 +248,23 @@ export default function QuoteSection({
     setIsDirty(true);
   };
 
+  const requestRemoveRow = (id: number) => {
+    const item = quoteData.find((i: any) => i.id === id);
+    // Skip the confirmation for a still-blank row someone just added.
+    if (item && !item.description && !item.unitPrice) {
+      handleRemoveRow(id);
+      return;
+    }
+    setDeleteConfirmId(id);
+  };
+
+  const confirmRemoveRow = () => {
+    if (deleteConfirmId !== null) {
+      handleRemoveRow(deleteConfirmId);
+      setDeleteConfirmId(null);
+    }
+  };
+
   const handleAddRow = () => {
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
     setQuoteData((prev) => [...prev, newItem]);
@@ -308,22 +313,6 @@ export default function QuoteSection({
       : 0;
 
   const quoteAccepted = !!(lead?.project_quote_accepted_at || lead?.quote_accepted_at);
-  const quoteDeclined = !!(lead?.project_quote_declined_at || lead?.quote_declined_at);
-  const quoteSent = !!(lead?.project_quote_sent_at || lead?.quote_sent_at);
-  const acceptedAt = lead?.project_quote_accepted_at || lead?.quote_accepted_at;
-  const declinedAt = lead?.project_quote_declined_at || lead?.quote_declined_at;
-  const sentAt = lead?.project_quote_sent_at || lead?.quote_sent_at;
-
-  const dateOnly = (d: string) =>
-    new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-
-  const quoteState = quoteDeclined
-    ? { label: `Declined (${declinedAt ? dateOnly(declinedAt) : ''})`, cls: 'bg-rose-50 text-rose-700 border-rose-200' }
-    : quoteAccepted
-    ? { label: `Approved (${acceptedAt ? dateOnly(acceptedAt) : ''})`, cls: 'bg-emerald-50 text-emerald-700 border-emerald-200' }
-    : quoteSent
-    ? { label: `Sent (${sentAt ? dateOnly(sentAt) : ''})`, cls: 'bg-blue-50 text-blue-700 border-blue-200' }
-    : { label: 'Draft', cls: 'bg-slate-100 text-slate-600 border-slate-200' };
 
   return (
     <>
@@ -375,24 +364,36 @@ export default function QuoteSection({
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden"
       >
-        {/* HEADER BAR */}
-        <div className="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 bg-slate-50/50">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 leading-tight">Quote</h3>
-              <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold ${quoteState.cls}`}>
-                {quoteState.label}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">
-              {quoteData.length} line item{quoteData.length === 1 ? '' : 's'}
-              {isDirty && <span className="ml-2 text-amber-600 font-semibold">• Unsaved changes</span>}
-            </p>
-          </div>
-
-          <div className="text-left sm:text-right shrink-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total</p>
-            <p className="text-2xl font-bold text-slate-900 tabular-nums leading-tight">{fmt(total)}</p>
+        {/* TOP ACTION BAR — Quote label left, Save + Send right, mobile-wrapping */}
+        <div className="px-4 sm:px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+          <h3 className="text-sm font-bold text-slate-900">Quote</h3>
+          <div className="flex items-center gap-2 flex-wrap">
+          <button
+            onClick={handleManualSave}
+            disabled={!hasProject || quoteData.length === 0 || saving}
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+              isDirty
+                ? 'bg-slate-900 text-white hover:bg-slate-800'
+                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+            }`}
+          >
+            {saving ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : isDirty ? (
+              <Save className="w-3.5 h-3.5" />
+            ) : (
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            )}
+            {isDirty ? 'Save Changes' : 'Saved'}
+          </button>
+          <button
+            onClick={() => setShowEmailModal(true)}
+            disabled={!hasProject || quoteData.length === 0}
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 hover:bg-slate-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Mail className="w-3.5 h-3.5 text-slate-500" />
+            Send Proposal
+          </button>
           </div>
         </div>
 
@@ -440,66 +441,72 @@ export default function QuoteSection({
         </AnimatePresence>
 
         {/* MAIN BODY GRID */}
-        <div className="p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
-          
-          {/* LEFT: TABLE & LINE ITEMS */}
-          <div className="space-y-4 min-w-0">
-            {/* Desktop Table */}
-            <div className="hidden md:block space-y-2">
-              {quoteData.length === 0 ? (
-                <div className="rounded-xl border border-slate-200 bg-white py-12 px-4 text-center">
-                  <p className="text-sm font-semibold text-slate-700">No line items in quote</p>
-                  <p className="text-xs text-slate-400 mt-1">Add items manually below or generate a draft using AI.</p>
-                </div>
-              ) : (
-                quoteData.map((item: any) => {
-                  const isNew = item.id === lastAddedId && !item.description;
-                  return (
-                    <div
-                      key={item.id}
-                      ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-                      className="rounded-xl border border-slate-200 bg-white p-3.5 hover:border-slate-300 transition-colors group"
-                    >
-                      {/* Top: full-width description — never shares a row with
-                          anything but the delete button, so it can never be
-                          squeezed by fixed-width siblings the way a single-row
-                          table layout forces it to be. */}
-                      <div className="flex items-center gap-2">
-                        <input
-                          ref={isNew ? newRowInputRef : undefined}
-                          type="text"
-                          value={item.description}
-                          onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
-                          placeholder="Describe line item or service..."
-                          className="flex-1 min-w-0 px-1 py-1 bg-transparent text-sm font-semibold text-slate-900 outline-none placeholder:font-normal placeholder:text-slate-300"
-                        />
-                        <button
-                          onClick={() => handleRemoveRow(item.id)}
-                          className="p-1.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer opacity-0 group-hover:opacity-100 shrink-0"
-                          title="Delete row"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+        <div className="p-4 sm:p-5 lg:p-6 grid gap-5 lg:gap-6 lg:grid-cols-[1fr_300px] items-start">
 
-                      {/* Bottom: price / qty / amount — small, natural widths,
-                          never asked to share space with description. */}
-                      <div className="flex items-center gap-6 pt-2 mt-2 border-t border-slate-100">
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus-within:border-slate-400">
-                            <span className="text-xs text-slate-400 font-medium">$</span>
+          {/* LEFT: TABLE & LINE ITEMS */}
+          <div className="space-y-3 min-w-0">
+            {/* Desktop — real table, one header row, full column labels */}
+            <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden">
+              <table className="w-full text-sm border-collapse table-fixed">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-4 py-2 w-auto">
+                      Description
+                    </th>
+                    <th className="text-right font-semibold text-slate-500 text-xs uppercase tracking-wide px-3 py-2 w-20">
+                      Price
+                    </th>
+                    <th className="text-center font-semibold text-slate-500 text-xs uppercase tracking-wide px-3 py-2 w-16">
+                      Quantity
+                    </th>
+                    <th className="text-right font-semibold text-slate-500 text-xs uppercase tracking-wide px-4 py-2 w-24">
+                      Amount
+                    </th>
+                    <th className="w-9 px-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {quoteData.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-10 px-4 text-center">
+                        <p className="text-sm font-semibold text-slate-700">No line items in quote</p>
+                        <p className="text-xs text-slate-400 mt-1">Add items manually below or generate a draft using AI.</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    quoteData.map((item: any) => {
+                      const isNew = item.id === lastAddedId && !item.description;
+                      return (
+                        <tr
+                          key={item.id}
+                          ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
+                          className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 group"
+                        >
+                          <td className="px-4 py-1.5">
                             <input
-                              type="number"
-                              step="any"
-                              value={item.unitPrice || ''}
-                              onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                              onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                              placeholder="0.00"
-                              className={`w-16 bg-transparent text-sm font-semibold text-slate-900 outline-none tabular-nums ${noSpinners}`}
+                              ref={isNew ? newRowInputRef : undefined}
+                              type="text"
+                              value={item.description}
+                              onChange={(e) => handleUpdateCell(item.id, 'description', e.target.value)}
+                              placeholder="Describe line item or service..."
+                              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:font-normal placeholder:text-slate-300"
                             />
-                          </div>
-                          <span className="text-xs text-slate-300 font-bold">×</span>
-                          <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 focus-within:border-slate-400">
+                          </td>
+                          <td className="px-3 py-1.5">
+                            <div className="flex items-center justify-end gap-0.5">
+                              <span className="text-xs text-slate-400">$</span>
+                              <input
+                                type="number"
+                                step="any"
+                                value={item.unitPrice || ''}
+                                onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                                onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                                placeholder="0.00"
+                                className={`w-12 bg-transparent text-sm text-slate-900 outline-none text-right tabular-nums ${noSpinners}`}
+                              />
+                            </div>
+                          </td>
+                          <td className="px-3 py-1.5">
                             <input
                               type="number"
                               step="any"
@@ -507,19 +514,29 @@ export default function QuoteSection({
                               onKeyDown={(e) => handleNumericKeyDown(e, true)}
                               onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
                               placeholder="1"
-                              className={`w-8 bg-transparent text-sm font-semibold text-slate-900 outline-none text-center tabular-nums ${noSpinners}`}
+                              className={`w-full bg-transparent text-sm text-slate-900 outline-none text-center tabular-nums ${noSpinners}`}
                             />
-                          </div>
-                        </div>
-
-                        <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">
-                          {fmt(item.amount || 0)}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                          </td>
+                          <td className="px-4 py-1.5 text-right">
+                            <span className="text-sm font-semibold text-slate-900 tabular-nums">
+                              {fmt(item.amount || 0)}
+                            </span>
+                          </td>
+                          <td className="px-2 py-1.5">
+                            <button
+                              onClick={() => requestRemoveRow(item.id)}
+                              className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer opacity-0 group-hover:opacity-100"
+                              title="Delete row"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
 
             {/* Desktop Add Row + AI Toolbar */}
@@ -589,7 +606,7 @@ export default function QuoteSection({
                             {fmt(item.amount || 0)}
                           </p>
                           <button
-                            onClick={() => handleRemoveRow(item.id)}
+                            onClick={() => requestRemoveRow(item.id)}
                             className="mt-1 p-1 text-slate-300 hover:text-rose-500 rounded transition"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -619,141 +636,103 @@ export default function QuoteSection({
             </div>
           </div>
 
-          {/* RIGHT: SUMMARY, TAX, DEPOSIT & ACTIONS */}
-          <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-5 lg:p-6 space-y-4 lg:sticky lg:top-4">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Quote Summary</p>
+          {/* RIGHT: SUMMARY — plain table, no color, subtotal/deposit/tax/total */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden lg:sticky lg:top-4">
+            <table className="w-full text-sm border-collapse">
+              <tbody>
+                <tr className="border-b border-slate-100">
+                  <td className="px-4 py-2.5 text-slate-600">Subtotal</td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
+                    {fmt(subtotal)}
+                  </td>
+                </tr>
 
-            {/* BREAKDOWN SECTION */}
-            <div className="space-y-3">
-              {/* Subtotal */}
-              <div className="flex items-center justify-between text-xs font-medium text-slate-600">
-                <span>Subtotal</span>
-                <span className="font-semibold text-slate-900 tabular-nums">{fmt(subtotal)}</span>
-              </div>
-
-              {/* Deposit Card */}
-              {depositAmount > 0 ? (
-                <div className="p-3.5 bg-indigo-50/70 border border-indigo-200 rounded-xl space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-700">
-                      Deposit Due ({depositType === 'percent' ? `${depositValue}%` : 'Fixed'})
-                    </span>
-                    <span className="text-base font-extrabold text-indigo-950 tabular-nums">{fmt(depositAmount)}</span>
-                  </div>
-                  <div className="flex items-center justify-between pt-2 border-t border-indigo-200/70 text-xs font-semibold text-slate-600">
-                    <span>Balance due later</span>
-                    <span className="text-slate-900 tabular-nums">{fmt(total - depositAmount)}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs text-slate-500 font-medium">
-                  <span>Deposit</span>
-                  <span className="text-slate-400">Not set</span>
-                </div>
-              )}
-
-              {/* Explicit Tax Control — pill when set, click to edit */}
-              {editingTaxRate ? (
-                <div className="p-3 bg-white border-2 border-slate-300 rounded-xl space-y-2">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-700">
-                    <label htmlFor="taxRateInput" className="flex items-center gap-1">
-                      <Percent className="w-3.5 h-3.5 text-slate-400" />
-                      Tax Rate (%)
-                    </label>
-                    <span className="text-slate-900 tabular-nums">
-                      +{fmt(subtotal * ((parseFloat(taxRateDraft) || 0) / 100))}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="relative flex-1">
-                      {/* type="text" deliberately, not "number" — number inputs
-                          have real browser/OS precision quirks; text inputs
-                          hold exactly what's typed, nothing more. */}
-                      <input
-                        id="taxRateInput"
-                        type="text"
-                        inputMode="decimal"
-                        value={taxRateDraft}
-                        onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                        onChange={(e) => setTaxRateDraft(e.target.value)}
-                        placeholder="0"
-                        autoFocus
-                        className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold text-slate-900 outline-none focus:border-slate-400 focus:bg-white focus:ring-2 focus:ring-slate-900/10 tabular-nums"
-                      />
-                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        const parsed = parseFloat(taxRateDraft);
-                        setTaxRate(isNaN(parsed) || parsed < 0 ? 0 : parsed);
-                        setIsDirty(true);
-                        setEditingTaxRate(false);
-                      }}
-                      className="px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold hover:bg-slate-800 transition cursor-pointer shrink-0"
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => {
-                    setTaxRateDraft(taxRate ? String(taxRate) : '');
-                    setEditingTaxRate(true);
-                  }}
-                  className="w-full p-3 bg-white border border-slate-200/80 rounded-xl flex items-center justify-between hover:border-slate-300 hover:bg-slate-50 transition-colors cursor-pointer text-left"
-                >
-                  <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                    <Percent className="w-3.5 h-3.5 text-slate-400" />
-                    {taxRate > 0 ? `Tax Rate — ${taxRate}%` : 'Tax Rate'}
-                  </span>
-                  <span className="text-xs font-bold text-slate-900 tabular-nums">
-                    {taxRate > 0 ? `+${fmt(taxAmount)}` : 'None set'}
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {/* ACTION BUTTONS */}
-            <div className="space-y-2 pt-2 border-t border-slate-200/80">
-              <button
-                onClick={handleManualSave}
-                disabled={!hasProject || quoteData.length === 0 || saving}
-                className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-40 disabled:cursor-not-allowed ${
-                  isDirty
-                    ? 'bg-slate-900 text-white hover:bg-slate-800'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {saving ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : isDirty ? (
-                  <Save className="w-4 h-4" />
-                ) : (
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                {depositAmount > 0 && (
+                  <tr className="border-b border-slate-100">
+                    <td className="px-4 py-2.5 text-slate-600">
+                      Deposit ({depositType === 'percent' ? `${depositValue}%` : 'Fixed'})
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
+                      {fmt(depositAmount)}
+                    </td>
+                  </tr>
                 )}
-                {isDirty ? 'Save Changes' : 'Saved'}
-              </button>
 
-              <button
-                onClick={() => setShowEmailModal(true)}
-                disabled={!hasProject || quoteData.length === 0}
-                className="w-full py-2.5 px-4 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 hover:bg-slate-50 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shadow-xs"
-              >
-                <Mail className="w-4 h-4 text-slate-500" />
-                Send Proposal to Customer
-              </button>
+                {editingTaxRate ? (
+                  <tr className="border-b border-slate-100 bg-slate-50/60">
+                    <td className="px-4 py-2.5" colSpan={2}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-slate-600 text-sm shrink-0">Tax rate</span>
+                        <div className="relative flex-1 max-w-[88px]">
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={taxRateDraft}
+                            onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                            onChange={(e) => setTaxRateDraft(e.target.value)}
+                            placeholder="0"
+                            autoFocus
+                            className="w-full pl-2 pr-5 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-900 outline-none focus:border-slate-400 tabular-nums"
+                          />
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const parsed = parseFloat(taxRateDraft);
+                            setTaxRate(isNaN(parsed) || parsed < 0 ? 0 : parsed);
+                            setIsDirty(true);
+                            setEditingTaxRate(false);
+                          }}
+                          className="ml-auto px-2.5 py-1 bg-slate-900 text-white rounded-md text-xs font-bold hover:bg-slate-800 transition cursor-pointer shrink-0"
+                        >
+                          Done
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  <tr className="border-b border-slate-100 group">
+                    <td className="px-4 py-2.5 text-slate-600">
+                      <span className="inline-flex items-center gap-1.5">
+                        Tax{taxRate > 0 ? ` (${taxRate}%)` : ''}
+                        <button
+                          onClick={() => {
+                            setTaxRateDraft(taxRate ? String(taxRate) : '');
+                            setEditingTaxRate(true);
+                          }}
+                          className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
+                          title="Edit tax rate"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
+                      {taxRate > 0 ? fmt(taxAmount) : '—'}
+                    </td>
+                  </tr>
+                )}
 
-              {!quoteAccepted && quoteData.length > 0 && (
+                <tr>
+                  <td className="px-4 py-3 font-bold text-slate-900">Total</td>
+                  <td className="px-4 py-3 text-right font-bold text-slate-900 tabular-nums">
+                    {fmt(total)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {!quoteAccepted && quoteData.length > 0 && (
+              <div className="px-4 py-2.5 border-t border-slate-100">
                 <button
                   onClick={() => setShowAcceptConfirm(true)}
-                  className="w-full py-2 px-4 text-xs font-semibold text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full py-2 px-3 text-xs font-semibold text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Mark Accepted Manually
                 </button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1105,6 +1084,50 @@ export default function QuoteSection({
                 >
                   {markingAccepted ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   Confirm
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DELETE LINE ITEM CONFIRM MODAL */}
+      <AnimatePresence>
+        {deleteConfirmId !== null && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            onClick={() => setDeleteConfirmId(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 12 }}
+              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-11 h-11 bg-rose-50 rounded-xl flex items-center justify-center mb-4">
+                <Trash2 className="w-5 h-5 text-rose-600" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mb-1">Delete this line item?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-5">
+                This removes it from the quote. You'll need to re-add it if this was a mistake.
+              </p>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  onClick={() => setDeleteConfirmId(null)}
+                  className="py-2.5 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmRemoveRow}
+                  className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-xs"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
                 </button>
               </div>
             </motion.div>

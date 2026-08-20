@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -62,6 +63,48 @@ export default function SchedulingSection({
 
   // Track initial state to indicate dirty / unsaved changes
   const [initialState, setInitialState] = useState<any>({});
+
+  // Outside click ref for Assignee Dropdown
+  const assigneeRef = useRef<HTMLDivElement>(null);
+  const assigneeTriggerRef = useRef<HTMLButtonElement>(null);
+  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
+  const [assigneeDropdownPos, setAssigneeDropdownPos] = useState({ top: 0, left: 0, width: 0 });
+
+  const positionAssigneeDropdown = () => {
+    if (!assigneeTriggerRef.current) return;
+    const rect = assigneeTriggerRef.current.getBoundingClientRect();
+    setAssigneeDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  };
+
+  const toggleAssigneePicker = () => {
+    if (!assigneePickerOpen) positionAssigneeDropdown();
+    setAssigneePickerOpen((o) => !o);
+  };
+
+  // Keep the portaled dropdown aligned with its trigger while open
+  useEffect(() => {
+    if (!assigneePickerOpen) return;
+    positionAssigneeDropdown();
+    window.addEventListener('scroll', positionAssigneeDropdown, true);
+    window.addEventListener('resize', positionAssigneeDropdown);
+    return () => {
+      window.removeEventListener('scroll', positionAssigneeDropdown, true);
+      window.removeEventListener('resize', positionAssigneeDropdown);
+    };
+  }, [assigneePickerOpen]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as Node;
+      const insideTrigger = assigneeRef.current && assigneeRef.current.contains(target);
+      const insideDropdown = assigneeDropdownRef.current && assigneeDropdownRef.current.contains(target);
+      if (!insideTrigger && !insideDropdown) {
+        setAssigneePickerOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     setScheduledEndTime(lead?.scheduled_end_time ? lead.scheduled_end_time : '');
@@ -233,7 +276,7 @@ export default function SchedulingSection({
             initial={{ opacity: 0 }} 
             animate={{ opacity: 1 }} 
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 sm:p-6 bg-slate-900/85 backdrop-blur-sm"
+            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/85 backdrop-blur-sm"
             onClick={() => setPreviewHtml(null)}
           >
             <motion.div
@@ -248,7 +291,7 @@ export default function SchedulingSection({
                   <Eye size={14} className="text-slate-400" />
                   <p className="text-xs font-medium text-slate-700">Email preview</p>
                 </div>
-                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-slate-100 rounded-lg transition">
+                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-slate-100 rounded-lg transition touch-manipulation">
                   <X size={16} />
                 </button>
               </div>
@@ -265,13 +308,23 @@ export default function SchedulingSection({
         )}
       </AnimatePresence>
 
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden flex flex-col">
-        {/* HEADER */}
-        <div className="px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+      {/* MAIN CONTAINER (overflow-visible to prevent dropdown clipping) */}
+      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col relative z-10">
+        
+        {/* HEADER & PRIMARY ACTIONS */}
+        <div className="px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Schedule Overview
             </h3>
+            {isDirty ? (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md text-[10px] font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                Unsaved
+              </span>
+            ) : (
+              <span className="text-[10px] text-slate-400 font-medium">Saved</span>
+            )}
             {lastEmailSentAt && (
               <div className="hidden sm:flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100">
                 <CheckCircle2 size={11} className="text-emerald-500" />
@@ -282,37 +335,60 @@ export default function SchedulingSection({
             )}
           </div>
 
-          {scheduledDate && (
-            <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
-              {new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-            </span>
-          )}
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                if (!hasProject) return toast.error('Create a project first');
+                if (!scheduledDate) return toast.error('Add a date to send the schedule');
+                setShowEmailModal(true);
+              }}
+              disabled={!hasProject || !scheduledDate}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition touch-manipulation disabled:opacity-40 min-h-[42px] sm:min-h-0"
+            >
+              <Mail className="w-3.5 h-3.5 text-blue-600" />
+              <span>Send Schedule</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSave()}
+              disabled={saving}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 sm:py-1.5 text-xs font-semibold rounded-xl transition shadow-xs touch-manipulation min-h-[42px] sm:min-h-0 ${
+                isDirty ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'
+              } disabled:opacity-50`}
+            >
+              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+              {saving ? 'Saving...' : 'Save'}
+            </button>
+          </div>
         </div>
 
-        {/* MAIN BODY: SPLIT FORM & ACTION SIDEBAR */}
-        <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        {/* MAIN BODY: FORM & SIDEBAR */}
+        <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
           {/* LEFT 2 COLS: ASSIGNEE, DATE & TIME */}
-          <div className="md:col-span-2 space-y-4">
+          <div className="lg:col-span-2 space-y-4">
             
             {/* ASSIGNED TO */}
-            <div className="relative">
+            <div className="relative" ref={assigneeRef}>
               <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5">
                 <User size={12} className="text-slate-400" /> Assigned to
               </label>
 
               <button
+                ref={assigneeTriggerRef}
                 type="button"
-                onClick={() => setAssigneePickerOpen((o) => !o)}
-                className="w-full flex flex-wrap items-center gap-1.5 min-h-[42px] px-3.5 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl text-left hover:bg-slate-50 transition"
+                onClick={toggleAssigneePicker}
+                className="w-full flex flex-wrap items-center gap-1.5 min-h-[44px] px-3.5 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl text-left hover:bg-slate-50 transition touch-manipulation"
               >
                 {selectedAssignees.length === 0 ? (
-                  <span className="text-xs font-medium text-slate-400">Choose staff...</span>
+                  <span className="text-[16px] sm:text-xs font-medium text-slate-400">Choose staff...</span>
                 ) : (
                   selectedAssignees.map((name, i) => (
                     <span
                       key={name}
-                      className={`flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-lg text-xs font-medium ${
+                      className={`flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded-lg text-xs font-medium ${
                         i === 0 ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-slate-100 text-slate-700'
                       }`}
                     >
@@ -323,9 +399,9 @@ export default function SchedulingSection({
                           e.stopPropagation();
                           setSelectedAssignees((prev) => prev.filter((n) => n !== name));
                         }}
-                        className="p-0.5 hover:bg-black/10 rounded-md cursor-pointer transition"
+                        className="p-1.5 -mr-0.5 hover:bg-black/10 rounded-md cursor-pointer transition touch-manipulation"
                       >
-                        <X size={10} />
+                        <X size={12} />
                       </span>
                     </span>
                   ))
@@ -333,14 +409,23 @@ export default function SchedulingSection({
                 <ChevronDown className="ml-auto w-4 h-4 text-slate-400 shrink-0" />
               </button>
 
-              {assigneePickerOpen && (
-                <div className="absolute z-20 mt-1 w-full bg-white border border-slate-200 rounded-xl shadow-xl p-2 max-h-56 overflow-y-auto">
+              {assigneePickerOpen && typeof document !== 'undefined' && createPortal(
+                <div
+                  ref={assigneeDropdownRef}
+                  style={{
+                    position: 'fixed',
+                    top: assigneeDropdownPos.top,
+                    left: assigneeDropdownPos.left,
+                    width: assigneeDropdownPos.width,
+                  }}
+                  className="z-[500] bg-white border border-slate-200 rounded-xl shadow-xl p-2 max-h-60 overflow-y-auto"
+                >
                   {teamMembers.map((m: any) => {
                     const checked = selectedAssignees.includes(m.name);
                     return (
                       <label
                         key={m.id}
-                        className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-medium text-slate-700 transition"
+                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-medium text-slate-700 transition touch-manipulation"
                       >
                         <input
                           type="checkbox"
@@ -369,9 +454,10 @@ export default function SchedulingSection({
                           setCustomNameInput('');
                         }
                       }}
-                      className="flex-1 px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium text-slate-900 outline-none focus:border-blue-400"
+                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[16px] sm:text-xs font-medium text-slate-900 outline-none focus:border-blue-400"
                     />
                     <button
+                      type="button"
                       onClick={() => {
                         const val = customNameInput.trim();
                         if (val && !selectedAssignees.includes(val)) {
@@ -379,76 +465,89 @@ export default function SchedulingSection({
                           setCustomNameInput('');
                         }
                       }}
-                      className="px-3 bg-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition"
+                      className="px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition touch-manipulation"
                     >
                       Add
                     </button>
                   </div>
                   <button
+                    type="button"
                     onClick={() => setAssigneePickerOpen(false)}
-                    className="w-full mt-2 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition"
+                    className="w-full mt-2 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition touch-manipulation"
                   >
                     Done
                   </button>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
 
-            {/* DATE & START TIME */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="min-w-0 overflow-hidden">
-                <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">Date</label>
-                <input
-                  type="date" 
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                  className="w-full min-w-0 px-3.5 py-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-slate-900 text-xs font-medium outline-none focus:border-blue-400 focus:bg-white transition-all"
-                  style={{ maxWidth: '100%', WebkitAppearance: 'none' }}
-                />
+            {/* DATE & START TIME WITH INLINE CALENDAR TRIGGER */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Date & Start Time</label>
+                <button
+                  type="button"
+                  onClick={() => setShowCalendarModal(true)}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 hover:underline transition touch-manipulation"
+                >
+                  <Calendar size={12} />
+                  Calendar View ↗
+                </button>
               </div>
-              <div>
-                <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">Start Time</label>
-                <div className="flex items-center px-3 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl gap-1 focus-within:border-blue-400 focus-within:bg-white transition-all">
-                  <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
-                    <option value="">HH</option>
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
-                  </select>
-                  <span className="text-slate-300 text-xs">:</span>
-                  <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
-                    <option value="">MM</option>
-                    {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                  <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-2 py-1 rounded-lg text-xs font-semibold text-blue-600 outline-none shadow-sm">
-                    <option value="AM">AM</option>
-                    <option value="PM">PM</option>
-                  </select>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="min-w-0">
+                  <input
+                    type="date" 
+                    value={scheduledDate}
+                    onChange={(e) => setScheduledDate(e.target.value)}
+                    className="w-full px-3.5 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl text-slate-900 text-[16px] sm:text-xs font-medium outline-none focus:border-blue-400 focus:bg-white transition-all min-h-[44px] touch-manipulation"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center px-3 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl gap-1 focus-within:border-blue-400 focus-within:bg-white transition-all min-h-[44px]">
+                    <select value={timeHour} onChange={(e) => setTimeHour(e.target.value)} className="bg-transparent text-[16px] sm:text-xs font-medium outline-none flex-1 cursor-pointer min-w-0 touch-manipulation">
+                      <option value="">HH</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
+                    </select>
+                    <span className="text-slate-300 text-xs">:</span>
+                    <select value={timeMinute} onChange={(e) => setTimeMinute(e.target.value)} className="bg-transparent text-[16px] sm:text-xs font-medium outline-none flex-1 cursor-pointer min-w-0 touch-manipulation">
+                      <option value="">MM</option>
+                      {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                    <select value={timeAmPm} onChange={(e) => setTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-2 py-1 rounded-lg text-[16px] sm:text-xs font-semibold text-blue-600 outline-none shadow-sm touch-manipulation">
+                      <option value="AM">AM</option>
+                      <option value="PM">PM</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* END TIME & LOCATION */}
             {schedulingConfig.showEndTime && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
                 <div>
                   <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 block">End Time</label>
-                  <div className="flex items-center px-3 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl gap-1 focus-within:border-blue-400 focus-within:bg-white transition-all">
-                    <select value={endTimeHour} onChange={(e) => setEndTimeHour(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
+                  <div className="flex items-center px-3 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl gap-1 focus-within:border-blue-400 focus-within:bg-white transition-all min-h-[44px]">
+                    <select value={endTimeHour} onChange={(e) => setEndTimeHour(e.target.value)} className="bg-transparent text-[16px] sm:text-xs font-medium outline-none flex-1 cursor-pointer min-w-0 touch-manipulation">
                       <option value="">HH</option>
                       {Array.from({ length: 12 }, (_, i) => i + 1).map(h => <option key={h} value={h}>{h}</option>)}
                     </select>
                     <span className="text-slate-300 text-xs">:</span>
-                    <select value={endTimeMinute} onChange={(e) => setEndTimeMinute(e.target.value)} className="bg-transparent text-xs font-medium outline-none flex-1 cursor-pointer min-w-0">
+                    <select value={endTimeMinute} onChange={(e) => setEndTimeMinute(e.target.value)} className="bg-transparent text-[16px] sm:text-xs font-medium outline-none flex-1 cursor-pointer min-w-0 touch-manipulation">
                       <option value="">MM</option>
                       {['00', '15', '30', '45'].map(m => <option key={m} value={m}>{m}</option>)}
                     </select>
-                    <select value={endTimeAmPm} onChange={(e) => setEndTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-2 py-1 rounded-lg text-xs font-semibold text-blue-600 outline-none shadow-sm">
+                    <select value={endTimeAmPm} onChange={(e) => setEndTimeAmPm(e.target.value)} className="bg-white border border-slate-200 px-2 py-1 rounded-lg text-[16px] sm:text-xs font-semibold text-blue-600 outline-none shadow-sm touch-manipulation">
                       <option value="AM">AM</option>
                       <option value="PM">PM</option>
                     </select>
                   </div>
                 </div>
                 <div>
-                  <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 block flex items-center gap-1">
+                  <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                     <MapPin size={11} /> Event Location
                   </label>
                   <input
@@ -456,114 +555,63 @@ export default function SchedulingSection({
                     value={eventLocation}
                     onChange={(e) => setEventLocation(e.target.value)}
                     placeholder="Venue name and address..."
-                    className="w-full px-3.5 py-2.5 bg-slate-50/70 border border-slate-200/80 rounded-xl text-xs font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                    className="w-full px-3.5 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl text-[16px] sm:text-xs font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all min-h-[44px]"
                   />
                 </div>
               </div>
             )}
           </div>
 
-          {/* RIGHT 1 COL: QUICK CONTROLS SIDEBAR */}
-          <div className="space-y-3 bg-slate-50/60 p-3.5 rounded-2xl border border-slate-100 h-full flex flex-col justify-between">
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-2">Quick Controls</p>
-              
-              <button
-                onClick={() => setShowCalendarModal(true)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 border border-slate-200 bg-white text-slate-700 rounded-xl text-xs font-medium transition hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 shadow-sm group"
-              >
-                <span className="flex items-center gap-2">
-                  <Calendar size={14} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                  Calendar View
-                </span>
-                <span className="text-[10px] text-slate-400 group-hover:text-blue-500">Open ↗</span>
-              </button>
-
-              <button
-                onClick={() => setClockOpen(true)}
-                className="w-full flex items-center justify-between px-3.5 py-2.5 border border-slate-200 bg-white text-slate-700 rounded-xl text-xs font-medium transition hover:bg-blue-50 hover:border-blue-200 hover:text-blue-600 shadow-sm group relative"
-              >
-                <span className="flex items-center gap-2">
-                  <Clock size={14} className="text-amber-500 group-hover:scale-110 transition-transform" />
+          {/* RIGHT 1 COL: JOB HOURS WIDGET */}
+          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <Clock size={13} className="text-amber-500" />
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
                   Job Hours
-                </span>
-                {(estimatedHours || actualHours) ? (
-                  <span className="text-[10px] bg-amber-50 text-amber-700 font-semibold px-2 py-0.5 rounded-md border border-amber-200/60">
-                    {actualHours || estimatedHours}h
-                  </span>
-                ) : (
-                  <span className="text-[10px] text-slate-400 group-hover:text-blue-500">Log ↗</span>
-                )}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setClockOpen(true)}
+                className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 shadow-xs transition touch-manipulation min-h-[36px] sm:min-h-0"
+              >
+                {estimatedHours || actualHours ? 'Edit Hours' : '+ Log Hours'}
               </button>
             </div>
 
-            {/* Quick status summary */}
-            <div className="pt-3 border-t border-slate-200/60 text-[11px] text-slate-500 space-y-1">
-              <div className="flex justify-between">
-                <span>Est. Hours:</span>
-                <span className="font-semibold text-slate-800">{estimatedHours ? `${estimatedHours} hrs` : 'Not set'}</span>
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200/60 text-center">
+                <p className="text-[10px] text-slate-400 font-medium uppercase">Estimated</p>
+                <p className="text-xs font-bold text-slate-800 mt-0.5">
+                  {estimatedHours ? `${estimatedHours} hrs` : '—'}
+                </p>
               </div>
-              <div className="flex justify-between">
-                <span>Actual Hours:</span>
-                <span className="font-semibold text-slate-800">{actualHours ? `${actualHours} hrs` : 'Not set'}</span>
+              <div className="p-2.5 bg-white rounded-xl border border-slate-200/60 text-center">
+                <p className="text-[10px] text-slate-400 font-medium uppercase">Actual</p>
+                <p className="text-xs font-bold text-slate-800 mt-0.5">
+                  {actualHours ? `${actualHours} hrs` : '—'}
+                </p>
               </div>
             </div>
-          </div>
 
-        </div>
-
-        {/* DESKTOP FOOTER */}
-        <div className="hidden md:flex px-5 py-3.5 bg-slate-50 border-t border-slate-200/80 items-center justify-between">
-          <div className="flex items-center gap-2">
-            {isDirty ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-lg text-xs font-medium">
-                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                Unsaved changes
-              </span>
-            ) : (
-              <span className="text-xs text-slate-400 font-medium">All changes saved</span>
+            {estimatedHours && actualHours && (
+              <div className="px-3 py-2 bg-white rounded-xl border border-slate-200/60 flex items-center justify-between">
+                <span className="text-[11px] text-slate-400 font-medium">Variance</span>
+                <span className={`text-xs font-bold ${parseFloat(actualHours) > parseFloat(estimatedHours) ? 'text-red-500' : 'text-emerald-600'}`}>
+                  {parseFloat(actualHours) > parseFloat(estimatedHours)
+                    ? `+${(parseFloat(actualHours) - parseFloat(estimatedHours)).toFixed(1)}h over`
+                    : `${(parseFloat(estimatedHours) - parseFloat(actualHours)).toFixed(1)}h under`}
+                </span>
+              </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleSave()}
-              disabled={saving}
-              className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl transition shadow-sm ${
-                isDirty 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white ring-2 ring-blue-500/20' 
-                  : 'bg-slate-900 hover:bg-slate-800 text-white'
-              } disabled:opacity-50`}
-            >
-              {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              {saving ? 'Saving...' : isDirty ? 'Save changes' : 'Save'}
-            </button>
-
-            <button
-              onClick={() => {
-                if (!hasProject) {
-                  toast.error('Create a project first');
-                  return;
-                }
-                if (!scheduledDate) {
-                  toast.error('Add a date to send the schedule');
-                  return;
-                }
-                setShowEmailModal(true);
-              }}
-              className={`flex items-center gap-1.5 px-3 py-2 border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold shadow-sm transition ${
-                (!hasProject || !scheduledDate) ? 'opacity-40 cursor-not-allowed' : ''
-              }`}
-            >
-              <Mail className="w-3.5 h-3.5 text-blue-600" />
-              <span>Send Schedule</span>
-            </button>
-          </div>
         </div>
 
         {/* SENT HISTORY */}
         {outboxLog.length > 0 && (
-          <div className="px-4 sm:px-5 py-3 bg-slate-50/50 border-t border-slate-100">
+          <div className="px-4 sm:px-5 py-3 bg-slate-50/50 border-t border-slate-100 rounded-b-2xl">
             <div className="flex items-center gap-1.5 mb-2">
               <History size={12} className="text-slate-400" />
               <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
@@ -584,8 +632,9 @@ export default function SchedulingSection({
                   </div>
                   {entry.html_body && (
                     <button
+                      type="button"
                       onClick={() => setPreviewHtml(entry.html_body)}
-                      className="flex items-center gap-1 px-2 py-0.5 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-medium text-blue-600 hover:bg-blue-50 transition shrink-0"
+                      className="flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-[10px] font-medium text-blue-600 hover:bg-blue-50 transition shrink-0 touch-manipulation"
                     >
                       <Eye size={10} /> Preview
                     </button>
@@ -595,53 +644,6 @@ export default function SchedulingSection({
             </div>
           </div>
         )}
-      </div>
-
-      {/* MOBILE STICKY BOTTOM ACTION BAR — sticky, not fixed: fixed pins to
-          the viewport and collides with MobileTabBar's own bottom bar,
-          which is a normal flex child, not viewport-fixed. Sticky respects
-          the modal's scroll container, so this naturally sits above it. */}
-      <div className="sticky bottom-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 p-3 px-4 flex items-center justify-between gap-2 md:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
-        <div>
-          {isDirty ? (
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md text-[11px] font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              Unsaved
-            </span>
-          ) : (
-            <span className="text-[11px] text-slate-400 font-medium">Saved</span>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => {
-              if (!hasProject) {
-                toast.error('Create a project first');
-                return;
-              }
-              if (!scheduledDate) {
-                toast.error('Add a date to send the schedule');
-                return;
-              }
-              setShowEmailModal(true);
-            }}
-            disabled={!hasProject || !scheduledDate}
-            className="flex items-center gap-1 px-3 py-2 border border-slate-200 bg-white text-slate-700 rounded-xl text-xs font-semibold shadow-sm disabled:opacity-40"
-          >
-            <Mail className="w-3.5 h-3.5 text-blue-600" />
-            <span>Send</span>
-          </button>
-          <button
-            onClick={() => handleSave()}
-            disabled={saving}
-            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded-xl transition shadow-sm ${
-              isDirty ? 'bg-blue-600 text-white' : 'bg-slate-900 text-white'
-            } disabled:opacity-50`}
-          >
-            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-            {saving ? 'Saving...' : isDirty ? 'Save changes' : 'Save'}
-          </button>
-        </div>
       </div>
 
       {/* JOB HOURS MODAL */}
@@ -667,7 +669,7 @@ export default function SchedulingSection({
                   <Clock size={14} className="text-amber-500" />
                   <p className="text-sm font-semibold text-slate-900">Job hours</p>
                 </div>
-                <button onClick={() => setClockOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition">
+                <button onClick={() => setClockOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition touch-manipulation">
                   <X size={14} className="text-slate-400" />
                 </button>
               </div>
@@ -680,7 +682,7 @@ export default function SchedulingSection({
                     value={estimatedHours}
                     onChange={e => setEstimatedHours(e.target.value)}
                     placeholder="0.0"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[16px] sm:text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
                   />
                 </div>
                 <div>
@@ -691,7 +693,7 @@ export default function SchedulingSection({
                     value={actualHours}
                     onChange={e => setActualHours(e.target.value)}
                     placeholder="0.0"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[16px] sm:text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
                   />
                 </div>
                 {estimatedHours && actualHours && (
@@ -707,9 +709,10 @@ export default function SchedulingSection({
               </div>
               <div className="px-5 pb-5">
                 <button
+                  type="button"
                   onClick={() => { handleSave(); setClockOpen(false); }}
                   disabled={saving}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition flex items-center justify-center gap-2"
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
                 >
                   {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                   {saving ? 'Saving...' : 'Save hours'}
