@@ -401,7 +401,6 @@ export default function OverviewTab({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
                       <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-slate-600 shrink-0" />
                         <span>Logo & Name</span>
                       </div>
                     </td>
@@ -444,7 +443,6 @@ export default function OverviewTab({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
                       <div className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-slate-600 shrink-0" />
                         <span>Reply-To Email</span>
                       </div>
                     </td>
@@ -477,7 +475,6 @@ export default function OverviewTab({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
                       <div className="flex items-center gap-2">
-                        <Phone className="h-4 w-4 text-slate-600 shrink-0" />
                         <span>Company Phone</span>
                       </div>
                     </td>
@@ -503,7 +500,6 @@ export default function OverviewTab({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
                       <div className="flex items-center gap-2">
-                        <Globe className="h-4 w-4 text-slate-600 shrink-0" />
                         <span>Website URL</span>
                       </div>
                     </td>
@@ -531,7 +527,6 @@ export default function OverviewTab({
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
                       <div className="flex items-center gap-2">
-                        <Palette className="h-4 w-4 text-slate-600 shrink-0" />
                         <span>Brand Colors</span>
                       </div>
                     </td>
