@@ -26,6 +26,7 @@ import {
   Tag,
   ArrowUpRight,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
@@ -179,7 +180,7 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
 function PhoneFrame({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto w-full max-w-[320px]">
-      <div className="relative h-[540px] rounded-[2.25rem] border-[8px] border-slate-900 bg-slate-900 shadow-lg">
+      <div className="relative h-[540px] rounded-[2.25rem] border-[8px] border-slate-900 bg-slate-900 shadow-xl">
         <div className="absolute left-1/2 top-1.5 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-slate-900" />
         <div className="h-full overflow-y-auto rounded-[1.6rem] bg-white">{children}</div>
       </div>
@@ -221,7 +222,30 @@ function PhoneField({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-/* ═══════════════ Control Row Component ═══════════════ */
+/* ═══════════════ Control Row Components ═══════════════ */
+
+function LockedControlRow({
+  icon: Icon,
+  label,
+  hint,
+}: {
+  icon: React.ElementType;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 transition-all opacity-80">
+      <Icon className="h-4 w-4 shrink-0 text-slate-400" />
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-bold text-slate-800">{label}</p>
+        <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">{hint}</p>
+      </div>
+      <span className="inline-flex items-center gap-1 rounded-md bg-slate-200/60 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+        <Lock className="h-3 w-3" /> Required
+      </span>
+    </div>
+  );
+}
 
 function ControlRow({
   icon: Icon,
@@ -280,7 +304,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [ctaSuccessMessage] = useState(company.cta_success_message || '');
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(company.custom_questions || []);
 
-  const [mobileTab, setMobileTab] = useState<'optional' | 'required'>('optional');
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewTab, setPreviewTab] = useState<'optional' | 'required'>('optional');
 
   const existingConfig = company.form_field_config;
   const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
@@ -539,7 +564,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           />
         )}
 
-        {/* Page Title & Controls */}
+        {/* Page Title & Top Controls */}
         <div className="pb-4 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2.5">
@@ -557,6 +582,13 @@ export default function FormTab({ company, currentUser }: { company: any; curren
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
+              onClick={() => setIsPreviewOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50"
+            >
+              <Eye className="h-4 w-4 text-slate-500" /> Preview Form
+            </button>
+            <button
               onClick={handleSaveAll}
               disabled={loading}
               className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
@@ -567,7 +599,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
-        {/* Subtle Public URL Bar */}
+        {/* Public Live Link Bar with "Try it Yourself" Callout */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
           <div className="flex items-center gap-2 min-w-0">
             <Link2 className="h-4 w-4 shrink-0 text-slate-400" />
@@ -575,6 +607,9 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             <code className="truncate font-mono text-xs font-bold text-slate-800">{publicUrl}</code>
           </div>
           <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+            <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 mr-1">
+              ✨ <span className="text-slate-800">Try it out yourself!</span> Own your business growth.
+            </span>
             <button
               onClick={() => {
                 navigator.clipboard.writeText(publicUrl);
@@ -592,8 +627,19 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
             >
-              Preview <ArrowUpRight className="h-3.5 w-3.5" />
+              Test Form Live <ArrowUpRight className="h-3.5 w-3.5" />
             </a>
+          </div>
+        </div>
+
+        {/* Instant Lead Capture Notice */}
+        <div className="flex items-start gap-3 rounded-xl border border-blue-200/80 bg-blue-50/60 p-4 text-xs font-medium text-blue-950 shadow-xs">
+          <Zap className="h-4 w-4 shrink-0 text-blue-600 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-bold text-blue-900">How Lead Capture Works</p>
+            <p className="text-blue-800/90 leading-relaxed">
+              When a customer completes the <span className="font-bold">Required Intake Fields</span> (Step 1) and taps submit, their request <span className="font-bold underline decoration-blue-300">lands on your dashboard immediately as a new lead</span>! If they proceed to complete any optional fields, site photos, or custom questions, those details will automatically update on their existing lead ticket.
+            </p>
           </div>
         </div>
 
@@ -615,81 +661,62 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           )}
         </AnimatePresence>
 
-        {/* --- PHONE PREVIEWS (PRIMARY FOCUS) --- */}
-        <div className="lg:hidden">
-          <div className="mb-4 grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-white p-1">
-            <button
-              type="button"
-              onClick={() => setMobileTab('optional')}
-              className={`rounded-md px-3 py-2 text-xs font-bold transition ${
-                mobileTab === 'optional' ? 'bg-slate-900 text-white' : 'text-slate-600'
-              }`}
-            >
-              Optional Fields
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab('required')}
-              className={`inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-bold transition ${
-                mobileTab === 'required' ? 'bg-slate-900 text-white' : 'text-slate-600'
-              }`}
-            >
-              <Lock className="h-3 w-3" /> Required Fields
-            </button>
-          </div>
+        {/* Form Configuration Settings */}
+        <div className="space-y-6 pt-2">
 
-          {mobileTab === 'required' ? (
-            <>
-              <div className="mb-3 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600">
-                <Lock className="h-3.5 w-3.5 shrink-0 text-slate-500" />
-                <span>These core fields are always present on all forms.</span>
-              </div>
-              {RequiredPhone}
-            </>
-          ) : (
-            <>
-              <div className="mb-3 flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
-                <Eye className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
-                <span>Live preview updating with your controls below.</span>
-              </div>
-              {OptionalPhone}
-            </>
-          )}
-        </div>
-
-        {/* Desktop Dual Phone View */}
-        <div className="hidden lg:grid lg:grid-cols-2 lg:gap-8">
-          <div>
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
-              <Lock className="h-4 w-4 shrink-0 text-slate-400" />
-              <div>
-                <p className="text-xs font-bold text-slate-900">Standard Required Fields</p>
-                <p className="text-[11px] font-medium text-slate-500">Every client completes these foundational fields.</p>
-              </div>
-            </div>
-            {RequiredPhone}
-          </div>
-
-          <div>
-            <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200/80 bg-emerald-50/50 px-4 py-3 shadow-xs">
-              <Eye className="h-4 w-4 shrink-0 text-emerald-600" />
-              <div>
-                <p className="text-xs font-bold text-emerald-900">Optional Fields & Custom Questions</p>
-                <p className="text-[11px] font-medium text-emerald-700">Updates live as you toggle settings below.</p>
-              </div>
-            </div>
-            {OptionalPhone}
-          </div>
-        </div>
-
-        {/* Field Configuration Settings */}
-        <div className="space-y-6 pt-4">
-
-          {/* Optional Toggles */}
+          {/* 1. REQUIRED INTAKE FIELDS (Locked standard fields grid) */}
           <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-              Optional Intake Fields
-            </h2>
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Required Intake Fields (Step 1)
+              </h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                Instantly Sent to Dashboard
+              </span>
+            </div>
+            <p className="text-xs font-medium text-slate-500 mb-6">
+              These standard fields are automatically included on all request forms and cannot be disabled.
+            </p>
+
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <LockedControlRow
+                icon={User}
+                label="Full Name"
+                hint="Client's legal or full contact name"
+              />
+              <LockedControlRow
+                icon={Mail}
+                label="Email Address"
+                hint="For quote delivery and booking updates"
+              />
+              <LockedControlRow
+                icon={Phone}
+                label="Phone Number"
+                hint="For SMS updates and direct call-backs"
+              />
+              <LockedControlRow
+                icon={Sparkles}
+                label="Service Category"
+                hint="Required service item or package choices"
+              />
+              <LockedControlRow
+                icon={Edit2}
+                label="Project Description"
+                hint="Freeform scope or job details box"
+              />
+            </div>
+          </div>
+
+          {/* 2. OPTIONAL INTAKE FIELDS (Configurable grid layout) */}
+          <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
+            <div className="flex items-center justify-between mb-1">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Optional Intake Fields (Step 2)
+              </h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                Captured & Appended to Lead
+              </span>
+            </div>
             <p className="text-xs font-medium text-slate-500 mb-6">
               Enable additional fields to gather specific job details during client request submission.
             </p>
@@ -741,7 +768,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             )}
           </div>
 
-          {/* Custom Questions Card */}
+          {/* 3. Custom Questions Card */}
           <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
             <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
               <div className="flex items-center gap-2">
@@ -814,8 +841,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 <span className="font-semibold text-slate-800">Categories & Pricing</span>.
               </p>
             </div>
-
-   
           </div>
         </div>
 
@@ -878,7 +903,79 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         </AnimatePresence>
       </div>
 
-      {/* Modal for adding/editing questions */}
+      {/* Slide-out Mobile & Desktop Live Preview Drawer */}
+      <AnimatePresence>
+        {isPreviewOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsPreviewOpen(false)}
+              className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs"
+            />
+
+            {/* Slide Drawer Panel */}
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 220 }}
+              className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                <div className="flex items-center gap-2">
+                  <Eye className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-bold text-slate-900">Live Mobile Preview</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(false)}
+                  className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Drawer Tab Selectors */}
+              <div className="px-6 pt-4 pb-2">
+                <div className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200/80 bg-slate-100/60 p-1">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab('optional')}
+                    className={`rounded-lg py-2 text-xs font-bold transition ${
+                      previewTab === 'optional'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Combined Live View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewTab('required')}
+                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition ${
+                      previewTab === 'required'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    <Lock className="h-3 w-3" /> Core Required
+                  </button>
+                </div>
+              </div>
+
+              {/* Drawer Frame Body */}
+              <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 flex items-center justify-center">
+                {previewTab === 'required' ? RequiredPhone : OptionalPhone}
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Modal for adding/editing custom questions */}
       {showAddQuestion && (
         <QuestionModal
           question={newQuestion}

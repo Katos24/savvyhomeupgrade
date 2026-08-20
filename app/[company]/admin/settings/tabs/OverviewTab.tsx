@@ -23,6 +23,7 @@ import {
   Sparkles,
   Camera,
   HelpCircle,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -52,8 +53,9 @@ function StripeStatusBadge({
 
   return (
     <button
+      type="button"
       onClick={() => onNavigateSection('payments')}
-      className={`inline-flex shrink-0 items-center gap-2 rounded-md border px-3 py-1 text-xs font-semibold transition ${config.pill}`}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold transition ${config.pill}`}
     >
       <span className={`h-2 w-2 rounded-full ${config.dot}`} />
       {config.label}
@@ -330,8 +332,8 @@ export default function OverviewTab({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 px-4 py-6 sm:px-6 sm:py-10 lg:px-12 font-sans text-slate-900 antialiased">
-      <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8 pb-16">
+    <div className="min-h-screen bg-slate-50/50 px-3 py-4 sm:px-6 sm:py-10 lg:px-12 font-sans text-slate-900 antialiased">
+      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-8 pb-20">
         
         {/* Page Title */}
         <div className="pb-2 border-b border-slate-200">
@@ -345,68 +347,60 @@ export default function OverviewTab({
           </div>
         )}
 
-        {/* TOP GRID: Company Profile (7 cols) + Automations (5 cols) */}
+        {/* TOP GRID: Company Profile (7 cols) + Right Stack (5 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           
-          {/* SECTION 1: Company Profile & Branding (2-Column Table starting with Logo & Name) */}
-          <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-4">
+          {/* SECTION 1: Company Profile & Branding */}
+          <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-4">
             
-            {/* Header: Title, Badges & Actions */}
-            <div className="flex flex-col gap-3 pb-3 border-b border-slate-200">
+            {/* Header: Title & Actions */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Building2 className="h-4 w-4 text-slate-700" /> Company Profile & Branding
+                <Building2 className="h-4 w-4 text-slate-700 shrink-0" /> Company Profile & Branding
               </h2>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-0.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-[10px] sm:text-xs font-bold text-slate-700 border border-slate-300 uppercase tracking-wide">
-                    {isFreePlan ? 'Free Tier' : `${company.plan_tier} Tier`}
-                  </span>
-                  <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
-                </div>
-
-                {!isEditingBrand ? (
+              {!isEditingBrand ? (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingBrand(true)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 shrink-0 cursor-pointer self-end sm:self-auto"
+                >
+                  <Pencil className="h-3.5 w-3.5 text-slate-600" /> Edit Profile
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                   <button
-                    onClick={() => setIsEditingBrand(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 shrink-0 cursor-pointer"
+                    type="button"
+                    onClick={handleCancelEdit}
+                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
                   >
-                    <Pencil className="h-3.5 w-3.5 text-slate-600" /> Edit Profile
+                    Cancel
                   </button>
-                ) : (
-                  <div className="flex items-center gap-2 shrink-0">
-                    <button
-                      onClick={handleCancelEdit}
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleSaveEdit}
-                      disabled={brandSaving}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
-                    >
-                      {brandSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                      Save
-                    </button>
-                  </div>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    onClick={handleSaveEdit}
+                    disabled={brandSaving}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
+                  >
+                    {brandSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    Save
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* TABLE STARTING DIRECTLY WITH LOGO & NAME (NO HEADERS) */}
+            {/* Profile Table */}
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
               <table className="w-full text-left text-xs sm:text-sm">
                 <tbody className="divide-y divide-slate-200">
                   {/* ROW 1: LOGO & COMPANY NAME */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span>Logo & Name</span>
-                      </div>
+                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <span>Logo & Name</span>
                     </td>
-                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
-                      <div className="flex items-center gap-3">
-                        <div className="relative group shrink-0">
+                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
+                        <div className="relative group shrink-0 self-start sm:self-auto">
                           <div className={`flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg border bg-white shadow-xs overflow-hidden ${
                             missingLogo ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-300'
                           }`}>
@@ -427,13 +421,14 @@ export default function OverviewTab({
 
                         {isEditingBrand ? (
                           <input
+                            type="text"
                             value={companyName}
                             onChange={(e) => setCompanyName(e.target.value)}
                             placeholder="Company Name"
-                            className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                            className="w-full min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
                           />
                         ) : (
-                          <span className="text-sm sm:text-base font-bold text-slate-900 truncate block">{companyName}</span>
+                          <span className="text-sm sm:text-base font-bold text-slate-900 break-words min-w-0 flex-1">{companyName}</span>
                         )}
                       </div>
                     </td>
@@ -441,14 +436,12 @@ export default function OverviewTab({
 
                   {/* ROW 2: REPLY-TO EMAIL */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span>Reply-To Email</span>
-                      </div>
+                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <span>Reply-To Email</span>
                     </td>
-                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
                       {isEditingBrand ? (
-                        <div>
+                        <div className="w-full min-w-0">
                           <input
                             type="email"
                             value={companyEmail}
@@ -457,7 +450,7 @@ export default function OverviewTab({
                               setEmailError('');
                             }}
                             placeholder="office@company.com"
-                            className={`w-full rounded-md border bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 ${
+                            className={`w-full min-w-0 rounded-md border bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 ${
                               emailError ? 'border-rose-400 focus:border-rose-600' : 'border-slate-300'
                             }`}
                           />
@@ -473,12 +466,10 @@ export default function OverviewTab({
 
                   {/* ROW 3: PHONE NUMBER */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span>Company Phone</span>
-                      </div>
+                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <span>Company Phone</span>
                     </td>
-                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
                       {isEditingBrand ? (
                         <input
                           type="text"
@@ -486,7 +477,7 @@ export default function OverviewTab({
                           onChange={(e) => setCompanyPhone(formatPhone(e.target.value))}
                           placeholder="(555) 000-0000"
                           maxLength={14}
-                          className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                          className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
                         />
                       ) : (
                         <span className="text-xs sm:text-sm font-semibold text-slate-800">
@@ -498,19 +489,17 @@ export default function OverviewTab({
 
                   {/* ROW 4: WEBSITE */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span>Website URL</span>
-                      </div>
+                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <span>Website URL</span>
                     </td>
-                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
+                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
                       {isEditingBrand ? (
                         <input
                           type="text"
                           value={companyWebsite}
                           onChange={(e) => setCompanyWebsite(e.target.value)}
                           placeholder="https://company.com"
-                          className="w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                          className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
                         />
                       ) : company.website ? (
                         <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-slate-900 hover:underline inline-flex items-center gap-1.5 font-semibold break-all">
@@ -525,13 +514,11 @@ export default function OverviewTab({
 
                   {/* ROW 5: BRAND COLORS */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-1/3 border-r border-slate-200 bg-slate-100/70 px-4 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span>Brand Colors</span>
-                      </div>
+                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <span>Brand Colors</span>
                     </td>
-                    <td className="w-2/3 px-4 py-3.5 sm:px-5 align-middle bg-white">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
+                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
                         {isEditingBrand ? (
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
@@ -571,84 +558,140 @@ export default function OverviewTab({
 
           </div>
 
-          {/* SECTION 2: Automations & Copying */}
-          <div className="lg:col-span-5 bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-1">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-4 mb-2 border-b border-slate-200 flex items-center gap-2">
-              <Bell className="h-4 w-4 text-slate-700" /> Automations & Copying
-            </h2>
+          {/* RIGHT COLUMN: Automations & Plan Status */}
+          <div className="lg:col-span-5 space-y-6">
+            
+            {/* Card A: Automations & Copying */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-1">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-3 mb-2 border-b border-slate-200 flex items-center gap-2">
+                <Bell className="h-4 w-4 text-slate-700 shrink-0" /> Automations & Copying
+              </h2>
 
-            <div className="flex items-center justify-between py-4 border-b border-slate-100 gap-3">
-              <div className="flex items-center gap-1.5 pr-2">
-                <label className="text-sm font-semibold text-slate-800">6:00 AM Daily Summary</label>
-                <div className="group relative cursor-pointer">
-                  <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
-                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-52 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
-                    Sends a morning summary email with leads, active jobs, and yesterday's payments.
+              {/* 6:00 AM Daily Summary Toggle */}
+              <div className="flex items-center justify-between py-3 sm:py-4 border-b border-slate-100 gap-3">
+                <div className="flex items-center gap-1.5 pr-1 min-w-0">
+                  <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">6:00 AM Daily Summary</label>
+                  <div className="group relative cursor-pointer shrink-0">
+                    <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
+                    <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-48 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
+                      Sends a morning summary email with leads, active jobs, and yesterday's payments.
+                    </div>
                   </div>
                 </div>
+                
+                <div className="shrink-0 flex items-center">
+                  {can(planTier, 'daily_digest') ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowDigestConfirm(true)}
+                      disabled={digestSaving}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        digestEnabled ? 'bg-slate-900' : 'bg-slate-200'
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out ${
+                          digestEnabled ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onNavigateSection('billing')}
+                      className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-300 px-2 py-1 text-xs font-bold text-slate-800 hover:bg-slate-200 transition shrink-0 cursor-pointer"
+                    >
+                      <Sparkles className="h-3 w-3 text-slate-600" /> Upgrade
+                    </button>
+                  )}
+                </div>
               </div>
-              
-              <div className="shrink-0">
-                {can(planTier, 'daily_digest') ? (
+
+              {/* Auto-BCC Emails Toggle */}
+              <div className="flex items-center justify-between py-3 sm:py-4 gap-3">
+                <div className="flex items-center gap-1.5 pr-1 min-w-0">
+                  <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">Auto-BCC Emails</label>
+                  <div className="group relative cursor-pointer shrink-0">
+                    <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
+                    <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-48 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
+                      Sends a secret copy (BCC) of every client quote or invoice email directly to your inbox.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="shrink-0 flex items-center">
                   <button
-                    onClick={() => setShowDigestConfirm(true)}
-                    disabled={digestSaving}
+                    type="button"
+                    onClick={handleToggleBcc}
+                    disabled={bccSaving}
                     className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      digestEnabled ? 'bg-slate-900' : 'bg-slate-200'
+                      bccEnabled ? 'bg-slate-900' : 'bg-slate-200'
                     }`}
                   >
                     <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                        digestEnabled ? 'translate-x-5' : 'translate-x-0'
+                      className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out ${
+                        bccEnabled ? 'translate-x-5' : 'translate-x-0'
                       }`}
                     />
                   </button>
-                ) : (
-                  <button
-                    onClick={() => onNavigateSection('billing')}
-                    className="inline-flex items-center gap-1.5 rounded-md bg-slate-100 border border-slate-300 px-2.5 py-1 text-xs font-bold text-slate-800 hover:bg-slate-200 transition shrink-0 cursor-pointer"
-                  >
-                    <Sparkles className="h-3 w-3 text-slate-600" /> Upgrade
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between py-4 gap-3">
-              <div className="flex items-center gap-1.5 pr-2">
-                <label className="text-sm font-semibold text-slate-800">Auto-BCC Emails</label>
-                <div className="group relative cursor-pointer">
-                  <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
-                  <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-52 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
-                    Sends a secret copy (BCC) of every client quote or invoice email directly to your inbox.
-                  </div>
                 </div>
               </div>
+            </div>
 
-              <div className="shrink-0">
-                <button
-                  onClick={handleToggleBcc}
-                  disabled={bccSaving}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                    bccEnabled ? 'bg-slate-900' : 'bg-slate-200'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-xs ring-0 transition duration-200 ease-in-out ${
-                      bccEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
+            {/* Card B: Plan & Payment Status Table */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-3">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-3 border-b border-slate-200 flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-slate-700 shrink-0" /> Plan & Payment Status
+              </h2>
+
+              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+                <table className="w-full text-left text-xs sm:text-sm">
+                  <tbody className="divide-y divide-slate-200">
+                    {/* Plan Tier Row */}
+                    <tr className="hover:bg-slate-50/60 transition-colors">
+                      <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                        <span>Plan Tier</span>
+                      </td>
+                      <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300 uppercase tracking-wide shrink-0">
+                            {isFreePlan ? 'Free Tier' : `${company.plan_tier} Tier`}
+                          </span>
+                          {isFreePlan && (
+                            <button
+                              type="button"
+                              onClick={() => onNavigateSection('billing')}
+                              className="text-xs font-bold text-slate-800 hover:underline cursor-pointer shrink-0"
+                            >
+                              Upgrade
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Payment Status Row */}
+                    <tr className="hover:bg-slate-50/60 transition-colors">
+                      <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                        <span>Payment Status</span>
+                      </td>
+                      <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                        <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
+
           </div>
 
         </div>
 
         {/* SECTION 3: Booking Link */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4 flex items-center gap-2">
-            <LinkIcon className="h-4 w-4 text-slate-700" /> Lead Intake Link
+        <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-2">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
+            <LinkIcon className="h-4 w-4 text-slate-700 shrink-0" /> Lead Intake Link
           </h2>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-1 gap-3 sm:gap-4">
@@ -658,6 +701,7 @@ export default function OverviewTab({
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
+                type="button"
                 onClick={onCopy}
                 className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition cursor-pointer"
               >
@@ -673,6 +717,7 @@ export default function OverviewTab({
                 Open <ExternalLink className="h-3.5 w-3.5" />
               </a>
               <button
+                type="button"
                 onClick={onShowQrModal}
                 className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white p-2 text-slate-800 shadow-xs hover:bg-slate-50 transition shrink-0 cursor-pointer"
                 title="Download QR Code"
@@ -716,7 +761,7 @@ export default function OverviewTab({
       {/* Daily Digest Modal */}
       {showDigestConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
-          <div className="w-full max-w-sm rounded-xl border border-slate-300 bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-sm rounded-xl border border-slate-300 bg-white p-5 sm:p-6 shadow-2xl">
             <h3 className="text-sm font-bold text-slate-900">
               {digestEnabled ? 'Turn off daily digest?' : 'Turn on daily digest?'}
             </h3>
@@ -727,12 +772,14 @@ export default function OverviewTab({
             </p>
             <div className="mt-6 flex items-center justify-end gap-2">
               <button
+                type="button"
                 onClick={() => setShowDigestConfirm(false)}
                 className="rounded-md border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleConfirmDigestToggle}
                 className={`rounded-md px-4 py-2 text-xs font-semibold text-white transition cursor-pointer ${
                   digestEnabled ? 'bg-rose-600 hover:bg-rose-700' : 'bg-slate-900 hover:bg-slate-800'

@@ -22,7 +22,6 @@ import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
 import FaqModal from '@/components/FaqModal';
 
-
 // Real sections you already have code for
 import CategoriesTab from '@/app/[company]/admin/settings/tabs/CategoriesTab';
 import PaymentsTab from '@/app/[company]/admin/settings/tabs/PaymentsTab';
@@ -59,7 +58,18 @@ type Company = {
   stripe_connect_onboarded: boolean;
   stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
 };
-type SectionKey = 'setup' | 'overview' | 'form' | 'categories' | 'payments' | 'reviews' | 'pipeline' | 'email-templates' | 'team' | 'billing';
+
+type SectionKey =
+  | 'setup'
+  | 'overview'
+  | 'form'
+  | 'categories'
+  | 'payments'
+  | 'reviews'
+  | 'pipeline'
+  | 'email-templates'
+  | 'team'
+  | 'billing';
 
 type ChecklistStep =
   | { label: string; description: string; done: boolean; kind: 'section'; section: SectionKey }
@@ -141,7 +151,7 @@ function SidebarItem({ icon: Icon, imageUrl, label, active, locked, onClick }: {
 }
 
 export default function HomeClient({ company: initialCompany, currentUser }: { company: Company; currentUser?: any }) {
- const [company, setCompany] = useState(initialCompany);
+  const [company, setCompany] = useState(initialCompany);
   const searchParams = useSearchParams();
   const initialSection = (searchParams.get('section') as SectionKey) || 'overview';
   const [activeSection, setActiveSection] = useState<SectionKey>(initialSection);
@@ -316,7 +326,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
   ];
 
-const sectionLabels: Record<SectionKey, string> = {
+  const sectionLabels: Record<SectionKey, string> = {
     setup: 'Setup',
     overview: 'Overview',
     form: 'Booking form',
@@ -330,50 +340,21 @@ const sectionLabels: Record<SectionKey, string> = {
   };
 
   const isAdminOrOwner = currentUser?.role === 'owner' || currentUser?.role === 'admin';
-  // BillingTab itself hard-blocks anyone but owner — gating the nav entry
-  // the same way avoids sending admins to a dead-end screen.
   const isOwner = currentUser?.role === 'owner';
 
-  // Mobile Bottom Bar items including Google Reviews & Settings Link
- type MobileNavItem = {
-    key: string;
-    label: string;
-    icon?: React.ElementType;
-    imageUrl?: string;
-    isSection: boolean;
-    locked?: boolean;
-    href?: string;
-  };
-
-  const mobileBottomNavItems: MobileNavItem[] = [
-    { key: 'setup', label: 'Setup', icon: Rocket, isSection: true },
-    { key: 'overview', label: 'Overview', icon: LayoutGrid, isSection: true },
-    { key: 'form', label: 'Form', icon: FileText, isSection: true },
-    { key: 'categories', label: 'Categories', icon: Tags, isSection: true, locked: categoriesLocked },
-    { key: 'payments', label: 'Payments', icon: CreditCard, isSection: true, locked: paymentsLocked },
-    { 
-      key: 'reviews', 
-      label: 'Reviews', 
-      imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg', 
-      isSection: true, 
-      locked: reviewsLocked 
-    },
-    ...(isAdminOrOwner ? [
-      { key: 'pipeline', label: 'Pipeline', icon: Workflow, isSection: true, locked: !can(planTier, 'settings_pipeline') },
-      { key: 'email-templates', label: 'Email', icon: Mail, isSection: true, locked: !can(planTier, 'settings_email_templates') },
-      { key: 'team', label: 'Team', icon: Users, isSection: true, locked: !can(planTier, 'settings_team') },
-    ] : []),
-    ...(isOwner ? [
-      { key: 'billing', label: 'Billing', icon: CreditCard, isSection: true },
-    ] : []),
-  ];
-
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row pb-20 lg:pb-0">
+    <div className="min-h-screen bg-slate-50 flex flex-col lg:flex-row">
 
       {/* ── MOBILE TOP BAR ── */}
       <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-slate-900 text-white px-4 py-3 shadow-sm">
         <div className="flex items-center gap-3 min-w-0">
+          <button
+            onClick={() => setMobileNavOpen(true)}
+            className="p-1.5 -ml-1 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 transition-colors shrink-0"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
           <div className="w-7 h-7 rounded-md bg-[#3e4046] flex items-center justify-center shrink-0">
             {logoPreview ? (
               <img src={logoPreview} className="w-full h-full object-cover rounded-md" alt="" />
@@ -387,18 +368,11 @@ const sectionLabels: Record<SectionKey, string> = {
         <div className="flex items-center gap-2">
           <a
             href={`/${company.slug}/dashboard`}
-            className="p-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs font-medium flex items-center gap-1.5"
+            className="p-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors"
           >
             <LayoutDashboard className="w-4 h-4 text-[#4ade80]" />
             <span className="hidden sm:inline">Dashboard</span>
           </a>
-          <button
-            onClick={() => setMobileNavOpen(true)}
-            className="p-2 rounded-lg bg-slate-800 text-slate-200 hover:bg-slate-700"
-            aria-label="Open menu"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
         </div>
       </header>
 
@@ -487,8 +461,6 @@ const sectionLabels: Record<SectionKey, string> = {
               />
             </div>
           </nav>
-
-       
         </div>
       </aside>
 
@@ -498,7 +470,7 @@ const sectionLabels: Record<SectionKey, string> = {
           <SetupTab checklistSteps={checklistSteps} onNavigateSection={(section) => setActiveSection(section as SectionKey)} />
         )}
 
-       {activeSection === 'overview' && (
+        {activeSection === 'overview' && (
           <OverviewTab
             company={company}
             color1={color1}
@@ -548,7 +520,7 @@ const sectionLabels: Record<SectionKey, string> = {
           )}
         </div>
 
-       <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'reviews' ? 'block' : 'none' }}>
+        <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'reviews' ? 'block' : 'none' }}>
           <GoogleReviewsTab company={company} locked={reviewsLocked} />
         </div>
 
@@ -560,7 +532,7 @@ const sectionLabels: Record<SectionKey, string> = {
             <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'email-templates' ? 'block' : 'none' }}>
               <EmailTemplatesTab company={company} currentUser={currentUser} />
             </div>
-           <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'team' ? 'block' : 'none' }}>
+            <div className="px-4 sm:px-6 py-6" style={{ display: activeSection === 'team' ? 'block' : 'none' }}>
               <TeamTab company={company} currentUser={currentUser} />
             </div>
           </>
@@ -572,45 +544,6 @@ const sectionLabels: Record<SectionKey, string> = {
           </div>
         )}
       </main>
-
-      {/* ── HORIZONTALLY SCROLLABLE MOBILE BOTTOM NAV BAR ── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-slate-900 border-t border-slate-800 shadow-lg">
-        <div className="flex items-center gap-1 overflow-x-auto px-2 py-2 scrollbar-none [scrollbar-width:none] [-ms-overflow-style:none]">
-         {mobileBottomNavItems.map((item) => {
-  const isActive = activeSection === item.key;
-
-  if (!item.isSection && item.href) {
-    return (
-      <a
-        key={item.key}
-        href={item.href}
-        className="flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 shrink-0 min-w-[68px] transition-colors"
-      >
-        {item.icon && <item.icon className="w-5 h-5" />}
-        <span className="text-[10px] whitespace-nowrap">{item.label}</span>
-      </a>
-    );
-  }
-
-  return (
-    <button
-      key={item.key}
-      onClick={() => setActiveSection(item.key as SectionKey)}
-      className={`flex flex-col items-center justify-center gap-1 py-1 px-3 rounded-lg text-xs font-medium shrink-0 min-w-[68px] transition-colors ${
-        isActive ? 'text-[#4ade80]' : 'text-slate-400 hover:text-slate-200'
-      }`}
-    >
-      {item.imageUrl ? (
-        <img src={item.imageUrl} className="w-5 h-5" alt="" />
-      ) : item.icon ? (
-        <item.icon className="w-5 h-5" />
-      ) : null}
-      <span className="text-[10px] whitespace-nowrap">{item.label}</span>
-    </button>
-  );
-})}
-        </div>
-      </nav>
 
       {/* ── FAQ MODAL ── */}
       {showFaqModal && <FaqModal onClose={() => setShowFaqModal(false)} />}

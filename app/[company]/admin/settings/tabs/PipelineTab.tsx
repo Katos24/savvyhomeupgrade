@@ -27,15 +27,18 @@ import {
   type StatusOption,
 } from '@/lib/formCategories';
 
+// Modern, sophisticated SaaS color palette (Linear/Notion style)
 const COLOR_OPTIONS = [
-  { value: 'blue', label: 'Blue', hex: '#3b82f6' },
-  { value: 'yellow', label: 'Yellow', hex: '#eab308' },
-  { value: 'orange', label: 'Orange', hex: '#f97316' },
-  { value: 'green', label: 'Green', hex: '#22c55e' },
-  { value: 'red', label: 'Red', hex: '#ef4444' },
-  { value: 'gray', label: 'Gray', hex: '#6b7280' },
-  { value: 'indigo', label: 'Indigo', hex: '#6366f1' },
-  { value: 'pink', label: 'Pink', hex: '#ec4899' },
+  { value: 'indigo', label: 'Indigo', hex: '#4f46e5' },
+  { value: 'blue', label: 'Ocean', hex: '#0284c7' },
+  { value: 'teal', label: 'Teal', hex: '#0d9488' },
+  { value: 'green', label: 'Emerald', hex: '#059669' },
+  { value: 'yellow', label: 'Amber', hex: '#d97706' },
+  { value: 'orange', label: 'Coral', hex: '#ea580c' },
+  { value: 'red', label: 'Rose', hex: '#e11d48' },
+  { value: 'violet', label: 'Violet', hex: '#7c3aed' },
+  { value: 'slate', label: 'Slate', hex: '#475569' },
+  { value: 'gray', label: 'Zinc', hex: '#27272a' },
 ];
 
 const spring = { type: 'spring' as const, damping: 25, stiffness: 300 };
@@ -127,7 +130,7 @@ function StatusRow({
           onClick={() =>
             setActiveColorPicker(activeColorPicker === index ? null : index)
           }
-          className={`group/picker flex h-8 w-8 shrink-0 items-center justify-center rounded-lg shadow-xs transition-transform ${
+          className={`group/picker flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-xs ring-1 ring-black/5 transition-transform ${
             locked ? 'cursor-not-allowed opacity-90' : 'hover:scale-105'
           }`}
           style={{ backgroundColor: getColorHex(status.color) }}
@@ -144,11 +147,11 @@ function StatusRow({
               initial={{ opacity: 0, scale: 0.95, y: 5 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 5 }}
-              className="absolute left-0 top-10 z-30 w-48 rounded-xl border border-slate-200 bg-white p-3 shadow-xl"
+              className="absolute left-0 top-9 z-30 w-52 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-xl backdrop-blur-md"
             >
-              <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
-                <span className="text-[11px] font-semibold text-slate-500">
-                  Change Color
+              <div className="mb-2.5 flex items-center justify-between border-b border-slate-100 pb-2">
+                <span className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+                  Stage Color
                 </span>
                 <button
                   type="button"
@@ -158,15 +161,16 @@ function StatusRow({
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-2">
                 {COLOR_OPTIONS.map((c) => (
                   <button
                     key={c.value}
                     type="button"
+                    title={c.label}
                     onClick={() => updateStatusColor(index, c.value)}
-                    className={`h-6 w-6 rounded-full border-2 border-white transition hover:scale-110 ${
+                    className={`h-6 w-6 rounded-full border border-black/10 transition-transform hover:scale-115 ${
                       status.color === c.value
-                        ? 'ring-2 ring-indigo-500 ring-offset-1'
+                        ? 'ring-2 ring-indigo-500 ring-offset-2'
                         : ''
                     }`}
                     style={{ backgroundColor: c.hex }}
@@ -204,7 +208,7 @@ function StatusRow({
         </div>
       </div>
 
-      {/* Delete Action (Available for ALL stages except New/Completed) */}
+      {/* Delete Action */}
       {!locked && (
         <button
           type="button"
@@ -235,7 +239,7 @@ export default function PipelineTab({
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeColorPicker, setActiveColorPicker] = useState<number | null>(null);
   const [newLabel, setNewLabel] = useState('');
-  const [newColor, setNewColor] = useState('blue');
+  const [newColor, setNewColor] = useState('indigo');
 
   const initialStatuses = useMemo<StatusOption[]>(() => {
     const saved = company?.status_options;
@@ -263,7 +267,7 @@ export default function PipelineTab({
   }, [isDirty]);
 
   const getColorHex = (name: string) =>
-    COLOR_OPTIONS.find((c) => c.value === name)?.hex || '#3b82f6';
+    COLOR_OPTIONS.find((c) => c.value === name)?.hex || '#4f46e5';
 
   const isLockedStage = (s: StatusOption) =>
     s.value === 'new' || s.value === 'completed';
@@ -321,7 +325,7 @@ export default function PipelineTab({
     });
     setStatuses(updated);
     setNewLabel('');
-    setNewColor('blue');
+    setNewColor('indigo');
     setShowAddForm(false);
   };
 
@@ -521,11 +525,12 @@ export default function PipelineTab({
                           <button
                             key={c.value}
                             type="button"
+                            title={c.label}
                             onClick={() => setNewColor(c.value)}
-                            className={`h-7 w-7 rounded-full transition cursor-pointer ${
+                            className={`h-6 w-6 rounded-full border border-black/10 transition cursor-pointer ${
                               newColor === c.value
                                 ? 'scale-110 ring-2 ring-indigo-500 ring-offset-2'
-                                : 'opacity-60 hover:opacity-100'
+                                : 'opacity-80 hover:opacity-100'
                             }`}
                             style={{ backgroundColor: c.hex }}
                           />
@@ -588,7 +593,7 @@ export default function PipelineTab({
               {statuses.map((s) => (
                 <span
                   key={s.value}
-                  className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold text-white shadow-2xs"
+                  className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-2xs"
                   style={{ backgroundColor: getColorHex(s.color) }}
                 >
                   {s.label}
