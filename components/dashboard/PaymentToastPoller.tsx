@@ -62,7 +62,17 @@ export default function PaymentToastPoller({
         const newOnes = payments.filter((p) => !seenIdsRef.current.has(p.id));
 
         for (const p of newOnes) {
+          // Mark every new payment as seen regardless of method, so a
+          // manual entry doesn't get re-evaluated on every future poll —
+          // it's just never toasted.
           seenIdsRef.current.add(p.id);
+
+          // Only Stripe payments represent something the contractor
+          // didn't already know about — a customer paid without them in
+          // the room. A manually-marked payment is the contractor's own
+          // action; toasting it back at them is just an echo, not news.
+          if (p.method !== 'stripe') continue;
+
           toast.success(`${fmt(p.amount)} from ${p.customer_name}`, {
             description: `${KIND_LABEL[p.kind] || 'Payment received'}${
               p.project_number ? ` · Project #${p.project_number}` : ''
@@ -78,7 +88,9 @@ export default function PaymentToastPoller({
 
         // Advance the cursor to the server's own latest timestamp — still
         // useful to keep the query fast/scoped, even though it's no
-        // longer the only thing preventing a duplicate toast.
+        // longer the only thing preventing a duplicate toast. This stays
+        // based on ALL payments, not just Stripe ones, so the query
+        // window keeps moving forward correctly either way.
         const latest = payments[payments.length - 1]?.created_at;
         if (latest) sinceRef.current = latest;
       }

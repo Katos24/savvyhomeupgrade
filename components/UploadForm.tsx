@@ -18,6 +18,10 @@ type CustomQuestion = {
   type: 'text' | 'select' | 'checkbox';
   required: boolean;
   options?: string[];
+  // Which service this question applies to. Missing/empty means it's a
+  // legacy question saved before per-service scoping existed — those still
+  // show on every service's form rather than silently disappearing.
+  category?: string;
 };
 
 type FieldConfig = {
@@ -99,7 +103,14 @@ export default function UploadForm({
 
   const finalCompanySlug = company?.slug || companySlug;
   const finalCompanyId = company?.id || companyId;
-  const customQuestions = company?.custom_questions || [];
+
+  // Only show questions scoped to the service the customer actually picked
+  // in Step 1. A question with no `category` (saved before per-service
+  // scoping existed) still shows everywhere, so nothing that was already
+  // live silently disappears because of this change.
+  const customQuestions = (company?.custom_questions || []).filter(
+    (q) => !q.category || q.category === step1Data.category
+  );
 
   const isStarterPlan = company?.plan_tier === 'free';
 

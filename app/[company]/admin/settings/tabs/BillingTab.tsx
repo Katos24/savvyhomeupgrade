@@ -60,6 +60,11 @@ export default function BillingTab({
   );
 
   const isTrialing = company.subscription_status === 'trialing';
+  // What the trial is actually FOR — the plan/price the card gets charged
+  // for once the trial ends. Falls back to 'basic' defensively; a trialing
+  // company should always have a real plan_tier, but this avoids the banner
+  // rendering "undefined/mo" if that assumption is ever wrong.
+  const trialPlanConfig = PLAN_CONFIG[(activePlan === 'free' ? 'basic' : activePlan) as 'basic' | 'pro'];
 
   // --- ACTIONS ---
 
@@ -264,25 +269,46 @@ export default function BillingTab({
           animate={{ opacity: 1, scale: 1 }}
           className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-900 to-slate-900 p-6 text-white shadow-md"
         >
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-500/20 backdrop-blur-md text-blue-300 ring-1 ring-blue-400/30">
                 <Sparkles className="h-6 w-6" />
               </div>
               <div>
-                <p className="text-base font-bold text-white">Free Trial Active</p>
-                <p className="mt-0.5 text-xs text-blue-100/80">
-                  Your trial ends on{' '}
+                <p className="text-base font-bold text-white">
+                  14-Day Free Trial &mdash; $0 charged today
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-blue-100/90">
+                  On{' '}
                   <span className="font-semibold text-white">
-                    {new Date(company.trial_ends_at).toLocaleDateString()}
+                    {new Date(company.trial_ends_at).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
                   </span>
-                  .{' '}
-                  {activePlan === 'pro'
-                    ? "You're enjoying full Pro tier features."
-                    : 'Upgrade anytime to maintain seamless feature access.'}
+                  , your card will be automatically charged{' '}
+                  <span className="font-semibold text-white">
+                    ${trialPlanConfig?.price}/mo
+                  </span>{' '}
+                  for the {trialPlanConfig?.label} plan unless you cancel before then.
+                </p>
+                <p className="mt-2 flex items-center gap-1.5 text-[11px] text-blue-200/80">
+                  <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                  Cancel anytime before your trial ends and you'll keep full access
+                  through day 14 &mdash; no early cutoff.
                 </p>
               </div>
             </div>
+
+            <button
+              onClick={handleManageSubscription}
+              disabled={loading}
+              className="inline-flex shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-xs font-bold text-white shadow-xs backdrop-blur-md transition hover:bg-white/20 active:scale-95 disabled:opacity-50"
+            >
+              <CreditCard className="h-3.5 w-3.5" />
+              {loading ? 'Opening...' : 'Manage or Cancel Trial'}
+            </button>
           </div>
         </motion.div>
       )}

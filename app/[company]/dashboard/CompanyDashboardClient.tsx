@@ -485,7 +485,7 @@ const groups = useMemo(() => [
     return (
       <div
         className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-colors ${
-          isDark ? 'bg-[#0b0f17]' : 'bg-slate-50'
+isDark ? 'bg-[#0b0f17]' : 'bg-slate-100'
         }`}
         role="status"
         aria-label="Loading dashboard"
@@ -583,12 +583,15 @@ const groups = useMemo(() => [
   // -------------------------------------------------------------------------
 const accentColor = company.email_brand_color_1 || '#2563eb';
 
-  return (
-<div className="min-h-screen relative selection:bg-blue-500/30 bg-[#0b0f17]">
+return (
+<div className={`min-h-screen relative selection:bg-blue-500/30 transition-colors ${
+isDark ? 'bg-[#0b0f17]' : 'bg-slate-100'
+
+}`}>
    <div
         className="pointer-events-none fixed inset-x-0 top-0 h-[480px] z-0"
         style={{
-          background: `radial-gradient(ellipse at top, ${accentColor}1f, transparent 70%)`,
+          background: `radial-gradient(ellipse at top, ${accentColor}${isDark ? '1f' : '0d'}, transparent 70%)`,
         }}
         aria-hidden="true"
       />

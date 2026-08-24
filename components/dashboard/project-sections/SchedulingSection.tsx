@@ -222,6 +222,31 @@ export default function SchedulingSection({
     );
   }, [scheduledDate, scheduledTime, scheduledEndTime, eventLocation, selectedAssignees, estimatedHours, actualHours, initialState]);
 
+  // Formatted date and time strings for modal reference
+  const scheduledDateFormatted = useMemo(() => {
+    if (!scheduledDate) return null;
+    try {
+      const [year, month, day] = scheduledDate.split('-');
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+    } catch {
+      return scheduledDate;
+    }
+  }, [scheduledDate]);
+
+  const scheduledTimeFormatted = useMemo(() => {
+    if (!timeHour || !timeMinute) return null;
+    const start = `${timeHour}:${timeMinute} ${timeAmPm}`;
+    if (schedulingConfig.showEndTime && endTimeHour && endTimeMinute) {
+      const end = `${endTimeHour}:${endTimeMinute} ${endTimeAmPm}`;
+      return `${start} - ${end}`;
+    }
+    return start;
+  }, [timeHour, timeMinute, timeAmPm, endTimeHour, endTimeMinute, endTimeAmPm, schedulingConfig.showEndTime]);
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -269,6 +294,49 @@ export default function SchedulingSection({
 
   return (
     <div className="max-w-4xl mx-auto w-full space-y-4">
+      {/* SEND EMAIL MODAL */}
+      <SendEmailModal
+        open={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
+        type="schedule"
+        leadId={lead?.id}
+        currentUser={currentUser}
+        customerName={lead?.name || 'Customer'}
+        customerEmail={lead?.email}
+        scheduledDateDisplay={scheduledDateFormatted}
+        scheduledTimeDisplay={scheduledTimeFormatted}
+        lastSentAt={lastEmailSentAt}
+        lastHtmlBody={lastHtmlBody}
+      />
+
+      {/* CALENDAR MODAL */}
+      <SchedulingCalendarModal
+        isOpen={showCalendarModal}
+        onClose={() => setShowCalendarModal(false)}
+        onSelectDateTime={(d: string, t: string, endT?: string) => {
+          setScheduledDate(d);
+          const { hour, minute, ampm } = parseTimeString(t);
+          setTimeHour(hour);
+          setTimeMinute(minute);
+          setTimeAmPm(ampm);
+          if (endT) {
+            const end = parseTimeString(endT);
+            setEndTimeHour(end.hour);
+            setEndTimeMinute(end.minute);
+            setEndTimeAmPm(end.ampm);
+          }
+        }}
+        companySlug={companySlug}
+        currentScheduledDate={scheduledDate}
+        currentScheduledTime={scheduledTime}
+        currentScheduledEndTime={scheduledEndTime}
+        selectedAssignees={selectedAssignees}
+        currentLeadId={lead?.id}
+        bufferMinutes={schedulingConfig.bufferMinutes}
+        showEndTime={schedulingConfig.showEndTime}
+      />
+
       {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
         {previewHtml && (
@@ -308,7 +376,7 @@ export default function SchedulingSection({
         )}
       </AnimatePresence>
 
-      {/* MAIN CONTAINER (overflow-visible to prevent dropdown clipping) */}
+      {/* MAIN CONTAINER */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col relative z-10">
         
         {/* HEADER & PRIMARY ACTIONS */}
@@ -347,7 +415,7 @@ export default function SchedulingSection({
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition touch-manipulation disabled:opacity-40 min-h-[42px] sm:min-h-0"
             >
               <Mail className="w-3.5 h-3.5 text-blue-600" />
-              <span>Send Schedule</span>
+              <span>{outboxLog.length > 0 ? 'Resend Schedule' : 'Send Schedule'}</span>
             </button>
 
             <button
@@ -482,7 +550,7 @@ export default function SchedulingSection({
               )}
             </div>
 
-            {/* DATE & START TIME WITH INLINE CALENDAR TRIGGER */}
+            {/* DATE & START TIME */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">Date & Start Time</label>
@@ -667,102 +735,58 @@ export default function SchedulingSection({
               <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Clock size={14} className="text-amber-500" />
-                  <p className="text-sm font-semibold text-slate-900">Job hours</p>
+                  <h3 className="text-xs font-bold text-slate-800">Edit Job Hours</h3>
                 </div>
-                <button onClick={() => setClockOpen(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition touch-manipulation">
-                  <X size={14} className="text-slate-400" />
+                <button onClick={() => setClockOpen(false)} className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600">
+                  <X size={15} />
                 </button>
               </div>
-              <div className="px-5 py-5 space-y-4">
+
+              <div className="p-5 space-y-4">
                 <div>
-                  <label className="text-[11px] font-medium text-slate-400 mb-1.5 block uppercase tracking-wider">Estimated hours</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Estimated Hours
+                  </label>
                   <input
                     type="number"
                     step="0.5"
+                    min="0"
+                    placeholder="e.g. 4.5"
                     value={estimatedHours}
-                    onChange={e => setEstimatedHours(e.target.value)}
-                    placeholder="0.0"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[16px] sm:text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                    onChange={(e) => setEstimatedHours(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold outline-none focus:border-blue-500 focus:bg-white"
                   />
                 </div>
+
                 <div>
-                  <label className="text-[11px] font-medium text-slate-400 mb-1.5 block uppercase tracking-wider">Actual hours</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">
+                    Actual Hours Worked
+                  </label>
                   <input
                     type="number"
                     step="0.5"
+                    min="0"
+                    placeholder="e.g. 5.0"
                     value={actualHours}
-                    onChange={e => setActualHours(e.target.value)}
-                    placeholder="0.0"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[16px] sm:text-sm font-medium text-slate-900 outline-none focus:border-blue-400 focus:bg-white transition-all"
+                    onChange={(e) => setActualHours(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-xs font-semibold outline-none focus:border-blue-500 focus:bg-white"
                   />
                 </div>
-                {estimatedHours && actualHours && (
-                  <div className="flex items-center justify-between px-3.5 py-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                    <span className="text-[11px] font-medium text-slate-500">Over/under</span>
-                    <span className={`text-xs font-bold ${parseFloat(actualHours) > parseFloat(estimatedHours) ? 'text-red-500' : 'text-emerald-600'}`}>
-                      {parseFloat(actualHours) > parseFloat(estimatedHours)
-                        ? `+${(parseFloat(actualHours) - parseFloat(estimatedHours)).toFixed(1)} hrs over`
-                        : `${(parseFloat(estimatedHours) - parseFloat(actualHours)).toFixed(1)} hrs under`}
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="px-5 pb-5">
-                <button
-                  type="button"
-                  onClick={() => { handleSave(); setClockOpen(false); }}
-                  disabled={saving}
-                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-sm font-medium transition flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
-                >
-                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                  {saving ? 'Saving...' : 'Save hours'}
-                </button>
+
+                <div className="pt-2 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setClockOpen(false)}
+                    className="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* CALENDAR & EMAIL MODALS */}
-      <SchedulingCalendarModal
-        isOpen={showCalendarModal}
-        onClose={() => setShowCalendarModal(false)}
-        onSelectDateTime={(d, t, endT) => {
-          setScheduledDate(d);
-          const { hour, minute, ampm } = parseTimeString(t);
-          setTimeHour(hour); 
-          setTimeMinute(minute); 
-          setTimeAmPm(ampm);
-          if (endT) {
-            const end = parseTimeString(endT);
-            setEndTimeHour(end.hour);
-            setEndTimeMinute(end.minute);
-            setEndTimeAmPm(end.ampm);
-          }
-        }}
-        companySlug={companySlug}
-        currentScheduledDate={scheduledDate}
-        currentScheduledTime={scheduledTime}
-        currentScheduledEndTime={scheduledEndTime}
-        selectedAssignees={selectedAssignees}
-        currentLeadId={lead?.id}
-        bufferMinutes={schedulingConfig.bufferMinutes}
-        showEndTime={schedulingConfig.showEndTime}
-      />
-
-      <SendEmailModal
-        open={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        onSuccess={async () => { await onRefresh(); await fetchOutbox(); }}
-        type="schedule"
-        leadId={lead.id}
-        currentUser={currentUser}
-        customerName={lead.name}
-        customerEmail={lead.email}
-        contextLine={scheduledDate ? new Date(scheduledDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : null}
-        lastSentAt={lastEmailSentAt}
-        lastHtmlBody={lastHtmlBody}
-      />
     </div>
   );
 }

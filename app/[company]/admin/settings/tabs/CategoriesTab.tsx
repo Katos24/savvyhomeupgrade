@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus, X, CheckSquare, Trash2, Save, AlertTriangle, Layers, DollarSign,
-  AlertCircle, Lock, Check, Percent, HandCoins, Loader2,
+  AlertCircle, Lock, Check, Percent, HandCoins, Loader2, HelpCircle, Edit2, ChevronDown,
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -24,6 +24,19 @@ type QuoteTemplate = {
   deposit_value?: number | null;
 };
 type Category = { value: string; label: string; task_templates?: TaskTemplate[] };
+
+// A question now belongs to exactly one service (set from that service's
+// card), instead of the old flat, unscoped list. `category` holds the
+// service's `value`. Legacy questions saved before this existed get bucketed
+// onto the first service at load time rather than silently disappearing.
+type CustomQuestion = {
+  id: string;
+  label: string;
+  type: 'text' | 'select' | 'checkbox';
+  required: boolean;
+  options?: string[];
+  category: string;
+};
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -62,7 +75,7 @@ function LockedCategoriesSection({ companySlug }: { companySlug: string }) {
       <div className="mx-auto max-w-4xl">
         <div className="rounded-xl border border-slate-200/80 bg-white py-16 text-center shadow-lg shadow-slate-200/60">
           <Lock className="mx-auto mb-3 h-6 w-6 text-slate-300" />
-          <p className="text-sm font-bold text-slate-800">Categories &amp; pricing is on the Basic plan</p>
+          <p className="text-sm font-bold text-slate-800">Services &amp; pricing is on the Basic plan</p>
           <a
             href={`/${companySlug}/home?section=billing`}
             className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800"
@@ -93,6 +106,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [newCatLabel, setNewCatLabel] = useState('');
   const [newCatError, setNewCatError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; label: string } | null>(null);
+  const [expandedService, setExpandedService] = useState<string | null>(null);
 
   const [taskEditorCatIndex, setTaskEditorCatIndex] = useState<number | null>(null);
   const [editingTasks, setEditingTasks] = useState<TaskTemplate[]>([]);
@@ -113,6 +127,23 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [quoteSaving, setQuoteSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
   const [showQuotePreview, setShowQuotePreview] = useState(false);
+
+  // ── Custom Questions, scoped per service ──
+  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(() => {
+    const raw = company.custom_questions || [];
+    const fallbackCategory = (company.form_categories?.length > 0 ? company.form_categories : defaultCategories)[0]?.value || 'general';
+    return raw.map((q: any) => ({ ...q, category: q.category || fallbackCategory }));
+  });
+  const [questionEditorCatValue, setQuestionEditorCatValue] = useState<string>('');
+  const [questionEditorOpen, setQuestionEditorOpen] = useState(false);
+  const [questionSaving, setQuestionSaving] = useState(false);
+  const [questionSaveError, setQuestionSaveError] = useState('');
+  const [newQLabel, setNewQLabel] = useState('');
+  const [newQType, setNewQType] = useState<'text' | 'select' | 'checkbox'>('text');
+  const [newQOptions, setNewQOptions] = useState<string[]>([]);
+  const [newQOptionDraft, setNewQOptionDraft] = useState('');
+  const [editingQId, setEditingQId] = useState<string | null>(null);
+  const [questionLabelError, setQuestionLabelError] = useState('');
 
   // Per-template values being edited in the pricing modal. Moved up here with
   // the rest of the state — it was previously declared mid-component.
@@ -294,7 +325,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   }, [company.slug]);
 
   const handleAddCategory = () => {
-    if (!newCatLabel.trim()) { setNewCatError('Enter a category name.'); return; }
+    if (!newCatLabel.trim()) { setNewCatError('Enter a service name.'); return; }
     const value = newCatLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_');
     setCategories(prev => [...prev, { value, label: newCatLabel.trim(), task_templates: [] }]);
     setNewCatLabel(''); setNewCatError(''); setShowAddForm(false); setUseDefaults(false); markDirty();
@@ -440,7 +471,76 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     } catch {}
   };
 
+  // ── Custom Questions, per-service ──
+  const openQuestionEditor = (catValue: string) => {
+    setQuestionEditorCatValue(catValue);
+    setQuestionEditorOpen(true);
+    resetQuestionForm();
+  };
+
+  const resetQuestionForm = () => {
+    setNewQLabel(''); setNewQType('text'); setNewQOptions([]); setNewQOptionDraft('');
+    setEditingQId(null); setQuestionLabelError('');
+  };
+
+  const startEditQuestion = (q: CustomQuestion) => {
+    setEditingQId(q.id);
+    setNewQLabel(q.label);
+    setNewQType(q.type);
+    setNewQOptions(q.options || []);
+    setNewQOptionDraft('');
+    setQuestionLabelError('');
+  };
+
+  const addOrUpdateQuestionInList = () => {
+    if (!newQLabel.trim()) { setQuestionLabelError('Enter a question.'); return; }
+    if (editingQId) {
+      setCustomQuestions(prev => prev.map(q => q.id === editingQId
+        ? { ...q, label: newQLabel.trim(), type: newQType, options: newQType === 'select' ? newQOptions : [] }
+        : q
+      ));
+    } else {
+      setCustomQuestions(prev => [...prev, {
+        id: `q_${Date.now()}`,
+        label: newQLabel.trim(),
+        type: newQType,
+        required: false,
+        options: newQType === 'select' ? newQOptions : [],
+        category: questionEditorCatValue,
+      }]);
+    }
+    resetQuestionForm();
+  };
+
+  const removeQuestion = (id: string) => {
+    setCustomQuestions(prev => prev.filter(q => q.id !== id));
+  };
+
+  const saveQuestionsForService = async () => {
+    setQuestionSaving(true); setQuestionSaveError('');
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-form', data: { questions: customQuestions } }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setQuestionEditorOpen(false);
+      } else {
+        setQuestionSaveError(data.error || 'Failed to save questions.');
+      }
+    } catch {
+      setQuestionSaveError('Network error. Try again.');
+    } finally {
+      setQuestionSaving(false);
+    }
+  };
+
   const activeQuoteEditorCat = categories.find(c => c.value === quoteEditorCatValue);
+  const activeQuestionEditorCat = categories.find(c => c.value === questionEditorCatValue);
+  const questionsForActiveService = customQuestions.filter(q => q.category === questionEditorCatValue);
+
   const quoteEditorSubtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
   const quoteEditorTaxAmount = quoteEditorSubtotal * (editingTaxRateValue / 100);
   const quoteEditorTotal = quoteEditorSubtotal + quoteEditorTaxAmount;
@@ -460,7 +560,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         {/* ── TITLE + ACTIONS ── */}
         <div className="pb-2 border-b border-slate-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Service Categories</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Services</h1>
             {isDirty && (
               <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
                 <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Unsaved changes
@@ -482,12 +582,12 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         {/* ── HEADLINE CARD ── */}
         <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60">
           <h2 className="text-sm sm:text-base font-bold leading-snug text-slate-900">
-            Set up your estimate templates to create invoices faster
+            Set up each service so quotes and intake are ready to go
           </h2>
           <ul className="mt-3 space-y-1.5 text-xs sm:text-sm font-medium leading-relaxed text-slate-600 list-disc pl-4">
-            <li>Adjust quantity and price per job — templates are just a starting point.</li>
-            <li>Add or remove line items whenever a job needs it.</li>
-            <li>Set a deposit and the quote splits into an amount due on signing and a balance.</li>
+            <li>Pricing templates are just a starting point — everything's editable per job.</li>
+            <li>Task checklists auto-load when a job in that service is created.</li>
+            <li>Custom questions only show customers who are requesting that specific service.</li>
           </ul>
           <button
             onClick={() => setShowQuotePreview(true)}
@@ -534,7 +634,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           </div>
         )}
 
-        {/* ── ADD CATEGORY + COMPANY DEFAULTS ── */}
+        {/* ── ADD SERVICE + COMPANY DEFAULTS ── */}
         <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 space-y-2">
           <AnimatePresence mode="wait">
             {showAddForm ? (
@@ -576,7 +676,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   onClick={() => setShowAddForm(true)}
                   className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 sm:w-auto sm:py-2"
                 >
-                  <Plus className="h-3.5 w-3.5" /> Add category
+                  <Plus className="h-3.5 w-3.5" /> Add service
                 </motion.button>
 
                 {editingTaxRate ? (
@@ -702,75 +802,182 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           )}
         </div>
 
-        {/* ── CATEGORY GRID ── */}
+        {/* ── SERVICE LIST ── */}
         <div>
           <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Layers className="h-4 w-4 text-slate-700" /> Update your categories, tasks, and templates
+            <Layers className="h-4 w-4 text-slate-700" /> Manage each service's tasks, pricing, and questions
           </h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-3">
             {categories.map((cat, index) => {
               const taskCount = cat.task_templates?.length || 0;
               const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
               const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate.deposit_value ?? 0) > 0;
+              const questionCount = customQuestions.filter(q => q.category === cat.value).length;
               return (
                 <motion.div
                   key={cat.value}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="group bg-white rounded-xl border border-slate-200/80 p-5 shadow-lg shadow-slate-200/60 transition-shadow hover:shadow-slate-300/60"
+                  className="group bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-lg shadow-slate-200/60 transition-shadow hover:shadow-slate-300/60"
                 >
-                  <div className="mb-4 flex items-start justify-between">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  {/* LEFT: identity + badges */}
+                  <div
+                    className="flex items-start gap-3 flex-1 min-w-0 cursor-pointer"
+                    onClick={() => setExpandedService(expandedService === cat.value ? null : cat.value)}
+                  >
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100">
                       <Layers className="h-5 w-5 text-slate-600" />
                     </div>
-                    <button
-                      onClick={() => setDeleteConfirm({ index, label: cat.label })}
-                      className="rounded-lg p-2 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600"
-                      aria-label={`Delete ${cat.label}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-bold text-slate-900 truncate">{cat.label}</h3>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ index, label: cat.label }); }}
+                          className="shrink-0 rounded-lg p-1 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600"
+                          aria-label={`Delete ${cat.label}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                          taskCount > 0 ? 'border-slate-300 bg-slate-100 text-slate-700' : 'border-slate-200 bg-slate-50 text-slate-400'
+                        }`}>
+                          <CheckSquare className="h-3 w-3" />
+                          {taskCount > 0 ? `${taskCount} Task${taskCount !== 1 ? 's' : ''}` : 'No Tasks'}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                          quoteTemplate ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-400'
+                        }`}>
+                          <DollarSign className="h-3 w-3" />
+                          {quoteTemplate ? `${quoteTemplate.items.length} Item${quoteTemplate.items.length !== 1 ? 's' : ''}` : 'No Pricing'}
+                        </span>
+                        {hasDeposit && (
+                          <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            <HandCoins className="h-3 w-3" />
+                            {quoteTemplate!.deposit_type === 'percent'
+                              ? `${quoteTemplate!.deposit_value}% Down`
+                              : `${fmt(quoteTemplate!.deposit_value ?? 0)} Down`}
+                          </span>
+                        )}
+                        <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
+                          questionCount > 0 ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-slate-50 text-slate-400'
+                        }`}>
+                          <HelpCircle className="h-3 w-3" />
+                          {questionCount > 0 ? `${questionCount} Question${questionCount !== 1 ? 's' : ''}` : 'No Questions'}
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <h3 className="mb-3 text-sm font-bold text-slate-900">{cat.label}</h3>
+                  {/* CHEVRON: toggle at-a-glance summary */}
+                  <button
+                    onClick={() => setExpandedService(expandedService === cat.value ? null : cat.value)}
+                    className="hidden sm:flex shrink-0 items-center justify-center rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    aria-label={expandedService === cat.value ? 'Collapse summary' : 'Expand summary'}
+                  >
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedService === cat.value ? 'rotate-180' : ''}`} />
+                  </button>
 
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                      taskCount > 0 ? 'border-slate-300 bg-slate-100 text-slate-700' : 'border-slate-200 bg-slate-50 text-slate-400'
-                    }`}>
-                      <CheckSquare className="h-3 w-3" />
-                      {taskCount > 0 ? `${taskCount} Task${taskCount !== 1 ? 's' : ''}` : 'No Tasks'}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                      quoteTemplate ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-400'
-                    }`}>
-                      <DollarSign className="h-3 w-3" />
-                      {quoteTemplate ? `${quoteTemplate.items.length} Item${quoteTemplate.items.length !== 1 ? 's' : ''}` : 'No Pricing'}
-                    </span>
-                    {hasDeposit && (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
-                        <HandCoins className="h-3 w-3" />
-                        {quoteTemplate!.deposit_type === 'percent'
-                          ? `${quoteTemplate!.deposit_value}% Down`
-                          : `${fmt(quoteTemplate!.deposit_value ?? 0)} Down`}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
+                  {/* RIGHT: actions */}
+                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
                     <button
-                      onClick={() => openTaskEditor(index)}
-                      className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2.5 text-[11px] font-bold uppercase tracking-wide text-slate-600 shadow-xs transition hover:border-slate-900 hover:bg-slate-900 hover:text-white"
+                      onClick={(e) => { e.stopPropagation(); openTaskEditor(index); }}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-xs transition hover:border-slate-900 hover:bg-slate-900 hover:text-white"
                     >
-                      <Plus className="h-3 w-3" /> Tasks
+                      <CheckSquare className="h-3.5 w-3.5" /> Tasks
                     </button>
                     <button
-                      onClick={() => openQuoteEditor(cat.value)}
-                      className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white py-2.5 text-[11px] font-bold uppercase tracking-wide text-slate-600 shadow-xs transition hover:border-emerald-600 hover:bg-emerald-600 hover:text-white"
+                      onClick={(e) => { e.stopPropagation(); openQuoteEditor(cat.value); }}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-xs transition hover:border-emerald-600 hover:bg-emerald-600 hover:text-white"
                     >
-                      <Plus className="h-3 w-3" /> Pricing
+                      <DollarSign className="h-3.5 w-3.5" /> Pricing
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openQuestionEditor(cat.value); }}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-xs transition hover:border-blue-600 hover:bg-blue-600 hover:text-white"
+                    >
+                      <HelpCircle className="h-3.5 w-3.5" /> Questions
                     </button>
                   </div>
+                </div>
+
+                {/* AT-A-GLANCE SUMMARY (accordion) */}
+                <AnimatePresence>
+                  {expandedService === cat.value && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {/* Tasks summary */}
+                        <div className="min-w-0">
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Tasks</p>
+                          {(cat.task_templates || []).length === 0 ? (
+                            <p className="text-[11px] italic text-slate-400">No tasks yet</p>
+                          ) : (
+                            <ul className="max-h-28 space-y-1 overflow-y-auto pr-1">
+                              {(cat.task_templates || []).map((t) => (
+                                <li key={t.id} className="truncate text-[11px] text-slate-600">
+                                  &bull; {t.label}
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+
+                        {/* Pricing summary */}
+                        <div className="min-w-0">
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Pricing</p>
+                          {!quoteTemplate ? (
+                            <p className="text-[11px] italic text-slate-400">No pricing yet</p>
+                          ) : (
+                            <>
+                              <ul className="max-h-20 space-y-1 overflow-y-auto pr-1">
+                                {quoteTemplate.items.map((item) => (
+                                  <li key={item.id} className="flex items-baseline gap-2 text-[11px] text-slate-600">
+                                    <span className="truncate max-w-[65%]">{item.description || 'Untitled item'}</span>
+                                    <span className="text-slate-500">{fmt(item.unitPrice)}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                              <p className="mt-1.5 text-[11px] font-semibold text-slate-700">
+                                Total: {fmt(quoteTemplate.total)}
+                              </p>
+                              {hasDeposit && (
+                                <p className="text-[10px] font-medium text-amber-700">
+                                  {depositLabel(quoteTemplate.deposit_type, quoteTemplate.deposit_value)}
+                                </p>
+                              )}
+                            </>
+                          )}
+                        </div>
+
+                        {/* Questions summary */}
+                        <div className="min-w-0">
+                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Questions</p>
+                          {customQuestions.filter((q) => q.category === cat.value).length === 0 ? (
+                            <p className="text-[11px] italic text-slate-400">No questions yet</p>
+                          ) : (
+                            <ul className="max-h-28 space-y-1 overflow-y-auto pr-1">
+                              {customQuestions
+                                .filter((q) => q.category === cat.value)
+                                .map((q) => (
+                                  <li key={q.id} className="truncate text-[11px] text-slate-600">
+                                    &bull; {q.label}
+                                  </li>
+                                ))}
+                            </ul>
+                          )}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
                 </motion.div>
               );
             })}
@@ -1197,6 +1404,215 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           </div>
         )}
 
+        {/* ── CUSTOM QUESTIONS MODAL (per service) ── */}
+        {questionEditorOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
+            onClick={() => setQuestionEditorOpen(false)}
+          >
+            <div
+              className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+                <div>
+                  <p className="text-sm font-bold text-slate-900">Custom Questions</p>
+                  <p className="text-[11px] font-medium text-slate-500">
+                    {activeQuestionEditorCat?.label} · only shown to customers requesting this service
+                  </p>
+                </div>
+                <button
+                  onClick={() => setQuestionEditorOpen(false)}
+                  className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
+                  aria-label="Close"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                {/* Inline add/edit form */}
+                <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/60 p-4">
+                  <div>
+                    <label className="mb-1.5 block text-xs font-bold text-slate-800">
+                      {editingQId ? 'Edit question' : 'New question'}
+                    </label>
+                    <input
+                      type="text"
+                      value={newQLabel}
+                      onChange={(e) => { setNewQLabel(e.target.value); setQuestionLabelError(''); }}
+                      onKeyDown={(e) => e.key === 'Enter' && newQType !== 'select' && addOrUpdateQuestionInList()}
+                      placeholder='e.g., "How old is your roof?"'
+                      className={`w-full rounded-md border bg-white px-3.5 py-2 text-xs font-medium text-slate-900 outline-none transition ${
+                        questionLabelError ? 'border-rose-400' : 'border-slate-200 focus:border-slate-900'
+                      }`}
+                    />
+                    {questionLabelError && (
+                      <p className="mt-1 text-[11px] font-semibold text-rose-600">{questionLabelError}</p>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { val: 'text', label: 'Text Input' },
+                      { val: 'select', label: 'Dropdown' },
+                      { val: 'checkbox', label: 'Yes/No' },
+                    ].map((t) => (
+                      <button
+                        key={t.val}
+                        type="button"
+                        onClick={() => setNewQType(t.val as any)}
+                        className={`rounded-lg border py-2.5 text-xs font-semibold transition ${
+                          newQType === t.val
+                            ? 'border-slate-900 bg-slate-900 text-white'
+                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {newQType === 'select' && (
+                    <div className="space-y-2 border-t border-slate-200 pt-3">
+                      <label className="block text-xs font-bold text-slate-800">Dropdown Options</label>
+                      <div className="max-h-24 space-y-1.5 overflow-y-auto pr-1">
+                        <AnimatePresence>
+                          {newQOptions.map((opt, i) => (
+                            <motion.div
+                              key={i}
+                              initial={{ opacity: 0, y: -4 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 4 }}
+                              className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-1.5"
+                            >
+                              <span className="text-xs font-medium text-slate-800">{opt}</span>
+                              <button
+                                onClick={() => setNewQOptions(prev => prev.filter((_, idx) => idx !== i))}
+                                className="text-slate-400 hover:text-rose-600 transition"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                              </button>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={newQOptionDraft}
+                          onChange={(e) => setNewQOptionDraft(e.target.value)}
+                          placeholder="Add option..."
+                          className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium outline-none focus:border-slate-900"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && newQOptionDraft) {
+                              e.preventDefault();
+                              setNewQOptions(prev => [...prev, newQOptionDraft]);
+                              setNewQOptionDraft('');
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (newQOptionDraft) {
+                              setNewQOptions(prev => [...prev, newQOptionDraft]);
+                              setNewQOptionDraft('');
+                            }
+                          }}
+                          aria-label="Add option"
+                          className="shrink-0 rounded-md border border-slate-300 bg-white p-2.5 text-slate-600 hover:bg-slate-50 transition"
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-2 pt-1">
+                    {editingQId && (
+                      <button
+                        onClick={resetQuestionForm}
+                        className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
+                      >
+                        Cancel edit
+                      </button>
+                    )}
+                    <button
+                      onClick={addOrUpdateQuestionInList}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 transition"
+                    >
+                      <Plus className="h-3.5 w-3.5" /> {editingQId ? 'Update question' : 'Add question'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* List of this service's questions */}
+                {questionsForActiveService.length > 0 && (
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                    Added questions — click Save questions below when you're done
+                  </p>
+                )}
+                <div className="space-y-2">
+                  {questionsForActiveService.length === 0 ? (
+                    <p className="py-4 text-center text-xs font-medium text-slate-400">
+                      No custom questions for this service yet.
+                    </p>
+                  ) : (
+                    questionsForActiveService.map((q) => (
+                      <div key={q.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5">
+                        <HelpCircle className="h-4 w-4 shrink-0 text-slate-400" />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs font-bold text-slate-900">{q.label}</p>
+                          <p className="mt-0.5 text-[11px] font-medium text-slate-500">
+                            {q.type === 'text' && 'Text Response'}
+                            {q.type === 'checkbox' && 'Yes / No Choice'}
+                            {q.type === 'select' && `Dropdown (${q.options?.length || 0} options)`}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => startEditQuestion(q)}
+                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-xs transition hover:bg-slate-50"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          onClick={() => removeQuestion(q.id)}
+                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-rose-600 shadow-xs transition hover:bg-rose-50"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {questionSaveError && (
+                  <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">
+                    <AlertCircle className="h-4 w-4 shrink-0" /> {questionSaveError}
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 border-t border-slate-200 p-4">
+                <button
+                  onClick={() => setQuestionEditorOpen(false)}
+                  className="rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveQuestionsForService}
+                  disabled={questionSaving}
+                  className="rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-60"
+                >
+                  {questionSaving ? 'Saving...' : 'Save questions'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── QUOTE SHEET PREVIEW ── */}
         {showQuotePreview && (
           <div
@@ -1226,7 +1642,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                 />
                 <p className="mt-3 text-xs sm:text-sm font-medium leading-relaxed text-slate-600">
                   This is the Quote tab on a job — your estimate builder, not
-                  the invoice. Set a pricing template for a category and
+                  the invoice. Set a pricing template for a service and
                   these line items — description, unit price, and quantity —
                   load in automatically here. Everything stays editable, and
                   sending the invoice is a separate step once the quote is
@@ -1255,12 +1671,12 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-rose-200 bg-rose-50">
                 <AlertTriangle className="h-6 w-6 text-rose-600" />
               </div>
-              <h3 className="mb-2 text-base font-bold text-slate-900">Remove category?</h3>
+              <h3 className="mb-2 text-base font-bold text-slate-900">Remove service?</h3>
               <p className="mb-2 text-sm font-medium text-slate-600">
                 This will remove <span className="font-bold text-slate-900">&quot;{deleteConfirm.label}&quot;</span>.
               </p>
               <p className="mb-6 text-xs font-semibold text-amber-700">
-                Task checklists will also be removed. Pricing templates are stored separately.
+                Task checklists will also be removed. Pricing templates and custom questions are stored separately and won't be deleted, but won't be reachable from this list anymore.
               </p>
               <div className="grid grid-cols-2 gap-2">
                 <button

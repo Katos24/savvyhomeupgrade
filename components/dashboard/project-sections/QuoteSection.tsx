@@ -497,7 +497,7 @@ export default function QuoteSection({
                     <tr>
                       <td colSpan={5} className="py-10 px-4 text-center">
                         <p className="text-sm font-semibold text-slate-700">No line items in quote</p>
-                        <p className="text-xs text-slate-400 mt-1">Add items manually below or generate a draft using AI.</p>
+                        <p className="text-xs text-slate-400 mt-1">Add items manually below or generate a draft using AI. Need templates for different service types? Set them up on the home page.</p>
                       </td>
                     </tr>
                   ) : (

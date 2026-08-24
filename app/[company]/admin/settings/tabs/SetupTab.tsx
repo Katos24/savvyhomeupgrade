@@ -167,13 +167,7 @@ export default function SetupTab({
           </div>
         </div>
 
-        {/* COMPACT FOOTER NOTE */}
-        <div className="p-4 rounded-xl bg-slate-100/70 border border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
-          <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-slate-400 shrink-0" />
-            <span>Need to update settings later? Modify your configuration anytime from workspace settings.</span>
-          </div>
-        </div>
+      
 
       </div>
     </div>

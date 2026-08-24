@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Calendar from '@/components/dashboard/Calendar';
 import LeadModal from '@/components/dashboard/LeadModal';
 import { Toaster } from 'sonner';
+import { DEFAULT_STATUSES } from '@/lib/formCategories';
 
 type Company = {
   id: number;
@@ -140,16 +141,12 @@ export default function CalendarClient({ company }: { company: Company }) {
     }
   }
 
-  const DEFAULT_STATUSES = [
-    { value: 'new', label: 'New', color: 'blue', emoji: '🆕' },
-    { value: 'contacted', label: 'Contacted', color: 'yellow', emoji: '📞' },
-    { value: 'quoted', label: 'Quoted', color: 'purple', emoji: '💰' },
-    { value: 'in-progress', label: 'In Progress', color: 'orange', emoji: '🔨' },
-    { value: 'completed', label: 'Completed', color: 'green', emoji: '✅' },
-  ];
-
-  const statusOptions = company.status_options && company.status_options.length > 0 
-    ? company.status_options 
+  // Was a locally hardcoded, stale 5-stage list (no active/approved/scheduled)
+  // duplicated from the same pre-automation snapshot that broke the pipeline
+  // status page — a lead in any of those three stages had nothing to match
+  // against here. Now sourced from the single canonical list.
+  const statusOptions = company.status_options && company.status_options.length > 0
+    ? company.status_options
     : DEFAULT_STATUSES;
 
   return (

@@ -8,12 +8,41 @@ import {
   CalendarDays, LayoutGrid, ArrowLeft, Filter, User, Clock,
   Briefcase, CheckCircle2
 } from 'lucide-react';
+import { DEFAULT_STATUSES } from '@/lib/formCategories';
 
 type CalendarProps = {
   companySlug: string;
   onSelectLead: (lead: any) => void;
   statusOptions: any[];
 };
+
+// Maps the named colors used across the app's various status-color pickers
+// (PipelineTab's palette and the legacy DEFAULT_STATUSES palette both use
+// different name sets) to an actual hex value. Previously the calendar only
+// ever checked `color === 'green'` and rendered everything else as the same
+// blue — this is what actually lets each configured status show its own
+// color instead of a green/not-green binary.
+const STATUS_COLOR_HEX: Record<string, string> = {
+  blue: '#3b82f6',
+  indigo: '#4f46e5',
+  purple: '#7c3aed',
+  violet: '#7c3aed',
+  pink: '#db2777',
+  yellow: '#d97706',
+  amber: '#d97706',
+  orange: '#ea580c',
+  coral: '#ea580c',
+  green: '#1a6645',
+  emerald: '#059669',
+  teal: '#0d9488',
+  red: '#dc2626',
+  rose: '#e11d48',
+  slate: '#475569',
+  gray: '#6b7280',
+  zinc: '#3f3f46',
+};
+
+const resolveStatusColor = (colorName?: string) => STATUS_COLOR_HEX[colorName || ''] || '#3b82f6';
 
 export default function Calendar({ companySlug, onSelectLead, statusOptions }: CalendarProps) {
   const [events, setEvents] = useState<any[]>([]);
@@ -22,11 +51,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
   const [view, setView] = useState<'month' | 'week'>('month');
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
 
-  const safeStatusOptions = statusOptions?.length > 0 ? statusOptions : [
-    { value: 'new', label: 'New', color: 'blue' },
-    { value: 'in-progress', label: 'In Progress', color: 'orange' },
-    { value: 'completed', label: 'Completed', color: 'green' },
-  ];
+  const safeStatusOptions = statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES;
 
   useEffect(() => { fetchScheduledJobs(); }, [companySlug]);
 
@@ -134,6 +159,22 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
           </button>
         </div>
 
+        {/* STATUS LEGEND — now meaningful since each status renders its own
+            real color instead of a green/blue binary */}
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5 sm:mb-8 px-2">
+          {safeStatusOptions.map((s: any) => (
+            <div key={s.value} className="flex items-center gap-1.5">
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: resolveStatusColor(s.color) }}
+              />
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-slate-500">
+                {s.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
         {/* VIEWS */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -224,17 +265,24 @@ function MonthGrid({ currentDate, events, onSelect, getStatus }: any) {
                 </span>
               </div>
               <div className="space-y-0.5 sm:space-y-1">
-                {dayEvents.slice(0, 3).map((e: any) => (
-                  <button
-                    key={e.id}
-                    onClick={() => onSelect(e)}
-                    className="w-full text-[7px] sm:text-[8px] font-black p-1 sm:p-1.5 rounded-md border border-black/5 text-white uppercase truncate text-left shadow-sm hover:brightness-110 active:scale-95 transition-all"
-                    style={{ backgroundColor: getStatus(e.job_status || e.status).color === 'green' ? '#1a6645' : '#3b82f6' }}
-                  >
-                    <span className="hidden sm:inline">{e.name}</span>
-                    <span className="sm:hidden">•</span>
-                  </button>
-                ))}
+                {dayEvents.slice(0, 3).map((e: any) => {
+                  const color = resolveStatusColor(getStatus(e.job_status || e.status).color);
+                  return (
+                    <button
+                      key={e.id}
+                      onClick={() => onSelect(e)}
+                      title={`${e.name} — ${getStatus(e.job_status || e.status).label}`}
+                      className="w-full flex items-center gap-1 text-[7px] sm:text-[9px] font-black p-1 sm:p-1.5 rounded-md border border-black/5 text-white uppercase truncate text-left shadow-sm hover:brightness-110 active:scale-95 transition-all"
+                      style={{ backgroundColor: color }}
+                    >
+                      <span className="hidden sm:inline truncate">{e.name}</span>
+                      <span
+                        className="sm:hidden w-2 h-2 rounded-full bg-white/90 shrink-0 mx-auto"
+                        aria-hidden="true"
+                      />
+                    </button>
+                  );
+                })}
                 {dayEvents.length > 3 && (
                   <p className="text-[7px] sm:text-[8px] font-black text-slate-400 pl-1">+{dayEvents.length - 3}</p>
                 )}
@@ -299,32 +347,44 @@ function WeekStrip({ currentDate, events, onSelect, getStatus }: any) {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-                  {dayEvents.map((e: any) => (
-                    <button
-                      key={e.id}
-                      onClick={() => onSelect(e)}
-                      className="flex flex-col p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border border-[#D1C9BD]/50 hover:border-[#1a6645] hover:shadow-2xl transition-all group/card relative overflow-hidden text-left"
-                    >
-                      <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-10 group-hover/card:opacity-100 transition-opacity">
-                        <ChevronRight size={16} />
-                      </div>
-                      <div
-                        className="w-10 sm:w-12 h-1.5 rounded-full mb-4 sm:mb-6"
-                        style={{ background: getStatus(e.job_status || e.status).color === 'green' ? '#1a6645' : '#3b82f6' }}
-                      />
-                      <h4 className="text-base sm:text-xl font-black tracking-tight mb-3 sm:mb-6 truncate">{e.name}</h4>
-                      <div className="space-y-2 sm:space-y-3">
-                        <div className="flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] font-black uppercase text-slate-400 italic">
-                          <Clock size={13} className="text-[#1a6645] shrink-0" />
-                          {e.scheduled_time || 'TBD'}
+                  {dayEvents.map((e: any) => {
+                    const statusConfig = getStatus(e.job_status || e.status);
+                    const color = resolveStatusColor(statusConfig.color);
+                    return (
+                      <button
+                        key={e.id}
+                        onClick={() => onSelect(e)}
+                        className="flex flex-col p-5 sm:p-8 rounded-[1.5rem] sm:rounded-[2.5rem] bg-white border border-[#D1C9BD]/50 hover:border-[#1a6645] hover:shadow-2xl transition-all group/card relative overflow-hidden text-left"
+                      >
+                        <div className="absolute top-0 right-0 p-4 sm:p-6 opacity-10 group-hover/card:opacity-100 transition-opacity">
+                          <ChevronRight size={16} />
                         </div>
-                        <div className="flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] font-black uppercase text-slate-400 italic">
-                          <User size={13} className="text-[#1a6645] shrink-0" />
-                          {e.assigned_to || 'Unassigned'}
+                        <div className="flex items-center gap-2 mb-4 sm:mb-6">
+                          <div
+                            className="w-10 sm:w-12 h-1.5 rounded-full"
+                            style={{ background: color }}
+                          />
+                          <span
+                            className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest"
+                            style={{ color }}
+                          >
+                            {statusConfig.label}
+                          </span>
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                        <h4 className="text-base sm:text-xl font-black tracking-tight mb-3 sm:mb-6 truncate">{e.name}</h4>
+                        <div className="space-y-2 sm:space-y-3">
+                          <div className="flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] font-black uppercase text-slate-400 italic">
+                            <Clock size={13} className="text-[#1a6645] shrink-0" />
+                            {e.scheduled_time || 'TBD'}
+                          </div>
+                          <div className="flex items-center gap-2 sm:gap-3 text-[9px] sm:text-[10px] font-black uppercase text-slate-400 italic">
+                            <User size={13} className="text-[#1a6645] shrink-0" />
+                            {e.assigned_to || 'Unassigned'}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>

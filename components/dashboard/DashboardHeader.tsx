@@ -104,8 +104,9 @@ export default function DashboardHeader({
         }
         ${isDark
           ? `bg-[#0A0C14]/${isScrolled ? '90' : '60'} border-white/5`
-          : `bg-white/${isScrolled ? '95' : '80'} border-slate-200/80`
-      }`}
+: `bg-white/${isScrolled ? '95' : '80'} border-slate-300/80`
+
+}`}
       style={{ borderTop: `2px solid ${safeAccent}${isScrolled ? '80' : 'ff'}` }}
     >
       {/* Subtle top glow */}
@@ -126,8 +127,8 @@ export default function DashboardHeader({
           <Menu className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
         </button>
 
-        <div className={`flex items-center gap-3 border-l transition-all duration-300 ${isScrolled ? 'pl-2 sm:pl-3' : 'pl-3 sm:pl-4'} ${isDark ? 'border-white/10' : 'border-slate-200'}`}>
-          
+<div className={`flex items-center gap-3 border-l min-w-0 transition-all duration-300 ${isScrolled ? 'pl-2 sm:pl-3' : 'pl-3 sm:pl-4'} ${isDark ? 'border-white/10' : 'border-slate-300'}`}>
+
           {/* LOGO: Shrinks smoothly on scroll */}
           {company.logo_url ? (
             <div

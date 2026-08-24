@@ -1092,7 +1092,7 @@ useEffect(() => {
                     <span className="font-medium text-slate-900">{activeMethodLabel}</span>
                   ) : (
                     <a
-                      href={`/${company?.slug}/admin/settings#payments`}
+                      href={`/${company?.slug}/home#payments`}
                       className="text-slate-500 hover:text-slate-900 underline"
                     >
                       Not Configured
