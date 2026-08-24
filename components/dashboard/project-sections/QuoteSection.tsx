@@ -398,9 +398,9 @@ export default function QuoteSection({
           <button
             onClick={handleManualSave}
             disabled={!hasProject || quoteData.length === 0 || saving}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
               isDirty
-                ? 'bg-slate-900 text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                 : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
             }`}
           >
@@ -811,8 +811,8 @@ export default function QuoteSection({
               <button
                 onClick={handleManualSave}
                 disabled={!hasProject || quoteData.length === 0 || saving}
-                className="w-full py-3 bg-slate-900 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
-              >
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
+                              >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Saving...' : 'Save Changes'}
                 <span className="ml-1 w-1.5 h-1.5 rounded-full bg-amber-400" />
@@ -880,8 +880,7 @@ export default function QuoteSection({
                         setEditingItem({ ...editingItem, description: e.target.value });
                         autoResizeTextarea(e.target);
                       }}
-                      placeholder="Item or service name..."
-                      autoFocus
+                                           placeholder="Item or service name..."
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:bg-white resize-none overflow-hidden leading-snug"
                     />
                   </div>
@@ -893,9 +892,9 @@ export default function QuoteSection({
                       </label>
                       <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-slate-400 focus-within:bg-white">
                         <span className="text-xs font-semibold text-slate-400">$</span>
-                        <input
-                          type="number"
-                          step="any"
+                                       <input
+                          type="text"
+                          inputMode="decimal"
                           value={editingItem.unitPrice || ''}
                           onKeyDown={(e) => handleNumericKeyDown(e, true)}
                           onChange={(e) => {
@@ -907,7 +906,7 @@ export default function QuoteSection({
                             });
                           }}
                           placeholder="0.00"
-                          className={`w-full bg-transparent text-sm font-bold text-slate-900 outline-none tabular-nums ${noSpinners}`}
+                          className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none tabular-nums"
                         />
                       </div>
                     </div>
@@ -916,9 +915,9 @@ export default function QuoteSection({
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                         Quantity
                       </label>
-                      <input
-                        type="number"
-                        step="any"
+                                           <input
+                        type="text"
+                        inputMode="decimal"
                         value={editingItem.quantity || ''}
                         onKeyDown={(e) => handleNumericKeyDown(e, true)}
                         onChange={(e) => {
@@ -930,7 +929,7 @@ export default function QuoteSection({
                           });
                         }}
                         placeholder="1"
-                        className={`w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 text-center outline-none focus:border-slate-400 focus:bg-white tabular-nums ${noSpinners}`}
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 text-center outline-none focus:border-slate-400 focus:bg-white tabular-nums"
                       />
                     </div>
                   </div>
