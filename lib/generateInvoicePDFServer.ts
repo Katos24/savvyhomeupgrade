@@ -395,6 +395,14 @@ y -= 6;
   page.drawRectangle({ x: margin, y, width: contentW, height: 0.5, color: mutedGray });
   y -= 20;
 
+  // The QR block below lives in the left column (x = margin); everything
+  // from here through the totals box only occupies the right column
+  // (x = totalsX rightward). Gating the QR's page-fit check on the shared
+  // `y` cursor treated right-column-only content as if it filled the left
+  // column too, forcing an unnecessary second page while the left column
+  // sat empty. Track the left column's real remaining space separately.
+  let leftColumnY = y;
+
 // ── TOTALS ──
   // Reserve the whole block so it can't straddle a page break.
   ensureSpace(hasPartialPayment || hasDepositDue ? 150 : 120);
@@ -448,6 +456,7 @@ y -= 6;
 
   // ── NOTES ──
   if (data.notes) {
+    const yBeforeNotes = y;
     y -= 10;
     page.drawRectangle({ x: margin, y: y - 65, width: contentW, height: 70, color: lightGray });
     page.drawRectangle({ x: margin, y: y + 4, width: contentW, height: 3, color: accentColor });
@@ -467,6 +476,9 @@ y -= 6;
       }
     }
     if (line) page.drawText(line, { x: margin + 10, y, size: 9, font: fontRegular, color: black });
+    // Unlike totals, notes span the full page width — they really do
+    // consume left-column space, so mirror the drop onto leftColumnY too.
+    leftColumnY -= (yBeforeNotes - y);
   }
 
   // ── QR CODE ──
@@ -482,8 +494,8 @@ y -= 6;
       const qrSize   = 60;
       // If content ran near the bottom, give the QR its own page rather than
       // painting it over the totals.
-      if (y < BOTTOM_LIMIT + qrSize + 40) addContinuationPage();
-      const qrX      = margin;
+      if (leftColumnY < BOTTOM_LIMIT + qrSize + 40) addContinuationPage();
+            const qrX      = margin;
       const qrY      = BOTTOM_LIMIT + 12;
 
       page.drawRectangle({ x: qrX - 8, y: qrY - 8, width: qrSize + 140, height: qrSize + 24, color: lightGray });

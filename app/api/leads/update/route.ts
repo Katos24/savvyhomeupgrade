@@ -1367,9 +1367,10 @@ const leadCheck = await sql`
 else if (action === 'get_payment_link') {
   const leadCheck = await sql`
     SELECT l.id, l.name, l.email, l.project_id,
-           p.quote_total,
+           p.quote_total, p.payment_amount, p.deposit_type, p.deposit_value,
            c.slug as company_slug, c.plan_tier,
-           c.stripe_connect_account_id, c.stripe_payment_status
+           c.stripe_connect_account_id, c.stripe_payment_status,
+           c.payment_link_url, c.payment_link_type
     FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
@@ -1382,25 +1383,8 @@ else if (action === 'get_payment_link') {
 
   const lead = leadCheck[0];
 
-  // Gated on stripe_connect, not send_invoice_email — this never emails
-  // anything, so it shouldn't require the emailing permission.
-  if (!can((lead.plan_tier ?? 'free') as PlanTier, 'stripe_connect')) {
-    return NextResponse.json({
-      success: false,
-      error: 'Accepting online payments is available on the Basic plan',
-      upgrade_required: true,
-    }, { status: 403 });
-  }
-
   if (!lead.project_id) {
     return NextResponse.json({ success: false, error: 'No project exists.' }, { status: 400 });
-  }
-
-  if (lead.stripe_payment_status !== 'active') {
-    return NextResponse.json({
-      success: false,
-      error: 'Stripe is not connected or not active for this company.',
-    }, { status: 400 });
   }
 
   const invoiceTotal = parseFloat(lead.quote_total || '0');
@@ -1408,43 +1392,95 @@ else if (action === 'get_payment_link') {
     return NextResponse.json({ success: false, error: 'No quote total to charge.' }, { status: 400 });
   }
 
-  try {
-    const checkout = await getOrCreateCheckoutSession({
-      projectId: lead.project_id,
-      connectedAccountId: lead.stripe_connect_account_id,
-      customerName: lead.name,
-      customerEmail: lead.email,
-      companySlug: lead.company_slug,
-      contractTotal: invoiceTotal,
-      collect: body.collect === 'full' ? 'full' : undefined,
-    });
+  // Same deposit-vs-balance math as BillingSection's currentAmountDue, so
+  // this modal always shows the same number the billing card does.
+  const paidSoFar = parseFloat(lead.payment_amount || '0');
+  const depositType = lead.deposit_type || null;
+  const depositValueRaw = parseFloat(lead.deposit_value || '0');
+  const hasDepositTerms = !!depositType && depositValueRaw > 0;
+  const depositAmount = hasDepositTerms
+    ? Math.min(
+        Math.round((depositType === 'percent' ? (invoiceTotal * depositValueRaw) / 100 : depositValueRaw) * 100) / 100,
+        invoiceTotal
+      )
+    : 0;
+  const depositPaid = hasDepositTerms && paidSoFar > 0;
+  const amountDue = hasDepositTerms && !depositPaid ? depositAmount : Math.max(invoiceTotal - paidSoFar, 0);
 
-    if (!checkout.url) {
+  if (amountDue <= 0) {
+    return NextResponse.json({ success: false, error: 'This invoice is already fully paid.' }, { status: 400 });
+  }
+
+  if (lead.stripe_payment_status === 'active') {
+    // Gated on stripe_connect specifically for the live-checkout path —
+    // the manual-method fallback below never touches Stripe, so it
+    // doesn't need this capability check.
+    if (!can((lead.plan_tier ?? 'free') as PlanTier, 'stripe_connect')) {
       return NextResponse.json({
         success: false,
-        error:
-          checkout.reason === 'fully_paid'
-            ? 'This invoice is already fully paid.'
-            : 'Could not generate a payment link.',
-      }, { status: 400 });
+        error: 'Accepting online payments is available on the Basic plan',
+        upgrade_required: true,
+      }, { status: 403 });
     }
 
+    try {
+      const checkout = await getOrCreateCheckoutSession({
+        projectId: lead.project_id,
+        connectedAccountId: lead.stripe_connect_account_id,
+        customerName: lead.name,
+        customerEmail: lead.email,
+        companySlug: lead.company_slug,
+        contractTotal: invoiceTotal,
+        collect: body.collect === 'full' ? 'full' : undefined,
+      });
+
+      if (!checkout.url) {
+        return NextResponse.json({
+          success: false,
+          error:
+            checkout.reason === 'fully_paid'
+              ? 'This invoice is already fully paid.'
+              : 'Could not generate a payment link.',
+        }, { status: 400 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        method: 'stripe',
+        url: checkout.url,
+        kind: checkout.kind,
+        amount: checkout.amount,
+      });
+    } catch (stripeErr: any) {
+      console.error('Failed to create in-person Stripe Checkout session:', stripeErr.message);
+      if (stripeErr.code === 'account_invalid' || stripeErr.message?.includes('not enabled')) {
+        return NextResponse.json({
+          success: false,
+          error: 'Your Stripe account needs attention before you can generate payment links. Check your Stripe dashboard or reconnect in Settings.',
+        }, { status: 400 });
+      }
+      return NextResponse.json({ success: false, error: 'Failed to generate payment link.' }, { status: 500 });
+    }
+  }
+
+  // Manual method fallback (Venmo/Zelle/Cash App/PayPal/Other) — the same
+  // static link the company set in Settings. No prefilled amount yet;
+  // that's the next iteration. This just saves reading a handle aloud.
+  if (lead.payment_link_url) {
     return NextResponse.json({
       success: true,
-      url: checkout.url,
-      kind: checkout.kind,
-      amount: checkout.amount,
+      method: 'manual',
+      url: lead.payment_link_url,
+      linkType: lead.payment_link_type || 'other',
+      amount: amountDue,
+      kind: hasDepositTerms && !depositPaid ? 'deposit' : 'balance',
     });
-  } catch (stripeErr: any) {
-    console.error('Failed to create in-person Stripe Checkout session:', stripeErr.message);
-    if (stripeErr.code === 'account_invalid' || stripeErr.message?.includes('not enabled')) {
-      return NextResponse.json({
-        success: false,
-        error: 'Your Stripe account needs attention before you can generate payment links. Check your Stripe dashboard or reconnect in Settings.',
-      }, { status: 400 });
-    }
-    return NextResponse.json({ success: false, error: 'Failed to generate payment link.' }, { status: 500 });
   }
+
+  return NextResponse.json({
+    success: false,
+    error: 'No payment method is configured for this company.',
+  }, { status: 400 });
 }
 
 // ==================== SAVE DEPOSIT TERMS 💰 ====================

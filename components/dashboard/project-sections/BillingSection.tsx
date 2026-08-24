@@ -74,8 +74,8 @@ export default function BillingSection({
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
-  const [paymentLinkData, setPaymentLinkData] = useState<{ url: string; kind: string | null; amount: number } | null>(null);
-  const [paymentLinkQr, setPaymentLinkQr] = useState<string | null>(null);
+  const [paymentLinkData, setPaymentLinkData] = useState<{ url: string; kind: string | null; amount: number; method?: string; linkType?: string } | null>(null);
+    const [paymentLinkQr, setPaymentLinkQr] = useState<string | null>(null);
   const [loadingPaymentLink, setLoadingPaymentLink] = useState(false);
   const [paymentLinkError, setPaymentLinkError] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
@@ -485,8 +485,9 @@ useEffect(() => {
         }),
       });
       const data = await res.json();
-      if (res.ok && data.success && data.url) {
-        setPaymentLinkData({ url: data.url, kind: data.kind, amount: data.amount });
+            if (res.ok && data.success && data.url) {
+        setPaymentLinkData({ url: data.url, kind: data.kind, amount: data.amount, method: data.method, linkType: data.linkType });
+
         // Rendered locally — the payment URL never leaves the browser to a
         // third-party QR image service.
         try {
@@ -910,7 +911,7 @@ useEffect(() => {
                   Download PDF
                 </button>
 
-                {stripeActive && !isPaid && (!isClosed || refundedButOwing) && remaining > 0 && (
+                               {hasPayLink && !isPaid && (!isClosed || refundedButOwing) && remaining > 0 && (
                   <button
                     onClick={handleGetPaymentLink}
                     className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 border-l border-slate-200 transition-colors"
@@ -938,7 +939,7 @@ useEffect(() => {
                                 {(!isClosed || refundedButOwing) && !isPaid && (
                   <button
                     onClick={openRecordPaymentModal}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-200 text-xs font-semibold text-emerald-700 bg-white hover:bg-emerald-50 transition-colors"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
                     Record Payment
@@ -1220,7 +1221,7 @@ useEffect(() => {
                   )}
                 </div>
 
-                <div>
+                               <div>
                   <label htmlFor="modal-due-date" className="block text-xs font-medium text-slate-600 mb-1">
                     Invoice Due Date
                   </label>
@@ -1232,6 +1233,12 @@ useEffect(() => {
                     onChange={(e) => setDueDate(e.target.value)}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700"
                   />
+                                    {!dueDate && (
+                    <div className="mt-2 flex items-start gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
+                      <span>No due date set.</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1681,7 +1688,7 @@ useEffect(() => {
                     {paymentLinkQr ? 'Customer scans with their phone camera' : 'Share this link with the customer'}
                   </p>
 
-                  <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                                   <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
                     <p className="flex-1 text-[11px] text-slate-600 truncate font-mono">
                       {paymentLinkData.url}
                     </p>
@@ -1692,6 +1699,14 @@ useEffect(() => {
                       {linkCopied ? 'Copied!' : 'Copy'}
                     </button>
                   </div>
+
+                  {paymentLinkData.method === 'manual' && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 p-2.5 text-[11px] text-amber-800">
+                      Scanning opens {paymentMethodLabels[paymentLinkData.linkType || 'other'] || 'the payment link'}{' '}
+                      — the amount isn&rsquo;t prefilled yet, so let the customer know to send {fmt(paymentLinkData.amount)}{' '}
+                      and note <strong>Invoice {invoiceNumber}</strong>. Record it here once it lands.
+                    </div>
+                  )}
                 </div>
               ) : null}
             </motion.div>
