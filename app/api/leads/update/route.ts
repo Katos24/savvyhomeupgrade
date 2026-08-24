@@ -1171,6 +1171,7 @@ else if (action === 'send_invoice_to_customer') {
 const leadCheck = await sql`
    SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total, p.quote_tax_rate,
          p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
+         p.deposit_type, p.deposit_value,
          c.name as company_name, c.phone as company_phone,
          c.email as company_email,
          c.id as company_id, c.slug as company_slug, c.plan_tier,
@@ -1222,15 +1223,34 @@ const leadCheck = await sql`
   // ── Generate or reuse a Stripe Connect payment link ──
   let paymentLinkUrl: string | undefined;
   let paymentLinkType: string | undefined;
-  // What the link actually charges. Without these the email showed the full
-  // total on a button that collected only the deposit.
-  let collectionKind: 'deposit' | 'balance' | undefined;
-  let chargeAmount: number | undefined;
 
-  // The amount is derived inside the helper from what the ledger says has
-  // been collected. The old inline version charged the full invoiceTotal
-  // whenever status wasn't 'paid' — so after a deposit, the balance link
-  // asked for the whole job again.
+  // Deposit vs. balance, computed from the lead's own saved terms and what's
+  // already been collected — not from Stripe. Previously this only got set
+  // inside the Stripe branch below, so a company without Stripe active (or a
+  // failed checkout call) sent an email with no record of whether a deposit
+  // or the balance actually went out.
+  const depositType = lead.deposit_type || null;
+  const depositValueRaw = parseFloat(lead.deposit_value || '0');
+  const hasDepositTerms = !!depositType && depositValueRaw > 0;
+  const depositAmount = hasDepositTerms
+    ? Math.min(
+        Math.round((depositType === 'percent' ? (invoiceTotal * depositValueRaw) / 100 : depositValueRaw) * 100) / 100,
+        invoiceTotal
+      )
+    : 0;
+  const paidSoFar = parseFloat(lead.payment_amount || '0');
+  const depositAlreadyPaid = hasDepositTerms && paidSoFar > 0;
+
+   const collectionKind: 'deposit' | 'balance' | 'full' = hasDepositTerms
+    ? (depositAlreadyPaid ? 'balance' : 'deposit')
+    : 'full';
+  const chargeAmount = collectionKind === 'deposit'
+    ? depositAmount
+    : Math.max(invoiceTotal - paidSoFar, 0);
+  // sendInvoiceToCustomer's collectionKind param predates the 'full' case —
+  // it only distinguishes deposit vs. balance, treating "unset" as full amount.
+  const emailCollectionKind = collectionKind === 'full' ? undefined : collectionKind;
+
   if (lead.stripe_payment_status === 'active' && invoiceTotal > 0) {
     try {
       const checkout = await getOrCreateCheckoutSession({
@@ -1245,8 +1265,6 @@ const leadCheck = await sql`
      if (checkout.url) {
         paymentLinkUrl = checkout.url;
         paymentLinkType = 'stripe';
-        collectionKind = checkout.kind ?? undefined;
-        chargeAmount = checkout.amount;
       }
     } catch (stripeErr: any) {
       console.error('Failed to create Stripe Checkout session:', stripeErr.message);
@@ -1278,19 +1296,25 @@ const leadCheck = await sql`
   paymentLinkType,
   taxRate: invoiceTaxRate > 0 ? invoiceTaxRate : undefined,
   depositAmount: chargeAmount,
-  collectionKind,
+  collectionKind: emailCollectionKind,
     });
 
     // Log to outbox
     try {
-      await sql`
+            await sql`
         INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, subject, html_body, status, sent_by_email, sent_by_name, metadata)
         VALUES (
           ${lead.company_id}, ${lead.project_id}, ${id}, 'invoice',
           ${lead.email}, ${lead.name},
           ${emailResult?.subject || 'Invoice'}, ${emailResult?.html || ''},
           'sent', ${user_email}, ${user_name},
-          ${JSON.stringify({ invoice_number: invoiceNumber, invoice_total: invoiceTotal, resend_id: emailResult?.resendId })}::jsonb
+          ${JSON.stringify({
+            invoice_number: invoiceNumber,
+            invoice_total: invoiceTotal,
+            resend_id: emailResult?.resendId,
+            kind: collectionKind,
+            amount: chargeAmount,
+          })}::jsonb
         )
       `;
     } catch (outboxErr) {
@@ -1516,12 +1540,68 @@ else if (action === 'save_deposit_terms') {
     timestamp: new Date().toISOString(),
   });
 
-  return NextResponse.json({
+    return NextResponse.json({
     success: true,
     deposit_type: nextType,
     deposit_value: nextValue,
     deposit_amount: Math.round(depositAmount * 100) / 100,
   });
+}
+
+// ==================== SAVE TAX RATE 🧾 ====================
+else if (action === 'save_tax_rate') {
+  const { tax_rate } = body;
+
+  const projectRows = await sql`
+    SELECT id, COALESCE(payment_amount, 0) AS collected
+    FROM projects WHERE lead_id = ${id} LIMIT 1
+  `;
+
+  if (projectRows.length === 0) {
+    return NextResponse.json(
+      { success: false, error: 'No project exists. Please create a project first.' },
+      { status: 404 }
+    );
+  }
+
+  const project = projectRows[0];
+
+  // Same reasoning as deposit terms — once money's collected, the total
+  // owed is locked in. Refund first if the rate genuinely needs to change.
+  if (parseFloat(project.collected || '0') > 0) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Payments have already been collected. Refund them before changing the tax rate.',
+      },
+      { status: 400 }
+    );
+  }
+
+  const parsed = parseFloat(String(tax_rate ?? '0'));
+  if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
+    return NextResponse.json(
+      { success: false, error: 'Enter a tax rate between 0 and 100.' },
+      { status: 400 }
+    );
+  }
+
+  await sql`
+    UPDATE projects
+    SET quote_tax_rate = ${parsed},
+        updated_at = NOW()
+    WHERE id = ${project.id}
+  `;
+
+  await addActivityToProject(id, {
+    type: 'tax_rate_updated',
+    text: parsed > 0 ? `Tax rate set to ${parsed}%` : 'Marked tax-exempt',
+    user_name,
+    user_email,
+    timestamp: new Date().toISOString(),
+  });
+
+  return NextResponse.json({ success: true, tax_rate: parsed });
 }
 
 

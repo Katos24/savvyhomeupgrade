@@ -732,8 +732,19 @@ export async function sendInvoiceToCustomer({
     // once money has been collected. The old version fell back to the full
     // total, so a $500 balance invoice showed a "Pay $3,135.06" button over a
     // checkout that correctly charged $500.
-    const outstanding = Math.max(invoiceTotal - (amountPaid || 0), 0);
+       const outstanding = Math.max(invoiceTotal - (amountPaid || 0), 0);
     const payButtonAmount = isDepositCollection ? depositAmount! : outstanding;
+
+    // Drives the template's amount line with the same number that drives the
+    // pay button — previously that line always said "Total: {full amount}"
+    // regardless of what was actually due, contradicting the deposit box
+    // rendered right above it.
+    const amountLabel = isDepositCollection
+      ? 'Deposit Due Now'
+      : amountPaid && amountPaid > 0
+      ? 'Balance Due'
+      : 'Total';
+    const showProjectTotalLine = isDepositCollection || (!!amountPaid && amountPaid > 0 && amountPaid < invoiceTotal);
 
     // ── STEP 1: Generate PDF buffer ───────────────────────
     const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
@@ -786,7 +797,7 @@ export async function sendInvoiceToCustomer({
       other: 'Pay Now',
     };
 
-    const rawPaymentUrl = effectivePaymentUrl || '';
+       const rawPaymentUrl = effectivePaymentUrl || '';
     const paymentUrl = rawPaymentUrl.startsWith('http') ? rawPaymentUrl : `https://${rawPaymentUrl}`;
     const payNowButtonHtml = rawPaymentUrl ? `
       <div style="margin-bottom: 16px; text-align: center;">
@@ -795,6 +806,21 @@ export async function sendInvoiceToCustomer({
          ${isDepositCollection ? 'Pay Deposit' : (paymentMethodLabels[effectivePaymentType || 'other'] || 'Pay Now')} — ${fmt(payButtonAmount)}
         </a>
       </div>
+    ` : '';
+
+    // Manual methods (Venmo/Zelle/etc.) have no session tying a payment back
+    // to this invoice the way Stripe does — the company has to recognize it
+    // themselves later. Asking the customer to reference the invoice number
+    // is the only way to make that matchable after the fact.
+    const methodDisplayNames: Record<string, string> = {
+      venmo: 'Venmo', zelle: 'Zelle', cashapp: 'Cash App', paypal: 'PayPal', other: 'the link above',
+    };
+    const isManualMethod = !!rawPaymentUrl && effectivePaymentType !== 'stripe';
+    const manualPaymentNoteHtml = isManualMethod ? `
+      <p style="margin: 0 0 24px 0; padding: 12px 16px; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; color: #64748b; font-size: 13px; line-height: 1.6; text-align: center;">
+        When sending payment via ${methodDisplayNames[effectivePaymentType || 'other'] || 'the link above'}, please include
+        <strong style="color: #334155;">Invoice ${invoiceNumber}</strong> in the note so it can be matched to this job.
+      </p>
     ` : '';
 
     const downloadButtonHtml = `
@@ -895,7 +921,7 @@ ${invoiceNumber} · ${fmt(invoiceTotal)}${isDepositCollection ? ` · ${fmt(payBu
     // ── STEP 4: Build full email ──────────────────────────
     const emailTemplates = await getCompanyEmailTemplates(companyId);
     const invoiceTemplate = emailTemplates?.invoice;
-    const { subject, body: templateBody } = renderEmailTemplate(
+        const { subject, body: templateBody } = renderEmailTemplate(
       invoiceTemplate,
       {
         company_name: company.name || companyName,
@@ -903,6 +929,9 @@ ${invoiceNumber} · ${fmt(invoiceTotal)}${isDepositCollection ? ` · ${fmt(payBu
         customer_name: customerName,
         invoice_number: invoiceNumber,
         invoice_total: fmt(invoiceTotal),
+        amount_label: amountLabel,
+        amount_value: fmt(payButtonAmount),
+        project_total: showProjectTotalLine ? fmt(invoiceTotal) : undefined,
         due_date: dueDate
           ? new Date(dueDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
           : '',
@@ -914,13 +943,14 @@ ${invoiceNumber} · ${fmt(invoiceTotal)}${isDepositCollection ? ` · ${fmt(payBu
       logoUrl: company.logo_url,
       brandColor: company.email_brand_color_1,
       brandColor2: company.email_brand_color_2,
-      bodyHtml: `
+            bodyHtml: `
         ${downloadButtonHtml}
+        ${manualPaymentNoteHtml}
+        ${depositDueHtml}
+        ${partialPaymentHtml}
         <p style="white-space: pre-line; margin: 0 0 24px 0; color: #334155; font-size: 15px; line-height: 1.7;">${templateBody}</p>
         ${dueDateHtml}
       ${taxBreakdownHtml}
-        ${depositDueHtml}
-        ${partialPaymentHtml}
         ${notesHtml}
       `,
       phone: company.phone || companyPhone,

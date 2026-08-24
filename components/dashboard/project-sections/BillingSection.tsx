@@ -94,9 +94,14 @@ export default function BillingSection({
   const [showDepositEditor, setShowDepositEditor] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>(lead?.deposit_type ? 'deposit' : 'full');
 
-  const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
+    const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
   const [depositValueDraft, setDepositValueDraft] = useState('');
   const [savingDeposit, setSavingDeposit] = useState(false);
+
+  // ── TAX RATE ──
+  const [showTaxEditor, setShowTaxEditor] = useState(false);
+  const [taxRateDraft, setTaxRateDraft] = useState('');
+  const [savingTax, setSavingTax] = useState(false);
 
   // ── PAYMENT FIELDS ──
   const [paymentAmount, setPaymentAmount] = useState('');
@@ -145,7 +150,8 @@ export default function BillingSection({
     : 0;
 
   const depositLocked = paidAmount > 0;
-  const awaitingDeposit = hasDepositTerms && paidAmount === 0 && depositAmount > 0;
+  const taxLocked = paidAmount > 0;
+    const awaitingDeposit = hasDepositTerms && paidAmount === 0 && depositAmount > 0;
 
   const isRefunded = lead?.payment_status === 'refunded';
   const isStripeVerified = !!lead?.stripe_payment_intent_id;
@@ -195,16 +201,36 @@ export default function BillingSection({
   // balance. Mirrors getOrCreateCheckoutSession's own kind-selection logic,
   // so what's shown here always matches what Stripe will actually charge.
   const currentAmountDue = hasDepositTerms && !depositPaid ? depositAmount : remaining;
-  const balanceNotYetRequested =
+    const balanceNotYetRequested =
     !!depositPayment &&
     !isPaid &&
     !isClosed &&
     remaining > 0 &&
     (!lead?.invoice_sent_at ||
       new Date(lead.invoice_sent_at).getTime() <
-        new Date(depositPayment.paid_on).getTime());
+  new Date(depositPayment.created_at).getTime()
+    )
+
+  // Manual methods (Venmo/Zelle/etc.) have no webhook — nothing tells this
+  // app when money actually lands. Left alone, the card just sits on
+  // "awaiting payment" forever even if they were paid days ago. This nudges
+  // the company to go check themselves after enough time has passed.
+  const isManualPaymentMethod = !stripeActive && hasManualLink;
+  const daysSinceInvoiceSent = lead?.invoice_sent_at
+    ? Math.floor((Date.now() - new Date(lead.invoice_sent_at).getTime()) / 86_400_000)
+    : null;
+  const NUDGE_AFTER_DAYS = 2;
+  const showManualPaymentNudge =
+    isManualPaymentMethod &&
+    invoiceSent &&
+    !isPaid &&
+    (!isClosed || refundedButOwing) &&
+    remaining > 0 &&
+    daysSinceInvoiceSent !== null &&
+    daysSinceInvoiceSent >= NUDGE_AFTER_DAYS;
 
   // ── EFFECTS ──
+
 useEffect(() => {
     setPaymentMode(lead?.deposit_type ? 'deposit' : 'full');
     setDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
@@ -320,10 +346,39 @@ useEffect(() => {
       } else {
         toast.error(result.error || 'Could not save deposit');
       }
-    } catch {
+       } catch {
       toast.error('Could not save deposit');
     } finally {
       setSavingDeposit(false);
+    }
+  };
+
+  const handleSaveTaxRate = async (clear = false) => {
+    setSavingTax(true);
+    try {
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'save_tax_rate',
+          tax_rate: clear ? 0 : parseFloat(taxRateDraft || '0'),
+          user_name: currentUser?.name || 'Unknown',
+          user_email: currentUser?.email || '',
+        }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        toast.success(clear ? 'Marked tax-exempt' : 'Tax rate saved');
+        setShowTaxEditor(false);
+        await onRefresh();
+      } else {
+        toast.error(result.error || 'Could not save tax rate');
+      }
+    } catch {
+      toast.error('Could not save tax rate');
+    } finally {
+      setSavingTax(false);
     }
   };
 
@@ -481,11 +536,28 @@ useEffect(() => {
     }
   };
 
-  const openDepositEditor = () => {
+   const openDepositEditor = () => {
     setPaymentMode('deposit');
     setDepositTypeDraft(depositType ?? 'percent');
     setDepositValueDraft(depositValue > 0 ? String(depositValue) : '');
     setShowDepositEditor(true);
+  };
+
+    const openTaxEditor = () => {
+    setTaxRateDraft(invoiceTaxRate > 0 ? String(invoiceTaxRate) : '');
+    setShowTaxEditor(true);
+  };
+
+  const openRecordPaymentModal = () => {
+    const prefill = currentAmountDue;
+    if (prefill > 0) {
+      setRawAmount(prefill.toString());
+      setPaymentAmount(
+        prefill.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+      );
+    }
+    if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
+    setShowRecordPayment(true);
   };
 
   if (!hasQuote) {
@@ -544,8 +616,13 @@ useEffect(() => {
               ? { label: invoiceSent ? 'Resend Deposit Request' : 'Send Deposit', onClick: () => setShowSendConfirm(true) }
               : undefined,
           needsUpgrade: !depositPaid && !canSendInvoice,
-          editAction: !depositLocked ? { label: 'Edit deposit terms', onClick: openDepositEditor } : undefined,
-        },
+          editAction: !depositLocked
+            ? {
+                label: `${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)} deposit`,
+                onClick: openDepositEditor,
+              }
+            : undefined,
+                  },
         {
           key: 'balance',
           title: 'Balance',
@@ -613,8 +690,19 @@ useEffect(() => {
                 </span>
               </div>
               <p className="text-3xl font-bold text-slate-900 tabular-nums leading-tight">{fmt(total)}</p>
-              {invoiceTaxRate > 0 && (
-                <p className="text-[11px] text-slate-400 mt-0.5 tabular-nums">Incl. {invoiceTaxRate}% tax</p>
+                            {taxLocked ? (
+                invoiceTaxRate > 0 && (
+                  <p className="text-[11px] text-slate-400 mt-0.5 tabular-nums">Incl. {invoiceTaxRate}% tax</p>
+                )
+              ) : (
+                <button
+                  type="button"
+                  onClick={openTaxEditor}
+                  className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-500 hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+                >
+                  <Edit2 className="w-2.5 h-2.5" />
+                  {invoiceTaxRate > 0 ? `Incl. ${invoiceTaxRate}% tax` : 'Add tax'}
+                </button>
               )}
               {isPaid && !isClosed ? (
                 <p className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-emerald-600">
@@ -771,164 +859,36 @@ useEffect(() => {
                           </p>
                         </div>
 
-                        {step.action && (
-                          <button
-                            onClick={step.action.onClick}
-                            className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            {step.action.label}
-                          </button>
-                        )}
-                        {step.needsUpgrade && (
-                          <a
-                            href={`/${company?.slug}/admin/settings#billing`}
-                            className="mt-2.5 inline-block text-[11px] font-semibold text-brand-700 hover:underline"
-                          >
-                            Upgrade to send invoices
-                          </a>
-                        )}
-                        {step.editAction && (
-                          <button
-                            onClick={step.editAction.onClick}
-                            className="mt-2 ml-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-brand-700 hover:underline"
-                          >
-                            {step.editAction.label}
-                            <ArrowRight className="w-3 h-3" />
-                          </button>
-                        )}
-
-                        {step.key === 'deposit' && (
-                          <AnimatePresence>
-                            {showDepositEditor && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden"
+                                              {(step.action || step.needsUpgrade || step.editAction) && (
+                          <div className="mt-2.5 flex flex-col items-start gap-2">
+                            {step.action && (
+                              <button
+                                onClick={step.action.onClick}
+                                className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors"
                               >
-                                <div className="mt-3 rounded-lg border-2 border-brand-700 bg-white p-3 space-y-3">
-                                  <p className="text-xs font-medium text-slate-600">
-                                    {hasDepositTerms ? 'Change the deposit amount' : 'How much is the deposit?'}
-                                  </p>
-                                  <div className="flex items-center gap-2">
-                                    <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
-                                      {(['percent', 'fixed'] as const).map((t) => (
-                                        <button
-                                          key={t}
-                                          onClick={() => setDepositTypeDraft(t)}
-                                          className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                            depositTypeDraft === t
-                                              ? 'bg-brand-700 text-white'
-                                              : 'bg-white text-slate-600 hover:bg-slate-50'
-                                          }`}
-                                        >
-                                          {t === 'percent' ? '%' : '$'}
-                                        </button>
-                                      ))}
-                                    </div>
-                                    <input
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="0.001"
-                                      min="0"
-                                      max={depositTypeDraft === 'percent' ? 100 : undefined}
-                                      value={depositValueDraft}
-                                      onChange={(e) => setDepositValueDraft(e.target.value)}
-                                      placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
-                                      autoFocus
-                                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
-                                    />
-                                  </div>
-                                  <div className="flex flex-wrap items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => setShowDepositEditor(false)}
-                                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                                    >
-                                      Cancel
-                                    </button>
-                                    {hasDepositTerms && (
-                                      <button
-                                        onClick={() => handleSaveDepositTerms(true)}
-                                        disabled={savingDeposit}
-                                        className="px-3 py-1.5 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
-                                      >
-                                        Remove deposit
-                                      </button>
-                                    )}
-                                    <button
-                                      onClick={() => handleSaveDepositTerms(false)}
-                                      disabled={savingDeposit || !depositValueDraft}
-                                      className="px-3 py-1.5 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 disabled:opacity-50"
-                                    >
-                                      {savingDeposit ? 'Saving...' : 'Save'}
-                                    </button>
-                                  </div>
-                                </div>
-                              </motion.div>
+                                <Send className="w-3.5 h-3.5" />
+                                {step.action.label}
+                              </button>
                             )}
-                          </AnimatePresence>
-                        )}
-
-                        {step.key === 'invoice' && (
-                          <AnimatePresence>
-                            {showDepositEditor && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden"
+                            {step.needsUpgrade && (
+                              <a
+                              
+                                href={`/${company?.slug}/admin/settings#billing`}
+                                className="text-[11px] font-semibold text-brand-700 hover:underline"
                               >
-                                <div className="mt-3 rounded-lg border-2 border-brand-700 bg-white p-3 space-y-3">
-                                  <p className="text-xs font-medium text-slate-600">How much is the deposit?</p>
-                                  <div className="flex items-center gap-2">
-                                    <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
-                                      {(['percent', 'fixed'] as const).map((t) => (
-                                        <button
-                                          key={t}
-                                          onClick={() => setDepositTypeDraft(t)}
-                                          className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                                            depositTypeDraft === t
-                                              ? 'bg-brand-700 text-white'
-                                              : 'bg-white text-slate-600 hover:bg-slate-50'
-                                          }`}
-                                        >
-                                          {t === 'percent' ? '%' : '$'}
-                                        </button>
-                                      ))}
-                                    </div>
-                                    <input
-                                      type="number"
-                                      inputMode="decimal"
-                                      step="0.001"
-                                      min="0"
-                                      max={depositTypeDraft === 'percent' ? 100 : undefined}
-                                      value={depositValueDraft}
-                                      onChange={(e) => setDepositValueDraft(e.target.value)}
-                                      placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
-                                      autoFocus
-                                      className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
-                                    />
-                                  </div>
-                                  <div className="flex flex-wrap items-center justify-end gap-2">
-                                    <button
-                                      onClick={() => setShowDepositEditor(false)}
-                                      className="px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50"
-                                    >
-                                      Cancel
-                                    </button>
-                                    <button
-                                      onClick={() => handleSaveDepositTerms(false)}
-                                      disabled={savingDeposit || !depositValueDraft}
-                                      className="px-3 py-1.5 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 disabled:opacity-50"
-                                    >
-                                      {savingDeposit ? 'Saving...' : 'Save'}
-                                    </button>
-                                  </div>
-                                </div>
-                              </motion.div>
+                                Upgrade to send invoices
+                              </a>
                             )}
-                          </AnimatePresence>
+                            {step.editAction && (
+                              <button
+                                onClick={step.editAction.onClick}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                                {step.editAction.label}
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     ))}
@@ -975,22 +935,9 @@ useEffect(() => {
                   </button>
                 )}
 
-                {(!isClosed || refundedButOwing) && !isPaid && (
+                                {(!isClosed || refundedButOwing) && !isPaid && (
                   <button
-                    onClick={() => {
-                      const prefill = currentAmountDue;
-                      if (prefill > 0) {
-                        setRawAmount(prefill.toString());
-                        setPaymentAmount(
-                          prefill.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
-                        );
-                      }
-                      if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
-                      setShowRecordPayment(true);
-                    }}
+                    onClick={openRecordPaymentModal}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 transition-colors"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
@@ -1122,9 +1069,13 @@ useEffect(() => {
                           }`}
                         />
                         <div className="min-w-0">
-                          <p className="font-medium text-slate-800 truncate">
+                                                   <p className="font-medium text-slate-800 truncate">
                             {entry.type === 'invoice'
-                              ? 'Invoice Sent'
+                              ? entry.metadata?.kind === 'deposit'
+                                ? 'Deposit Sent'
+                                : entry.metadata?.kind === 'balance'
+                                ? 'Balance Sent'
+                                : 'Invoice Sent'
                               : entry.type === 'payment_reminder'
                               ? 'Reminder Sent'
                               : entry.type}
@@ -1199,30 +1150,55 @@ useEffect(() => {
                 </button>
               </div>
 
-              <div className="space-y-3 mb-5">
-                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2 text-xs">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-[11px] text-slate-400">Recipient</p>
-                      <p className="font-bold text-slate-900 truncate">{lead?.name || 'Client'}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{lead?.email || 'No email'}</p>
+                           <div className="space-y-3 mb-5">
+                <div className="flex items-center justify-between gap-3 px-0.5">
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">{lead?.name || 'Client'}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{lead?.email || 'No email'}</p>
+                  </div>
+                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                    {invoiceNumber}
+                  </span>
+                </div>
+
+                {hasDepositTerms && !isPaid ? (
+                  <div className="rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="p-3.5 bg-brand-50/60 border-b border-slate-200">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[11px] font-semibold text-brand-700">
+                          {awaitingDeposit
+                            ? `Deposit due now${depositType === 'percent' ? ` · ${depositValue}%` : ''}`
+                            : 'Balance due now'}
+                        </p>
+                        <p className="text-xl font-bold text-slate-900 tabular-nums shrink-0">
+                          {fmt(awaitingDeposit ? depositAmount : remaining)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-[11px] text-slate-400">
-                        {awaitingDeposit ? 'Deposit Due' : 'Amount Billed'}
-                      </p>
-                      <p className="font-bold text-slate-900 tabular-nums text-sm">
-                        {fmt(awaitingDeposit ? depositAmount : remaining)}
-                      </p>
+                    <div className="px-3.5 py-2.5 space-y-1 text-[11px]">
+                      {awaitingDeposit ? (
+                        <div className="flex justify-between text-slate-500">
+                          <span>Balance due on completion</span>
+                          <span className="tabular-nums">{fmt(total - depositAmount)}</span>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between text-emerald-600 font-medium">
+                          <span>Deposit already paid</span>
+                          <span className="tabular-nums">{fmt(depositPayment?.amount ?? depositAmount)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold text-slate-700 pt-1 border-t border-slate-100">
+                        <span>Total invoice</span>
+                        <span className="tabular-nums">{fmt(total)}</span>
+                      </div>
                     </div>
                   </div>
-
-                  {awaitingDeposit && (
-                    <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-200 tabular-nums">
-                      {fmt(total - depositAmount)} balance due on job completion.
-                    </p>
-                  )}
-                </div>
+                ) : (
+                  <div className="rounded-xl border border-slate-200 p-3.5 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-semibold text-slate-500">Amount billed</p>
+                    <p className="text-xl font-bold text-slate-900 tabular-nums">{fmt(remaining)}</p>
+                  </div>
+                )}
 
                 <div
                   className={`flex items-start gap-2 p-2.5 rounded-xl border text-xs ${
@@ -1431,6 +1407,202 @@ useEffect(() => {
                   className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {savingPayment ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Save Payment'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+            {/* MODAL: EDIT DEPOSIT TERMS */}
+      <AnimatePresence>
+        {showDepositEditor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !savingDeposit && setShowDepositEditor(false)}
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-slate-900">
+                  {hasDepositTerms ? 'Edit Deposit Terms' : 'Collect a Deposit First?'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => !savingDeposit && setShowDepositEditor(false)}
+                  disabled={savingDeposit}
+                  aria-label="Close"
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <p className="text-xs font-medium text-slate-600">
+                  {hasDepositTerms ? 'Change the deposit amount' : 'How much is the deposit?'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
+                    {(['percent', 'fixed'] as const).map((t) => (
+                      <button
+                        key={t}
+                        onClick={() => setDepositTypeDraft(t)}
+                        className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                          depositTypeDraft === t
+                            ? 'bg-brand-700 text-white'
+                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {t === 'percent' ? '%' : '$'}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.001"
+                    min="0"
+                    max={depositTypeDraft === 'percent' ? 100 : undefined}
+                    value={depositValueDraft}
+                    onChange={(e) => setDepositValueDraft(e.target.value)}
+                    placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
+                    autoFocus
+                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDepositEditor(false)}
+                  disabled={savingDeposit}
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                {hasDepositTerms && (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveDepositTerms(true)}
+                    disabled={savingDeposit}
+                    className="px-3 py-2 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                  >
+                    Remove deposit
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleSaveDepositTerms(false)}
+                  disabled={savingDeposit || !depositValueDraft}
+                  className="px-3 py-2 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingDeposit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {savingDeposit ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+           )}
+      </AnimatePresence>
+
+      {/* MODAL: EDIT TAX RATE */}
+      <AnimatePresence>
+        {showTaxEditor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !savingTax && setShowTaxEditor(false)}
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-slate-900">
+                  {invoiceTaxRate > 0 ? 'Edit Tax Rate' : 'Add Tax'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => !savingTax && setShowTaxEditor(false)}
+                  disabled={savingTax}
+                  aria-label="Close"
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {invoiceSent && (
+                <div className="flex items-start gap-2 p-2.5 mb-3 rounded-xl border border-amber-200 bg-amber-50 text-[11px] text-amber-800">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
+                  <span>
+                    This invoice was already sent. The customer&rsquo;s copy still shows the old
+                    rate — only the next thing you send will reflect this change.
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-3 mb-5">
+                <p className="text-xs font-medium text-slate-600">Tax rate for this quote</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.001"
+                    min="0"
+                    max="100"
+                    value={taxRateDraft}
+                    onChange={(e) => setTaxRateDraft(e.target.value)}
+                    placeholder="8.625"
+                    autoFocus
+                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                  />
+                  <span className="text-sm font-semibold text-slate-500 shrink-0">%</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTaxEditor(false)}
+                  disabled={savingTax}
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                {invoiceTaxRate > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveTaxRate(true)}
+                    disabled={savingTax}
+                    className="px-3 py-2 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                  >
+                    Mark tax-exempt
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleSaveTaxRate(false)}
+                  disabled={savingTax || !taxRateDraft}
+                  className="px-3 py-2 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingTax && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {savingTax ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </motion.div>

@@ -47,14 +47,15 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
-  invoice: {
+   invoice: {
     subject: 'Invoice {{invoice_number}} from {{company_name}}',
     body: `Hi {{customer_name}},
 
 Please find your invoice attached for recent work completed.
 
 Invoice #: {{invoice_number}}
-Total: {{invoice_total}}{{#due_date}}
+{{amount_label}}: {{amount_value}}{{#project_total}}
+Project Total: {{project_total}}{{/project_total}}{{#due_date}}
 Due Date: {{due_date}}{{/due_date}}
 
 If you have any questions, don't hesitate to reach out.

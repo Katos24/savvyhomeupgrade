@@ -146,10 +146,10 @@ export async function GET(
             ORDER BY paid_on DESC, id DESC
           `
         : Promise.resolve([] as any[]),
-      sql`
+           sql`
         SELECT id, type, status, error_message,
                sent_by_email, sent_by_name, subject,
-               created_at, sent_at,
+               created_at, sent_at, metadata,
                (html_body IS NOT NULL AND html_body <> '') AS has_body
         FROM email_outbox
         WHERE lead_id = ${leadId}

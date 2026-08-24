@@ -55,11 +55,12 @@ export async function GET(
     }
 
     // Get project + lead data
-   const rows = await sql`
+         const rows = await sql`
       SELECT
         p.id, p.invoice_number, p.quote_total, p.quote_tax_rate, p.quote_data,
         p.payment_status, p.payment_amount, p.payment_due_date,
         p.invoice_sent_at, p.created_at, p.stripe_checkout_session_id,
+        p.deposit_type, p.deposit_value,
         l.name as customer_name, l.email as customer_email,
         l.phone as customer_phone, l.address_line_1, l.city, l.zip_code
       FROM projects p
@@ -91,14 +92,26 @@ export async function GET(
       ? new Date(project.payment_due_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
       : undefined;
 
-    // Determine payment link: prefer a live Stripe Checkout session if Connect is set up
+       // Determine payment link: prefer a live Stripe Checkout session if Connect is set up
   let paymentLinkUrl: string | null = company.payment_link_url;
     let paymentLinkType: string | null = company.payment_link_type;
-    // What the link actually charges. Without this the PDF showed the full
-    // total next to a QR code that collects only the deposit.
-    let pdfDepositAmount: number | undefined;
 
 const contractTotal = parseFloat(project.quote_total || '0');
+
+    // What the deposit actually is — sourced from the lead's own saved
+    // terms, not from Stripe. This way it still shows correctly even when
+    // Stripe isn't active, isn't configured, or the checkout call below
+    // fails — previously this was only ever set inside the Stripe branch,
+    // so no Stripe meant no deposit on the PDF regardless of terms.
+    const depositType = project.deposit_type || null;
+    const depositValue = parseFloat(project.deposit_value || '0');
+    const hasDepositTerms = !!depositType && depositValue > 0;
+    const pdfDepositAmount: number | undefined = hasDepositTerms
+      ? Math.min(
+          Math.round((depositType === 'percent' ? (contractTotal * depositValue) / 100 : depositValue) * 100) / 100,
+          contractTotal
+        )
+      : undefined;
 
     if (company.stripe_payment_status === 'active' && contractTotal > 0) {
       try {
@@ -113,7 +126,6 @@ const contractTotal = parseFloat(project.quote_total || '0');
        if (checkout.url) {
           paymentLinkUrl = checkout.url;
           paymentLinkType = 'stripe';
-          if (checkout.kind === 'deposit') pdfDepositAmount = checkout.amount;
         }
       } catch (stripeErr: any) {
         console.error('Failed to create Stripe Checkout session for PDF:', stripeErr.message);
