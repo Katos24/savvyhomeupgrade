@@ -305,10 +305,13 @@ export default function QuoteSection({
     setIsDirty(true);
   };
 
-  const handleDoneEditing = () => {
+    const handleDoneEditing = () => {
     if (!editingItem) return;
+    const unitPrice = parseFloat(String(editingItem.unitPrice)) || 0;
+    const quantity = parseFloat(String(editingItem.quantity)) || 0;
+    const finalized = { ...editingItem, unitPrice, quantity, amount: unitPrice * quantity };
     setQuoteData((prev) =>
-      prev.map((item: any) => (item.id === editingItem.id ? { ...editingItem } : item))
+      prev.map((item: any) => (item.id === finalized.id ? finalized : item))
     );
     setEditingItem(null);
     setIsDirty(true);
@@ -895,14 +898,19 @@ export default function QuoteSection({
                                        <input
                           type="text"
                           inputMode="decimal"
-                          value={editingItem.unitPrice || ''}
+                                                   value={editingItem.unitPrice ?? ''}
                           onKeyDown={(e) => handleNumericKeyDown(e, true)}
                           onChange={(e) => {
-                            const unitPrice = parseFloat(e.target.value) || 0;
+                            // Keep the raw typed string, not a parsed number —
+                            // parseFloat("30.") === 30, and storing that number
+                            // silently strips the trailing "." the user just typed.
+                            const raw = e.target.value;
+                            const parsedPrice = parseFloat(raw) || 0;
+                            const parsedQty = parseFloat(String(editingItem.quantity)) || 0;
                             setEditingItem({
                               ...editingItem,
-                              unitPrice,
-                              amount: unitPrice * (editingItem.quantity || 0),
+                              unitPrice: raw,
+                              amount: parsedPrice * parsedQty,
                             });
                           }}
                           placeholder="0.00"
@@ -918,14 +926,16 @@ export default function QuoteSection({
                                            <input
                         type="text"
                         inputMode="decimal"
-                        value={editingItem.quantity || ''}
+                                               value={editingItem.quantity ?? ''}
                         onKeyDown={(e) => handleNumericKeyDown(e, true)}
                         onChange={(e) => {
-                          const quantity = parseFloat(e.target.value) || 0;
+                          const raw = e.target.value;
+                          const parsedQty = parseFloat(raw) || 0;
+                          const parsedPrice = parseFloat(String(editingItem.unitPrice)) || 0;
                           setEditingItem({
                             ...editingItem,
-                            quantity,
-                            amount: (editingItem.unitPrice || 0) * quantity,
+                            quantity: raw,
+                            amount: parsedPrice * parsedQty,
                           });
                         }}
                         placeholder="1"
@@ -936,8 +946,8 @@ export default function QuoteSection({
 
                   <div className="flex items-center justify-between p-3.5 bg-slate-100/70 rounded-xl">
                     <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Line Total</span>
-                    <span className="text-base font-extrabold text-slate-900 tabular-nums">
-                      {fmt((editingItem.unitPrice || 0) * (editingItem.quantity || 0))}
+                                        <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                      {fmt((parseFloat(String(editingItem.unitPrice)) || 0) * (parseFloat(String(editingItem.quantity)) || 0))}
                     </span>
                   </div>
                 </div>
