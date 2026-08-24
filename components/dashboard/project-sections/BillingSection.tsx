@@ -1428,8 +1428,8 @@ useEffect(() => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => !savingDeposit && setShowDepositEditor(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                       onClick={() => !savingDeposit && setShowDepositEditor(false)}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -1481,8 +1481,7 @@ useEffect(() => {
                     max={depositTypeDraft === 'percent' ? 100 : undefined}
                     value={depositValueDraft}
                     onChange={(e) => setDepositValueDraft(e.target.value)}
-                    placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
-                    autoFocus
+                                        placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
                     className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                   />
                 </div>
@@ -1529,8 +1528,8 @@ useEffect(() => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => !savingTax && setShowTaxEditor(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+                        onClick={() => !savingTax && setShowTaxEditor(false)}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -1567,16 +1566,12 @@ useEffect(() => {
               <div className="space-y-3 mb-5">
                 <p className="text-xs font-medium text-slate-600">Tax rate for this quote</p>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="number"
+                                   <input
+                    type="text"
                     inputMode="decimal"
-                    step="0.001"
-                    min="0"
-                    max="100"
                     value={taxRateDraft}
                     onChange={(e) => setTaxRateDraft(e.target.value)}
                     placeholder="8.625"
-                    autoFocus
                     className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                   />
                   <span className="text-sm font-semibold text-slate-500 shrink-0">%</span>
