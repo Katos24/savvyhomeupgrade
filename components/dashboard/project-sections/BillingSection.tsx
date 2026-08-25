@@ -179,13 +179,7 @@ export default function BillingSection({
     ? paymentMethodLabels[company?.payment_link_type || 'other'] || 'your payment link'
     : null;
 
-  const isPaid = !isClosed && total > 0 && paidAmount >= total;
-  // Was previously settled in full, but new work was added to the quote
-  // since — the customer already paid what they were originally invoiced;
-  // this new balance is for scope that was never actually invoiced yet.
-  // Framing this as a "resend" would suggest they're being asked to pay
-  // for something they've already covered.
-  const wasSettledThenGrew = !!lead?.paid_at && !isPaid && !isClosed && remaining > 0;
+   const isPaid = !isClosed && total > 0 && paidAmount >= total;
   const isPartial = !isClosed && paidAmount > 0 && !isPaid;
   const invoiceSent = !!lead?.invoice_sent_at;
   const lastReminderSent = lead?.reminder_sent_at || null;
@@ -193,9 +187,20 @@ export default function BillingSection({
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
     : null;
 
-  const depositPayment = payments.find((p: any) => p.kind === 'deposit');
+   const depositPayment = payments.find((p: any) => p.kind === 'deposit');
   const balancePayment = payments.find((p: any) => p.kind === 'balance');
   const depositPaid = hasDepositTerms && paidAmount > 0;
+
+  // Ledger-derived rather than lead?.paid_at — confirmed against real data
+  // that paid_at goes empty once payment_status drops back to 'partial'
+  // after the quote grows post-settlement, silently hiding this banner
+  // exactly when it's most needed. A completed deposit-then-balance pair
+  // is itself proof the job was fully settled once, regardless of what
+  // paid_at currently holds — the customer already paid what they were
+  // originally invoiced; this new balance is for scope that was never
+  // actually invoiced yet. Framing this as a "resend" would suggest
+  // they're being asked to pay for something they've already covered.
+  const wasSettledThenGrew = !!depositPayment && !!balancePayment && !isPaid && !isClosed && remaining > 0;
   // The amount actually due right now — deposit only if nothing's been
   // collected yet and deposit terms exist, otherwise the true remaining
   // balance. Mirrors getOrCreateCheckoutSession's own kind-selection logic,

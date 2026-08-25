@@ -213,21 +213,14 @@ export async function POST(
       );
     }
 
-    // One deposit + one balance per job. Enforced here rather than as a DB
-    // constraint — change orders will legitimately need a third collection
-    // later, and a CHECK would have to be dropped to allow it. Refund rows
-    // are excluded so refunding a deposit doesn't block re-collecting it.
-    const collectionRows = await sql`
-      SELECT COUNT(*)::int AS n
-      FROM payments
-      WHERE project_id = ${projectId} AND kind IN ('deposit', 'balance')
-    `;
-    if ((collectionRows[0]?.n ?? 0) >= 2) {
+       // Gate on whether money is actually still owed, matching
+    // getOrCreateCheckoutSession's "fully_paid" rule — not a fixed row
+    // count. A hard "2 collections max" blocked exactly this legitimate
+    // case: job paid in full, then new work added to the quote, leaving a
+    // real balance with no valid way to record it manually.
+    if (total > 0 && alreadyPaid >= total) {
       return NextResponse.json(
-        {
-          success: false,
-          error: 'This job already has a deposit and a balance recorded.',
-        },
+        { success: false, error: 'This job is already paid in full.' },
         { status: 400 }
       );
     }

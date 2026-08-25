@@ -4,6 +4,7 @@ import React from 'react';
 import { useState } from 'react';
 import { ChevronDown, X, MoreVertical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getAmountDueNow, getDepositAmount } from '@/lib/billing';
 
 type LeadModalHeaderProps = {
   lead: any;
@@ -76,18 +77,39 @@ export default function LeadModalHeader({
     : quoteTotal ? { text: 'Not sent', color: 'rgba(255,255,255,0.3)' }
     : null;
 
-  const paymentSub = paymentStatus === 'paid'
-    ? { text: 'Paid in full', color: '#34d399' }
-    : paymentStatus === 'partial' && paymentAmount && quoteTotal
-    ? { text: `${fmt(quoteTotal - paymentAmount)} due`, color: '#f87171' }
+    // Deposit-aware, and labeled so it can't look like a math error. A bare
+  // "Unpaid" + a number smaller than the quote total (the deposit) read as
+  // contradictory — this names what kind of amount is due and shows it
+  // against the total, instead of a lone figure the viewer has to explain
+  // to themselves.
+  const depositType = (lead.deposit_type || null) as 'percent' | 'fixed' | null;
+  const depositValue = lead.deposit_value ? parseFloat(lead.deposit_value) : 0;
+  const depositAmount = quoteTotal ? getDepositAmount({ total: quoteTotal, depositType, depositValue }) : 0;
+  const hasDepositTerms = depositAmount > 0;
+  const depositAlreadyPaid = hasDepositTerms && !!paymentAmount && paymentAmount > 0;
+
+  const amountDueNow = quoteTotal
+    ? getAmountDueNow({ total: quoteTotal, paidAmount: paymentAmount || 0, depositType, depositValue })
+    : 0;
+
+  const paymentLabel = paymentStatus === 'paid'
+    ? `${fmt(paymentAmount || quoteTotal || 0)} paid`
+    : hasDepositTerms
+    ? (depositAlreadyPaid ? 'Balance due' : 'Deposit due')
     : quoteTotal
-    ? { text: `${fmt(quoteTotal)} due`, color: '#f87171' }
+    ? 'Unpaid'
+    : null;
+
+    const paymentSub = paymentStatus === 'paid'
+    ? { text: 'Paid in full', color: '#34d399' }
+    : quoteTotal
+    ? { text: fmt(amountDueNow), color: '#f87171' }
     : null;
 
   const snapshot = [
     { id: 'quote', label: 'Quote', value: quoteTotal ? fmt(quoteTotal) : null, sub: quoteSub?.text, subColor: quoteSub?.color, valueColor: undefined as string | undefined, hasData: !!quoteTotal },
-    { id: 'payment', label: 'Payment', value: paymentAmount ? `${fmt(paymentAmount)} paid` : quoteTotal ? 'Unpaid' : null, sub: paymentSub?.text, subColor: paymentSub?.color, valueColor: undefined, hasData: !!(quoteTotal || paymentAmount) },
-    { id: 'schedule', label: 'Scheduled', value: scheduledDate, sub: scheduledTime, subColor: 'rgba(255,255,255,0.4)', valueColor: undefined, hasData: !!scheduledDate },
+    { id: 'payment', label: 'Payment', value: paymentLabel, sub: paymentSub?.text, subColor: paymentSub?.color, valueColor: undefined, hasData: !!(quoteTotal || paymentAmount) },
+        { id: 'schedule', label: 'Scheduled', value: scheduledDate, sub: scheduledTime, subColor: 'rgba(255,255,255,0.4)', valueColor: undefined, hasData: !!scheduledDate },
     { id: 'assigned', label: 'Assigned', value: assignedTo, sub: null, subColor: null, valueColor: undefined, hasData: !!assignedTo },
     { id: 'invoice', label: 'Invoice', value: lead.invoice_number ? `#${lead.invoice_number}` : null, sub: lead.invoice_sent_at ? 'Sent' : 'Not sent', subColor: lead.invoice_sent_at ? '#34d399' : 'rgba(255,255,255,0.3)', valueColor: '#60a5fa', hasData: !!lead.invoice_number },
   ].filter(i => i.hasData);

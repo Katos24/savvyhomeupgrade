@@ -15,6 +15,7 @@ import {
   ArrowRightLeft,
   Pencil,
   FileText,
+  Lock,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import AIQuoteGenerator from '../AIQuoteGenerator';
@@ -60,9 +61,15 @@ export default function QuoteSection({
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
   const [markingAccepted, setMarkingAccepted] = useState(false);
-  const [editingTaxRate, setEditingTaxRate] = useState(false);
+    const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  // ── DEPOSIT TERMS ── (same save_deposit_terms action BillingSection uses)
+  const [showDepositEditor, setShowDepositEditor] = useState(false);
+  const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
+  const [depositValueDraft, setDepositValueDraft] = useState('');
+  const [savingDeposit, setSavingDeposit] = useState(false);
 
   const newRowRef = useRef<HTMLTableRowElement | null>(null);
   const newRowInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -219,13 +226,60 @@ export default function QuoteSection({
         toast.success('Quote marked as accepted');
         setShowAcceptConfirm(false);
         await onRefresh();
-      } else {
+           } else {
         toast.error(data.error || 'Could not update the quote');
       }
     } catch {
       toast.error('Could not update the quote');
     } finally {
       setMarkingAccepted(false);
+    }
+  };
+
+  // Same lock rule as BillingSection: once money's moved, deposit terms
+  // (and tax rate) describe what the customer already agreed to and paid
+  // against — changing them after the fact would silently rewrite that.
+  const paidAmount = parseFloat(lead?.payment_amount || '0');
+  const depositLocked = paidAmount > 0;
+  const taxLocked = paidAmount > 0;
+
+  const openDepositEditor = () => {
+    if (!hasProject) {
+      toast.error('Convert to project first');
+      return;
+    }
+    setDepositTypeDraft((lead?.deposit_type as 'percent' | 'fixed') || 'percent');
+    setDepositValueDraft(lead?.deposit_value ? String(lead.deposit_value) : '');
+    setShowDepositEditor(true);
+  };
+
+  const handleSaveDepositTerms = async (clear = false) => {
+    setSavingDeposit(true);
+    try {
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'save_deposit_terms',
+          deposit_type: clear ? null : depositTypeDraft,
+          deposit_value: clear ? null : parseFloat(depositValueDraft || '0'),
+          user_name: currentUser?.name || 'Unknown',
+          user_email: currentUser?.email || '',
+        }),
+      });
+      const result = await res.json();
+      if (res.ok && result.success) {
+        toast.success(clear ? 'Deposit removed' : 'Deposit saved');
+        setShowDepositEditor(false);
+        await onRefresh();
+      } else {
+        toast.error(result.error || 'Could not save deposit');
+      }
+    } catch {
+      toast.error('Could not save deposit');
+    } finally {
+      setSavingDeposit(false);
     }
   };
 
@@ -710,16 +764,29 @@ export default function QuoteSection({
                   </td>
                 </tr>
 
-                {depositAmount > 0 && (
-                  <tr className="border-b border-slate-100">
-                    <td className="px-4 py-2.5 text-slate-600">
-                      Deposit ({depositType === 'percent' ? `${depositValue}%` : 'Fixed'})
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
-                      {fmt(depositAmount)}
-                    </td>
-                  </tr>
-                )}
+                               <tr className="border-b border-slate-100 group">
+                  <td className="px-4 py-2.5 text-slate-600">
+                    <span className="inline-flex items-center gap-1.5">
+                      Deposit{depositAmount > 0 ? ` (${depositType === 'percent' ? `${depositValue}%` : 'Fixed'})` : ''}
+                      {depositLocked ? (
+                        depositAmount > 0 && (
+                          <Lock className="w-3 h-3 text-slate-300" aria-label="Locked — payment collected" />
+                        )
+                      ) : (
+                        <button
+                          onClick={openDepositEditor}
+                          className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
+                          title={depositAmount > 0 ? 'Edit deposit terms' : 'Require a deposit'}
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
+                    {depositAmount > 0 ? fmt(depositAmount) : '—'}
+                  </td>
+                </tr>
 
                 {editingTaxRate ? (
                   <tr className="border-b border-slate-100 bg-slate-50/60">
@@ -755,19 +822,23 @@ export default function QuoteSection({
                   </tr>
                 ) : (
                   <tr className="border-b border-slate-100 group">
-                    <td className="px-4 py-2.5 text-slate-600">
+                                      <td className="px-4 py-2.5 text-slate-600">
                       <span className="inline-flex items-center gap-1.5">
                         Tax{taxRate > 0 ? ` (${taxRate}%)` : ''}
-                        <button
-                          onClick={() => {
-                            setTaxRateDraft(taxRate ? String(taxRate) : '');
-                            setEditingTaxRate(true);
-                          }}
-                          className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
-                          title="Edit tax rate"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
+                        {taxLocked ? (
+                          <Lock className="w-3 h-3 text-slate-300" aria-label="Locked — payment collected" />
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setTaxRateDraft(taxRate ? String(taxRate) : '');
+                              setEditingTaxRate(true);
+                            }}
+                            className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
+                            title="Edit tax rate"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
@@ -1362,6 +1433,104 @@ export default function QuoteSection({
                 >
                   <Trash2 className="w-4 h-4" />
                   Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+           </AnimatePresence>
+
+      {/* DEPOSIT TERMS MODAL */}
+      <AnimatePresence>
+        {showDepositEditor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => !savingDeposit && setShowDepositEditor(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-slate-900">
+                  {depositAmount > 0 ? 'Edit Deposit Terms' : 'Require a Deposit?'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => !savingDeposit && setShowDepositEditor(false)}
+                  disabled={savingDeposit}
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <p className="text-xs font-medium text-slate-600">
+                  {depositAmount > 0 ? 'Change the deposit amount' : 'How much is the deposit?'}
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
+                    {(['percent', 'fixed'] as const).map((t) => (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setDepositTypeDraft(t)}
+                        className={`px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
+                          depositTypeDraft === t
+                            ? 'bg-slate-900 text-white'
+                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {t === 'percent' ? '%' : '$'}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={depositValueDraft}
+                    onChange={(e) => setDepositValueDraft(e.target.value)}
+                    placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
+                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-slate-400"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDepositEditor(false)}
+                  disabled={savingDeposit}
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                {depositAmount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => handleSaveDepositTerms(true)}
+                    disabled={savingDeposit}
+                    className="px-3 py-2 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
+                  >
+                    Remove deposit
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleSaveDepositTerms(false)}
+                  disabled={savingDeposit || !depositValueDraft}
+                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  {savingDeposit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {savingDeposit ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </motion.div>

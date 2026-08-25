@@ -6,6 +6,31 @@ import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSess
 
 import { stripe } from '@/lib/stripe';
 
+function fmtPaymentDate(d: string | Date | null | undefined): string | undefined {
+  if (!d) return undefined;
+  let year: number, month: number, day: number;
+  if (d instanceof Date) {
+    // Postgres DATE columns often come back from the driver as a Date
+    // already anchored to UTC midnight for that calendar date. Reading the
+    // UTC getters (not local ones) pulls the intended calendar date back
+    // out without a timezone shift — same goal as the string-splitting
+    // branch below, just for an object instead of a "YYYY-MM-DD" string.
+    year = d.getUTCFullYear();
+    month = d.getUTCMonth() + 1;
+    day = d.getUTCDate();
+  } else {
+    const datePart = d.split('T')[0];
+    const parts = datePart.split('-').map(Number);
+    [year, month, day] = parts as [number, number, number];
+  }
+  if (!year || !month || !day) return undefined;
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -133,7 +158,27 @@ const contractTotal = parseFloat(project.quote_total || '0');
       }
     }
     
-    const customerAddress = [project.address_line_1, project.city, project.zip_code].filter(Boolean).join(', ');
+        const customerAddress = [project.address_line_1, project.city, project.zip_code].filter(Boolean).join(', ');
+
+    const kindLabels: Record<string, string> = {
+      deposit: 'Deposit paid',
+      balance: 'Balance paid',
+    };
+    const paymentRows = await sql`
+      SELECT amount, kind, paid_on
+      FROM payments
+      WHERE project_id = ${project.id} AND company_id = ${company.id}
+      ORDER BY paid_on ASC, id ASC
+    `;
+    // Refunds (negative amount) aren't part of "what was collected" —
+    // exclude them from this breakdown specifically.
+    const paymentBreakdown = paymentRows
+      .filter((p: any) => parseFloat(p.amount) > 0)
+      .map((p: any) => ({
+        label: kindLabels[p.kind] || 'Payment received',
+        amount: parseFloat(p.amount) || 0,
+        date: fmtPaymentDate(p.paid_on),
+      }));
 
     // Generate PDF
     const { generateInvoicePDFBuffer } = await import('@/lib/generateInvoicePDFServer');
@@ -157,8 +202,9 @@ const contractTotal = parseFloat(project.quote_total || '0');
       })),
    total: contractTotal,
       taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
-      amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
+            amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
       depositAmount: pdfDepositAmount,
+      paymentBreakdown,
       paymentLinkUrl: paymentLinkUrl || undefined,
       paymentLinkType: paymentLinkType || undefined,
       brandColor1: company.email_brand_color_1 || undefined,

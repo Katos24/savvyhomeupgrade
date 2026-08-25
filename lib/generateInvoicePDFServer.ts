@@ -1,4 +1,4 @@
-import { PDFDocument, rgb, StandardFonts, PDFPage, PDFFont } from 'pdf-lib';
+import { PDFDocument, rgb, degrees, StandardFonts, PDFPage, PDFFont } from 'pdf-lib';
 
 
 type LineItem = {
@@ -31,6 +31,11 @@ amountPaid?: number;
    *  shows the full contract — the customer needs to see what they're
    *  agreeing to — but the amount-due figures reflect what's owed now. */
   depositAmount?: number;
+  /** Individual payments actually collected (deposit, balance, etc). When
+   *  there's more than one, shown itemized with dates instead of a single
+   *  lump "Amount Paid" — so the PDF reflects how the job was actually
+   *  paid, not just the end total. */
+  paymentBreakdown?: { label: string; amount: number; date?: string }[];
   brandColor1?: string;
   brandColor2?: string;
 };
@@ -176,15 +181,20 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
 
   const margin   = 48;
   const contentW = width - margin * 2;
- const hasPartialPayment = !!(data.amountPaid && data.amountPaid > 0 && data.amountPaid < data.total);
+  const isPaidInFull = !!(data.amountPaid && data.total > 0 && data.amountPaid >= data.total);
+  const hasPartialPayment = !isPaidInFull
+    && !!(data.amountPaid && data.amountPaid > 0 && data.amountPaid < data.total);
   // Deposit only applies before anything is collected — once a payment lands,
   // the partial-payment path takes over and shows the real balance.
-  const hasDepositDue = !hasPartialPayment
+  const hasDepositDue = !isPaidInFull && !hasPartialPayment
     && !!(data.depositAmount && data.depositAmount > 0 && data.depositAmount < data.total);
   const depositDue = data.depositAmount ?? 0;
   const balanceDue = hasPartialPayment ? data.total - (data.amountPaid ?? 0) : data.total;
-  // What the customer is actually being asked to pay right now.
-  const amountDueNow = hasDepositDue ? depositDue : balanceDue;
+  // What the customer is actually being asked to pay right now. Previously
+  // there was no paid-in-full case, so a fully paid invoice still rendered
+  // "TOTAL DUE" for the full amount — actively misleading on a document
+  // meant to prove the job's settled.
+  const amountDueNow = isPaidInFull ? 0 : hasDepositDue ? depositDue : balanceDue;
 
   let y = height;
 
@@ -337,8 +347,14 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
   page.drawRectangle({ x: boxX, y: y - bandH, width: boxW, height: bandH, color: offWhite });
   page.drawRectangle({ x: boxX, y: y - 1, width: boxW, height: 3, color: accentColor });
 
-  let boxY = y - 18;
-  if (hasPartialPayment) {
+    let boxY = y - 18;
+  if (isPaidInFull) {
+    page.drawText('PAID IN FULL', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: accent2Color });
+    boxY -= 24;
+    page.drawText(fmt(data.total), { x: boxX + 14, y: boxY, size: 28, font: fontBold, color: accent2Color });
+    boxY -= 18;
+    page.drawText('Balance: $0.00', { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
+  } else if (hasPartialPayment) {
     page.drawText('BALANCE DUE', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: gray });
     boxY -= 24;
     page.drawText(fmt(balanceDue), { x: boxX + 14, y: boxY, size: 28, font: fontBold, color: accentColor });
@@ -405,8 +421,10 @@ y -= 6;
 
 // ── TOTALS ──
   // Reserve the whole block so it can't straddle a page break.
-  ensureSpace(hasPartialPayment || hasDepositDue ? 150 : 120);
-
+  const breakdownExtra =
+    data.paymentBreakdown && data.paymentBreakdown.length > 1 ? (data.paymentBreakdown.length - 1) * 14 : 0;
+  ensureSpace((isPaidInFull || hasPartialPayment || hasDepositDue ? 150 : 120) + breakdownExtra);
+  
   const totalsX = margin + contentW * 0.55;
   const totalsW = contentW * 0.45;
   const totalsRight = totalsX + totalsW - 10;
@@ -426,10 +444,19 @@ y -= 6;
     y -= 14;
   }
 
-  if (hasPartialPayment) {
-    page.drawText('Amount Paid', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
-    drawRightAligned(page, `- ${fmt(data.amountPaid ?? 0)}`, totalsRight, y, 9, fontRegular, gray);
-    y -= 14;
+    if (isPaidInFull || hasPartialPayment) {
+    if (data.paymentBreakdown && data.paymentBreakdown.length > 0) {
+      for (const payment of data.paymentBreakdown) {
+        const label = payment.date ? `${payment.label} — ${payment.date}` : payment.label;
+        page.drawText(label, { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+        drawRightAligned(page, `- ${fmt(payment.amount)}`, totalsRight, y, 9, fontRegular, gray);
+        y -= 14;
+      }
+    } else {
+      page.drawText('Amount Paid', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+      drawRightAligned(page, `- ${fmt(data.amountPaid ?? 0)}`, totalsRight, y, 9, fontRegular, gray);
+      y -= 14;
+    }
   }
 
   if (hasDepositDue) {
@@ -448,10 +475,10 @@ y -= 6;
   page.drawRectangle({ x: totalsX, y: y - 10, width: totalsW, height: 48, color: offWhite });
   page.drawRectangle({ x: totalsX, y: y + 38, width: totalsW, height: 3, color: accentColor });
  page.drawText(
-    hasPartialPayment ? 'BALANCE DUE' : hasDepositDue ? 'DEPOSIT DUE NOW' : 'TOTAL DUE',
-    { x: totalsX + 10, y: y + 18, size: 8, font: fontBold, color: gray }
+    isPaidInFull ? 'PAID IN FULL' : hasPartialPayment ? 'BALANCE DUE' : hasDepositDue ? 'DEPOSIT DUE NOW' : 'TOTAL DUE',
+    { x: totalsX + 10, y: y + 18, size: 8, font: fontBold, color: isPaidInFull ? accent2Color : gray }
   );
-  drawRightAligned(page, fmt(amountDueNow), totalsRight, y + 6, 18, fontBold, darkGray);
+  drawRightAligned(page, fmt(amountDueNow), totalsRight, y + 6, 18, fontBold, isPaidInFull ? accent2Color : darkGray);
   y -= 24;
 
   // ── NOTES ──
@@ -482,8 +509,8 @@ y -= 6;
   }
 
   // ── QR CODE ──
-  if (data.paymentLinkUrl) {
-    try {
+  if (data.paymentLinkUrl && !isPaidInFull) {
+        try {
       const QRCode = await import('qrcode');
       const qrDataUrl = await QRCode.toDataURL(data.paymentLinkUrl, {
         width: 80, margin: 1, errorCorrectionLevel: 'M',
@@ -519,7 +546,28 @@ y -= 6;
   ];
   const footerText = footerParts.join('  •  ');
 
-  pages.forEach((p, i) => {
+    pages.forEach((p, i) => {
+    // PAID watermark — large, rotated, low-opacity, centered on every page.
+    if (isPaidInFull) {
+      const watermarkText = 'PAID';
+      const watermarkSize = 110;
+      const angle = Math.PI / 4;
+      const textW = fontBold.widthOfTextAtSize(watermarkText, watermarkSize);
+      const cx = width / 2;
+      const cy = height / 2;
+      const anchorX = cx - (textW / 2) * Math.cos(angle);
+      const anchorY = cy - (textW / 2) * Math.sin(angle) - watermarkSize * 0.35;
+      p.drawText(watermarkText, {
+        x: anchorX,
+        y: anchorY,
+        size: watermarkSize,
+        font: fontBold,
+        color: accent2Color,
+        opacity: 0.16,
+        rotate: degrees(45),
+      });
+    }
+
     p.drawRectangle({ x: 0, y: 0, width, height: FOOTER_H, color: headerColor });
     p.drawText(footerText, {
       x: margin, y: 13, size: 8, font: fontRegular, color: rgb(0.6, 0.65, 0.72),

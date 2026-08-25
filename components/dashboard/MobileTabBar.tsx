@@ -74,18 +74,21 @@ export default function MobileTabBar({ lead, company, activeTab, onTabChange, on
     setShowMore(false);
   };
 
-  const ItemButton = ({ tab }: { tab: { id: string; locked: boolean } }) => {
+    const ItemButton = ({ tab }: { tab: { id: string; locked: boolean } }) => {
     const Icon = ICONS[tab.id];
     const isActive = activeTab === tab.id;
     return (
       <button
         onClick={() => handleSelect(tab)}
-        className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-w-0"
+        className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-w-0"
       >
-        <div className="relative">
+        <div
+          className="relative flex items-center justify-center w-12 h-8 rounded-xl transition-colors"
+          style={{ backgroundColor: isActive ? 'rgba(96,165,250,0.18)' : 'transparent' }}
+        >
           <Icon
-            className="w-6 h-6"
-            style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
+            className="w-5 h-5"
+            style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.65)' }}
           />
           {tab.locked && (
             <Sparkles className="w-3 h-3 text-yellow-400 absolute -top-1 -right-1.5" />
@@ -93,7 +96,7 @@ export default function MobileTabBar({ lead, company, activeTab, onTabChange, on
         </div>
         <span
           className="text-[11px] font-medium truncate max-w-full"
-          style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
+          style={{ color: isActive ? '#60a5fa' : 'rgba(255,255,255,0.65)' }}
         >
           {LABELS[tab.id]}
         </span>
@@ -149,23 +152,28 @@ export default function MobileTabBar({ lead, company, activeTab, onTabChange, on
       </AnimatePresence>
 
       {/* ── BOTTOM BAR ── */}
-      <div
-        className="sm:hidden flex-shrink-0 flex items-stretch border-t border-white/10"
+            <div
+        className="sm:hidden flex-shrink-0 flex items-stretch border-t border-white/15 shadow-[0_-4px_16px_rgba(0,0,0,0.25)]"
         style={{ background: '#0f172a', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {primary.map(tab => <ItemButton key={tab.id} tab={tab} />)}
-        {overflow.length > 0 && (
+                {overflow.length > 0 && (
           <button
             onClick={() => setShowMore(true)}
-            className="flex-1 flex flex-col items-center justify-center gap-1 py-3 min-w-0"
+            className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-w-0"
           >
-            <MoreHorizontal
-              className="w-6 h-6"
-              style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
-            />
+            <div
+              className="flex items-center justify-center w-12 h-8 rounded-xl transition-colors"
+              style={{ backgroundColor: overflowHasActive ? 'rgba(96,165,250,0.18)' : 'transparent' }}
+            >
+              <MoreHorizontal
+                className="w-5 h-5"
+                style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.65)' }}
+              />
+            </div>
             <span
               className="text-[11px] font-medium"
-              style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.45)' }}
+              style={{ color: overflowHasActive ? '#60a5fa' : 'rgba(255,255,255,0.65)' }}
             >
               More
             </span>
