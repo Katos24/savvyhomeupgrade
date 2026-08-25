@@ -448,14 +448,14 @@ export default function QuoteSection({
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden"
       >
-        {/* TOP ACTION BAR — Quote label left, Save + Send right, mobile-wrapping */}
-        <div className="px-4 sm:px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2 flex-wrap">
+               {/* TOP ACTION BAR — Quote label left, Save + Send right, mobile-wrapping */}
+        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-sm font-bold text-slate-900">Quote</h3>
           <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleManualSave}
             disabled={!hasProject || quoteData.length === 0 || saving}
-                        className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
               isDirty
                 ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                 : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -470,7 +470,7 @@ export default function QuoteSection({
             )}
             {isDirty ? 'Save Changes' : 'Saved'}
           </button>
-                   <button
+          <button
             onClick={() => setShowEmailModal(true)}
             disabled={!hasProject || quoteData.length === 0}
             className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-700 hover:bg-brand-800 rounded-lg text-xs font-bold text-white transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
@@ -480,6 +480,19 @@ export default function QuoteSection({
           </button>
           </div>
         </div>
+
+        {/* MOBILE TOTAL STRIP — desktop already has the sticky summary
+            sidebar next to the table; mobile collapses to one column, so
+            the total was only visible after scrolling past every line
+            item. This keeps it in view immediately. */}
+        {quoteData.length > 0 && (
+          <div className="md:hidden px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+              Total{taxRate > 0 ? ` (incl. ${taxRate}% tax)` : ''}
+            </span>
+            <span className="text-base font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
+          </div>
+        )}
 
         {/* TEMPLATE BANNER */}
         <AnimatePresence>
@@ -1089,7 +1102,7 @@ export default function QuoteSection({
 
       {/* Reserves space below the card on mobile so the floating save bar never overlaps content */}
       {!editingItem && (isDirty || quoteData.length > 0) && <div className="md:hidden h-20" />}
-      
+
       {/* AI GENERATOR MODAL */}
       <AnimatePresence>
         {showAI && (
