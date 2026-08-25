@@ -16,8 +16,10 @@ import {
   Pencil,
   FileText,
   Lock,
+  ChevronDown,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
+import MobileQuoteSummary from '@/components/dashboard/MobileQuoteSummary';
 import AIQuoteGenerator from '../AIQuoteGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -64,6 +66,7 @@ export default function QuoteSection({
     const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [showMobileSummary, setShowMobileSummary] = useState(false);
 
   // ── DEPOSIT TERMS ── (same save_deposit_terms action BillingSection uses)
   const [showDepositEditor, setShowDepositEditor] = useState(false);
@@ -481,18 +484,61 @@ export default function QuoteSection({
           </div>
         </div>
 
-        {/* MOBILE TOTAL STRIP — desktop already has the sticky summary
-            sidebar next to the table; mobile collapses to one column, so
-            the total was only visible after scrolling past every line
-            item. This keeps it in view immediately. */}
+               {/* MOBILE TOTAL STRIP / ACCORDION — desktop already has the sticky
+            summary sidebar next to the table; mobile collapses to one
+            column, so this doubles as both an always-visible total and the
+            trigger for the full breakdown (which lives further down, once,
+            not duplicated). */}
         {quoteData.length > 0 && (
-          <div className="md:hidden px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setShowMobileSummary((v) => !v)}
+            className="md:hidden w-full px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between cursor-pointer"
+          >
             <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
               Total{taxRate > 0 ? ` (incl. ${taxRate}% tax)` : ''}
             </span>
-            <span className="text-base font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
-          </div>
+            <span className="flex items-center gap-2">
+              <span className="text-base font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
+              <ChevronDown
+                className={`w-4 h-4 text-slate-400 transition-transform ${showMobileSummary ? 'rotate-180' : ''}`}
+              />
+            </span>
+          </button>
         )}
+
+        <AnimatePresence>
+          {showMobileSummary && quoteData.length > 0 && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden overflow-hidden border-b border-slate-100"
+            >
+              <div className="p-4">
+                <MobileQuoteSummary
+                  subtotal={subtotal}
+                  taxAmount={taxAmount}
+                  taxRate={taxRate}
+                  total={total}
+                  depositAmount={depositAmount}
+                  depositType={depositType}
+                  depositValue={depositValue}
+                  depositLocked={depositLocked}
+                  taxLocked={taxLocked}
+                  onOpenDepositEditor={openDepositEditor}
+                  onOpenTaxEditor={() => {
+                    setTaxRateDraft(taxRate ? String(taxRate) : '');
+                    setEditingTaxRate(true);
+                  }}
+                  quoteAccepted={quoteAccepted}
+                  hasItems={quoteData.length > 0}
+                  onMarkAccepted={() => setShowAcceptConfirm(true)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* TEMPLATE BANNER */}
         <AnimatePresence>
@@ -766,8 +812,11 @@ export default function QuoteSection({
             </div>
           </div>
 
-          {/* RIGHT: SUMMARY — plain table, no color, subtotal/deposit/tax/total */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden lg:sticky lg:top-4">
+                   {/* RIGHT: SUMMARY — plain table, no color, subtotal/deposit/tax/total.
+              Hidden on mobile; the accordion above covers the same content
+              there so there's exactly one summary, not two at different
+              scroll positions. */}
+          <div className="hidden lg:block border border-slate-200 rounded-xl overflow-hidden lg:sticky lg:top-4">
             <table className="w-full text-sm border-collapse">
               <tbody>
                 <tr className="border-b border-slate-100">
@@ -782,9 +831,14 @@ export default function QuoteSection({
                     <span className="inline-flex items-center gap-1.5">
                       Deposit{depositAmount > 0 ? ` (${depositType === 'percent' ? `${depositValue}%` : 'Fixed'})` : ''}
                       {depositLocked ? (
-                        depositAmount > 0 && (
-                          <Lock className="w-3 h-3 text-slate-300" aria-label="Locked — payment collected" />
-                        )
+                                                  depositAmount > 0 && (
+                                                       <span
+                              title="Locked — a payment has already been collected against these terms. Refund it in Billing to make changes."
+                              className="p-0.5 inline-flex"
+                            >
+                              <Lock className="w-3 h-3 text-slate-300" />
+                            </span>
+                          )
                       ) : (
                         <button
                           onClick={openDepositEditor}
@@ -801,64 +855,35 @@ export default function QuoteSection({
                   </td>
                 </tr>
 
-                {editingTaxRate ? (
-                  <tr className="border-b border-slate-100 bg-slate-50/60">
-                    <td className="px-4 py-2.5" colSpan={2}>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-600 text-sm shrink-0">Tax rate</span>
-                        <div className="relative flex-1 max-w-[88px]">
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={taxRateDraft}
-                            onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                            onChange={(e) => setTaxRateDraft(e.target.value)}
-                            placeholder="0"
-                            autoFocus
-                            className="w-full pl-2 pr-5 py-1 bg-white border border-slate-300 rounded-md text-xs font-semibold text-slate-900 outline-none focus:border-slate-400 tabular-nums"
-                          />
-                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">%</span>
-                        </div>
+                               <tr className="border-b border-slate-100 group">
+                  <td className="px-4 py-2.5 text-slate-600">
+                    <span className="inline-flex items-center gap-1.5">
+                      Tax{taxRate > 0 ? ` (${taxRate}%)` : ''}
+                      {taxLocked ? (
+                                                <span
+                          title="Locked — a payment has already been collected against these terms. Refund it in Billing to make changes."
+                          className="p-0.5 inline-flex"
+                        >
+                          <Lock className="w-3 h-3 text-slate-300" />
+                        </span>
+                      ) : (
                         <button
                           onClick={() => {
-                            const parsed = parseFloat(taxRateDraft);
-                            setTaxRate(isNaN(parsed) || parsed < 0 ? 0 : parsed);
-                            setIsDirty(true);
-                            setEditingTaxRate(false);
+                            setTaxRateDraft(taxRate ? String(taxRate) : '');
+                            setEditingTaxRate(true);
                           }}
-                          className="ml-auto px-2.5 py-1 bg-slate-900 text-white rounded-md text-xs font-bold hover:bg-slate-800 transition cursor-pointer shrink-0"
+                          className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
+                          title="Edit tax rate"
                         >
-                          Done
+                          <Pencil className="w-3 h-3" />
                         </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  <tr className="border-b border-slate-100 group">
-                                      <td className="px-4 py-2.5 text-slate-600">
-                      <span className="inline-flex items-center gap-1.5">
-                        Tax{taxRate > 0 ? ` (${taxRate}%)` : ''}
-                        {taxLocked ? (
-                          <Lock className="w-3 h-3 text-slate-300" aria-label="Locked — payment collected" />
-                        ) : (
-                          <button
-                            onClick={() => {
-                              setTaxRateDraft(taxRate ? String(taxRate) : '');
-                              setEditingTaxRate(true);
-                            }}
-                            className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
-                            title="Edit tax rate"
-                          >
-                            <Pencil className="w-3 h-3" />
-                          </button>
-                        )}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
-                      {taxRate > 0 ? fmt(taxAmount) : '—'}
-                    </td>
-                  </tr>
-                )}
+                      )}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
+                    {taxRate > 0 ? fmt(taxAmount) : '—'}
+                  </td>
+                </tr>
 
                 <tr>
                   <td className="px-4 py-3 font-bold text-slate-900">Total</td>
@@ -893,8 +918,8 @@ export default function QuoteSection({
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="md:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] px-4 pt-3"
-              style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
+                           className="md:hidden fixed left-0 right-0 z-[150] bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] px-4 pt-3 pb-3"
+              style={{ bottom: 'var(--mobile-tabbar-h, 64px)' }}
             >
               {isDirty ? (
                 <button
@@ -1556,6 +1581,83 @@ export default function QuoteSection({
                 >
                   {savingDeposit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {savingDeposit ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+           {/* TAX RATE MODAL — mirrors the Deposit modal above. Previously this
+          was an inline table row, which worked on desktop but was
+          invisible on mobile once that table became hidden lg:block —
+          the mobile accordion's edit trigger had nothing to open. */}
+      <AnimatePresence>
+        {editingTaxRate && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => setEditingTaxRate(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-bold text-slate-900">
+                  {taxRate > 0 ? 'Edit Tax Rate' : 'Add Tax'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setEditingTaxRate(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 mb-5">
+                <p className="text-xs font-medium text-slate-600">Tax rate for this quote</p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={taxRateDraft}
+                    onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                    onChange={(e) => setTaxRateDraft(e.target.value)}
+                    placeholder="8.625"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-slate-400"
+                  />
+                  <span className="text-sm font-semibold text-slate-500 shrink-0">%</span>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setEditingTaxRate(false)}
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const parsed = parseFloat(taxRateDraft);
+                    setTaxRate(isNaN(parsed) || parsed < 0 ? 0 : parsed);
+                    setIsDirty(true);
+                    setEditingTaxRate(false);
+                  }}
+                  disabled={!taxRateDraft}
+                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
+                >
+                  Done
                 </button>
               </div>
             </motion.div>

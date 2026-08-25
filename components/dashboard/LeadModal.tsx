@@ -92,10 +92,25 @@ export default function LeadModal({
   // switch — only its content does, via key={activeTab} on the inner
   // motion.div. That leaves scroll position stuck wherever it was on the
   // previous tab. Reset it explicitly whenever the tab changes.
-  const contentPaneRef = useRef<HTMLDivElement>(null);
+   const contentPaneRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     contentPaneRef.current?.scrollTo(0, 0);
   }, [activeTab]);
+
+  // MobileTabBar is a normal flex child of the modal, not viewport-fixed —
+  // so any fixed-positioned bar elsewhere (e.g. QuoteSection's mobile
+  // save/send bar) needs to know its real height to sit above it instead
+  // of underneath it. Measured rather than hardcoded, since it varies with
+  // font size and safe-area-inset across devices.
+  const tabBarWrapperRef = useRef<HTMLDivElement>(null);
+  const [tabBarHeight, setTabBarHeight] = useState(0);
+  useEffect(() => {
+    const el = tabBarWrapperRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(([entry]) => setTabBarHeight(entry.contentRect.height));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
 
 
@@ -277,8 +292,8 @@ export default function LeadModal({
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-white w-full sm:max-w-4xl lg:max-w-5xl xl:max-w-7xl 2xl:max-w-[1600px] sm:rounded-2xl shadow-2xl flex flex-col"
-style={{ maxHeight: '96vh', height: '96vh' }}
+                className="bg-white w-full sm:max-w-4xl lg:max-w-5xl xl:max-w-7xl 2xl:max-w-[1600px] sm:rounded-2xl shadow-2xl flex flex-col"
+style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tabBarHeight}px` }}
         onClick={e => e.stopPropagation()}
       >
         {/* ── HEADER ── */}
@@ -420,13 +435,15 @@ style={{ maxHeight: '96vh', height: '96vh' }}
               modal's own rounded/bounded frame instead of the whole screen.
               Desktop/tablet uses DesktopSidebarNav (left rail) instead —
               exactly one nav mechanism is visible at any given width. ── */}
-        <MobileTabBar
-          lead={lead}
-          company={company}
-          activeTab={activeTab}
-          onTabChange={(tab) => setActiveTab(tab as TopTab)}
-          onLockedTab={setLockedFeatureModal}
-        />
+                <div ref={tabBarWrapperRef}>
+          <MobileTabBar
+            lead={lead}
+            company={company}
+            activeTab={activeTab}
+            onTabChange={(tab) => setActiveTab(tab as TopTab)}
+            onLockedTab={setLockedFeatureModal}
+          />
+        </div>
 
       </motion.div>
 
