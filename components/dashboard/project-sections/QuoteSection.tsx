@@ -19,7 +19,6 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
-import MobileQuoteSummary from '@/components/dashboard/MobileQuoteSummary';
 import AIQuoteGenerator from '../AIQuoteGenerator';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -65,8 +64,8 @@ export default function QuoteSection({
   const [markingAccepted, setMarkingAccepted] = useState(false);
     const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [showMobileSummary, setShowMobileSummary] = useState(false);
+    const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [showLineItems, setShowLineItems] = useState(false);
 
   // ── DEPOSIT TERMS ── (same save_deposit_terms action BillingSection uses)
   const [showDepositEditor, setShowDepositEditor] = useState(false);
@@ -484,63 +483,7 @@ export default function QuoteSection({
           </div>
         </div>
 
-               {/* MOBILE TOTAL STRIP / ACCORDION — desktop already has the sticky
-            summary sidebar next to the table; mobile collapses to one
-            column, so this doubles as both an always-visible total and the
-            trigger for the full breakdown (which lives further down, once,
-            not duplicated). */}
-        {quoteData.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setShowMobileSummary((v) => !v)}
-            className="md:hidden w-full px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center justify-between cursor-pointer"
-          >
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-              Total{taxRate > 0 ? ` (incl. ${taxRate}% tax)` : ''}
-            </span>
-            <span className="flex items-center gap-2">
-              <span className="text-base font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
-              <ChevronDown
-                className={`w-4 h-4 text-slate-400 transition-transform ${showMobileSummary ? 'rotate-180' : ''}`}
-              />
-            </span>
-          </button>
-        )}
-
-        <AnimatePresence>
-          {showMobileSummary && quoteData.length > 0 && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="md:hidden overflow-hidden border-b border-slate-100"
-            >
-              <div className="p-4">
-                <MobileQuoteSummary
-                  subtotal={subtotal}
-                  taxAmount={taxAmount}
-                  taxRate={taxRate}
-                  total={total}
-                  depositAmount={depositAmount}
-                  depositType={depositType}
-                  depositValue={depositValue}
-                  depositLocked={depositLocked}
-                  taxLocked={taxLocked}
-                  onOpenDepositEditor={openDepositEditor}
-                  onOpenTaxEditor={() => {
-                    setTaxRateDraft(taxRate ? String(taxRate) : '');
-                    setEditingTaxRate(true);
-                  }}
-                  quoteAccepted={quoteAccepted}
-                  hasItems={quoteData.length > 0}
-                  onMarkAccepted={() => setShowAcceptConfirm(true)}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* TEMPLATE BANNER */}
+                {/* TEMPLATE BANNER */}
         <AnimatePresence>
           {categoryTemplate && quoteData.length === 0 && !templateBannerDismissed && (
             <motion.div
@@ -749,74 +692,96 @@ export default function QuoteSection({
                     </button>
                   )}
                 </>
-              ) : (
-                <>
-                  {quoteData.map((item: any) => (
-                    <div
-                      key={item.id}
-                      className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs space-y-2"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <button
-                          onClick={() => setEditingItem({ ...item })}
-                          className="flex-1 text-left min-w-0"
-                        >
-                          <p className="text-sm font-semibold text-slate-900 leading-snug">
-                            {item.description || <span className="font-normal italic text-slate-400">No description</span>}
-                          </p>
-                          <p className="text-xs text-slate-500 mt-1 font-medium tabular-nums">
-                            {fmt(item.unitPrice || 0)} × {item.quantity || 1}
-                          </p>
-                        </button>
-                        <div className="text-right shrink-0">
-                          <p className="text-sm font-bold text-slate-900 tabular-nums">
-                            {fmt(item.amount || 0)}
-                          </p>
-                          <button
-                            onClick={() => requestRemoveRow(item.id)}
-                            className="mt-1 p-1 text-slate-300 hover:text-rose-500 rounded transition"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleAddRowMobile}
-                      className="flex-1 py-3 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.99] transition"
-                    >
-                      <Plus className="w-4 h-4" /> Add Line Item
-                    </button>
-                    <button
-                      onClick={() => setShowAI(true)}
-                      className="shrink-0 px-3.5 py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 active:scale-[0.99] transition"
-                      aria-label="AI Draft Generator"
-                    >
-                      <Sparkles className="w-4 h-4 text-amber-500" />
-                    </button>
-                    {allTemplates.length > 0 && (
-                      <button
-                        onClick={() => setShowTemplateBrowser(true)}
-                        className="shrink-0 px-3.5 py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 active:scale-[0.99] transition"
-                        aria-label="Browse Templates"
+                          ) : (
+                <div className="rounded-xl border border-slate-200 overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setShowLineItems((v) => !v)}
+                    className="w-full px-4 py-3 bg-slate-50 flex items-center justify-between cursor-pointer"
+                  >
+                    <span className="text-sm font-bold text-slate-700">
+                      Line Items ({quoteData.length})
+                    </span>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 transition-transform ${showLineItems ? 'rotate-180' : ''}`}
+                    />
+                  </button>
+                  <AnimatePresence>
+                    {showLineItems && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        className="overflow-hidden"
                       >
-                        <FileText className="w-4 h-4 text-indigo-500" />
-                      </button>
+                        <div className="p-3 space-y-2.5 border-t border-slate-100">
+                          {quoteData.map((item: any) => (
+                            <div
+                              key={item.id}
+                              className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-xs space-y-2"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <button
+                                  onClick={() => setEditingItem({ ...item })}
+                                  className="flex-1 text-left min-w-0"
+                                >
+                                  <p className="text-sm font-semibold text-slate-900 leading-snug">
+                                    {item.description || <span className="font-normal italic text-slate-400">No description</span>}
+                                  </p>
+                                  <p className="text-xs text-slate-500 mt-1 font-medium tabular-nums">
+                                    {fmt(item.unitPrice || 0)} × {item.quantity || 1}
+                                  </p>
+                                </button>
+                                <div className="text-right shrink-0">
+                                  <p className="text-sm font-bold text-slate-900 tabular-nums">
+                                    {fmt(item.amount || 0)}
+                                  </p>
+                                  <button
+                                    onClick={() => requestRemoveRow(item.id)}
+                                    className="mt-1 p-1 text-slate-300 hover:text-rose-500 rounded transition"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={handleAddRowMobile}
+                              className="flex-1 py-3 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.99] transition"
+                            >
+                              <Plus className="w-4 h-4" /> Add Line Item
+                            </button>
+                            <button
+                              onClick={() => setShowAI(true)}
+                              className="shrink-0 px-3.5 py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 active:scale-[0.99] transition"
+                              aria-label="AI Draft Generator"
+                            >
+                              <Sparkles className="w-4 h-4 text-amber-500" />
+                            </button>
+                            {allTemplates.length > 0 && (
+                              <button
+                                onClick={() => setShowTemplateBrowser(true)}
+                                className="shrink-0 px-3.5 py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 active:scale-[0.99] transition"
+                                aria-label="Browse Templates"
+                              >
+                                <FileText className="w-4 h-4 text-indigo-500" />
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </motion.div>
                     )}
-                  </div>
-                </>
+                  </AnimatePresence>
+                </div>
               )}
             </div>
           </div>
 
-                   {/* RIGHT: SUMMARY — plain table, no color, subtotal/deposit/tax/total.
-              Hidden on mobile; the accordion above covers the same content
-              there so there's exactly one summary, not two at different
-              scroll positions. */}
-          <div className="hidden lg:block border border-slate-200 rounded-xl overflow-hidden lg:sticky lg:top-4">
+                     {/* RIGHT: SUMMARY — plain table, no color, subtotal/deposit/tax/total */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden lg:sticky lg:top-4">
             <table className="w-full text-sm border-collapse">
               <tbody>
                 <tr className="border-b border-slate-100">
@@ -908,42 +873,33 @@ export default function QuoteSection({
           </div>
         </div>
 
-        {/* FLOATING SAVE BAR (Mobile) — visible whenever there are unsaved changes,
-            so it's not lost by scrolling past the top action bar on a long quote */}
-                <AnimatePresence>
-          {!editingItem && (isDirty || quoteData.length > 0) && (
-            <motion.div
-              key={isDirty ? 'save' : 'send'}
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-                           className="md:hidden fixed left-0 right-0 z-[150] bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] px-4 pt-3 pb-3"
-              style={{ bottom: 'var(--mobile-tabbar-h, 64px)' }}
-            >
-              {isDirty ? (
-                <button
-                  onClick={handleManualSave}
-                  disabled={!hasProject || quoteData.length === 0 || saving}
-                  className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
-                >
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  {saving ? 'Saving...' : 'Save Changes'}
-                  <span className="ml-1 w-1.5 h-1.5 rounded-full bg-amber-400" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setShowEmailModal(true)}
-                  disabled={!hasProject}
-                  className="w-full py-3 bg-brand-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
-                >
-                  <Mail className="w-4 h-4" />
-                  {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
-                </button>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+               {/* MOBILE BOTTOM ACTION — plain, in-flow, not sticky. Was a fixed
+            floating bar; swapped per feedback: permanent floating UI eats
+            screen space and risks accidental taps. Just a second copy of
+            the top action, reachable after scrolling the quote. */}
+        {!editingItem && (isDirty || quoteData.length > 0) && (
+          <div className="md:hidden px-4 sm:px-5 pb-5">
+            {isDirty ? (
+              <button
+                onClick={handleManualSave}
+                disabled={!hasProject || quoteData.length === 0 || saving}
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
+              >
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                {saving ? 'Saving...' : 'Save Changes'}
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowEmailModal(true)}
+                disabled={!hasProject}
+                className="w-full py-3 bg-brand-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
+              >
+                <Mail className="w-4 h-4" />
+                {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
+              </button>
+            )}
+          </div>
+        )}
 
         {/* BOTTOM SHEET ITEM EDITOR (Mobile) */}
         <AnimatePresence>
@@ -1125,8 +1081,6 @@ export default function QuoteSection({
         )}
       </motion.div>
 
-      {/* Reserves space below the card on mobile so the floating save bar never overlaps content */}
-      {!editingItem && (isDirty || quoteData.length > 0) && <div className="md:hidden h-20" />}
 
       {/* AI GENERATOR MODAL */}
       <AnimatePresence>
