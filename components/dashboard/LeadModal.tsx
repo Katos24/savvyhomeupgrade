@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { toast } from 'sonner';
 import {
   X, Trash2, Lock, Sparkles, LayoutGrid,
@@ -76,7 +76,7 @@ export default function LeadModal({
     setSelectedStatus(lead.status || statusOptions[0]?.value);
   }, [lead.id, lead.status]);
 
-  useEffect(() => {
+    useEffect(() => {
     if (!lead.name || !lead.city || !lead.company_id) return;
     const params = new URLSearchParams({
       name: lead.name, city: lead.city, company_id: String(lead.company_id),
@@ -87,6 +87,15 @@ export default function LeadModal({
       .then(data => { if (data.leads?.length) setRelatedLeads(data.leads); })
       .catch(() => {});
   }, [lead.id]);
+
+  // The scrollable pane below (overflow-y-auto) never remounts on tab
+  // switch — only its content does, via key={activeTab} on the inner
+  // motion.div. That leaves scroll position stuck wherever it was on the
+  // previous tab. Reset it explicitly whenever the tab changes.
+  const contentPaneRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    contentPaneRef.current?.scrollTo(0, 0);
+  }, [activeTab]);
 
 
 
@@ -331,7 +340,7 @@ style={{ maxHeight: '96vh', height: '96vh' }}
             onLockedTab={setLockedFeatureModal}
           />
 
-          <div className="flex-1 overflow-y-auto bg-gray-50">
+                    <div ref={contentPaneRef} className="flex-1 overflow-y-auto bg-gray-50">
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}

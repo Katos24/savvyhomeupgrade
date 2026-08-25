@@ -470,12 +470,12 @@ export default function QuoteSection({
             )}
             {isDirty ? 'Save Changes' : 'Saved'}
           </button>
-          <button
+                   <button
             onClick={() => setShowEmailModal(true)}
             disabled={!hasProject || quoteData.length === 0}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-800 hover:bg-slate-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 px-3 py-2 bg-brand-700 hover:bg-brand-800 rounded-lg text-xs font-bold text-white transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Mail className="w-3.5 h-3.5 text-slate-500" />
+            <Mail className="w-3.5 h-3.5" />
             {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
           </button>
           </div>
@@ -872,9 +872,10 @@ export default function QuoteSection({
 
         {/* FLOATING SAVE BAR (Mobile) — visible whenever there are unsaved changes,
             so it's not lost by scrolling past the top action bar on a long quote */}
-        <AnimatePresence>
-          {isDirty && !editingItem && (
+                <AnimatePresence>
+          {!editingItem && (isDirty || quoteData.length > 0) && (
             <motion.div
+              key={isDirty ? 'save' : 'send'}
               initial={{ y: 80, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
@@ -882,15 +883,26 @@ export default function QuoteSection({
               className="md:hidden fixed bottom-0 left-0 right-0 z-[150] bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(15,23,42,0.08)] px-4 pt-3"
               style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)' }}
             >
-              <button
-                onClick={handleManualSave}
-                disabled={!hasProject || quoteData.length === 0 || saving}
-                className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
-                              >
-                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                {saving ? 'Saving...' : 'Save Changes'}
-                <span className="ml-1 w-1.5 h-1.5 rounded-full bg-amber-400" />
-              </button>
+              {isDirty ? (
+                <button
+                  onClick={handleManualSave}
+                  disabled={!hasProject || quoteData.length === 0 || saving}
+                  className="w-full py-3 bg-indigo-600 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
+                >
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {saving ? 'Saving...' : 'Save Changes'}
+                  <span className="ml-1 w-1.5 h-1.5 rounded-full bg-amber-400" />
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowEmailModal(true)}
+                  disabled={!hasProject}
+                  className="w-full py-3 bg-brand-700 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-sm active:scale-[0.99] transition disabled:opacity-50"
+                >
+                  <Mail className="w-4 h-4" />
+                  {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
+                </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -1076,8 +1088,8 @@ export default function QuoteSection({
       </motion.div>
 
       {/* Reserves space below the card on mobile so the floating save bar never overlaps content */}
-      {isDirty && <div className="md:hidden h-20" />}
-
+      {!editingItem && (isDirty || quoteData.length > 0) && <div className="md:hidden h-20" />}
+      
       {/* AI GENERATOR MODAL */}
       <AnimatePresence>
         {showAI && (
