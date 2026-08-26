@@ -21,6 +21,7 @@ function shapePayment(row: any) {
     // Non-null means it came from Stripe and can't be deleted in the UI.
     is_stripe: !!row.stripe_payment_intent_id,
     stripe_payment_intent_id: row.stripe_payment_intent_id,   // ← add this
+    reversed_payment_id: row.reversed_payment_id,
     created_at: row.created_at,
   };
 }
@@ -136,11 +137,11 @@ export async function GET(
     // the list only renders a date and a label. The body is fetched from
     // outbox-preview when Preview is clicked.
     const [paymentRows, activityRows] = await Promise.all([
-      projectId
+           projectId
         ? sql`
             SELECT id, amount, invoiced_total, method, kind, paid_on,
                    card_brand, card_last4, note, recorded_by,
-                   stripe_payment_intent_id, created_at
+                   stripe_payment_intent_id, reversed_payment_id, created_at
             FROM payments
             WHERE project_id = ${projectId} AND company_id = ${companyId}
             ORDER BY paid_on DESC, id DESC

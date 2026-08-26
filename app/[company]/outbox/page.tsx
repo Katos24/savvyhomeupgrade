@@ -86,7 +86,7 @@ async function getCurrentUser(userId: number): Promise<CurrentUser | null> {
 async function getOutboxData(companyId: number) {
   const sql = neon(process.env.DATABASE_URL!);
 
-  const [outboxEmails, outboxTotal, projects, statsRows, typeCounts] = await Promise.all([
+  const [outboxEmails, outboxTotal, projects, statsRows, revenueRows, typeCounts] = await Promise.all([
 
     // ── First page of outbox emails ───────────────────────────────
     sql`
@@ -123,13 +123,17 @@ async function getOutboxData(companyId: number) {
       SELECT
         COUNT(*) FILTER (WHERE status != 'failed') as sent,
         COUNT(*) FILTER (WHERE type = 'payment_reminder') as reminders,
-        COUNT(*) FILTER (WHERE status = 'failed') as failed,
-        COALESCE(SUM(
-          CASE WHEN type = 'quote'
-          THEN COALESCE((metadata->>'quote_total')::numeric, 0)
-          ELSE 0 END
-        ), 0) as revenue
+        COUNT(*) FILTER (WHERE status = 'failed') as failed
       FROM email_outbox
+      WHERE company_id = ${companyId}
+    `,
+
+    // ── Real revenue: net dollars actually collected (refunds are
+    // already negative rows, so they net out), not the value of every
+    // quote emailed regardless of whether it was ever accepted or paid.
+    sql`
+      SELECT COALESCE(SUM(amount), 0) as total
+      FROM payments
       WHERE company_id = ${companyId}
     `,
 
@@ -144,6 +148,7 @@ async function getOutboxData(companyId: number) {
 
   const stats = statsRows[0];
   const total = parseInt(outboxTotal[0].total);
+  const realRevenue = parseFloat(revenueRows[0]?.total) || 0;
 
   // Build type count map for accurate tab counts
   const typeCountMap: Record<string, number> = {};
@@ -156,9 +161,9 @@ async function getOutboxData(companyId: number) {
     projects,
     // Total is outbox only — legacy emails shown as supplement, not double counted
     outboxTotal: total,
-    totalStats: {
+        totalStats: {
       sent:     parseInt(stats.sent)     || 0,
-      revenue:  parseFloat(stats.revenue) || 0,
+      revenue:  realRevenue,
       reminders: parseInt(stats.reminders) || 0,
       failed:   parseInt(stats.failed)   || 0,
     },

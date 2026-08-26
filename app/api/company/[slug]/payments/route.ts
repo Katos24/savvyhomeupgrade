@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
 const VALID_METHODS = ['cash', 'check', 'credit_card', 'zelle', 'venmo', 'paypal', 'stripe', 'other'];
+const fmtAmount = (n: number) => `$${n.toFixed(2)}`;
 // Two collection points per job: deposit, then balance. 'payment' described
 // an arbitrary partial, which the new model doesn't allow. Kind is derived
 // server-side from the job's deposit terms — client input is ignored.
@@ -72,6 +73,7 @@ function shape(row: any) {
     // Non-null means it came from Stripe and can't be deleted here.
     is_stripe: !!row.stripe_payment_intent_id,
     stripe_payment_intent_id: row.stripe_payment_intent_id,   // ← add this line
+    reversed_payment_id: row.reversed_payment_id,
     created_at: row.created_at,
   };
 }
@@ -80,7 +82,7 @@ async function loadPayments(projectId: number, companyId: number) {
   const rows = await sql`
     SELECT id, amount, invoiced_total, method, kind, paid_on,
            card_brand, card_last4, note, recorded_by,
-           stripe_payment_intent_id, created_at
+           stripe_payment_intent_id, reversed_payment_id, created_at
     FROM payments
     WHERE project_id = ${projectId} AND company_id = ${companyId}
     ORDER BY paid_on DESC, id DESC
@@ -159,7 +161,114 @@ export async function POST(
     const auth = await authorize(slug, true);
     if ('error' in auth) return auth.error;
 
-    const body = await request.json();
+       const body = await request.json();
+
+    // ── Reverse an existing manual payment (correction, not erasure) ──
+    // Same pattern Stripe refunds already use — a negative 'refund' row —
+    // just triggered manually instead of by a webhook. Keeps a defensible
+    // record ("recorded $500, reversed $500 on Aug 24, reason: entered
+    // wrong amount") instead of a silent hard-delete that leaves no trace
+    // either way.
+    if (body.reverse_payment_id) {
+      const paymentId = parseInt(body.reverse_payment_id);
+      if (!paymentId || Number.isNaN(paymentId)) {
+        return NextResponse.json({ success: false, error: 'Missing reverse_payment_id' }, { status: 400 });
+      }
+
+      const rows = await sql`
+        SELECT id, project_id, amount, invoiced_total, stripe_payment_intent_id, kind
+        FROM payments
+        WHERE id = ${paymentId} AND company_id = ${auth.company.id}
+        LIMIT 1
+      `;
+      const original = rows[0];
+      if (!original) {
+        return NextResponse.json({ success: false, error: 'Payment not found' }, { status: 404 });
+      }
+      if (original.stripe_payment_intent_id) {
+        return NextResponse.json(
+          { success: false, error: 'Card payments can\u2019t be reversed here. Issue a refund in Stripe and it will sync back.' },
+          { status: 400 }
+        );
+      }
+      if (original.kind === 'refund') {
+        return NextResponse.json(
+          { success: false, error: 'Refund records can\u2019t be reversed.' },
+          { status: 400 }
+        );
+      }
+
+          const originalAmount = Number(original.amount) || 0;
+
+      // Cap against what's actually still reversible, not the original face
+      // amount — otherwise the same payment can be reversed repeatedly with
+      // nothing tracking that it already happened, silently over-reversing
+      // payment_amount below zero net.
+      const alreadyReversedRows = await sql`
+        SELECT COALESCE(SUM(ABS(amount)), 0) AS reversed
+        FROM payments
+        WHERE reversed_payment_id = ${paymentId} AND company_id = ${auth.company.id}
+      `;
+      const alreadyReversed = Number(alreadyReversedRows[0]?.reversed) || 0;
+      const remainingReversible = Math.max(originalAmount - alreadyReversed, 0);
+
+      if (remainingReversible <= 0) {
+        return NextResponse.json(
+          { success: false, error: 'This payment has already been fully reversed.' },
+          { status: 400 }
+        );
+      }
+
+      const requestedAmount = body.amount !== undefined ? parseFloat(body.amount) : remainingReversible;
+      if (Number.isNaN(requestedAmount) || requestedAmount <= 0) {
+        return NextResponse.json({ success: false, error: 'Enter an amount greater than zero.' }, { status: 400 });
+      }
+      if (requestedAmount > remainingReversible) {
+        return NextResponse.json(
+          { success: false, error: `Can't reverse more than the remaining ${fmtAmount(remainingReversible)}.` },
+          { status: 400 }
+        );
+      }
+
+      const note = typeof body.note === 'string' ? body.note.trim().slice(0, 500) || null : null;
+
+      await sql`
+        INSERT INTO payments (
+          project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+          note, recorded_by, reversed_payment_id
+        ) VALUES (
+          ${original.project_id},
+          ${auth.company.id},
+          ${-Math.abs(requestedAmount)},
+          ${original.invoiced_total},
+          'other',
+          'refund',
+          ${new Date().toISOString().split('T')[0]},
+          ${note ? `Reversal of payment #${paymentId}: ${note}` : `Reversal of payment #${paymentId}`},
+          ${auth.user.name || auth.user.email || 'Unknown'},
+          ${paymentId}
+        )
+      `;
+
+      const refreshed = await loadProject(original.project_id, auth.company.id);
+      const payments = await loadPayments(original.project_id, auth.company.id);
+      const collected = payments.reduce((s, p) => s + p.amount, 0);
+      const total = Number(refreshed?.quote_total) || 0;
+
+      return NextResponse.json({
+        success: true,
+        message: 'Payment reversed',
+        payments,
+        summary: {
+          total,
+          collected,
+          remaining: Math.max(total - collected, 0),
+          status: refreshed?.payment_status,
+        },
+      });
+    }
+
+    // ── Record a new manual payment (existing behavior, unchanged below) ──
     const projectId = parseInt(body.project_id);
 
     if (!projectId || Number.isNaN(projectId)) {
@@ -196,11 +305,24 @@ export async function POST(
     // The job's own deposit terms decide this, not the amount. Inferring
     // from amount mislabelled a $700 payment on a $3,000 job as a deposit
     // even when the contractor never set deposit terms.
-    const alreadyPaid = Number(project.payment_amount) || 0;
+       const alreadyPaid = Number(project.payment_amount) || 0;
     const total = Number(project.quote_total) || 0;
     const hasDepositTerms =
       !!project.deposit_type && Number(project.deposit_value) > 0;
-    const kind = hasDepositTerms && alreadyPaid === 0 ? 'deposit' : 'balance';
+    const depositAmountForKind = hasDepositTerms
+      ? Math.min(
+          Math.round(
+            (project.deposit_type === 'percent'
+              ? (total * Number(project.deposit_value)) / 100
+              : Number(project.deposit_value)) * 100
+          ) / 100,
+          total
+        )
+      : 0;
+    // Same corrected rule as the webhook and getOrCreateCheckoutSession —
+    // "deposit" until the deposit is net-satisfied, not just until the
+    // first dollar ever landed.
+    const kind = hasDepositTerms && alreadyPaid < depositAmountForKind ? 'deposit' : 'balance';
 
     // Guard against fat-fingering an extra zero.
     if (total > 0 && alreadyPaid + amount > total * 1.5) {
@@ -275,80 +397,16 @@ export async function POST(
   }
 }
 
-/* ═══════════════ DELETE — remove a manual payment ═══════════════ */
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  try {
-    const { slug } = await params;
-    const auth = await authorize(slug, true);
-    if ('error' in auth) return auth.error;
-
-    const paymentId = parseInt(request.nextUrl.searchParams.get('payment_id') || '');
-    if (!paymentId || Number.isNaN(paymentId)) {
-      return NextResponse.json({ success: false, error: 'Missing payment_id' }, { status: 400 });
-    }
-
-    const rows = await sql`
-      SELECT id, project_id, stripe_payment_intent_id, kind
-      FROM payments
-      WHERE id = ${paymentId} AND company_id = ${auth.company.id}
-      LIMIT 1
-    `;
-    const payment = rows[0];
-
-    if (!payment) {
-      return NextResponse.json({ success: false, error: 'Payment not found' }, { status: 404 });
-    }
-
-    // Deleting a Stripe row would show the job unpaid while Stripe still
-    // holds real money. Refund it there instead.
-    if (payment.stripe_payment_intent_id) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Card payments can\u2019t be deleted here. Issue a refund in Stripe and it will sync back.',
-        },
-        { status: 400 }
-      );
-    }
-
-    if (payment.kind === 'refund') {
-      return NextResponse.json(
-        { success: false, error: 'Refund records can\u2019t be deleted.' },
-        { status: 400 }
-      );
-    }
-
-    await sql`DELETE FROM payments WHERE id = ${paymentId} AND company_id = ${auth.company.id}`;
-
-    const project = await loadProject(payment.project_id, auth.company.id);
-    const payments = await loadPayments(payment.project_id, auth.company.id);
-    const collected = payments.reduce((s, p) => s + p.amount, 0);
-    const total = Number(project?.quote_total) || 0;
-
-    return NextResponse.json({
-      success: true,
-      message: 'Payment removed',
-      payments,
-      summary: {
-        total,
-        collected,
-        remaining: Math.max(total - collected, 0),
-        status: project?.payment_status,
-      },
-    });
-  } catch (error) {
-    console.error('Delete payment error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to remove payment',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
-  }
+/* ═══════════════ DELETE — disabled; use reversal instead ═══════════════
+   Manual payments were previously hard-deletable, which left no trace a
+   payment was ever recorded — no record for the contractor, no record if
+   a customer later disputes what happened. Corrections now go through
+   POST with reverse_payment_id, which inserts a negative 'refund' row
+   (same pattern Stripe refunds already used) so the history stays intact
+   regardless of payment method. */
+export async function DELETE() {
+  return NextResponse.json(
+    { success: false, error: 'Payments can\u2019t be deleted. Use the reverse action to record a correction instead.' },
+    { status: 405 }
+  );
 }

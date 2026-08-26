@@ -4,6 +4,7 @@ import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
+
 const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(
@@ -196,6 +197,18 @@ case 'update-tax-rate': {
   const result = await sql`
     UPDATE companies
     SET default_tax_rate = ${rate}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
+// ── Invoice terms & conditions (boilerplate appended to every invoice PDF) ──
+case 'update-invoice-terms': {
+  const terms = typeof data.invoice_terms === 'string' ? data.invoice_terms.trim() : '';
+  const result = await sql`
+    UPDATE companies
+    SET invoice_terms = ${terms || null}
     WHERE id = ${company.id}
     RETURNING *
   `;

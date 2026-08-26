@@ -1175,7 +1175,8 @@ const leadCheck = await sql`
          c.name as company_name, c.phone as company_phone,
          c.email as company_email,
          c.id as company_id, c.slug as company_slug, c.plan_tier,
-         c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status
+         c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status,
+         c.invoice_terms
   FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
@@ -1229,23 +1230,28 @@ const leadCheck = await sql`
   // inside the Stripe branch below, so a company without Stripe active (or a
   // failed checkout call) sent an email with no record of whether a deposit
   // or the balance actually went out.
-  const depositType = lead.deposit_type || null;
+   const depositType = lead.deposit_type || null;
   const depositValueRaw = parseFloat(lead.deposit_value || '0');
   const hasDepositTerms = !!depositType && depositValueRaw > 0;
-  const depositAmount = hasDepositTerms
+  const fullDepositAmount = hasDepositTerms
     ? Math.min(
         Math.round((depositType === 'percent' ? (invoiceTotal * depositValueRaw) / 100 : depositValueRaw) * 100) / 100,
         invoiceTotal
       )
     : 0;
   const paidSoFar = parseFloat(lead.payment_amount || '0');
-  const depositAlreadyPaid = hasDepositTerms && paidSoFar > 0;
+  // Same corrected rule as the webhook, the manual payments route, and
+  // getOrCreateCheckoutSession: still "deposit" until the deposit is
+  // actually net-satisfied, not just until the first dollar ever landed —
+  // and the amount charged is the remaining shortfall, not the full
+  // original deposit re-asked.
+  const depositSatisfied = hasDepositTerms && paidSoFar >= fullDepositAmount;
 
    const collectionKind: 'deposit' | 'balance' | 'full' = hasDepositTerms
-    ? (depositAlreadyPaid ? 'balance' : 'deposit')
+    ? (depositSatisfied ? 'balance' : 'deposit')
     : 'full';
   const chargeAmount = collectionKind === 'deposit'
-    ? depositAmount
+    ? Math.round((fullDepositAmount - paidSoFar) * 100) / 100
     : Math.max(invoiceTotal - paidSoFar, 0);
   // sendInvoiceToCustomer's collectionKind param predates the 'full' case —
   // it only distinguishes deposit vs. balance, treating "unset" as full amount.
@@ -1289,6 +1295,7 @@ const leadCheck = await sql`
       invoiceTotal,
       amountPaid: lead.payment_amount ? parseFloat(lead.payment_amount) : undefined,
       invoiceItems,
+        terms: lead.invoice_terms || undefined,
       dueDate: body.due_date || undefined,
       notes: body.notes || undefined,
       contractorEmail: lead.company_email,

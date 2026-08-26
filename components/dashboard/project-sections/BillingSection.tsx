@@ -20,6 +20,7 @@ import {
   ArrowRight,
   Lock,
   QrCode,
+  RotateCcw,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
@@ -112,6 +113,9 @@ export default function BillingSection({
   const payments = paymentsProp ?? [];
   const activityLog = activityProp ?? [];
   const [deletingPaymentId, setDeletingPaymentId] = useState<number | null>(null);
+    const [confirmDeletePayment, setConfirmDeletePayment] = useState<any | null>(null);
+  const [reverseAmountDraft, setReverseAmountDraft] = useState('');
+  const [reverseNoteDraft, setReverseNoteDraft] = useState('');
 
   // ── PERMISSIONS ──
   const planTier = (company?.plan_tier || 'free') as PlanTier;
@@ -187,9 +191,17 @@ export default function BillingSection({
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
     : null;
 
-   const depositPayment = payments.find((p: any) => p.kind === 'deposit');
-  const balancePayment = payments.find((p: any) => p.kind === 'balance');
-  const depositPaid = hasDepositTerms && paidAmount > 0;
+   const depositPayments = payments.filter((p: any) => p.kind === 'deposit');
+  const balancePayments = payments.filter((p: any) => p.kind === 'balance');
+  // Kept for anywhere else in this file still expecting a single row
+  // (e.g. the "latest" card brand/date lookups) — most recent by paid_on.
+  const depositPayment = depositPayments[0];
+  const balancePayment = balancePayments[0];
+  // "Complete" means the deposit is actually net-satisfied — not just that
+  // some money exists. $100 against a $400 deposit is progress, not done;
+  // it should still prompt collecting the $300 shortfall, not silently
+  // advance to Balance.
+  const depositPaid = hasDepositTerms && paidAmount >= depositAmount;
 
   // Ledger-derived rather than lead?.paid_at — confirmed against real data
   // that paid_at goes empty once payment_status drops back to 'partial'
@@ -215,6 +227,12 @@ export default function BillingSection({
       new Date(lead.invoice_sent_at).getTime() <
   new Date(depositPayment.created_at).getTime()
     )
+
+
+    const reversedAmountFor = (paymentId: number) =>
+  payments
+    .filter((p2: any) => p2.kind === 'refund' && p2.reversed_payment_id === paymentId)
+    .reduce((s: number, p2: any) => s + Math.abs(p2.amount), 0);
 
   // Manual methods (Venmo/Zelle/etc.) have no webhook — nothing tells this
   // app when money actually lands. Left alone, the card just sits on
@@ -429,22 +447,23 @@ useEffect(() => {
     }
   };
 
-  const handleDeletePayment = async (paymentId: number) => {
+    const handleReversePayment = async (paymentId: number, amount: number, note: string) => {
     setDeletingPaymentId(paymentId);
     try {
-      const res = await fetch(
-        `/api/company/${companySlug}/payments?payment_id=${paymentId}`,
-        { method: 'DELETE' }
-      );
+      const res = await fetch(`/api/company/${companySlug}/payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reverse_payment_id: paymentId, amount, note }),
+      });
       const result = await res.json();
       if (res.ok && result.success) {
-        toast.success('Payment removed');
+        toast.success('Payment reversed');
         await onRefresh();
       } else {
-        toast.error(result.error || 'Could not remove payment');
+        toast.error(result.error || 'Could not reverse payment');
       }
     } catch {
-      toast.error('Could not remove payment');
+      toast.error('Could not reverse payment');
     } finally {
       setDeletingPaymentId(null);
     }
@@ -589,7 +608,23 @@ useEffect(() => {
   // ── PROGRESS STEPS ──
   // Whether the balance has actually been (re)sent since the deposit was
   // paid, vs. the deposit-send still being the last thing on record.
-  const balanceRequested = depositPaid && invoiceSent && !balanceNotYetRequested;
+   const balanceRequested = depositPaid && invoiceSent && !balanceNotYetRequested;
+
+  // Net of any linked refunds — "Paid $472.52" when $85 of that deposit
+  // was actually refunded is misleading, even though the aggregate Balance
+  // figure was already correct (payment_amount nets refunds via SUM).
+   const netOf = (p: any) => Math.max(p.amount - reversedAmountFor(p.id), 0);
+  const depositCollected = depositPayments.reduce((s: number, p: any) => s + netOf(p), 0);
+  const depositRemaining = Math.max(depositAmount - depositCollected, 0);
+  const balanceCollected = balancePayments.reduce((s: number, p: any) => s + netOf(p), 0);
+  // Balance's own "full amount" isn't a fixed constant like deposit's —
+  // it's whatever remains once the deposit is settled, which shifts as
+  // more balance payments land. Use the amount from the moment the FIRST
+  // balance-kind row was created as the reference point.
+  const balanceTargetAmount = balancePayments.length > 0
+    ? balancePayments.reduce((s: number, p: any) => s + netOf(p), 0) + Math.max(total - paidAmount, 0)
+    : Math.max(total - depositAmount, 0);
+  const balanceRemaining = Math.max(balanceTargetAmount - balanceCollected, 0);
 
   type StepStatus = 'locked' | 'ready' | 'sent' | 'done';
   type Step = {
@@ -608,10 +643,12 @@ useEffect(() => {
         {
           key: 'deposit',
           title: 'Deposit',
-          amount: depositPaid ? (depositPayment?.amount ?? depositAmount) : depositAmount,
-          status: depositPaid ? 'done' : invoiceSent ? 'sent' : 'ready',
+                   amount: depositAmount,
+          status: depositPaid ? 'done' : depositPayments.length > 0 ? 'sent' : invoiceSent ? 'sent' : 'ready',
           sub: depositPaid
-            ? `Paid ${fmtDate(depositPayment?.paid_on)}`
+            ? `Paid in full ${fmtDate(depositPayments[depositPayments.length - 1]?.paid_on)}`
+            : depositPayments.length > 0
+            ? `${fmt(depositCollected)} paid so far · ${fmt(depositRemaining)} remaining`
             : invoiceSent
             ? `Sent ${fmtDate(lead?.invoice_sent_at)} — awaiting payment`
             : canSendInvoice
@@ -632,12 +669,14 @@ useEffect(() => {
         {
           key: 'balance',
           title: 'Balance',
-          amount: isPaid ? (balancePayment?.amount ?? remaining) : depositPaid ? remaining : total - depositAmount,
-          status: isPaid ? 'done' : !depositPaid ? 'locked' : balanceRequested ? 'sent' : 'ready',
+                   amount: isPaid ? total - depositAmount : depositPaid ? remaining : total - depositAmount,
+          status: isPaid ? 'done' : !depositPaid ? 'locked' : balancePayments.length > 0 ? 'sent' : balanceRequested ? 'sent' : 'ready',
           sub: isPaid
-            ? `Paid ${fmtDate(lead?.payment_date)}`
+            ? `Paid in full ${fmtDate(lead?.payment_date)}`
             : !depositPaid
             ? 'Unlocks once the deposit is paid'
+            : balancePayments.length > 0
+            ? `${fmt(balanceCollected)} paid so far · ${fmt(balanceRemaining)} remaining`
             : balanceRequested
             ? `Sent ${fmtDate(lead?.invoice_sent_at)} — awaiting payment`
             : canSendInvoice
@@ -867,9 +906,27 @@ useEffect(() => {
 
                                               {(step.action || step.needsUpgrade || step.editAction) && (
                           <div className="mt-2.5 flex flex-col items-start gap-2">
-                            {step.action && (
-                              <button
-                                onClick={step.action.onClick}
+                                                   {(step.key === 'deposit' ? depositPayments : step.key === 'balance' ? balancePayments : []).length > 1 && (
+                          <div className="mt-2 space-y-1 pl-0.5">
+                            {(step.key === 'deposit' ? depositPayments : balancePayments).map((p: any) => {
+                              const refunded = reversedAmountFor(p.id);
+                              return (
+                                <div key={p.id} className="flex items-center justify-between text-[11px] text-slate-500">
+                                  <span>
+                                    {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
+                                    {refunded > 0 && <span className="text-amber-600"> · {fmt(refunded)} refunded</span>}
+                                  </span>
+                                  <span className="tabular-nums font-medium text-slate-600">
+                                    {fmt(Math.max(p.amount - refunded, 0))}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {step.action && (
+                          <button
+                            onClick={step.action.onClick}
                                 className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors"
                               >
                                 <Send className="w-3.5 h-3.5" />
@@ -968,9 +1025,11 @@ useEffect(() => {
                             {p.kind}
                           </span>
                         </div>
-                        <p className="text-[11px] text-slate-400 capitalize mt-0.5">
+                                               <p className="text-[11px] text-slate-400 capitalize mt-0.5">
                           {p.is_stripe && p.card_brand
                             ? `${p.card_brand} ····${p.card_last4}`
+                            : !p.is_stripe && p.method === 'stripe'
+                            ? 'Stripe (manual)'
                             : p.method.replace('_', ' ')}
                           {p.paid_on && ` · ${fmtDate(p.paid_on)}`}
                         </p>
@@ -987,17 +1046,22 @@ useEffect(() => {
                             Stripe ↗
                           </a>
                         )}
-                        {!p.is_stripe && p.kind !== 'refund' && (
+                                                 {!p.is_stripe && p.kind !== 'refund' && reversedAmountFor(p.id) < p.amount && (
                           <button
-                            onClick={() => handleDeletePayment(p.id)}
+                            onClick={() => {
+                              const remaining = p.amount - reversedAmountFor(p.id);
+                              setConfirmDeletePayment(p);
+                              setReverseAmountDraft(String(remaining));
+                              setReverseNoteDraft('');
+                            }}
                             disabled={deletingPaymentId === p.id}
-                            className="p-1.5 rounded-lg text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition-colors disabled:opacity-50"
-                            aria-label="Remove payment"
+                            className="p-1.5 rounded-lg text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                            aria-label="Reverse payment"
                           >
-                            {deletingPaymentId === p.id ? (
+                                                        {deletingPaymentId === p.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
-                              <X className="w-3.5 h-3.5" />
+                              <RotateCcw className="w-3.5 h-3.5" />
                             )}
                           </button>
                         )}
@@ -1276,6 +1340,104 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
+
+            {/* CONFIRM DELETE PAYMENT */}
+      <AnimatePresence>
+        {confirmDeletePayment && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => deletingPaymentId === null && setConfirmDeletePayment(null)}
+            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+            >
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="text-base font-bold text-slate-900">Remove this payment?</h3>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeletePayment(null)}
+                  disabled={deletingPaymentId !== null}
+                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+                           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3 flex items-center justify-between text-sm">
+                <span className="text-slate-600 capitalize">
+                  {confirmDeletePayment.kind} · {confirmDeletePayment.method?.replace('_', ' ')}
+                </span>
+                <span className="font-bold text-slate-900 tabular-nums">
+                  {fmt(confirmDeletePayment.amount)}
+                </span>
+              </div>
+
+              <div className="space-y-3 mb-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Amount to reverse</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={reverseAmountDraft}
+                    onChange={(e) => setReverseAmountDraft(e.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-400">Full amount by default — edit for a partial correction.</p>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Reason</label>
+                  <input
+                    type="text"
+                    value={reverseNoteDraft}
+                    onChange={(e) => setReverseNoteDraft(e.target.value)}
+                    placeholder="e.g. entered wrong amount"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-700"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800 mb-5">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
+                <span>
+                  This adds a reversal entry — the original payment stays on record. Balance due, payment
+                  status, and deposit/tax editing will recalculate to reflect the correction.
+                </span>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDeletePayment(null)}
+                  disabled={deletingPaymentId !== null}
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const amt = parseFloat(reverseAmountDraft || '0');
+                    await handleReversePayment(confirmDeletePayment.id, amt, reverseNoteDraft);
+                    setConfirmDeletePayment(null);
+                  }}
+                  disabled={deletingPaymentId !== null || !reverseAmountDraft}
+                  className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {deletingPaymentId !== null ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Reverse Payment'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* MODAL 2: RECORD PAYMENT */}
       <AnimatePresence>
         {showRecordPayment && (
@@ -1335,13 +1497,18 @@ useEffect(() => {
 
                   {/* QUICK FILLS */}
                   <div className="mt-2 grid gap-1.5">
-                    {hasDepositTerms && !depositPaid && depositAmount > 0 && (
+                                      {hasDepositTerms && !depositPaid && depositAmount > 0 && (
                       <button
                         type="button"
                         onClick={() => {
-                          setRawAmount(depositAmount.toString());
+                          // The shortfall, not the full original deposit —
+                          // if part of the deposit was already collected
+                          // (and, say, partially refunded since), asking
+                          // for the full amount again would double-charge.
+                          const shortfall = Math.max(depositAmount - paidAmount, 0);
+                          setRawAmount(shortfall.toString());
                           setPaymentAmount(
-                            depositAmount.toLocaleString('en-US', {
+                            shortfall.toLocaleString('en-US', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })
@@ -1351,7 +1518,7 @@ useEffect(() => {
                         className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors text-[11px]"
                       >
                         <span>Fill Required Deposit</span>
-                        <span className="font-bold tabular-nums">{fmt(depositAmount)}</span>
+                        <span className="font-bold tabular-nums">{fmt(Math.max(depositAmount - paidAmount, 0))}</span>
                       </button>
                     )}
                     {remaining > 0 && (

@@ -232,32 +232,34 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   }, [filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, fetchLeads]);
 
   // Deep-link to lead from URL
+   // Deep-link to lead from URL. Always fetches full detail regardless of
+  // isInitialLoad — previously, if isInitialLoad was still true at the
+  // exact render this effect fired, the fetch was skipped entirely, but
+  // the URL param had already been stripped a few lines above. That left
+  // no way to retry: the modal opened with the bare list-row lead (no
+  // payments) permanently, until some unrelated action forced a refetch.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const leadId = params.get('lead');
     if (!leadId) return;
-  const lead = allLeads.find(l => l.id === parseInt(leadId));
+    const lead = allLeads.find(l => l.id === parseInt(leadId));
     if (lead) {
       // The list row has no payments or activity — open with what we have
       // and let the detail fetch below fill them in.
       setSelectedLead(lead);
-      window.history.replaceState({}, '', window.location.pathname);
     }
-    if (isInitialLoad) return;
+    window.history.replaceState({}, '', window.location.pathname);
     fetch(`/api/leads/${leadId}`, { cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
         if (data.success && data.lead) {
-                  console.log('refreshModalLead status:', data.lead.status);
-
           setSelectedLead(data.lead);
           setSelectedLeadPayments(data.payments || []);
           setSelectedLeadActivity(data.activity || []);
-          window.history.replaceState({}, '', window.location.pathname);
         }
       })
       .catch(() => {});
-  }, [allLeads, isInitialLoad]);
+  }, [allLeads]);
 
   // Poll for new leads
   const lastPollCount = useRef<number | null>(null);
@@ -764,7 +766,7 @@ isDark ? 'bg-[#0b0f17]' : 'bg-slate-100'
           teamMembers={teamMembers}
         />
       )}
-
+ 
       <CreateLeadModal
         isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}
         onSuccess={() => fetchLeads(1, true)} companySlug={company.slug}

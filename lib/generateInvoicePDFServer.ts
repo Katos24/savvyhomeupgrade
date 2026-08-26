@@ -23,7 +23,11 @@ type InvoicePDFData = {
   lineItems: LineItem[];
   total: number;
   taxRate?: number;
-  notes?: string;
+   notes?: string;
+  /** Company-wide boilerplate (payment terms, late fees, warranty
+   *  language) — distinct from `notes`, which is per-job. Rendered as
+   *  smaller fine print below notes on every invoice automatically. */
+  terms?: string;
   paymentLinkUrl?: string;
   paymentLinkType?: string;
 amountPaid?: number;
@@ -181,14 +185,24 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
 
   const margin   = 48;
   const contentW = width - margin * 2;
-  const isPaidInFull = !!(data.amountPaid && data.total > 0 && data.amountPaid >= data.total);
-  const hasPartialPayment = !isPaidInFull
-    && !!(data.amountPaid && data.amountPaid > 0 && data.amountPaid < data.total);
-  // Deposit only applies before anything is collected — once a payment lands,
-  // the partial-payment path takes over and shows the real balance.
-  const hasDepositDue = !isPaidInFull && !hasPartialPayment
+    const isPaidInFull = !!(data.amountPaid && data.total > 0 && data.amountPaid >= data.total);
+  // Deposit-in-progress takes priority over generic "partial payment" —
+  // the caller (generate-invoice-pdf/route.ts, sendInvoiceToCustomer) only
+  // passes depositAmount when the deposit itself hasn't been fully
+  // satisfied yet. Previously hasPartialPayment was checked first, so ANY
+  // partial payment against a deposit (e.g. $300 of a $472.52 deposit) got
+  // treated as "now in the balance phase," even though the deposit was
+  // still short.
+  const hasDepositDue = !isPaidInFull
     && !!(data.depositAmount && data.depositAmount > 0 && data.depositAmount < data.total);
+  const hasPartialPayment = !isPaidInFull && !hasDepositDue
+    && !!(data.amountPaid && data.amountPaid > 0 && data.amountPaid < data.total);
   const depositDue = data.depositAmount ?? 0;
+  // depositDue is now the remaining shortfall, not the full original
+  // deposit — the full deposit is recoverable as shortfall + what's
+  // already been paid, since while hasDepositDue is true, nothing could
+  // legitimately have been collected yet except toward this deposit.
+  const fullDepositAmount = Math.round((depositDue + (data.amountPaid ?? 0)) * 100) / 100;
   const balanceDue = hasPartialPayment ? data.total - (data.amountPaid ?? 0) : data.total;
   // What the customer is actually being asked to pay right now. Previously
   // there was no paid-in-full case, so a fully paid invoice still rendered
@@ -362,14 +376,17 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
     page.drawText(`of ${fmt(data.total)} total`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
     boxY -= 12;
     page.drawText(`Paid: ${fmt(data.amountPaid ?? 0)}`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
-  } else if (hasDepositDue) {
-    page.drawText('DEPOSIT DUE', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: gray });
+    } else if (hasDepositDue) {
+    page.drawText('DEPOSIT DUE NOW', { x: boxX + 14, y: boxY, size: 7.5, font: fontBold, color: gray });
     boxY -= 24;
     page.drawText(fmt(depositDue), { x: boxX + 14, y: boxY, size: 28, font: fontBold, color: accentColor });
     boxY -= 18;
-    page.drawText(`of ${fmt(data.total)} total`, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
+    const depositContextLine = (data.amountPaid ?? 0) > 0
+      ? `of ${fmt(fullDepositAmount)} deposit (${fmt(data.amountPaid ?? 0)} already paid)`
+      : `of ${fmt(fullDepositAmount)} deposit`;
+    page.drawText(depositContextLine, { x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray });
     boxY -= 12;
-    page.drawText(`Balance on completion: ${fmt(data.total - depositDue)}`, {
+    page.drawText(`Balance on completion: ${fmt(data.total - fullDepositAmount)}`, {
       x: boxX + 14, y: boxY, size: 7.5, font: fontRegular, color: gray,
     });
   } else {
@@ -424,7 +441,7 @@ y -= 6;
   const breakdownExtra =
     data.paymentBreakdown && data.paymentBreakdown.length > 1 ? (data.paymentBreakdown.length - 1) * 14 : 0;
   ensureSpace((isPaidInFull || hasPartialPayment || hasDepositDue ? 150 : 120) + breakdownExtra);
-  
+
   const totalsX = margin + contentW * 0.55;
   const totalsW = contentW * 0.45;
   const totalsRight = totalsX + totalsW - 10;
@@ -459,12 +476,26 @@ y -= 6;
     }
   }
 
-  if (hasDepositDue) {
-    page.drawText('Project Total', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
-    drawRightAligned(page, fmt(data.total), totalsRight, y, 9, fontRegular, gray);
+    if (hasDepositDue) {
+    if ((data.amountPaid ?? 0) > 0) {
+      if (data.paymentBreakdown && data.paymentBreakdown.length > 0) {
+        for (const payment of data.paymentBreakdown) {
+          const label = payment.date ? `${payment.label} — ${payment.date}` : payment.label;
+          page.drawText(label, { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+          drawRightAligned(page, `- ${fmt(payment.amount)}`, totalsRight, y, 9, fontRegular, gray);
+          y -= 14;
+        }
+      } else {
+        page.drawText('Paid toward deposit', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+        drawRightAligned(page, `- ${fmt(data.amountPaid ?? 0)}`, totalsRight, y, 9, fontRegular, gray);
+        y -= 14;
+      }
+    }
+    page.drawText('Deposit Total', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
+    drawRightAligned(page, fmt(fullDepositAmount), totalsRight, y, 9, fontRegular, gray);
     y -= 14;
     page.drawText('Balance on Completion', { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
-    drawRightAligned(page, fmt(data.total - depositDue), totalsRight, y, 9, fontRegular, gray);
+    drawRightAligned(page, fmt(data.total - fullDepositAmount), totalsRight, y, 9, fontRegular, gray);
     y -= 14;
   }
 
@@ -502,10 +533,41 @@ y -= 6;
         line = test;
       }
     }
-    if (line) page.drawText(line, { x: margin + 10, y, size: 9, font: fontRegular, color: black });
-    // Unlike totals, notes span the full page width — they really do
-    // consume left-column space, so mirror the drop onto leftColumnY too.
-    leftColumnY -= (yBeforeNotes - y);
+   if (line) page.drawText(line, { x: margin + 10, y, size: 9, font: fontRegular, color: black });
+// Unlike totals, notes span the full page width — they really do
+// consume left-column space, so mirror the drop onto leftColumnY too.
+leftColumnY -= (yBeforeNotes - y);
+  }
+
+  // ── TERMS & CONDITIONS — company boilerplate, plain fine print ──
+  if (data.terms) {
+    const yBeforeTerms = y;
+    const words = data.terms.split(' ');
+    const lines: string[] = [];
+    let line = '';
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (fontRegular.widthOfTextAtSize(test, 7.5) > contentW) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    if (line) lines.push(line);
+
+       ensureSpace(lines.length * 10 + 24);
+    y -= 14;
+    page.drawText('TERMS & CONDITIONS', { x: margin, y, size: 7.5, font: fontBold, color: darkGray });
+    y -= 12;
+    for (const l of lines) {
+      page.drawText(l, { x: margin, y, size: 8, font: fontRegular, color: darkGray });
+      y -= 11;
+    }
+    // Same reasoning as notes above — this is full-width, so it consumes
+    // real left-column space that the QR's page-fit check needs to know
+    // about.
+    leftColumnY -= (yBeforeTerms - y);
   }
 
   // ── QR CODE ──

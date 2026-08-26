@@ -58,10 +58,11 @@ export async function GET(
     const sql = neon(process.env.DATABASE_URL!);
 
     // Get company
-   const companies = await sql`
+     const companies = await sql`
   SELECT id, name, phone, email, logo_url, payment_link_url, payment_link_type,
          email_brand_color_1, email_brand_color_2, plan_tier, referred_by_code,
-         stripe_connect_account_id, stripe_connect_onboarded, stripe_payment_status
+         stripe_connect_account_id, stripe_connect_onboarded, stripe_payment_status,
+         invoice_terms
   FROM companies WHERE slug = ${slug} LIMIT 1
 `;
     if (!companies.length) return NextResponse.json({ error: 'Company not found' }, { status: 404 });
@@ -123,7 +124,7 @@ export async function GET(
 
 const contractTotal = parseFloat(project.quote_total || '0');
 
-    // What the deposit actually is — sourced from the lead's own saved
+      // What the deposit actually is — sourced from the lead's own saved
     // terms, not from Stripe. This way it still shows correctly even when
     // Stripe isn't active, isn't configured, or the checkout call below
     // fails — previously this was only ever set inside the Stripe branch,
@@ -131,12 +132,22 @@ const contractTotal = parseFloat(project.quote_total || '0');
     const depositType = project.deposit_type || null;
     const depositValue = parseFloat(project.deposit_value || '0');
     const hasDepositTerms = !!depositType && depositValue > 0;
-    const pdfDepositAmount: number | undefined = hasDepositTerms
+    const fullDepositAmount = hasDepositTerms
       ? Math.min(
           Math.round((depositType === 'percent' ? (contractTotal * depositValue) / 100 : depositValue) * 100) / 100,
           contractTotal
         )
-      : undefined;
+      : 0;
+    // The shortfall, not the full deposit — if part of the deposit was
+    // already collected (partial manual payment, or a Stripe deposit that
+    // was itself later partially refunded), a PDF re-asking for the full
+    // original amount would double-charge. Same collected-vs-deposit rule
+    // used everywhere else the deposit/balance split is decided.
+    const paidSoFar = parseFloat(project.payment_amount || '0');
+    const pdfDepositAmount: number | undefined =
+      hasDepositTerms && paidSoFar < fullDepositAmount
+        ? Math.round((fullDepositAmount - paidSoFar) * 100) / 100
+        : undefined;
 
     if (company.stripe_payment_status === 'active' && contractTotal > 0) {
       try {
@@ -204,6 +215,8 @@ const contractTotal = parseFloat(project.quote_total || '0');
       taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
             amountPaid: project.payment_amount ? parseFloat(project.payment_amount) : undefined,
       depositAmount: pdfDepositAmount,
+            terms: company.invoice_terms || undefined,
+
       paymentBreakdown,
       paymentLinkUrl: paymentLinkUrl || undefined,
       paymentLinkType: paymentLinkType || undefined,

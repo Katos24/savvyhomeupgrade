@@ -26,7 +26,11 @@ export function getDepositAmount({
 export function getAmountDueNow({ total, paidAmount, depositType, depositValue }: DepositTerms): number {
   const depositAmount = getDepositAmount({ total, depositType, depositValue });
   const hasDepositTerms = depositAmount > 0;
-  const depositPaid = hasDepositTerms && paidAmount > 0;
+  // Deposit isn't "satisfied" just because some money exists — it's
+  // satisfied once the net amount collected reaches the deposit itself.
+  // A partial refund of the deposit now correctly re-opens what's owed on
+  // it, instead of jumping straight to "the rest of the total."
+  const depositSatisfied = hasDepositTerms && paidAmount >= depositAmount;
   const remaining = Math.max(total - paidAmount, 0);
-  return hasDepositTerms && !depositPaid ? depositAmount : remaining;
+  return hasDepositTerms && !depositSatisfied ? Math.max(depositAmount - paidAmount, 0) : remaining;
 }

@@ -59,10 +59,13 @@ interface FlatEmail {
   subject?: string | null
   html_body?: string | null
   outbox_id?: number
-  amount_due?: number | null
+    amount_due?: number | null
   days_overdue?: number | null
   due_date?: string | null
   lead_id?: number | null
+  invoice_kind?: string | null
+  invoice_amount?: number | null
+  invoice_project_total?: number | null
 }
 
 interface OutboxEmail {
@@ -146,7 +149,16 @@ function fmtMoney(n: number | undefined | null): string {
 }
 
 // ── Email type config ─────────────────────────────────────────────────────────
-function getTypeConfig(type: string) {
+function getTypeConfig(type: string, kind?: string | null) {
+  if (type === 'invoice') {
+    if (kind === 'deposit') {
+      return { label: 'Deposit Request', icon: <DollarSign className="w-5 h-5" />, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' }
+    }
+    if (kind === 'balance') {
+      return { label: 'Balance Request', icon: <DollarSign className="w-5 h-5" />, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)' }
+    }
+    return { label: 'Invoice', icon: <FileText className="w-5 h-5" />, color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' }
+  }
   switch (type) {
     case 'quote':
       return { label: 'Quote', icon: <DollarSign className="w-5 h-5" />, color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)' }
@@ -154,9 +166,7 @@ function getTypeConfig(type: string) {
       return { label: 'Schedule', icon: <Calendar className="w-5 h-5" />, color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)' }
     case 'payment_reminder':
       return { label: 'Payment Reminder', icon: <Bell className="w-5 h-5" />, color: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)' }
-    case 'invoice':
-      return { label: 'Invoice', icon: <FileText className="w-5 h-5" />, color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' }
-      default:
+    default:
       return { label: type, icon: <Mail className="w-5 h-5" />, color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)' }
   }
 }
@@ -175,13 +185,16 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
       lead_id: e.lead_id || null,
       sent_by_email: e.sent_by_email,
       isDup: false,
-      quote_data: metadata.quote_data || [],
+            quote_data: metadata.quote_data || [],
       quote_total: metadata.quote_total ? parseFloat(metadata.quote_total) : undefined,
       scheduled_date: metadata.scheduled_date || null,
       scheduled_time: metadata.scheduled_time || null,
       assigned_to: metadata.assigned_to || null,
       amount_due: metadata.amount_due ? parseFloat(metadata.amount_due) : null,
       due_date: metadata.due_date || null,
+      invoice_kind: metadata.kind || null,
+      invoice_amount: metadata.amount != null ? parseFloat(metadata.amount) : null,
+      invoice_project_total: metadata.invoice_total != null ? parseFloat(metadata.invoice_total) : null,
       source: 'outbox',
       status: e.status as 'sent' | 'failed',
       error_message: e.error_message,
@@ -525,10 +538,11 @@ const hasMore = allOutboxEmails.length < tabTotal
 
                 {group.emails.map(email => {
                   const isExpanded = expandedIdx === email.globalIdx
-                  const cfg = getTypeConfig(email.type)
-                  const isQ = email.type === 'quote'
+                  const cfg = getTypeConfig(email.type, email.invoice_kind)
+                                                     const isQ = email.type === 'quote'
                   const isSched = email.type === 'schedule'
                   const isReminder = email.type === 'payment_reminder'
+                  const isInvoice = email.type === 'invoice'
 
                   return (
                     <div key={`${email.project_id}-${email.type}-${email.sent_at}-${email.globalIdx}`}
@@ -586,10 +600,18 @@ const hasMore = allOutboxEmails.length < tabTotal
                               <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtDate(email.scheduled_date)}</span>
                             </div>
                           )}
-                          {isReminder && (email.amount_due ?? 0) > 0 && (
+                                                  {isReminder && (email.amount_due ?? 0) > 0 && (
                             <div className="flex flex-col shrink-0">
                               <span className="text-[11px] mb-0.5" style={{ color: cfg.color }}>Due</span>
                               <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtMoney(email.amount_due)}</span>
+                            </div>
+                          )}
+                          {isInvoice && (email.invoice_amount ?? 0) > 0 && (
+                            <div className="flex flex-col shrink-0">
+                              <span className="text-[11px] mb-0.5" style={{ color: cfg.color }}>
+                                {email.invoice_kind === 'deposit' ? 'Deposit' : email.invoice_kind === 'balance' ? 'Balance' : 'Amount'}
+                              </span>
+                              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtMoney(email.invoice_amount)}</span>
                             </div>
                           )}
                         </div>
@@ -619,8 +641,8 @@ const hasMore = allOutboxEmails.length < tabTotal
 
                             {/* Content */}
                             <div className="lg:col-span-2">
-                              <h5 className={`text-xs font-medium ${grayText} mb-4`}>
-                                {isQ ? 'Quote breakdown' : isSched ? 'Schedule details' : isReminder ? 'Reminder details' : 'Details'}
+                                                            <h5 className={`text-xs font-medium ${grayText} mb-4`}>
+                                {isQ ? 'Quote breakdown' : isSched ? 'Schedule details' : isReminder ? 'Reminder details' : isInvoice ? 'Invoice details' : 'Details'}
                               </h5>
                               <div className="rounded-xl p-4 sm:p-5" style={{ background: subtleBg, border: `1px solid ${subtleBorder}` }}>
                                 {isQ && (
@@ -662,7 +684,7 @@ const hasMore = allOutboxEmails.length < tabTotal
                                     ))}
                                   </div>
                                 )}
-                                {isReminder && (
+                                                               {isReminder && (
                                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
                                     {[
                                       { label: 'Amount due', value: fmtMoney(email.amount_due), color: '#fb923c' },
@@ -676,7 +698,27 @@ const hasMore = allOutboxEmails.length < tabTotal
                                     ))}
                                   </div>
                                 )}
-                                {!isQ && !isSched && !isReminder && (
+                                {isInvoice && (
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
+                                    {[
+                                      {
+                                        label: email.invoice_kind === 'deposit' ? 'Deposit due' : email.invoice_kind === 'balance' ? 'Balance due' : 'Amount',
+                                        value: fmtMoney(email.invoice_amount),
+                                        color: cfg.color,
+                                      },
+                                      ...(email.invoice_project_total
+                                        ? [{ label: 'Project total', value: fmtMoney(email.invoice_project_total), color: isDark ? '#e8eaf0' : '#0f172a' }]
+                                        : []),
+                                      { label: 'Customer', value: email.customer_name, color: isDark ? '#e8eaf0' : '#0f172a' },
+                                    ].map(f => (
+                                      <div key={f.label}>
+                                        <p className={`text-[11px] ${grayText} mb-1`}>{f.label}</p>
+                                        <p className="text-sm font-medium" style={{ color: f.color }}>{f.value}</p>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {!isQ && !isSched && !isReminder && !isInvoice && (
                                   <p className={`text-sm ${grayText}`}>{email.subject || 'No additional details.'}</p>
                                 )}
                               </div>

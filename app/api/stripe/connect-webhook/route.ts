@@ -117,12 +117,27 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
       // amount labelled any first partial a 'deposit' even when the contractor
       // never set deposit terms. Derived here rather than read from
       // session.metadata so a replayed session can't mislabel the row.
-      const alreadyPaidAmount = parseFloat(projectRow.payment_amount || '0');
+           const alreadyPaidAmount = parseFloat(projectRow.payment_amount || '0');
       const projectQuoteTotal = parseFloat(projectRow.quote_total || '0');
       const hasDepositTerms =
         !!projectRow.deposit_type && Number(projectRow.deposit_value) > 0;
+      const depositAmountForKind = hasDepositTerms
+        ? Math.min(
+            Math.round(
+              (projectRow.deposit_type === 'percent'
+                ? (projectQuoteTotal * Number(projectRow.deposit_value)) / 100
+                : Number(projectRow.deposit_value)) * 100
+            ) / 100,
+            projectQuoteTotal
+          )
+        : 0;
+      // "Deposit" until the deposit itself is net-satisfied, not just
+      // until the first dollar ever landed — see getOrCreateCheckoutSession
+      // for the full reasoning. A partial deposit refund now correctly
+      // re-opens deposit collection instead of permanently jumping to
+      // "balance" for the rest of the job.
       const paymentKind =
-        hasDepositTerms && alreadyPaidAmount === 0 ? 'deposit' : 'balance';
+        hasDepositTerms && alreadyPaidAmount < depositAmountForKind ? 'deposit' : 'balance';
 
       const insertedPayment = await sql`
        INSERT INTO payments (
@@ -246,8 +261,8 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
       // Find the payment this refund reverses. Not via
       // projects.stripe_payment_intent_id — that column holds only the most
       // recent payment, so refunding an earlier one would miss.
-      const refundTargetRows = await sql`
-        SELECT project_id, company_id, amount, invoiced_total
+           const refundTargetRows = await sql`
+        SELECT id, project_id, company_id, amount, invoiced_total
         FROM payments
         WHERE stripe_payment_intent_id = ${paymentIntentId}
           AND kind <> 'refund'
@@ -313,10 +328,10 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
         // Negative row so SUM(amount) reflects what was actually kept.
         // ON CONFLICT covers the race where two events for the same charge
         // arrive concurrently and both pass the check above.
-        const inserted = await sql`
+                const inserted = await sql`
          INSERT INTO payments (
             project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-            stripe_refund_id, note, recorded_by
+            stripe_refund_id, note, recorded_by, reversed_payment_id
           ) VALUES (
             ${refundProjectId},
             ${refundCompanyId},
@@ -327,7 +342,8 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
             CURRENT_DATE,
             ${refund.id},
             ${`Refund ${refund.id} against intent ${paymentIntentId}`},
-            'Stripe'
+            'Stripe',
+            ${refundTarget.id}
           )
           ON CONFLICT (stripe_refund_id) DO NOTHING
           RETURNING id

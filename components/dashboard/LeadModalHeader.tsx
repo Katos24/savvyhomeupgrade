@@ -86,7 +86,13 @@ export default function LeadModalHeader({
   const depositValue = lead.deposit_value ? parseFloat(lead.deposit_value) : 0;
   const depositAmount = quoteTotal ? getDepositAmount({ total: quoteTotal, depositType, depositValue }) : 0;
   const hasDepositTerms = depositAmount > 0;
-  const depositAlreadyPaid = hasDepositTerms && !!paymentAmount && paymentAmount > 0;
+    // Same corrected rule as everywhere else today: "deposit satisfied" means
+  // net collected has reached the deposit amount, not just that some money
+  // exists. This was still on the old rule, so the label flipped to
+  // "Balance due" the instant any partial payment landed, even while
+  // getAmountDueNow (used for the dollar figure right below it) was
+  // already correctly still showing the deposit shortfall.
+  const depositAlreadyPaid = hasDepositTerms && !!paymentAmount && paymentAmount >= depositAmount;
 
   const amountDueNow = quoteTotal
     ? getAmountDueNow({ total: quoteTotal, paidAmount: paymentAmount || 0, depositType, depositValue })

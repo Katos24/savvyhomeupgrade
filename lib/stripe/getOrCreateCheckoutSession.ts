@@ -78,14 +78,18 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
   if (contractTotal <= 0) return { url: null, kind: null, amount: 0, reason: 'no_total' };
   if (remaining <= 0) return { url: null, kind: null, amount: 0, reason: 'fully_paid' };
 
-  const depositAmount = depositFor(contractTotal, project.deposit_type, project.deposit_value);
+   const depositAmount = depositFor(contractTotal, project.deposit_type, project.deposit_value);
 
-  // Deposit only applies before anything has been collected. Once money is in,
-  // every subsequent link settles the job.
+  // "Deposit" applies until the deposit itself is actually net-satisfied,
+  // not just until the first dollar has ever landed. Previously this
+  // checked collected === 0, so once ANY money existed — even if a later
+  // refund brought the net deposit back down — every subsequent link
+  // permanently classified as "balance" for the rest of the job's life.
   const wantsFull = collect === 'full';
+  const depositShortfall = Math.round((depositAmount - collected) * 100) / 100;
   const kind: CollectionKind =
-    !wantsFull && collected === 0 && depositAmount > 0 ? 'deposit' : 'balance';
-  const amount = kind === 'deposit' ? depositAmount : remaining;
+    !wantsFull && depositAmount > 0 && depositShortfall > 0 ? 'deposit' : 'balance';
+  const amount = kind === 'deposit' ? depositShortfall : remaining;
 
   if (amount <= 0) return { url: null, kind: null, amount: 0, reason: 'nothing_due' };
 

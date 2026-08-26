@@ -688,8 +688,9 @@ export async function sendInvoiceToCustomer({
   paymentLinkUrl,
  paymentLinkType,
   taxRate,
-  depositAmount,
+   depositAmount,
   collectionKind,
+  terms,
 }: {
   customerEmail: string;
   customerName: string;
@@ -706,9 +707,10 @@ export async function sendInvoiceToCustomer({
   paymentLinkUrl?: string;
  paymentLinkType?: string;
   taxRate?: number;
-  /** What the pay link actually charges, when it's less than the total. */
+   /** What the pay link actually charges, when it's less than the total. */
   depositAmount?: number;
   collectionKind?: 'deposit' | 'balance';
+  terms?: string;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -766,11 +768,12 @@ export async function sendInvoiceToCustomer({
         unitPrice: item.unitPrice ?? undefined,
         amount: item.amount ?? 0,
       })),
-      total: invoiceTotal,
+            total: invoiceTotal,
       taxRate,
             depositAmount: isDepositCollection ? depositAmount : undefined,
 
       notes,
+      terms,
       amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
       paymentLinkUrl: effectivePaymentUrl || undefined,
       paymentLinkType: effectivePaymentType || undefined,
