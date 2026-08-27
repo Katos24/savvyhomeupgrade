@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   X, Loader2, User, Mail, Phone, Tag, AlignLeft, 
   Plus, ChevronDown, ChevronUp, MapPin, Home, 
-  Calendar, Clock, Megaphone 
+  Calendar, Clock, Megaphone, Search
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -64,6 +64,36 @@ export default function CreateLeadModal({
     custom_answers: {} as Record<string, string>,
   });
 
+
+    const [showCustomerSearch, setShowCustomerSearch] = useState(false);
+  const [customerQuery, setCustomerQuery] = useState('');
+  const [customerResults, setCustomerResults] = useState<any[]>([]);
+  const [searchingCustomers, setSearchingCustomers] = useState(false);
+  const [prefilledFrom, setPrefilledFrom] = useState<string | null>(null);
+
+  // Must run before the `if (!isOpen) return null` below — hooks can't
+  // sit after a conditional return, or their call order changes between
+  // renders depending on isOpen, which is exactly what React just flagged.
+   useEffect(() => {
+    if (!showCustomerSearch || customerQuery.trim().length < 2) {
+      setCustomerResults([]);
+      return;
+    }
+    const t = setTimeout(async () => {
+      setSearchingCustomers(true);
+      try {
+        const res = await fetch(`/api/company/${companySlug}/customers/search?q=${encodeURIComponent(customerQuery)}`);
+        const data = await res.json();
+        if (data.success) setCustomerResults(data.customers || []);
+      } catch {
+        // silent — search is a convenience, not required
+      } finally {
+        setSearchingCustomers(false);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [customerQuery, companySlug, showCustomerSearch]);
+  
   if (!isOpen) return null;
 
   const isAccentDark = isColorTooDark(accentColor);
@@ -153,6 +183,24 @@ export default function CreateLeadModal({
     }
   }
 
+   const handleSelectCustomer = (c: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      name: c.name || prev.name,
+      email: c.email || prev.email,
+      phone: c.phone ? formatPhoneNumber(c.phone) : prev.phone,
+      address_line_1: c.address_line_1 || prev.address_line_1,
+      address_line_2: c.address_line_2 || prev.address_line_2,
+      city: c.city || prev.city,
+      zip_code: c.zip_code || prev.zip_code,
+    }));
+    setPrefilledFrom(c.name);
+    setCustomerQuery('');
+    setCustomerResults([]);
+    setShowCustomerSearch(false);
+    if (c.address_line_1) setShowOptional(true);
+  };
+
   // Polished input styling dependent on light/dark mode
   const inputClass = `w-full rounded-2xl px-4 py-3 sm:py-3.5 border transition-all duration-200 outline-none text-[15px] ${
     isDark 
@@ -199,7 +247,115 @@ export default function CreateLeadModal({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                   <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-5">
+                      {/* Existing customer lookup — a deliberate button + reveal,
+                not an always-visible field next to Name. Two similar
+                text inputs stacked together risked someone typing a new
+                customer's name into the search box by mistake. Nothing
+                happens here unless the button is clicked on purpose. */}
+            {!prefilledFrom && !showCustomerSearch && (
+              <button
+                type="button"
+                onClick={() => setShowCustomerSearch(true)}
+                className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed text-sm font-semibold transition-colors ${
+                  isDark
+                    ? 'border-white/15 text-slate-300 hover:bg-white/5'
+                    : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Search className="w-4 h-4" />
+                Add from existing customer
+              </button>
+            )}
+
+            {showCustomerSearch && (
+              <div className="relative space-y-1.5">
+                <div className="flex items-center justify-between ml-1">
+                  <label className={`text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Search customers
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCustomerSearch(false);
+                      setCustomerQuery('');
+                      setCustomerResults([]);
+                    }}
+                    className={`text-[11px] font-semibold ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="relative">
+                  <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="Search by name, email, or phone..."
+                    value={customerQuery}
+                    onChange={(e) => setCustomerQuery(e.target.value)}
+                    className={`${inputClass} pl-11 focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
+                    style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
+                  />
+                  {searchingCustomers && (
+                    <Loader2 className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  )}
+                </div>
+
+                {customerQuery.trim().length >= 2 && !searchingCustomers && (
+                  <div
+                    className={`rounded-2xl border overflow-hidden ${
+                      isDark ? 'bg-[#0A0C14] border-white/10' : 'bg-white border-slate-200'
+                    }`}
+                  >
+                    {customerResults.length > 0 ? (
+                      customerResults.map((c) => (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => handleSelectCustomer(c)}
+                          className={`w-full text-left px-4 py-2.5 transition-colors ${
+                            isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50'
+                          }`}
+                        >
+                          <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.name}</p>
+                          <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {[c.email, c.phone].filter(Boolean).join(' · ')}
+                          </p>
+                        </button>
+                      ))
+                    ) : (
+                      <p className={`px-4 py-3 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        No matches — this looks like a new customer.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {prefilledFrom && (
+              <div
+                className={`flex items-center justify-between px-4 py-2.5 rounded-xl border ${
+                  isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'
+                }`}
+              >
+                <p className={`text-xs font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                  Prefilled from {prefilledFrom}'s last job
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPrefilledFrom(null);
+                    setShowCustomerSearch(true);
+                  }}
+                  className={`text-xs font-semibold ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-700 hover:text-emerald-800'}`}
+                >
+                  Search again
+                </button>
+              </div>
+            )}
+
             {/* Name */}
             <div className="space-y-1.5 group">
               <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 transition-colors ${isDark ? 'text-slate-400 group-focus-within:text-slate-300' : 'text-slate-500 group-focus-within:text-slate-700'}`}>
