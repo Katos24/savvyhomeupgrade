@@ -99,9 +99,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   // billing panel has no loading states of its own to get wrong.
   const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
-  const [currentView, setCurrentView] = useState<ViewMode>(() => {
-    if (typeof window === 'undefined') return 'cards';
-    return (localStorage.getItem('dashboard-view') as ViewMode) || 'cards';
+    const [currentView, setCurrentView] = useState<ViewMode>(() => {
+    if (typeof window === 'undefined') return 'table';
+    return (localStorage.getItem('dashboard-view') as ViewMode) || 'table';
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -486,8 +486,8 @@ const groups = useMemo(() => [
   if (isInitialLoad) {
     return (
       <div
-        className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-colors ${
-isDark ? 'bg-[#0b0f17]' : 'bg-slate-100'
+              className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-colors ${
+isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
         }`}
         role="status"
         aria-label="Loading dashboard"
@@ -587,7 +587,7 @@ const accentColor = company.email_brand_color_1 || '#2563eb';
 
 return (
 <div className={`min-h-screen relative selection:bg-blue-500/30 transition-colors ${
-isDark ? 'bg-[#0b0f17]' : 'bg-slate-100'
+isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
 
 }`}>
    <div

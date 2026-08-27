@@ -617,14 +617,39 @@ useEffect(() => {
   const depositCollected = depositPayments.reduce((s: number, p: any) => s + netOf(p), 0);
   const depositRemaining = Math.max(depositAmount - depositCollected, 0);
   const balanceCollected = balancePayments.reduce((s: number, p: any) => s + netOf(p), 0);
-  // Balance's own "full amount" isn't a fixed constant like deposit's —
-  // it's whatever remains once the deposit is settled, which shifts as
-  // more balance payments land. Use the amount from the moment the FIRST
-  // balance-kind row was created as the reference point.
   const balanceTargetAmount = balancePayments.length > 0
     ? balancePayments.reduce((s: number, p: any) => s + netOf(p), 0) + Math.max(total - paidAmount, 0)
     : Math.max(total - depositAmount, 0);
   const balanceRemaining = Math.max(balanceTargetAmount - balanceCollected, 0);
+
+  // Whether a given deposit/balance row actually completed that phase, or
+  // was just one installment toward it — a bare "DEPOSIT" badge on a $59
+  // row against a $635 deposit reads as "this was the deposit," when it's
+  // really 9% of it. Gross cumulative sum (not net-of-refund) in
+  // chronological order, so historical labeling reflects what was true
+  // when each payment landed, not what a later refund did to it.
+  const chronological = (arr: any[]) =>
+    [...arr].sort((a, b) => {
+      const byDate = new Date(a.paid_on).getTime() - new Date(b.paid_on).getTime();
+      return byDate !== 0 ? byDate : a.id - b.id;
+    });
+  const buildCompletionMap = (chrono: any[], target: number) => {
+    const map: Record<number, boolean> = {};
+    let running = 0;
+    for (const p of chrono) {
+      running += p.amount;
+      map[p.id] = running >= target;
+    }
+    return map;
+  };
+  const depositCompletionMap = buildCompletionMap(chronological(depositPayments), depositAmount);
+  const balanceCompletionMap = buildCompletionMap(chronological(balancePayments), balanceTargetAmount);
+
+  const paymentBadgeLabel = (p: any) => {
+    if (p.kind === 'deposit') return depositCompletionMap[p.id] ? 'Deposit' : 'Deposit · Partial';
+    if (p.kind === 'balance') return balanceCompletionMap[p.id] ? 'Balance' : 'Balance · Partial';
+    return p.kind;
+  };
 
   type StepStatus = 'locked' | 'ready' | 'sent' | 'done';
   type Step = {
@@ -1021,9 +1046,9 @@ useEffect(() => {
                       <div>
                         <div className="flex items-center gap-2 font-semibold text-slate-900 tabular-nums">
                           <span>{p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}</span>
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600">
-                            {p.kind}
-                          </span>
+                                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 whitespace-nowrap">
+                          {paymentBadgeLabel(p)}
+                        </span>
                         </div>
                                                <p className="text-[11px] text-slate-400 capitalize mt-0.5">
                           {p.is_stripe && p.card_brand

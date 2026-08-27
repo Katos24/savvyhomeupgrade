@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, ReactNode, ChangeEvent } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import {
   Copy,
   CheckCircle2,
@@ -10,12 +10,6 @@ import {
   Pencil,
   X,
   Save,
-  Mail,
-  Phone,
-  Globe,
-  Palette,
-  Trash2,
-  Receipt,
   ShieldAlert,
   Building2,
   Link as LinkIcon,
@@ -24,6 +18,8 @@ import {
   Camera,
   HelpCircle,
   CreditCard,
+  Receipt,
+  Trash2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -55,7 +51,7 @@ function StripeStatusBadge({
     <button
       type="button"
       onClick={() => onNavigateSection('payments')}
-      className={`inline-flex shrink-0 items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold transition ${config.pill}`}
+      className={`inline-flex shrink-0 items-center gap-2 rounded-md border px-2.5 py-1 text-xs font-semibold transition cursor-pointer ${config.pill}`}
     >
       <span className={`h-2 w-2 rounded-full ${config.dot}`} />
       {config.label}
@@ -220,7 +216,6 @@ export default function OverviewTab({
   const [emailError, setEmailError] = useState('');
   const [invoicePreviewRefreshToken, setInvoicePreviewRefreshToken] = useState(0);
 
-  // Notifications / Automations State
   const planTier = (company.plan_tier ?? 'free') as PlanTier;
   const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
   const [showDigestConfirm, setShowDigestConfirm] = useState(false);
@@ -347,14 +342,14 @@ export default function OverviewTab({
           </div>
         )}
 
-        {/* TOP GRID: Company Profile (7 cols) + Right Stack (5 cols) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-          
-          {/* SECTION 1: Company Profile & Branding */}
-          <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-4">
-            
-            {/* Header: Title & Actions */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200">
+        {/* MAIN GRID */}
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 items-start">
+
+          {/* LEFT COLUMN: Company Profile & Details (7 cols) */}
+          <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-4">
+
+            {/* Header Actions */}
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                 <Building2 className="h-4 w-4 text-slate-700 shrink-0" /> Company Profile & Branding
               </h2>
@@ -363,12 +358,12 @@ export default function OverviewTab({
                 <button
                   type="button"
                   onClick={() => setIsEditingBrand(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 shrink-0 cursor-pointer self-end sm:self-auto"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 shrink-0 cursor-pointer"
                 >
                   <Pencil className="h-3.5 w-3.5 text-slate-600" /> Edit Profile
                 </button>
               ) : (
-                <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={handleCancelEdit}
@@ -389,11 +384,11 @@ export default function OverviewTab({
               )}
             </div>
 
-            {/* Profile Table */}
+            {/* Profile Table Component */}
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-              <table className="w-full text-left text-xs sm:text-sm">
+              <table className="w-full table-auto text-left text-xs sm:text-sm">
                 <tbody className="divide-y divide-slate-200">
-                  {/* ROW 1: LOGO & COMPANY NAME */}
+                  {/* LOGO & COMPANY NAME */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
                     <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
                       <span>Logo & Name</span>
@@ -434,12 +429,12 @@ export default function OverviewTab({
                     </td>
                   </tr>
 
-                  {/* ROW 2: REPLY-TO EMAIL */}
+                  {/* REPLY-TO EMAIL */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
                       <span>Reply-To Email</span>
                     </td>
-                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
                       {isEditingBrand ? (
                         <div className="w-full min-w-0">
                           <input
@@ -464,12 +459,12 @@ export default function OverviewTab({
                     </td>
                   </tr>
 
-                  {/* ROW 3: PHONE NUMBER */}
+                  {/* PHONE NUMBER */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
                       <span>Company Phone</span>
                     </td>
-                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
                       {isEditingBrand ? (
                         <input
                           type="text"
@@ -487,12 +482,12 @@ export default function OverviewTab({
                     </td>
                   </tr>
 
-                  {/* ROW 4: WEBSITE */}
+                  {/* WEBSITE */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
                       <span>Website URL</span>
                     </td>
-                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
                       {isEditingBrand ? (
                         <input
                           type="text"
@@ -512,13 +507,13 @@ export default function OverviewTab({
                     </td>
                   </tr>
 
-                  {/* ROW 5: BRAND COLORS */}
+                  {/* BRAND COLORS */}
                   <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
                       <span>Brand Colors</span>
                     </td>
-                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
+                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
+                      <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
                         {isEditingBrand ? (
                           <div className="flex items-center gap-2 flex-wrap">
                             <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
@@ -558,13 +553,13 @@ export default function OverviewTab({
 
           </div>
 
-          {/* RIGHT COLUMN: Automations & Plan Status */}
-          <div className="lg:col-span-5 space-y-6">
-            
-            {/* Card A: Automations & Copying */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-1">
+          {/* RIGHT COLUMN: Automations, Plan & Payment Status (5 cols) */}
+          <div className="xl:col-span-5 space-y-6">
+                        
+            {/* Card A: Automations */}
+            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-1">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-3 mb-2 border-b border-slate-200 flex items-center gap-2">
-                <Bell className="h-4 w-4 text-slate-700 shrink-0" /> Automations & Copying
+                <Bell className="h-4 w-4 text-slate-700 shrink-0" /> Automations & Preferences
               </h2>
 
               {/* 6:00 AM Daily Summary Toggle */}
@@ -639,7 +634,7 @@ export default function OverviewTab({
             </div>
 
             {/* Card B: Plan & Payment Status Table */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-3">
+            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-3">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-3 border-b border-slate-200 flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-slate-700 shrink-0" /> Plan & Payment Status
               </h2>
@@ -649,10 +644,10 @@ export default function OverviewTab({
                   <tbody className="divide-y divide-slate-200">
                     {/* Plan Tier Row */}
                     <tr className="hover:bg-slate-50/60 transition-colors">
-                      <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
                         <span>Plan Tier</span>
                       </td>
-                      <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                      <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
                         <div className="flex items-center justify-between gap-2">
                           <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300 uppercase tracking-wide shrink-0">
                             {isFreePlan ? 'Free Tier' : `${company.plan_tier} Tier`}
@@ -672,10 +667,10 @@ export default function OverviewTab({
 
                     {/* Payment Status Row */}
                     <tr className="hover:bg-slate-50/60 transition-colors">
-                      <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
+                      <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
                         <span>Payment Status</span>
                       </td>
-                      <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
+                      <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
                         <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
                       </td>
                     </tr>
@@ -688,8 +683,8 @@ export default function OverviewTab({
 
         </div>
 
-        {/* SECTION 3: Booking Link */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 transition-shadow space-y-2">
+        {/* FULL WIDTH: Lead Intake / Booking Link */}
+        <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-2">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
             <LinkIcon className="h-4 w-4 text-slate-700 shrink-0" /> Lead Intake Link
           </h2>
@@ -738,7 +733,7 @@ export default function OverviewTab({
           />
         )}
 
-        {/* Footer Link */}
+        {/* Footer Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 sm:pt-4">
           <Link href="/" className="inline-block">
             <img

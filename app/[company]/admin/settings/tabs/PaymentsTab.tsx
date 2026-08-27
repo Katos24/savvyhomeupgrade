@@ -15,34 +15,16 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
-  CreditCard,
   Sparkles,
   ShieldCheck,
   Mail,
   FileText,
-  Info,
   ClipboardCheck,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────
-   TYPES & CONSTANTS
+   CONSTANTS
 ───────────────────────────────────────────────────────────── */
-
-const PAYMENT_COLORS: Record<string, string> = {
-  venmo: '#008CFF',
-  zelle: '#6D1ED4',
-  cashapp: '#00D632',
-  paypal: '#003087',
-  other: '#52525b',
-};
-
-const PAYMENT_LABELS: Record<string, string> = {
-  venmo: 'Venmo',
-  zelle: 'Zelle',
-  cashapp: 'Cash App',
-  paypal: 'PayPal',
-  other: 'Custom Link',
-};
 
 const SAMPLE_INVOICE_NUMBER = 'INV-1042';
 const SAMPLE_TOTAL = 505.0;
@@ -71,25 +53,6 @@ function StripeWordmark({ className = 'text-xl' }: { className?: string }) {
   return (
     <span className={`font-extrabold tracking-tight text-[#635BFF] ${className}`}>
       stripe
-    </span>
-  );
-}
-
-function StatusBadge({ state }: { state: 'active' | 'pending' | 'restricted' | 'none' | 'saved' }) {
-  const config = {
-    active: { label: 'Active', container: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' },
-    pending: { label: 'In review', container: 'bg-amber-50 text-amber-700 border-amber-200', dot: 'bg-amber-500 animate-pulse' },
-    restricted: { label: 'Action needed', container: 'bg-rose-50 text-rose-700 border-rose-200', dot: 'bg-rose-500' },
-    none: { label: 'Not set up', container: 'bg-slate-100 text-slate-500 border-slate-200', dot: 'bg-slate-400' },
-    // Configured, but Stripe is currently taking priority on invoices — not
-    // "inactive", just not the one actually being used right now.
-    saved: { label: 'Saved (backup)', container: 'bg-slate-100 text-slate-600 border-slate-200', dot: 'bg-slate-400' },
-  }[state];
-
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${config.container}`}>
-      <span className={`h-1.5 w-1.5 rounded-full ${config.dot}`} />
-      {config.label}
     </span>
   );
 }
@@ -139,13 +102,14 @@ function SectionCard({
 }
 
 /* ─────────────────────────────────────────────────────────────
-   ACTIVE METHOD BANNER — makes it unambiguous which method is
-   actually live on invoices, and whether it self-tracks or not.
+   ACTIVE METHOD BANNER — two states only: Stripe live, or not.
+   Manual collection (cash/Venmo/check/etc.) always works from the
+   Invoice tab's Record Payment action with zero setup, so it's not
+   a "method" this page configures — just what happens by default.
 ───────────────────────────────────────────────────────────── */
 
 function ActiveMethodBanner({ company }: { company: any }) {
   const stripeActive = !!company.stripe_connect_onboarded && company.stripe_payment_status === 'active';
-  const hasManualLink = !!company.payment_link_url;
 
   if (stripeActive) {
     return (
@@ -164,33 +128,17 @@ function ActiveMethodBanner({ company }: { company: any }) {
     );
   }
 
-  if (hasManualLink) {
-    const label = PAYMENT_LABELS[company.payment_link_type] || 'your payment link';
-    return (
-      <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/60 p-4 sm:p-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
-          <PenLine className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-amber-900">{label} is live on your invoices</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-amber-800">
-            Manual — {label} doesn&rsquo;t notify this app when you&rsquo;re paid. You&rsquo;ll
-            need to check yourself and record the payment once it lands.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
-        <Info className="h-4 w-4" />
+        <PenLine className="h-4 w-4" />
       </div>
       <div>
-        <p className="text-sm font-bold text-slate-800">No payment method configured</p>
+        <p className="text-sm font-bold text-slate-800">No automatic payment method connected</p>
         <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
-          Set up Stripe or add a manual payment link below so customers can pay online.
+          That's fine — collect payment however your customer prefers (cash, Venmo, Zelle, check)
+          and record it yourself from the Invoice tab. Connect Stripe below if you'd rather cards
+          get tracked automatically.
         </p>
       </div>
     </div>
@@ -212,23 +160,19 @@ function HowItWorksAccordion() {
       >
         <span className="flex items-center gap-2 text-sm font-semibold">
           <HelpCircle className="h-4 w-4 text-slate-400" />
-          How do online invoice payments work?
+          How do invoice payments work?
         </span>
         {open ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
       </button>
       {open && (
         <div className="space-y-3 border-t border-slate-100 p-4 pt-4 text-xs leading-relaxed text-slate-600 sm:p-5 sm:text-sm">
           <div className="flex items-start gap-2.5">
-            <Link2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-            <p><strong className="font-semibold text-slate-800">Automatic payment links:</strong> Every invoice email includes a secure link so clients can pay online.</p>
-          </div>
-          <div className="flex items-start gap-2.5">
             <Zap className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-            <p><strong className="font-semibold text-slate-800">Stripe payments track themselves:</strong> Card payments update your dashboard to &quot;Paid&quot; the instant they clear — nothing for you to do.</p>
+            <p><strong className="font-semibold text-slate-800">With Stripe connected:</strong> every invoice email includes a secure pay-online link, and the invoice updates itself to "Paid" the instant a card payment clears — nothing for you to do.</p>
           </div>
           <div className="flex items-start gap-2.5">
             <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-            <p><strong className="font-semibold text-slate-800">Manual links don&rsquo;t:</strong> With Venmo, Zelle, or Cash App, money moves outside this app — you&rsquo;ll need to check and record it yourself.</p>
+            <p><strong className="font-semibold text-slate-800">Without it:</strong> collect payment however works for the job — cash, Venmo, Zelle, check — then hit "Record Payment" on the invoice yourself once it lands.</p>
           </div>
         </div>
       )}
@@ -237,7 +181,7 @@ function HowItWorksAccordion() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   STRIPE CONNECT — logic unchanged, visuals trimmed
+   STRIPE CONNECT — logic unchanged from before
 ───────────────────────────────────────────────────────────── */
 
 function StripeConnectSection({ company }: { company: any }) {
@@ -407,111 +351,7 @@ function StripeConnectSection({ company }: { company: any }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   MANUAL PAYMENT LINK — logic unchanged, visuals trimmed
-───────────────────────────────────────────────────────────── */
-
-function ManualPaymentLinkSection({
-  company,
-  supersededByStripe,
-}: {
-  company: any;
-  supersededByStripe?: boolean;
-}) {
-  const [type, setType] = useState(company.payment_link_type || '');
-  const [url, setUrl] = useState(company.payment_link_url || '');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  async function handleSave() {
-    setSaving(true);
-    setSaved(false);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-payment-link',
-          data: { payment_link_type: type, payment_link_url: url },
-        }),
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2500);
-      }
-    } catch {
-      // Unhandled
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center gap-2">
-        <Link2 className="h-4 w-4 text-slate-500" />
-        <p className="text-sm font-bold text-slate-900">Custom Payment Link</p>
-      </div>
-
-      {supersededByStripe ? (
-        <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50/60 p-3.5 text-xs text-amber-800 sm:text-sm">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p><strong>Note:</strong> Stripe is currently active, so invoices prioritize direct card payments over this link.</p>
-        </div>
-      ) : (
-        <p className="text-sm text-slate-500">
-          Add your payment link or tag (Venmo, Zelle, Cash App, PayPal). Customers enter the amount manually when paying.
-        </p>
-      )}
-
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <select
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-800 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 sm:w-36"
-        >
-          <option value="">Select platform</option>
-          <option value="venmo">Venmo</option>
-          <option value="zelle">Zelle</option>
-          <option value="cashapp">Cash App</option>
-          <option value="paypal">PayPal</option>
-          <option value="other">Other</option>
-        </select>
-        <input
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-          onBlur={() => {
-            const val = url.trim();
-            if (val && !val.startsWith('http')) setUrl(`https://${val}`);
-          }}
-          placeholder="https://venmo.com/your-username"
-          className="flex-1 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-        />
-      </div>
-
-      <div className="flex items-center justify-between pt-1">
-        {type ? (
-          <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold text-white" style={{ backgroundColor: PAYMENT_COLORS[type] || '#52525b' }}>
-            {PAYMENT_LABELS[type] || type}
-          </span>
-        ) : <span />}
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
-        >
-          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Link'}
-          {saved && !saving && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   INVOICE TERMS — new, wired to update-invoice-terms
+   INVOICE TERMS — unchanged
 ───────────────────────────────────────────────────────────── */
 
 function InvoiceTermsSection({ company }: { company: any }) {
@@ -577,7 +417,9 @@ function InvoiceTermsSection({ company }: { company: any }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   PREVIEWS — logic unchanged
+   PREVIEWS — unchanged; still correctly reflects whichever method
+   is actually active, including legacy manual links if a company
+   already has one set from before this page was simplified
 ───────────────────────────────────────────────────────────── */
 
 function PreviewsSection({ company }: { company: any }) {
@@ -705,91 +547,26 @@ function PreviewsSection({ company }: { company: any }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   MAIN
+   MAIN — no method picker. One thing to configure (Stripe);
+   manual collection just works from the Invoice tab regardless.
 ───────────────────────────────────────────────────────────── */
 
-type MethodType = 'stripe' | 'manual';
-
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
-  const stripeConnected = !!company.stripe_connect_onboarded;
-  const stripeActive = stripeConnected && company.stripe_payment_status === 'active';
-  const hasManualLink = !!company.payment_link_url;
-
-  const [selectedMethod, setSelectedMethod] = useState<MethodType>(() => {
-    if (stripeConnected) return 'stripe';
-    if (hasManualLink) return 'manual';
-    return 'stripe';
-  });
-
-  const stripeStamp: 'active' | 'pending' | 'restricted' | 'none' = !stripeConnected
-    ? 'none'
-    : company.stripe_payment_status === 'active'
-    ? 'active'
-    : company.stripe_payment_status === 'restricted'
-    ? 'restricted'
-    : 'pending';
-
-  const manualStamp: 'active' | 'saved' | 'none' = !hasManualLink ? 'none' : stripeActive ? 'saved' : 'active';
-
   return (
     <div className="min-h-screen bg-slate-50/50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Payments & Invoicing</h1>
-          <p className="mt-1 text-sm text-slate-500">Configure how customers pay, and what appears on every invoice you send.</p>
+          <p className="mt-1 text-sm text-slate-500">
+            Connect Stripe for automatic card payments, or collect however you normally do and
+            record it on the invoice.
+          </p>
         </div>
 
         <ActiveMethodBanner company={company} />
 
-        <div>
-          <p className="mb-2.5 text-xs font-bold uppercase tracking-wide text-slate-400">Payment method</p>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setSelectedMethod('stripe')}
-              className={`flex items-center justify-between gap-3 rounded-2xl border-2 bg-white p-4 text-left transition ${
-                selectedMethod === 'stripe' ? 'border-indigo-600 shadow-sm' : 'border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#635BFF]/10">
-                  <CreditCard className="h-4 w-4 text-[#635BFF]" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Credit Card</p>
-                  <p className="text-[11px] text-slate-500">via Stripe</p>
-                </div>
-              </div>
-              <StatusBadge state={stripeStamp} />
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedMethod('manual')}
-              className={`flex items-center justify-between gap-3 rounded-2xl border-2 bg-white p-4 text-left transition ${
-                selectedMethod === 'manual' ? 'border-indigo-600 shadow-sm' : 'border-slate-200 hover:border-slate-300'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100">
-                  <Link2 className="h-4 w-4 text-slate-600" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Manual Link</p>
-                  <p className="text-[11px] text-slate-500">Venmo, Zelle, Cash App, PayPal</p>
-                </div>
-              </div>
-              <StatusBadge state={manualStamp} />
-            </button>
-          </div>
-        </div>
-
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          {selectedMethod === 'stripe' ? (
-            <StripeConnectSection company={company} />
-          ) : (
-            <ManualPaymentLinkSection company={company} supersededByStripe={stripeActive} />
-          )}
+          <StripeConnectSection company={company} />
         </div>
 
         <HowItWorksAccordion />

@@ -483,55 +483,76 @@ export default function QuoteSection({
           </div>
         </div>
 
-                {/* TEMPLATE BANNER */}
-        <AnimatePresence>
-          {categoryTemplate && quoteData.length === 0 && !templateBannerDismissed && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden border-b border-indigo-100 bg-indigo-50/60"
-            >
-              <div className="px-5 py-3 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shrink-0">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-indigo-950 truncate">
-                      Preset Pricing Template for {lead?.category || categoryTemplate.category}
-                    </p>
-                    <p className="text-xs text-indigo-700 mt-0.5">
-                      Contains {categoryTemplate.items?.length || 0} standard line items with default pricing
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={handleLoadTemplate}
-                    className="px-3 py-1.5 bg-indigo-600 text-white text-xs font-semibold rounded-lg hover:bg-indigo-700 transition cursor-pointer shadow-xs"
-                  >
-                    Load Items
-                  </button>
-                  <button
-                    onClick={() => setTemplateBannerDismissed(true)}
-                    className="p-1.5 text-indigo-400 hover:text-indigo-600 transition"
-                    aria-label="Dismiss template banner"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* MAIN BODY GRID */}
+            {/* MAIN BODY GRID */}
         <div className="p-4 sm:p-5 lg:p-6 grid gap-5 lg:gap-6 lg:grid-cols-[1fr_240px] items-start">
 
-          {/* LEFT: TABLE & LINE ITEMS */}
+                    {/* LEFT: TABLE & LINE ITEMS */}
           <div className="space-y-3 min-w-0">
+            {/* EMPTY STATE — one deliberate choice, same on every screen size.
+                Previously scattered across a dismissible template banner, a
+                text-only empty table row, and a separate stack of mobile
+                buttons — none of which agreed on which options existed or
+                what happened by default. */}
+            {quoteData.length === 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {categoryTemplate && (
+                  <button
+                    onClick={handleLoadTemplate}
+                    className="text-left p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-bold text-indigo-950">
+                      Load {lead?.category || categoryTemplate.category} Template
+                    </p>
+                    <p className="text-xs text-indigo-700 mt-1">
+                      {categoryTemplate.items?.length || 0} standard line items with default pricing
+                    </p>
+                  </button>
+                )}
+
+                {allTemplates.length > 0 && (
+                  <button
+                    onClick={() => setShowTemplateBrowser(true)}
+                    className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center mb-3">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-900">Browse Templates</p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Pick from {allTemplates.length} saved template{allTemplates.length === 1 ? '' : 's'}
+                    </p>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowAI(true)}
+                  className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-900">Generate with AI</p>
+                  <p className="text-xs text-slate-500 mt-1">Draft line items from the job description and photos</p>
+                </button>
+
+                <button
+                  onClick={handleAddRowMobile}
+                  className="text-left p-4 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition cursor-pointer"
+                >
+                  <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center mb-3">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <p className="text-sm font-bold text-slate-900">Start from Scratch</p>
+                  <p className="text-xs text-slate-500 mt-1">Add line items one at a time</p>
+                </button>
+              </div>
+            )}
+
             {/* Desktop — real table, one header row, full column labels */}
+            {quoteData.length > 0 && (
             <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden">
               <table className="w-full text-sm border-collapse table-fixed">
                 <thead>
@@ -552,15 +573,7 @@ export default function QuoteSection({
                   </tr>
                 </thead>
                 <tbody>
-                  {quoteData.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="py-10 px-4 text-center">
-                        <p className="text-sm font-semibold text-slate-700">No line items in quote</p>
-                        <p className="text-xs text-slate-400 mt-1">Add items manually below or generate a draft using AI. Need templates for different service types? Set them up on the home page.</p>
-                      </td>
-                    </tr>
-                  ) : (
-                    quoteData.map((item: any) => {
+                    {quoteData.map((item: any) => {
                       const isNew = item.id === lastAddedId && !item.description;
                       return (
                         <tr
@@ -623,15 +636,16 @@ export default function QuoteSection({
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </td>
-                        </tr>
+                                            </tr>
                       );
-                    })
-                  )}
+                    })}
                 </tbody>
               </table>
             </div>
+            )}
 
             {/* Desktop Add Row + AI Toolbar */}
+            {quoteData.length > 0 && (
             <div className="hidden md:flex items-center gap-2">
               <button
                 onClick={handleAddRow}
@@ -649,7 +663,7 @@ export default function QuoteSection({
                   Browse Templates
                 </button>
               )}
-              <button
+                           <button
                 onClick={() => setShowAI((v) => !v)}
                 className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                   showAI
@@ -661,38 +675,12 @@ export default function QuoteSection({
                 AI Draft Generator
               </button>
             </div>
+            )}
 
-            {/* Mobile View: Clean Touch Cards */}
+            {/* Mobile View: Clean Touch Cards (line items only — empty state
+                is the shared card grid above, same on every screen size) */}
+            {quoteData.length > 0 && (
             <div className="md:hidden space-y-2.5">
-              {quoteData.length === 0 ? (
-                <>
-                  <button
-                    onClick={handleAddRowMobile}
-                    className="w-full py-10 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 active:bg-slate-50 transition cursor-pointer"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center">
-                      <Plus className="w-5 h-5" />
-                    </div>
-                    <span className="text-xs font-semibold text-slate-600">Tap to add first line item</span>
-                  </button>
-                  <button
-                    onClick={() => setShowAI(true)}
-                    className="w-full py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 active:scale-[0.99] transition"
-                  >
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                    Or generate with AI
-                  </button>
-                  {allTemplates.length > 0 && (
-                    <button
-                      onClick={() => setShowTemplateBrowser(true)}
-                      className="w-full py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 active:scale-[0.99] transition"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                      Browse Templates
-                    </button>
-                  )}
-                </>
-                          ) : (
                 <div className="rounded-xl border border-slate-200 overflow-hidden">
                   <button
                     type="button"
@@ -774,10 +762,10 @@ export default function QuoteSection({
                         </div>
                       </motion.div>
                     )}
-                  </AnimatePresence>
+                                </AnimatePresence>
                 </div>
-              )}
             </div>
+            )}
           </div>
 
                      {/* RIGHT: SUMMARY — plain table, no color, subtotal/deposit/tax/total */}

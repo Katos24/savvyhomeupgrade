@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { safeJSONParse } from '@/lib/utils';
-import { Edit2, X, Trash2, ChevronDown } from 'lucide-react';
+import { Edit2, X, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { getTheme } from '@/lib/theme';
 
@@ -33,12 +33,6 @@ const formatCategory = (cat: string) => {
   return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 };
 
-const formatCustomAnswer = (value: any, question: CustomQuestion): string => {
-  if (value === null || value === undefined || value === '') return '—';
-  if (question.type === 'checkbox') return value === true || value === 'true' ? 'Yes' : 'No';
-  return String(value);
-};
-
 const formatCurrency = (amount: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
 
@@ -53,22 +47,26 @@ const STATUS_COLORS: Record<string, string> = {
   green: '#22c55e', red: '#ef4444', gray: '#6b7280', indigo: '#6366f1', pink: '#ec4899',
 };
 
-// Stripe's real brand purple — only used for their own wordmark, matching
-// the same treatment used in PaymentsTab/BillingSection.
-function StripeWordmark() {
-  return (
-    <span className="font-bold" style={{ color: '#635BFF' }}>
-      stripe
-    </span>
-  );
-}
+// Darker, text-safe variants for badge labels — STATUS_COLORS above is
+// tuned for a small dot accent, not for text that needs real contrast on
+// a light tint background. Matches the reference: bright dot, darker
+// muted label text, not the same hex for both.
+const STATUS_TEXT_COLORS: Record<string, string> = {
+  blue: '#1d4ed8', yellow: '#a16207', purple: '#7e22ce', orange: '#c2410c',
+  green: '#15803d', red: '#b91c1c', gray: '#374151', indigo: '#4338ca', pink: '#be185d',
+};
 
 export default function TableView({
   leads, onSelectLead, statusOptions,
   onBulkUpdate, onBulkDelete,
-  teamMembers = [], categories = [], customQuestions = [],
+  teamMembers = [], categories = [],
   isDark = true,
 }: TableViewProps) {
+  // Dark mode keeps every color routed through the app's existing shared
+  // theme tokens, untouched. Light mode is a new, separately hardcoded
+  // Terrascape-inspired look — kept apart deliberately rather than
+  // guessing at what belongs in the shared token file for a design this
+  // different from the rest of the app's current light theme.
   const t = getTheme(isDark);
 
   const [sortConfig, setSortConfig] = useState<SortConfig>(null);
@@ -78,8 +76,9 @@ export default function TableView({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
-  const getStatusConfig = (val: string) => statusOptions.find((s: any) => s.value === val) || statusOptions[0];
+   const getStatusConfig = (val: string) => statusOptions.find((s: any) => s.value === val) || statusOptions[0];
   const getHex = (color: string) => STATUS_COLORS[color] || '#3b82f6';
+  const getTextHex = (color: string) => STATUS_TEXT_COLORS[color] || '#374151';
 
   const handleSort = (key: string) => {
     setSortConfig(prev =>
@@ -122,32 +121,16 @@ export default function TableView({
 
   const sortedLeads = sortConfig ? [...leads].sort((a, b) => {
     let av: any, bv: any;
-    if (sortConfig.key.startsWith('cq_')) {
-      const qId = sortConfig.key.slice(3);
-      av = String(a.custom_answers?.[qId] ?? '').toLowerCase();
-      bv = String(b.custom_answers?.[qId] ?? '').toLowerCase();
-    } else {
-      switch (sortConfig.key) {
-        case 'name': av = a.name?.toLowerCase() || ''; bv = b.name?.toLowerCase() || ''; break;
-        case 'phone': av = a.phone || ''; bv = b.phone || ''; break;
-        case 'email': av = a.email?.toLowerCase() || ''; bv = b.email?.toLowerCase() || ''; break;
-        case 'category': av = a.category?.toLowerCase() || ''; bv = b.category?.toLowerCase() || ''; break;
-        case 'city': av = a.city?.toLowerCase() || ''; bv = b.city?.toLowerCase() || ''; break;
-        case 'zip_code': av = a.zip_code || ''; bv = b.zip_code || ''; break;
-        case 'lead_source': av = a.lead_source?.toLowerCase() || ''; bv = b.lead_source?.toLowerCase() || ''; break;
-        case 'status':
-          av = statusOptions.findIndex(s => s.value === (a.status || statusOptions[0].value));
-          bv = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
-          break;
-        case 'scheduled_date': av = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0; bv = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0; break;
-        case 'preferred_date': av = a.preferred_date ? new Date(a.preferred_date).getTime() : 0; bv = b.preferred_date ? new Date(b.preferred_date).getTime() : 0; break;
-        case 'quote_total': av = a.quote_total || 0; bv = b.quote_total || 0; break;
-        case 'payment_amount': av = a.payment_amount || 0; bv = b.payment_amount || 0; break;
-        case 'payment_due_date': av = a.payment_due_date ? new Date(a.payment_due_date).getTime() : 0; bv = b.payment_due_date ? new Date(b.payment_due_date).getTime() : 0; break;
-        case 'media': av = (safeJSONParse(a.file_urls) || []).length; bv = (safeJSONParse(b.file_urls) || []).length; break;
-        case 'date': av = new Date(a.created_at).getTime(); bv = new Date(b.created_at).getTime(); break;
-        default: return 0;
-      }
+    switch (sortConfig.key) {
+      case 'name': av = a.name?.toLowerCase() || ''; bv = b.name?.toLowerCase() || ''; break;
+      case 'status':
+        av = statusOptions.findIndex(s => s.value === (a.status || statusOptions[0].value));
+        bv = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
+        break;
+      case 'scheduled_date': av = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0; bv = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0; break;
+      case 'quote_total': av = a.quote_total || 0; bv = b.quote_total || 0; break;
+      case 'payment_amount': av = a.payment_amount || 0; bv = b.payment_amount || 0; break;
+      default: return 0;
     }
     if (av < bv) return sortConfig.direction === 'asc' ? -1 : 1;
     if (av > bv) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -156,465 +139,252 @@ export default function TableView({
 
   const SortIcon = ({ k }: { k: string }) =>
     sortConfig?.key !== k
-      ? <span className={`${t.textMuted} ml-1`}>&#8693;</span>
+      ? null
       : sortConfig.direction === 'asc'
-        ? <span className="text-blue-400 ml-1">&#8593;</span>
-        : <span className="text-blue-400 ml-1">&#8595;</span>;
+        ? <span className="ml-1">&#8593;</span>
+        : <span className="ml-1">&#8595;</span>;
 
-  const Th = ({ label, sortKey, className = '' }: { label: string; sortKey?: string; className?: string }) => (
-    <th
-      className={`px-3 lg:px-4 py-3 text-left text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-wider whitespace-nowrap select-none ${sortKey ? `cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-700/40' : 'hover:text-gray-900 hover:bg-gray-100'} transition` : ''} ${className}`}
-      onClick={sortKey ? () => handleSort(sortKey) : undefined}
-    >
-      {label}{sortKey && <SortIcon k={sortKey} />}
-    </th>
-  );
+  // ── LIGHT MODE — Terrascape-inspired: warm paper background, thin
+  // hairline borders, monospace-flavored uppercase labels, pill badges,
+  // no shadow/blur doing the work of "looking premium." ──
+  if (!isDark) {
+      const headerCell = 'px-4 py-3 text-left text-[11px] font-mono font-medium text-[#57534e] hover:text-[#1c1917] uppercase tracking-wider select-none transition-colors';
+    const cell = 'px-4 py-3.5';
 
-  // ── MOBILE TABLE ──────────────────────────────────────────────────────────
-  const MobileTable = () => (
-    <div className="lg:hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[600px]" style={{ borderCollapse: 'collapse' }}>
-          <thead className={t.tableHeadBg}>
-            <tr className={`border-b ${t.tableBorderCol}`}>
-              {editMode && <th className="px-3 py-2.5 w-8" />}
-              <Th label="Name" sortKey="name" />
-              <Th label="Status" sortKey="status" />
-              <Th label="Quote" sortKey="quote_total" />
-              <Th label="Contact" sortKey="phone" />
-              <Th label="Category" sortKey="category" />
-              <Th label="Scheduled" sortKey="scheduled_date" />
-              <Th label="Assigned" />
-              <Th label="Payment" sortKey="payment_amount" />
-              <Th label="Media" sortKey="media" />
-              <Th label="Address" />
-              <Th label="City" sortKey="city" />
-              <Th label="Zip" sortKey="zip_code" />
-              <Th label="Created" sortKey="date" />
-              <Th label="Source" sortKey="lead_source" />
-              {customQuestions.map((q) => (
-                <th
-                  key={q.id}
-                  className={`px-3 py-2.5 text-left text-[10px] font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-700/40' : 'hover:text-gray-900 hover:bg-gray-100'} transition whitespace-nowrap select-none border-l ${t.tableBorderCol}`}
-                  onClick={() => handleSort(`cq_${q.id}`)}
-                  title={q.label}
-                >
-                  {q.label.length > 14 ? q.label.slice(0, 14) + '...' : q.label}
-                  <SortIcon k={`cq_${q.id}`} />
+    return (
+      <div className="bg-white">
+        {/* Toolbar */}
+        <div className="px-4 py-3 border-b border-[#e7e2d8] flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            {editMode ? (
+              <>
+                <label className="flex items-center gap-2 text-[#292524] cursor-pointer text-sm font-medium">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === leads.length && leads.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-4 h-4 rounded text-[#1c1917] focus:ring-[#1c1917]"
+                  />
+                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+                </label>
+                {selectedIds.size > 0 && (
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowActionsMenu(!showActionsMenu)}
+                      disabled={bulkActionLoading}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1c1917] hover:bg-[#292524] disabled:opacity-50 text-white text-xs font-semibold transition-colors"
+                    >
+                      {bulkActionLoading ? 'Working...' : 'Actions'}
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                    {showActionsMenu && (
+                      <>
+                        <div className="fixed inset-0 z-10" onClick={() => setShowActionsMenu(false)} />
+                        <div className="absolute left-0 top-full mt-2 w-56 bg-white border border-[#e7e2d8] rounded-xl shadow-lg z-20 overflow-hidden">
+                          <div className="px-3 py-2 text-[10px] font-mono font-semibold text-[#a8a29e] uppercase tracking-wider bg-[#faf9f5]">Status</div>
+                          <div className="max-h-40 overflow-y-auto">
+                            {statusOptions.map((s) => (
+                              <button key={s.value} onClick={() => handleBulkStatusChange(s.value)}
+                                className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
+                                {s.label}
+                              </button>
+                            ))}
+                          </div>
+                          {teamMembers.length > 0 && (
+                            <>
+                              <div className="border-t border-[#e7e2d8]" />
+                              <div className="px-3 py-2 text-[10px] font-mono font-semibold text-[#a8a29e] uppercase tracking-wider bg-[#faf9f5]">Assign</div>
+                              <div className="max-h-40 overflow-y-auto">
+                                {teamMembers.map((m) => (
+                                  <button key={m.id} onClick={() => handleBulkAssign(m.name)}
+                                    className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors">
+                                    {m.name}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          {categories.length > 0 && (
+                            <>
+                              <div className="border-t border-[#e7e2d8]" />
+                              <div className="px-3 py-2 text-[10px] font-mono font-semibold text-[#a8a29e] uppercase tracking-wider bg-[#faf9f5]">Category</div>
+                              <div className="max-h-40 overflow-y-auto">
+                                {categories.map((c: any) => (
+                                  <button key={c.value} onClick={() => handleBulkCategoryChange(c.value)}
+                                    className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors">
+                                    {c.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          )}
+                          <div className="border-t border-[#e7e2d8]" />
+                          <button
+                            onClick={() => { setShowActionsMenu(false); setShowDeleteConfirm(true); }}
+                            className="w-full text-left px-3 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 font-medium"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedIds.size})
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <span className="text-[#78716c] text-sm">{leads.length} lead{leads.length !== 1 ? 's' : ''}</span>
+            )}
+          </div>
+          <button
+            onClick={toggleEditMode}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+              editMode
+                ? 'bg-[#f5f1e8] hover:bg-[#e7e2d8] text-[#292524] border border-[#e7e2d8]'
+                : 'bg-[#1c1917] hover:bg-[#292524] text-white'
+            }`}
+          >
+            {editMode ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><Edit2 className="w-3.5 h-3.5" /> Edit</>}
+          </button>
+        </div>
+
+        {/* Delete confirm */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white border border-[#e7e2d8] rounded-2xl max-w-sm w-full shadow-xl p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="text-[#1c1917] font-semibold">Delete {selectedIds.size} lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
+                  <p className="text-[#78716c] text-sm">This can't be undone.</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => setShowDeleteConfirm(false)} disabled={bulkActionLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#f5f1e8] hover:bg-[#e7e2d8] text-[#292524] font-medium text-sm transition-colors">
+                  Cancel
+                </button>
+                <button onClick={handleBulkDelete} disabled={bulkActionLoading}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-medium text-sm transition-colors">
+                  {bulkActionLoading ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+                    <table className="w-full min-w-[640px]" style={{ borderCollapse: 'collapse' }}>
+            <thead>
+              <tr className="border-b border-[#e7e2d8]">
+                {editMode && <th className="px-4 py-3 w-8" />}
+                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('name')}>
+                  Client<SortIcon k="name" />
                 </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className={`${t.tableDivide} divide-y`}>
-            {sortedLeads.map((lead) => {
-              const fileUrls = safeJSONParse(lead.file_urls) || [];
-              const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
-              const statusHex = getHex(statusConfig.color);
-              const isSelected = selectedIds.has(lead.id);
-              const customAnswers = lead.custom_answers || {};
-              const imgs = fileUrls.filter((f: any) => f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i));
-              const vids = fileUrls.filter((f: any) => f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i));
-
-              return (
-                <tr
-                  key={lead.id}
-                  className={`transition ${
-                    isSelected
-                      ? t.tableRowSelected
-                      : lead.project_id
-                      ? t.tableRowProject
-                      : t.tableRowHover
-                  }`}
-                  onClick={() => editMode ? toggleSelect(lead.id) : onSelectLead(lead)}
-                >
-                  {editMode && (
-                    <td className="px-3 py-2.5">
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
-                    </td>
-                  )}
-
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <div className={`text-[13px] font-bold ${t.textPrimary} truncate max-w-[140px]`}>{lead.name}</div>
-                    <div className={`text-[10px] ${t.textMuted}`}>{lead.category ? formatCategory(lead.category) : ''}</div>
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <span className="px-1.5 py-0.5 text-[9px] font-black text-white rounded-sm" style={{ backgroundColor: statusHex }}>
-                      {statusConfig.label}
-                    </span>
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap text-[13px]">
-                    {lead.quote_total
-                      ? <span className="font-bold text-emerald-500">{formatCurrency(lead.quote_total)}</span>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    <div className={`text-[12px] ${t.textPrimary}`}>{formatPhone(lead.phone || '')}</div>
-                    <div className={`text-[10px] ${t.textMuted} truncate max-w-[140px]`}>{lead.email}</div>
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    {lead.category
-                      ? <span className={`px-1.5 py-0.5 text-[9px] font-bold ${isDark ? 'bg-sky-500/20 text-white border border-sky-400/40' : 'bg-sky-100 text-sky-800 border border-sky-300'}`}>
-                          {formatCategory(lead.category)}
-                        </span>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
-                    {lead.scheduled_date
-                      ? <div>
-                          <div className={`${t.textPrimary} font-medium`}>
-                            {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
-                          </div>
-                          {lead.scheduled_time && <div className={`text-[10px] ${t.textMuted}`}>{lead.scheduled_time}</div>}
-                        </div>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    {lead.assigned_to
-                      ? <span className={`px-1.5 py-0.5 text-[9px] font-bold ${isDark ? 'bg-violet-500/20 text-white border border-violet-400/40' : 'bg-violet-100 text-violet-800 border border-violet-300'}`}>{lead.assigned_to}</span>
-                      : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap text-[12px]">
-                    {lead.payment_amount
-                      ? <div>
-                          <div className="font-bold text-sky-500">{formatCurrency(lead.payment_amount)}</div>
-                          {lead.payment_status && <div className={`text-[10px] ${t.textMuted} capitalize`}>{lead.payment_status}</div>}
-                        </div>
-                      : lead.payment_status
-                      ? <span className={`text-[10px] ${t.textMuted} capitalize`}>{lead.payment_status}</span>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
-                    {imgs.length > 0 && `${imgs.length} photos`}
-                    {imgs.length > 0 && vids.length > 0 && ' / '}
-                    {vids.length > 0 && `${vids.length} videos`}
-                    {imgs.length === 0 && vids.length === 0 && <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-3 py-2.5 max-w-[140px]">
-                    {lead.address_line_1
-                      ? <div>
-                          <div className={`text-[12px] ${t.textPrimary} truncate`}>{lead.address_line_1}</div>
-                          {lead.address_line_2 && <div className={`text-[10px] ${t.textMuted} truncate`}>{lead.address_line_2}</div>}
-                        </div>
-                      : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
-                  </td>
-
-                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
-                    {lead.city || <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
-                    {lead.zip_code || <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className={`px-3 py-2.5 whitespace-nowrap text-[12px] ${t.textPrimary}`}>
-                    {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                  </td>
-
-                  <td className="px-3 py-2.5 whitespace-nowrap">
-                    {lead.lead_source
-                      ? <span className={`px-1.5 py-0.5 text-[9px] font-bold capitalize ${isDark ? 'bg-blue-500/20 text-white border border-blue-400/40' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
-                          {lead.lead_source.replace('_', ' ')}
-                        </span>
-                      : <span className={`${t.textEmpty} text-[12px]`}>—</span>}
-                  </td>
-
-                  {customQuestions.map((q) => {
-                    const raw = customAnswers[q.id];
-                    const display = formatCustomAnswer(raw, q);
-                    const has = raw !== null && raw !== undefined && raw !== '';
-                    return (
-                      <td key={q.id} className={`px-3 py-2.5 whitespace-nowrap text-[12px] border-l ${t.tableBorderCol}`}>
-                        {has
-                          ? q.type === 'checkbox'
-                            ? <span className={raw === true || raw === 'true' ? 'text-emerald-500 font-bold' : 'text-red-400 font-bold'}>{display}</span>
-                            : <span className={`px-1.5 py-0.5 text-[9px] font-medium ${isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}>{display}</span>
-                          : <span className={t.textEmpty}>—</span>}
-                      </td>
-                    );
-                  })}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {leads.length === 0 && (
-        <div className={`py-12 text-center ${t.textMuted} text-sm`}>No leads to display</div>
-      )}
-    </div>
-  );
-
-  // ── DESKTOP TABLE ─────────────────────────────────────────────────────────
-  const DesktopTable = () => (
-    <div className="hidden lg:block">
-      <div className="overflow-x-auto">
-        <table className="min-w-full" style={{ borderCollapse: 'collapse' }}>
-          <thead className={t.tableHeadBg}>
-            <tr className={`border-b ${t.tableBorderCol}`}>
-              {editMode && <th className="px-4 py-3 w-10" />}
-              <Th label="Project #" />
-              <Th label="Name" sortKey="name" />
-              <Th label="Contact" sortKey="phone" />
-              <Th label="Category" sortKey="category" />
-              <Th label="Status" sortKey="status" />
-              <Th label="Type" />
-              <Th label="Scheduled" sortKey="scheduled_date" />
-              <Th label="Preferred Date" sortKey="preferred_date" />
-              <Th label="Assigned" />
-              <Th label="Quote" sortKey="quote_total" />
-              <Th label="Payment" sortKey="payment_amount" />
-              <Th label="Due Date" sortKey="payment_due_date" />
-              <Th label="Media" sortKey="media" />
-              <Th label="Address" />
-              <Th label="City" sortKey="city" />
-              <Th label="Zip" sortKey="zip_code" />
-              <Th label="Created" sortKey="date" />
-              <Th label="Source" sortKey="lead_source" />
-              {customQuestions.map((q) => (
-                <th
-                  key={q.id}
-                  className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer ${isDark ? 'hover:text-white hover:bg-slate-700/40' : 'hover:text-gray-900 hover:bg-gray-100'} transition whitespace-nowrap select-none border-l ${t.tableBorderCol}`}
-                  onClick={() => handleSort(`cq_${q.id}`)}
-                  title={q.label}
-                >
-                  {q.label.length > 18 ? q.label.slice(0, 18) + '...' : q.label}
-                  <SortIcon k={`cq_${q.id}`} />
+                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('status')}>
+                  Status<SortIcon k="status" />
                 </th>
-              ))}
-              {!editMode && <Th label="Actions" />}
-            </tr>
-          </thead>
-          <tbody className={`${t.tableDivide} divide-y`}>
-            {sortedLeads.map((lead) => {
-              const fileUrls = safeJSONParse(lead.file_urls) || [];
-              const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
-              const statusHex = getHex(statusConfig.color);
-              const isProject = !!lead.project_id;
-              const customAnswers = lead.custom_answers || {};
-              const images = fileUrls.filter((f: any) => f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i));
-              const videos = fileUrls.filter((f: any) => f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i));
-              const isSelected = selectedIds.has(lead.id);
+                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('quote_total')}>
+                  Quote<SortIcon k="quote_total" />
+                </th>
+                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('payment_amount')}>
+                  Payment<SortIcon k="payment_amount" />
+                </th>
+                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('scheduled_date')}>
+                  Scheduled<SortIcon k="scheduled_date" />
+                </th>
+                <th className="w-8" />
+              </tr>
+            </thead>
+            <tbody>
+                            {sortedLeads.map((lead) => {
+                const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
+                const statusHex = getHex(statusConfig.color);
+                const statusTextHex = getTextHex(statusConfig.color);
+                const isSelected = selectedIds.has(lead.id);
 
-              return (
-                <tr
-                  key={lead.id}
-                  className={`transition cursor-pointer ${
-                    isSelected
-                      ? t.tableRowSelected
-                      : isProject
-                      ? t.tableRowProject
-                      : t.tableRowHover
-                  }`}
-                  onClick={() => editMode ? toggleSelect(lead.id) : onSelectLead(lead)}
-                >
-                  {editMode && (
-                    <td className="px-4 py-3">
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
-                    </td>
-                  )}
-
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {isProject && lead.project_number
-                      ? <span className="font-bold text-emerald-500">#{lead.project_number}</span>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`text-sm font-semibold ${t.textPrimary}`}>{lead.name}</span>
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <div className={`text-sm ${t.textPrimary}`}>{formatPhone(lead.phone || '')}</div>
-                    <div className={`text-xs ${t.textMuted}`}>{lead.email}</div>
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-0.5 text-xs font-bold ${isDark ? 'bg-sky-500/20 text-white border border-sky-400/40' : 'bg-sky-100 text-sky-800 border border-sky-300'}`}>
-                      {formatCategory(lead.category)}
-                    </span>
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="px-2 py-0.5 text-xs font-bold text-white" style={{ backgroundColor: statusHex }}>
-                      {statusConfig.label}
-                    </span>
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {isProject
-                      ? <span className={`px-2 py-0.5 text-xs font-bold ${isDark ? 'bg-emerald-500/20 text-white border border-emerald-400/40' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'}`}>Project</span>
-                      : <span className={`px-2 py-0.5 text-xs font-bold ${isDark ? 'bg-slate-500/30 text-white border border-slate-400/30' : 'bg-gray-100 text-gray-600 border border-gray-300'}`}>Lead</span>}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {lead.scheduled_date
-                      ? <div>
-                          <div className={`${t.textPrimary} font-medium`}>
-                            {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
-                          </div>
-                          {lead.scheduled_time && <div className={`text-xs ${t.textMuted}`}>{lead.scheduled_time}</div>}
-                        </div>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {lead.preferred_date
-                      ? <div>
-                          <div className="text-amber-500 font-medium">
-                            {(() => { const [y,m,d] = lead.preferred_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
-                          </div>
-                          {lead.preferred_time && <div className={`text-xs ${t.textMuted}`}>{lead.preferred_time}</div>}
-                        </div>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {lead.assigned_to
-                      ? <span className={`px-2 py-0.5 text-xs font-bold ${isDark ? 'bg-violet-500/20 text-white border border-violet-400/40' : 'bg-violet-100 text-violet-800 border border-violet-300'}`}>{lead.assigned_to}</span>
-                      : <span className={`${t.textEmpty} text-sm`}>—</span>}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {lead.quote_total
-                      ? <span className="font-bold text-emerald-500">{formatCurrency(lead.quote_total)}</span>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {lead.payment_amount
-                      ? <div>
-                          <div className="font-bold text-sky-500">{formatCurrency(lead.payment_amount)}</div>
-                          {lead.payment_status && <div className={`text-xs ${t.textMuted} capitalize`}>{lead.payment_status}</div>}
-                        </div>
-                      : lead.payment_status
-                      ? <span className={`text-xs ${t.textMuted} capitalize`}>{lead.payment_status}</span>
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    {lead.payment_due_date
-                      ? (() => {
-                          const [py,pm,pd] = lead.payment_due_date.split('T')[0].split('-').map(Number);
-                          const due = new Date(py,pm-1,pd);
-                          const isOverdue = !lead.payment_status?.includes('paid') && due < new Date();
-                          return (
-                            <span className={`font-medium ${isOverdue ? 'text-red-500' : t.textPrimary}`}>
-                              {due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              {isOverdue && <span className="ml-1 text-xs text-red-500">overdue</span>}
-                            </span>
-                          );
-                        })()
-                      : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
-                    {(() => {
-                      const fileUrls2 = safeJSONParse(lead.file_urls) || [];
-                      const imgs = fileUrls2.filter((f: any) => f.type?.startsWith('image/') || f.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i));
-                      const vids = fileUrls2.filter((f: any) => f.type?.startsWith('video/') || f.name?.match(/\.(mp4|mov|avi|webm)$/i));
-                      return (
-                        <>
-                          {imgs.length > 0 && `${imgs.length} photos`}
-                          {imgs.length > 0 && vids.length > 0 && ' / '}
-                          {vids.length > 0 && `${vids.length} videos`}
-                          {imgs.length === 0 && vids.length === 0 && <span className={t.textEmpty}>—</span>}
-                        </>
-                      );
-                    })()}
-                  </td>
-
-                  <td className="px-4 py-3 max-w-[160px]">
-                    {lead.address_line_1
-                      ? <div>
-                          <div className={`text-sm ${t.textPrimary} truncate`}>{lead.address_line_1}</div>
-                          {lead.address_line_2 && <div className={`text-xs ${t.textMuted} truncate`}>{lead.address_line_2}</div>}
-                        </div>
-                      : <span className={`${t.textEmpty} text-sm`}>—</span>}
-                  </td>
-
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
-                    {lead.city || <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
-                    {lead.zip_code || <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                  <td className={`px-4 py-3 whitespace-nowrap text-sm ${t.textPrimary}`}>
-                    {new Date(lead.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
-                  </td>
-
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {lead.lead_source
-                      ? <span className={`px-2 py-0.5 text-xs font-bold capitalize ${isDark ? 'bg-blue-500/20 text-white border border-blue-400/40' : 'bg-blue-100 text-blue-800 border border-blue-300'}`}>
-                          {lead.lead_source.replace('_', ' ')}
-                        </span>
-                      : <span className={`${t.textEmpty} text-sm`}>—</span>}
-                  </td>
-
-                  {customQuestions.map((q) => {
-                    const raw = (lead.custom_answers || {})[q.id];
-                    const display = formatCustomAnswer(raw, q);
-                    const has = raw !== null && raw !== undefined && raw !== '';
-                    return (
-                      <td key={q.id} className={`px-4 py-3 whitespace-nowrap text-sm border-l ${t.tableBorderCol}`}>
-                        {has
-                          ? q.type === 'checkbox'
-                            ? <span className={raw === true || raw === 'true' ? 'text-emerald-500 font-bold' : 'text-red-400 font-bold'}>{display}</span>
-                            : <span className={`px-2 py-0.5 text-xs font-medium ${isDark ? 'bg-slate-700 text-white border border-slate-600' : 'bg-gray-100 text-gray-800 border border-gray-200'}`}>{display}</span>
-                          : <span className={t.textEmpty}>—</span>}
+                return (
+                  <tr
+                    key={lead.id}
+                    className={`border-b border-[#f0ece1] last:border-b-0 cursor-pointer transition-colors ${
+                      isSelected ? 'bg-[#f5f1e8]' : 'hover:bg-[#faf9f5]'
+                    }`}
+                    onClick={() => editMode ? toggleSelect(lead.id) : onSelectLead(lead)}
+                  >
+                    {editMode && (
+                      <td className={cell}>
+                        <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-4 h-4 rounded text-[#1c1917] focus:ring-[#1c1917]" />
                       </td>
-                    );
-                  })}
-
-                  {!editMode && (
-                    <td className="px-4 py-3 whitespace-nowrap text-sm">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onSelectLead(lead); }}
-                        className="text-blue-500 hover:text-blue-400 font-bold text-xs transition"
+                    )}
+                    <td className={cell}>
+                      <div className="text-sm font-semibold text-[#1c1917]">{lead.name}</div>
+                      <div className="text-xs text-[#a8a29e] mt-0.5">
+                        {lead.category ? formatCategory(lead.category) : '—'}
+                        {lead.phone && ` · ${formatPhone(lead.phone)}`}
+                      </div>
+                    </td>
+                    <td className={cell}>
+                                          <span
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                        style={{ backgroundColor: `${statusHex}18`, color: statusTextHex }}
                       >
-                        View
-                      </button>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
+                        {statusConfig.label}
+                      </span>
                     </td>
-                  )}
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    <td className={`${cell} text-sm`}>
+                      {lead.quote_total ? <span className="font-semibold text-[#1c1917]">{formatCurrency(lead.quote_total)}</span> : <span className="text-[#d6d3d1]">—</span>}
+                    </td>
+                    <td className={`${cell} text-sm`}>
+                      {lead.payment_amount ? (
+                        <div>
+                          <span className="font-semibold text-[#1c1917]">{formatCurrency(lead.payment_amount)}</span>
+                          {lead.payment_status && <span className="text-xs text-[#a8a29e] capitalize ml-1.5">{lead.payment_status}</span>}
+                        </div>
+                      ) : lead.payment_status === 'unpaid' && lead.quote_total ? (
+                        <span className="text-xs font-medium text-amber-700">{formatCurrency(lead.quote_total)} due</span>
+                      ) : <span className="text-[#d6d3d1]">—</span>}
+                    </td>
+                    <td className={`${cell} text-sm`}>
+                      {lead.scheduled_date ? (
+                        <div>
+                          <div className="text-[#292524]">
+                            {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
+                          </div>
+                          {lead.assigned_to && <div className="text-xs text-[#a8a29e] mt-0.5">{lead.assigned_to}</div>}
+                        </div>
+                      ) : <span className="text-[#d6d3d1]">—</span>}
+                    </td>
+                    <td className="pr-4">
+                      <ChevronRight className="w-4 h-4 text-[#d6d3d1]" />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {leads.length === 0 && (
+          <div className="py-16 text-center text-[#a8a29e] text-sm">No leads to display</div>
+        )}
       </div>
+    );
+  }
 
-      {leads.length === 0 && (
-        <div className={`py-16 text-center ${t.textMuted} text-sm`}>No leads to display</div>
-      )}
-    </div>
-  );
-
-  // ── RENDER ────────────────────────────────────────────────────────────────
-
+  // ── DARK MODE — unchanged behavior, routed through the app's existing
+  // shared theme tokens, same trimmed 5-column set as light mode. ──
   return (
-    <div className={`${t.tableBg} border ${t.tableBorderCol} overflow-hidden shadow-xl`}>
-
-      {/* Toolbar */}
-      <div className={`${t.toolbarBg} px-3 lg:px-4 py-2.5 lg:py-3 border-b ${t.toolbarBorder} flex items-center justify-between`}>
-        <div className="flex items-center gap-3 lg:gap-4">
+    <div className={`${t.tableBg} border ${t.tableBorderCol} overflow-hidden`}>
+      <div className={`${t.toolbarBg} px-4 py-3 border-b ${t.toolbarBorder} flex items-center justify-between`}>
+        <div className="flex items-center gap-4">
           {editMode ? (
             <>
-              <label className={`flex items-center gap-2 ${t.textPrimary} cursor-pointer text-xs lg:text-sm font-medium`}>
+              <label className={`flex items-center gap-2 ${t.textPrimary} cursor-pointer text-sm font-medium`}>
                 <input
                   type="checkbox"
                   checked={selectedIds.size === leads.length && leads.length > 0}
@@ -623,25 +393,21 @@ export default function TableView({
                 />
                 {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select All'}
               </label>
-
               {selectedIds.size > 0 && (
                 <div className="relative">
                   <button
                     onClick={() => setShowActionsMenu(!showActionsMenu)}
                     disabled={bulkActionLoading}
-                    className="inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-[10px] lg:text-xs transition"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs transition"
                   >
                     {bulkActionLoading ? 'Working...' : 'Actions'}
-                    <ChevronDown className="w-3 h-3 lg:w-3.5 lg:h-3.5" />
+                    <ChevronDown className="w-3.5 h-3.5" />
                   </button>
-
                   {showActionsMenu && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setShowActionsMenu(false)} />
-                      <div className={`absolute left-0 top-full mt-1 w-52 lg:w-56 ${t.dropdownBg} border ${t.dropdownBorder} shadow-2xl z-20 overflow-hidden`}>
-                        <div className={`px-3 py-2 text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                          Change Status
-                        </div>
+                      <div className={`absolute left-0 top-full mt-1 w-56 ${t.dropdownBg} border ${t.dropdownBorder} shadow-2xl z-20 overflow-hidden`}>
+                        <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>Status</div>
                         <div className="max-h-40 overflow-y-auto">
                           {statusOptions.map((s) => (
                             <button key={s.value} onClick={() => handleBulkStatusChange(s.value)}
@@ -651,13 +417,10 @@ export default function TableView({
                             </button>
                           ))}
                         </div>
-
                         {teamMembers.length > 0 && (
                           <>
                             <div className={`border-t ${t.toolbarBorder}`} />
-                            <div className={`px-3 py-2 text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                              Assign To
-                            </div>
+                            <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>Assign To</div>
                             <div className="max-h-40 overflow-y-auto">
                               {teamMembers.map((m) => (
                                 <button key={m.id} onClick={() => handleBulkAssign(m.name)}
@@ -668,13 +431,10 @@ export default function TableView({
                             </div>
                           </>
                         )}
-
                         {categories.length > 0 && (
                           <>
                             <div className={`border-t ${t.toolbarBorder}`} />
-                            <div className={`px-3 py-2 text-[10px] lg:text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>
-                              Category
-                            </div>
+                            <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>Category</div>
                             <div className="max-h-40 overflow-y-auto">
                               {categories.map((c: any) => (
                                 <button key={c.value} onClick={() => handleBulkCategoryChange(c.value)}
@@ -685,7 +445,6 @@ export default function TableView({
                             </div>
                           </>
                         )}
-
                         <div className={`border-t ${t.toolbarBorder}`} />
                         <button
                           onClick={() => { setShowActionsMenu(false); setShowDeleteConfirm(true); }}
@@ -700,39 +459,35 @@ export default function TableView({
               )}
             </>
           ) : (
-            <span className={`${t.textMuted} text-xs lg:text-sm`}>{leads.length} lead{leads.length !== 1 ? 's' : ''}</span>
+            <span className={`${t.textMuted} text-sm`}>{leads.length} lead{leads.length !== 1 ? 's' : ''}</span>
           )}
         </div>
-
         <button
           onClick={toggleEditMode}
-          className={`inline-flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 font-bold text-[10px] lg:text-xs transition ${
-            editMode
-              ? `${isDark ? 'bg-slate-700 hover:bg-slate-600 border-slate-600' : 'bg-gray-200 hover:bg-gray-300 border-gray-300'} ${t.textPrimary} border`
-              : 'bg-blue-600 hover:bg-blue-700 text-white'
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold text-xs transition ${
+            editMode ? `bg-slate-700 hover:bg-slate-600 border-slate-600 ${t.textPrimary} border` : 'bg-blue-600 hover:bg-blue-700 text-white'
           }`}
         >
           {editMode ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><Edit2 className="w-3.5 h-3.5" /> Edit</>}
         </button>
       </div>
 
-      {/* Delete confirm modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className={`${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-gray-200'} border max-w-sm w-full shadow-2xl`}>
-            <div className="p-5 lg:p-6">
-              <div className="flex items-center gap-3 mb-4 lg:mb-5">
-                <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center flex-shrink-0">
+          <div className={`${t.dropdownBg} border ${t.dropdownBorder} max-w-sm w-full shadow-2xl`}>
+            <div className="p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center shrink-0">
                   <Trash2 className="w-5 h-5 text-red-400" />
                 </div>
                 <div>
-                  <h3 className={`${t.textPrimary} font-bold`}>Delete {selectedIds.size} Lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
+                  <h3 className={`${t.textPrimary} font-bold`}>Delete {selectedIds.size} lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
                   <p className={`${t.textMuted} text-sm`}>This cannot be undone.</p>
                 </div>
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setShowDeleteConfirm(false)} disabled={bulkActionLoading}
-                  className={`flex-1 px-4 py-2.5 ${isDark ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-100 hover:bg-gray-200'} ${t.textPrimary} font-bold text-sm transition`}>
+                  className={`flex-1 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 ${t.textPrimary} font-bold text-sm transition`}>
                   Cancel
                 </button>
                 <button onClick={handleBulkDelete} disabled={bulkActionLoading}
@@ -745,14 +500,89 @@ export default function TableView({
         </div>
       )}
 
-      {/* Mobile scroll hint */}
-      <div className={`lg:hidden ${t.scrollHint} px-4 py-1.5 text-[10px] text-center border-b font-bold ${t.textMuted} uppercase tracking-wider`}>
-        Scroll for more columns
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px]" style={{ borderCollapse: 'collapse' }}>
+          <thead className={t.tableHeadBg}>
+            <tr className={`border-b ${t.tableBorderCol}`}>
+              {editMode && <th className="px-4 py-3 w-8" />}
+              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('name')}>Client<SortIcon k="name" /></th>
+              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('status')}>Status<SortIcon k="status" /></th>
+              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('quote_total')}>Quote<SortIcon k="quote_total" /></th>
+              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('payment_amount')}>Payment<SortIcon k="payment_amount" /></th>
+              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('scheduled_date')}>Scheduled<SortIcon k="scheduled_date" /></th>
+              <th className="w-8" />
+            </tr>
+          </thead>
+          <tbody className={`${t.tableDivide} divide-y`}>
+            {sortedLeads.map((lead) => {
+              const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
+              const statusHex = getHex(statusConfig.color);
+              const isSelected = selectedIds.has(lead.id);
+              const isProject = !!lead.project_id;
+
+              return (
+                <tr
+                  key={lead.id}
+                  className={`transition cursor-pointer ${isSelected ? t.tableRowSelected : isProject ? t.tableRowProject : t.tableRowHover}`}
+                  onClick={() => editMode ? toggleSelect(lead.id) : onSelectLead(lead)}
+                >
+                  {editMode && (
+                    <td className="px-4 py-3">
+                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
+                    </td>
+                  )}
+                  <td className="px-4 py-3">
+                    <div className={`text-sm font-semibold ${t.textPrimary}`}>{lead.name}</div>
+                    <div className={`text-xs ${t.textMuted} mt-0.5`}>
+                      {lead.category ? formatCategory(lead.category) : '—'}
+                      {lead.phone && ` · ${formatPhone(lead.phone)}`}
+                    </div>
+                  </td>
+                                    <td className="px-4 py-3">
+                    <span
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                      style={{ backgroundColor: `${statusHex}26`, color: statusHex }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
+                      {statusConfig.label}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {lead.quote_total ? <span className="font-bold text-emerald-500">{formatCurrency(lead.quote_total)}</span> : <span className={t.textEmpty}>—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {lead.payment_amount ? (
+                      <div>
+                        <span className="font-bold text-sky-500">{formatCurrency(lead.payment_amount)}</span>
+                        {lead.payment_status && <span className={`text-xs ${t.textMuted} capitalize ml-1.5`}>{lead.payment_status}</span>}
+                      </div>
+                    ) : <span className={t.textEmpty}>—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {lead.scheduled_date ? (
+                      <div>
+                        <div className={t.textPrimary}>
+                          {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
+                        </div>
+                        {lead.assigned_to && <div className={`text-xs ${t.textMuted} mt-0.5`}>{lead.assigned_to}</div>}
+                      </div>
+                    ) : <span className={t.textEmpty}>—</span>}
+                  </td>
+                  <td className="pr-4">
+                    <ChevronRight className={`w-4 h-4 ${t.textMuted}`} />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
-      {/* Render both tables — CSS handles visibility */}
-      <MobileTable />
-      <DesktopTable />
+      {leads.length === 0 && (
+        <div className={`py-16 text-center ${t.textMuted} text-sm`}>No leads to display</div>
+      )}
     </div>
   );
 }

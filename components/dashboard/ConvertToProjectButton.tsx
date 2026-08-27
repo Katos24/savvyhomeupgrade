@@ -92,62 +92,14 @@ export default function ConvertToProjectButton({
         return;
       }
 
-      setShowConfirm(false);
+        setShowConfirm(false);
       toast.success(`Project #${result.project_number} created!`);
 
-      const companySlug =
-        lead.company_slug ||
-        lead.slug ||
-        window.location.pathname.split('/').find((s: string) =>
-          s.length > 0 && s !== 'dashboard' && s !== 'leads' && s !== 'settings'
-        ) ||
-        '';
-
-      if (companySlug && category) {
-        try {
-          const tmplRes = await fetch(`/api/company/${companySlug}/quote-templates`);
-          if (tmplRes.ok) {
-            const tmplData = await tmplRes.json();
-
-            if (tmplData.success) {
-              const match = (tmplData.templates || []).find(
-                (t: any) => t.category === category
-              );
-
-              if (match?.items?.length > 0) {
-                const items = match.items.map((item: any, i: number) => ({
-                  id: Date.now() + i,
-                  description: item.description,
-                  quantity: item.quantity || 1,
-                  unitPrice: item.unitPrice || item.amount / (item.quantity || 1),
-                  amount: item.amount,
-                }));
-
-                const rate = match.tax_rate ?? 0;
-                const subtotal = items.reduce((s: number, i: any) => s + i.amount, 0);
-                const total = subtotal + subtotal * (rate / 100);
-
-                await fetch('/api/leads/update', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    id: lead.id,
-                    action: 'save_quote',
-                    quote_data: items,
-                    quote_tax_rate: rate,
-                    quote_total: total,
-                    user_name: currentUser?.name || 'Unknown',
-                    user_email: currentUser?.email || '',
-                  }),
-                });
-              }
-            }
-          }
-        } catch (e) {
-          console.error('Auto-load quote template failed:', e);
-        }
-      }
-
+      // Quote starts empty on purpose — QuoteSection's empty state now
+      // gives the contractor a deliberate choice (load the matching
+      // template, browse others, generate with AI, or start from
+      // scratch) instead of a template being silently pre-applied here
+      // before they ever see the quote.
       await onRefresh();
     } catch (error) {
       console.error(error);

@@ -203,52 +203,47 @@ export default function DashboardLeadsSection({
             )}
           </div>
         ) : (
-          <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
+                  <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
             {/* Structural Table Header */}
-            <div className="mb-5 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-2">
-              <div className="flex items-center gap-4">
-                <div className="w-1.5 h-8 rounded-full" style={{ backgroundColor: accentColor }} />
-                <div>
-                  <h2 className={`text-sm font-bold uppercase tracking-widest ${
-                    isDark ? 'text-slate-300' : 'text-slate-600'
-                  }`}>
-                    Database
-                  </h2>
-                  <p className={`text-xs font-semibold mt-1 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                    Showing {filteredLeads.length} active records
-                  </p>
-                </div>
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
+              <div>
+                <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>
+                  Jobs
+                </h2>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-[#78716c]'}`}>
+                  {filteredLeads.length} showing
+                </p>
               </div>
 
               {can(planTier, 'csv_export') ? (
                 <button
                   onClick={onShowExportModal}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all border shadow-sm ${
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-colors border ${
                     isDark
                       ? 'bg-slate-800/50 border-slate-700 text-slate-200 hover:bg-slate-800 hover:text-white hover:border-slate-600'
-                      : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400'
+                      : 'bg-white border-[#e7e2d8] text-[#292524] hover:bg-[#f5f1e8]'
                   }`}
                 >
-                  <Download className={`w-4 h-4 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
-                  Export Data
+                  <Download className="w-3.5 h-3.5" />
+                  Export
                 </button>
               ) : (
                 <button
                   onClick={() => onLockedFeature('csv_export')}
-                  className={`inline-flex items-center justify-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl transition-all border cursor-pointer ${
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold rounded-full transition-colors border cursor-pointer ${
                     isDark
                       ? 'bg-slate-800/30 border-slate-800 text-slate-500 hover:bg-slate-800/50'
-                      : 'bg-slate-100 border-slate-300 text-slate-400 hover:bg-slate-200'
+                      : 'bg-[#f5f1e8] border-[#e7e2d8] text-[#a8a29e]'
                   }`}
                 >
-                  <Lock className="w-4 h-4 text-amber-500/70" />
+                  <Lock className="w-3.5 h-3.5 text-amber-500/70" />
                   Export (Pro)
                 </button>
               )}
             </div>
 
-            <div className={`rounded-2xl overflow-hidden border shadow-2xl backdrop-blur-md ${
-              isDark ? 'border-slate-800/80 bg-[#0A0C14]/60' : 'border-slate-300 bg-white'
+            <div className={`rounded-2xl overflow-hidden border ${
+              isDark ? 'border-slate-800/80 bg-[#0A0C14]/60 shadow-2xl backdrop-blur-md' : 'border-[#e7e2d8] bg-white shadow-sm'
             }`}>
               <TableView
                 leads={filteredLeads}

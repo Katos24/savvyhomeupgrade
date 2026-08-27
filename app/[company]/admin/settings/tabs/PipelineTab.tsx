@@ -2,24 +2,20 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import {
-  motion,
-  AnimatePresence,
-} from 'framer-motion';
-import {
   Plus,
   X,
   AlertCircle,
-  AlertTriangle,
-  Workflow,
   Lock,
   Palette,
-  Save,
   Check,
   ChevronUp,
   ChevronDown,
   Trash2,
-  Sparkles,
+  Workflow,
+  AlertTriangle,
+  Loader2,
   Info,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   DEFAULT_STATUSES,
@@ -27,202 +23,18 @@ import {
   type StatusOption,
 } from '@/lib/formCategories';
 
-// Modern, sophisticated SaaS color palette (Linear/Notion style)
+// Modern, high-contrast color options
 const COLOR_OPTIONS = [
-  { value: 'indigo', label: 'Indigo', hex: '#4f46e5' },
+  { value: 'slate', label: 'Slate', hex: '#475569' },
   { value: 'blue', label: 'Ocean', hex: '#0284c7' },
   { value: 'teal', label: 'Teal', hex: '#0d9488' },
   { value: 'green', label: 'Emerald', hex: '#059669' },
   { value: 'yellow', label: 'Amber', hex: '#d97706' },
   { value: 'orange', label: 'Coral', hex: '#ea580c' },
   { value: 'red', label: 'Rose', hex: '#e11d48' },
-  { value: 'violet', label: 'Violet', hex: '#7c3aed' },
-  { value: 'slate', label: 'Slate', hex: '#475569' },
   { value: 'gray', label: 'Zinc', hex: '#27272a' },
 ];
 
-const spring = { type: 'spring' as const, damping: 25, stiffness: 300 };
-
-/* ── SUB-COMPONENT FOR STAGE ROW WITH ARROW CONTROLS ── */
-interface StatusRowProps {
-  status: StatusOption;
-  index: number;
-  totalCount: number;
-  locked: boolean;
-  activeColorPicker: number | null;
-  setActiveColorPicker: (index: number | null) => void;
-  getColorHex: (color: string) => string;
-  updateStatusColor: (index: number, color: string) => void;
-  updateStatusLabel: (index: number, label: string) => void;
-  handleRemoveStatus: (index: number) => void;
-  moveUp: (index: number) => void;
-  moveDown: (index: number) => void;
-}
-
-function StatusRow({
-  status,
-  index,
-  totalCount,
-  locked,
-  activeColorPicker,
-  setActiveColorPicker,
-  getColorHex,
-  updateStatusColor,
-  updateStatusLabel,
-  handleRemoveStatus,
-  moveUp,
-  moveDown,
-}: StatusRowProps) {
-  const canMoveUp = !locked && index > 1;
-  const canMoveDown = !locked && index < totalCount - 2;
-
-  return (
-    <motion.div
-      layout
-      transition={spring}
-      className={`group relative flex items-center gap-3 bg-white px-4 py-3.5 transition-colors ${
-        locked ? 'bg-slate-50/60' : 'hover:bg-slate-50/60'
-      }`}
-    >
-      {/* Up / Down Arrow Controls */}
-      <div className="flex flex-col items-center justify-center gap-0.5 shrink-0">
-        {locked ? (
-          <div className="flex h-10 w-6 items-center justify-center text-slate-300">
-            <Lock className="h-4 w-4 text-slate-300" />
-          </div>
-        ) : (
-          <>
-            <button
-              type="button"
-              disabled={!canMoveUp}
-              onClick={() => moveUp(index)}
-              className={`rounded-md p-0.5 transition ${
-                canMoveUp
-                  ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer'
-                  : 'text-slate-200 cursor-not-allowed'
-              }`}
-              title="Move Up"
-            >
-              <ChevronUp className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              disabled={!canMoveDown}
-              onClick={() => moveDown(index)}
-              className={`rounded-md p-0.5 transition ${
-                canMoveDown
-                  ? 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 cursor-pointer'
-                  : 'text-slate-200 cursor-not-allowed'
-              }`}
-              title="Move Down"
-            >
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          </>
-        )}
-      </div>
-
-      {/* Color Swatch Picker Toggle */}
-      <div className="relative">
-        <button
-          type="button"
-          disabled={locked}
-          onClick={() =>
-            setActiveColorPicker(activeColorPicker === index ? null : index)
-          }
-          className={`group/picker flex h-7 w-7 shrink-0 items-center justify-center rounded-lg shadow-xs ring-1 ring-black/5 transition-transform ${
-            locked ? 'cursor-not-allowed opacity-90' : 'hover:scale-105'
-          }`}
-          style={{ backgroundColor: getColorHex(status.color) }}
-        >
-          {!locked && (
-            <Palette className="h-3.5 w-3.5 text-white/90 opacity-0 transition-opacity group-hover/picker:opacity-100" />
-          )}
-        </button>
-
-        {/* Color Popover Menu */}
-        <AnimatePresence>
-          {activeColorPicker === index && !locked && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 5 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 5 }}
-              className="absolute left-0 top-9 z-30 w-52 rounded-2xl border border-slate-200/80 bg-white/95 p-3 shadow-xl backdrop-blur-md"
-            >
-              <div className="mb-2.5 flex items-center justify-between border-b border-slate-100 pb-2">
-                <span className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
-                  Stage Color
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setActiveColorPicker(null)}
-                  className="text-slate-400 hover:text-slate-600"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-              <div className="grid grid-cols-5 gap-2">
-                {COLOR_OPTIONS.map((c) => (
-                  <button
-                    key={c.value}
-                    type="button"
-                    title={c.label}
-                    onClick={() => updateStatusColor(index, c.value)}
-                    className={`h-6 w-6 rounded-full border border-black/10 transition-transform hover:scale-115 ${
-                      status.color === c.value
-                        ? 'ring-2 ring-indigo-500 ring-offset-2'
-                        : ''
-                    }`}
-                    style={{ backgroundColor: c.hex }}
-                  />
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Stage Title Input */}
-      <div className="flex-1 min-w-0">
-        <input
-          type="text"
-          value={status.label}
-          readOnly={locked}
-          onChange={(e) => updateStatusLabel(index, e.target.value)}
-          className={`w-full rounded-md border border-transparent px-1.5 py-0.5 text-sm font-semibold text-slate-800 transition ${
-            locked
-              ? 'cursor-not-allowed bg-transparent focus:outline-none'
-              : 'bg-transparent focus:border-indigo-300 focus:bg-white focus:outline-none'
-          }`}
-        />
-        <div className="ml-1.5 flex items-center gap-1.5">
-          {locked ? (
-            <span className="text-[11px] font-medium text-slate-400">
-              System Fixed Stage
-            </span>
-          ) : (
-            <span className="text-[11px] font-medium text-slate-400">
-              {STAGE_TRIGGERS[status.value] || 'Custom Stage'}
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* Delete Action */}
-      {!locked && (
-        <button
-          type="button"
-          onClick={() => handleRemoveStatus(index)}
-          className="rounded-lg p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 sm:p-1.5 sm:text-slate-300 sm:opacity-0 sm:group-hover:opacity-100"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      )}
-    </motion.div>
-  );
-}
-
-/* ── MAIN PIPELINE TAB COMPONENT ── */
 export default function PipelineTab({
   company,
 }: {
@@ -239,7 +51,7 @@ export default function PipelineTab({
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeColorPicker, setActiveColorPicker] = useState<number | null>(null);
   const [newLabel, setNewLabel] = useState('');
-  const [newColor, setNewColor] = useState('indigo');
+  const [newColor, setNewColor] = useState('slate');
 
   const initialStatuses = useMemo<StatusOption[]>(() => {
     const saved = company?.status_options;
@@ -267,7 +79,7 @@ export default function PipelineTab({
   }, [isDirty]);
 
   const getColorHex = (name: string) =>
-    COLOR_OPTIONS.find((c) => c.value === name)?.hex || '#4f46e5';
+    COLOR_OPTIONS.find((c) => c.value === name)?.hex || '#475569';
 
   const isLockedStage = (s: StatusOption) =>
     s.value === 'new' || s.value === 'completed';
@@ -325,7 +137,7 @@ export default function PipelineTab({
     });
     setStatuses(updated);
     setNewLabel('');
-    setNewColor('indigo');
+    setNewColor('slate');
     setShowAddForm(false);
   };
 
@@ -359,7 +171,7 @@ export default function PipelineTab({
       });
       const data = await res.json();
       if (data.success) {
-        setSuccess('Pipeline updated successfully!');
+        setSuccess('Pipeline updated successfully.');
         setTimeout(() => window.location.reload(), 1200);
       } else {
         showError(data.error || 'Failed to save pipeline changes');
@@ -372,304 +184,423 @@ export default function PipelineTab({
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
-      {/* ── HEADER ── */}
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Pipeline Stages
-          </h1>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-            Customize the linear progression of your customer jobs from initial lead to finished job.
-          </p>
+    <div className="w-full font-sans text-slate-900 antialiased">
+      <div className="w-full space-y-6">
+
+        {/* HEADER & TOP CONTROLS */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">
+              Pipeline Stages
+            </h1>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Customize the progression of customer jobs from initial lead to completion.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {isDirty && (
+              <button
+                type="button"
+                onClick={() => setStatuses(JSON.parse(JSON.stringify(initialStatuses)))}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition"
+              >
+                Reset
+              </button>
+            )}
+            <button
+              onClick={handleSave}
+              disabled={loading || !isDirty}
+              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold transition shadow-xs ${
+                isDirty
+                  ? 'bg-slate-900 text-white hover:bg-slate-800'
+                  : 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200/60'
+              }`}
+            >
+              {loading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Check className="h-3.5 w-3.5" />
+              )}
+              {loading ? 'Saving...' : isDirty ? 'Save Changes' : 'Saved'}
+            </button>
+          </div>
         </div>
 
-        <button
-          onClick={handleSave}
-          disabled={loading || !isDirty}
-          className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-xs font-semibold shadow-xs transition sm:text-sm ${
-            isDirty
-              ? 'bg-indigo-600 text-white hover:bg-indigo-700 active:scale-95 cursor-pointer'
-              : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-          }`}
-        >
-          {loading ? (
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          ) : (
-            <Save className="h-4 w-4" />
-          )}
-          {loading
-            ? 'Saving Changes...'
-            : isDirty
-            ? 'Save Changes'
-            : 'Saved'}
-        </button>
-      </div>
-
-      {/* ── ALERTS ── */}
-      <AnimatePresence>
-        {isDirty && !success && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-6 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50/80 p-4 text-xs font-medium text-amber-800 shadow-xs sm:text-sm"
-          >
-            <div className="flex items-center gap-2.5">
-              <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
-              <span>You have unsaved changes in your pipeline workflow.</span>
-            </div>
-            <button
-              onClick={() => setStatuses(JSON.parse(JSON.stringify(initialStatuses)))}
-              className="text-xs font-semibold text-amber-900 underline hover:text-amber-700 cursor-pointer"
-            >
-              Reset
-            </button>
-          </motion.div>
-        )}
-        {success && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-6 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs font-medium text-emerald-800 shadow-xs sm:text-sm"
-          >
-            <Check className="h-4 w-4 shrink-0 text-emerald-600" /> {success}
-          </motion.div>
-        )}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-6 flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-xs font-medium text-rose-700 shadow-xs sm:text-sm"
-          >
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" /> {error}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── MAIN LAYOUT ── */}
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_320px]">
-        {/* PIPELINE EDITOR */}
-        <div className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-            {/* Toolbar */}
-            <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-5 py-4">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                  <Workflow className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800">
-                    Active Workflow Stages
-                  </p>
-                  <p className="text-xs text-slate-400">
-                    {statuses.length} stages configured
-                  </p>
+        {/* ALERTS */}
+        {(success || error || isDirty) && (
+          <div className="space-y-2">
+            {isDirty && !success && (
+              <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50/80 px-3.5 py-2.5 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
+                  <span className="text-xs font-semibold text-amber-900">
+                    You have unsaved changes in your pipeline workflow.
+                  </span>
                 </div>
               </div>
+            )}
+            {success && (
+              <div className="flex items-center justify-between rounded-lg border border-emerald-200 bg-emerald-50/80 px-3.5 py-2.5 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 shrink-0 text-emerald-600" />
+                  <span className="text-xs font-semibold text-emerald-900">{success}</span>
+                </div>
+              </div>
+            )}
+            {error && (
+              <div className="flex items-center justify-between rounded-lg border border-rose-200 bg-rose-50/80 px-3.5 py-2.5 shadow-xs">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                  <span className="text-xs font-semibold text-rose-900">{error}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
+        {/* MAIN LAYOUT */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+          
+          {/* STAGE LISTING TABLE (2 COLUMNS WIDE) */}
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+            {/* Table Header Banner */}
+            <div className="px-5 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Workflow className="h-4 w-4 text-slate-700" />
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Active Workflow Stages ({statuses.length})
+                </span>
+              </div>
               <button
                 type="button"
                 onClick={() => {
                   setShowAddForm(true);
                   setActiveColorPicker(null);
                 }}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-2xs hover:bg-slate-50 transition"
               >
-                <Plus className="h-3.5 w-3.5" /> Add Stage
+                <Plus className="h-3.5 w-3.5" />
+                Add Stage
               </button>
             </div>
 
-            {/* Inline Add Stage Drawer */}
-            <AnimatePresence>
-              {showAddForm && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={spring}
-                  className="overflow-hidden border-b border-indigo-100 bg-indigo-50/30"
-                >
-                  <div className="space-y-4 p-5">
-                    <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-xs font-bold text-indigo-600">
-                        <Sparkles className="h-3.5 w-3.5" /> New Stage Configuration
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowAddForm(false)}
-                        className="rounded-md p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
+            {/* Inline Add Stage Form */}
+            {showAddForm && (
+              <div className="p-4 bg-slate-50/90 border-b border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    New Stage Configuration
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                    className="text-slate-400 hover:text-slate-600 rounded p-0.5"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Stage Label
+                    </label>
                     <input
                       type="text"
                       value={newLabel}
                       onChange={(e) => setNewLabel(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleAddStatus()}
                       placeholder="e.g. Parts Ordered"
-                      className="w-full rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-900 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-lg border border-slate-200 bg-white py-1.5 px-3 text-xs font-semibold text-slate-900 outline-none focus:border-slate-400"
                       autoFocus
                     />
+                  </div>
 
-                    <div>
-                      <p className="mb-2 text-[11px] font-semibold text-slate-500">
-                        Select Badge Color
-                      </p>
-                      <div className="flex flex-wrap gap-2">
-                        {COLOR_OPTIONS.map((c) => (
-                          <button
-                            key={c.value}
-                            type="button"
-                            title={c.label}
-                            onClick={() => setNewColor(c.value)}
-                            className={`h-6 w-6 rounded-full border border-black/10 transition cursor-pointer ${
-                              newColor === c.value
-                                ? 'scale-110 ring-2 ring-indigo-500 ring-offset-2'
-                                : 'opacity-80 hover:opacity-100'
-                            }`}
-                            style={{ backgroundColor: c.hex }}
-                          />
-                        ))}
+                  <div>
+                    <label className="block text-[10px] font-bold uppercase text-slate-500 mb-1">
+                      Color Theme
+                    </label>
+                    <div className="flex items-center gap-1.5 pt-1">
+                      {COLOR_OPTIONS.map((c) => (
+                        <button
+                          key={c.value}
+                          type="button"
+                          title={c.label}
+                          onClick={() => setNewColor(c.value)}
+                          className={`h-5 w-5 rounded-full border border-slate-300 transition-all ${
+                            newColor === c.value
+                              ? 'ring-2 ring-slate-900 ring-offset-1 scale-110'
+                              : 'opacity-70 hover:opacity-100'
+                          }`}
+                          style={{ backgroundColor: c.hex }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(false)}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddStatus}
+                    className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                  >
+                    Create Stage
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Stage Item Rows */}
+            <div className="divide-y divide-slate-100">
+              {statuses.map((status, index) => {
+                const locked = isLockedStage(status);
+                const canMoveUp = !locked && index > 1;
+                const canMoveDown = !locked && index < statuses.length - 2;
+
+                return (
+                  <div
+                    key={status.value}
+                    className={`relative flex items-center justify-between px-5 py-3 hover:bg-slate-50/60 transition-colors group ${
+                      locked ? 'bg-slate-50/40' : ''
+                    }`}
+                  >
+                    {/* Left side: Reorder + Color + Name */}
+                    <div className="flex items-center gap-3.5 min-w-0 pr-4">
+                      
+                      {/* Reorder Buttons */}
+                      <div className="flex flex-col items-center justify-center shrink-0">
+                        {locked ? (
+                          <Lock className="h-3.5 w-3.5 text-slate-300" />
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              disabled={!canMoveUp}
+                              onClick={() => handleMoveUp(index)}
+                              className={`p-0.5 rounded transition ${
+                                canMoveUp
+                                  ? 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
+                                  : 'text-slate-200 cursor-not-allowed'
+                              }`}
+                            >
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!canMoveDown}
+                              onClick={() => handleMoveDown(index)}
+                              className={`p-0.5 rounded transition ${
+                                canMoveDown
+                                  ? 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'
+                                  : 'text-slate-200 cursor-not-allowed'
+                              }`}
+                            >
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      {/* Color Picker Swatch */}
+                      <div className="relative shrink-0">
+                        <button
+                          type="button"
+                          disabled={locked}
+                          onClick={() =>
+                            setActiveColorPicker(activeColorPicker === index ? null : index)
+                          }
+                          className={`flex h-5 w-5 items-center justify-center rounded border border-black/10 transition-transform ${
+                            locked ? 'cursor-not-allowed opacity-80' : 'hover:scale-105'
+                          }`}
+                          style={{ backgroundColor: getColorHex(status.color) }}
+                        >
+                          {!locked && (
+                            <Palette className="h-2.5 w-2.5 text-white/90 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          )}
+                        </button>
+
+                        {/* Color Picker Dropdown Popover */}
+                        {activeColorPicker === index && !locked && (
+                          <div className="absolute left-0 top-7 z-30 w-44 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md">
+                            <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                Select Color
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setActiveColorPicker(null)}
+                                className="text-slate-400 hover:text-slate-600"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                            <div className="grid grid-cols-4 gap-1.5">
+                              {COLOR_OPTIONS.map((c) => (
+                                <button
+                                  key={c.value}
+                                  type="button"
+                                  title={c.label}
+                                  onClick={() => updateStatusColor(index, c.value)}
+                                  className={`h-5 w-5 rounded-full border border-slate-200 transition-transform ${
+                                    status.color === c.value
+                                      ? 'ring-2 ring-slate-900 ring-offset-1'
+                                      : 'hover:scale-110'
+                                  }`}
+                                  style={{ backgroundColor: c.hex }}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Stage Name & Trigger */}
+                      <div className="min-w-0">
+                        <input
+                          type="text"
+                          value={status.label}
+                          readOnly={locked}
+                          onChange={(e) => updateStatusLabel(index, e.target.value)}
+                          className={`text-xs sm:text-sm font-semibold transition text-slate-900 ${
+                            locked
+                              ? 'bg-transparent outline-none cursor-not-allowed text-slate-500'
+                              : 'bg-transparent border-b border-transparent focus:border-slate-400 focus:outline-none'
+                          }`}
+                        />
+                        <p className="text-[10px] text-slate-400 font-mono leading-none mt-0.5">
+                          {locked
+                            ? 'System Required Stage'
+                            : STAGE_TRIGGERS[status.value] || 'Custom User Stage'}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={handleAddStatus}
-                        className="flex-1 rounded-xl bg-indigo-600 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-indigo-700 cursor-pointer"
-                      >
-                        Create Stage
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowAddForm(false)}
-                        className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
-                      >
-                        Cancel
-                      </button>
+                    {/* Right side: Badge / Delete Action */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                        locked
+                          ? 'text-slate-500 bg-slate-100 border-slate-200'
+                          : 'text-amber-800 bg-amber-50 border-amber-200'
+                      }`}>
+                        {locked ? 'Fixed' : 'Custom'}
+                      </span>
+
+                      {!locked && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveStatus(index)}
+                          className="rounded p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* List with Animated Position Swapping */}
-            <div className="divide-y divide-slate-100">
-              {statuses.map((status, index) => (
-                <StatusRow
-                  key={status.value}
-                  status={status}
-                  index={index}
-                  totalCount={statuses.length}
-                  locked={isLockedStage(status)}
-                  activeColorPicker={activeColorPicker}
-                  setActiveColorPicker={setActiveColorPicker}
-                  getColorHex={getColorHex}
-                  updateStatusColor={updateStatusColor}
-                  updateStatusLabel={updateStatusLabel}
-                  handleRemoveStatus={handleRemoveStatus}
-                  moveUp={handleMoveUp}
-                  moveDown={handleMoveDown}
-                />
-              ))}
+                );
+              })}
             </div>
           </div>
-        </div>
 
-        {/* SIDEBAR PREVIEWS */}
-        <div className="space-y-4 lg:sticky lg:top-6">
-          {/* Card Badges Preview */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
-            <p className="mb-3 text-xs font-semibold text-slate-500">
-              Live Stage Badges
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {statuses.map((s) => (
-                <span
-                  key={s.value}
-                  className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-2xs"
-                  style={{ backgroundColor: getColorHex(s.color) }}
-                >
-                  {s.label}
+          {/* SIDEBAR PREVIEWS */}
+          <div className="space-y-6">
+            {/* Live Badges Card */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+              <div className="px-5 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4 text-slate-700" />
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Live Stage Badges
                 </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Automation Rules */}
-          <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-xs">
-            <div className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-              <Info className="h-4 w-4 text-indigo-500" /> Automated Triggers
-            </div>
-            <div className="space-y-2.5">
-              {statuses
-                .filter((s) => STAGE_TRIGGERS[s.value] && s.value !== 'new')
-                .map((s) => (
-                  <div key={s.value} className="text-xs leading-relaxed text-slate-600">
-                    <span
-                      className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold text-white"
-                      style={{ backgroundColor: getColorHex(s.color) }}
-                    >
-                      {s.label}
-                    </span>{' '}
-                    — {STAGE_TRIGGERS[s.value].replace(/^Moves here when |^You move jobs here when /, '')}
-                  </div>
+              </div>
+              <div className="p-4 flex flex-wrap gap-1.5">
+                {statuses.map((s) => (
+                  <span
+                    key={s.value}
+                    className="inline-flex items-center rounded border border-black/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-2xs"
+                    style={{ backgroundColor: getColorHex(s.color) }}
+                  >
+                    {s.label}
+                  </span>
                 ))}
+              </div>
+            </div>
+
+            {/* Automated Triggers Info Card */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+              <div className="px-5 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center gap-2">
+                <Info className="h-4 w-4 text-slate-700" />
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Automated Triggers
+                </span>
+              </div>
+              <div className="p-4 space-y-3">
+                {statuses
+                  .filter((s) => STAGE_TRIGGERS[s.value] && s.value !== 'new')
+                  .map((s) => (
+                    <div key={s.value} className="text-xs text-slate-600 leading-normal border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+                      <span
+                        className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold uppercase text-white mr-1.5"
+                        style={{ backgroundColor: getColorHex(s.color) }}
+                      >
+                        {s.label}
+                      </span>
+                      <span className="text-[11px] text-slate-500 font-medium">
+                        {STAGE_TRIGGERS[s.value].replace(/^Moves here when |^You move jobs here when /, '')}
+                      </span>
+                    </div>
+                  ))}
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* ── DELETE MODAL ── */}
-      <AnimatePresence>
+        </div>
+
+        {/* DELETE MODAL */}
         {deleteConfirm && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-2xs"
             onClick={() => setDeleteConfirm(null)}
           >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              transition={spring}
-              className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+            <div
+              className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-lg"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
-                <AlertTriangle className="h-6 w-6" />
+              <div className="mb-3 flex items-center gap-2 text-rose-600">
+                <AlertTriangle className="h-5 w-5" />
+                <h3 className="text-sm font-bold text-slate-900">Remove Stage</h3>
               </div>
-              <h3 className="text-center text-base font-bold text-slate-900">
-                Remove Stage?
-              </h3>
-              <p className="mt-2 text-center text-xs text-slate-500">
+              <p className="text-xs text-slate-500 leading-relaxed">
                 Are you sure you want to delete <strong className="text-slate-800">&quot;{deleteConfirm.label}&quot;</strong>? Any jobs currently in this stage will need to be manually reassigned.
               </p>
-              <div className="mt-6 grid grid-cols-2 gap-3">
+              <div className="mt-5 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setDeleteConfirm(null)}
-                  className="rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                  className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={confirmRemove}
-                  className="rounded-xl bg-rose-600 py-2.5 text-xs font-semibold text-white transition hover:bg-rose-700 cursor-pointer"
+                  className="rounded-lg bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700"
                 >
-                  Delete
+                  Delete Stage
                 </button>
               </div>
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+
+      </div>
     </div>
   );
 }

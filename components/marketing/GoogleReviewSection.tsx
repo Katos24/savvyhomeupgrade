@@ -43,8 +43,8 @@ export default function GoogleReviewSection() {
 
         {/* Trigger → result. Reading order now matches cause and effect;
             the old layout showed the email before the thing that sends it. */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 items-start">
+          
           {/* The trigger */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}

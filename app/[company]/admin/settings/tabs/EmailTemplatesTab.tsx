@@ -16,7 +16,6 @@ import {
   Receipt,
   MessageSquare,
   Star,
-  X,
   ChevronRight,
   ArrowLeft,
   Eye,
@@ -306,263 +305,265 @@ export default function EmailTemplatesTab({
   };
 
   return (
-    <div className="mx-auto max-w-6xl pb-12">
-      {(company.plan_tier === 'free' || company.plan_tier === 'basic') && (
-        <SettingsUpgradeBanner
-          planLabel="Pro"
-          price="$79.99/mo"
-          message="Customize your automated email templates — upgrade to Pro to start sending."
-          companySlug={company.slug}
-        />
-      )}
+    <div className="w-full font-sans text-slate-900 antialiased">
+      <div className="w-full space-y-6">
+        {(company.plan_tier === 'free' || company.plan_tier === 'basic') && (
+          <SettingsUpgradeBanner
+            planLabel="Pro"
+            price="$79.99/mo"
+            message="Customize your automated email templates — upgrade to Pro to start sending."
+            companySlug={company.slug}
+          />
+        )}
 
-      {/* Header */}
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-            Email Templates
-          </h2>
-          <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-            Customize every automated email dispatched to customers with your branding.
-          </p>
+        {/* Header */}
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center pb-4 border-b border-slate-200">
+          <div>
+            <h2 className="text-xl font-bold tracking-tight text-slate-900">
+              Email Templates
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500 font-medium">
+              Customize every automated email dispatched to customers with your branding.
+            </p>
+          </div>
+
+          {activeTemplate && (
+            <button
+              onClick={handleSave}
+              disabled={loading}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50 sm:text-sm"
+            >
+              {loading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {loading ? 'Saving Template...' : 'Save Template'}
+            </button>
+          )}
         </div>
 
-        {activeTemplate && (
-          <button
-            onClick={handleSave}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50 sm:text-sm"
-          >
-            {loading ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            {loading ? 'Saving Template...' : 'Save Template'}
-          </button>
-        )}
-      </div>
+        {/* Alerts */}
+        <AnimatePresence>
+          {success && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs font-medium text-emerald-800 shadow-xs sm:text-sm"
+            >
+              <Check className="h-4 w-4 shrink-0 text-emerald-600" /> {success}
+            </motion.div>
+          )}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-xs font-medium text-rose-700 shadow-xs sm:text-sm"
+            >
+              <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" /> {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Alerts */}
-      <AnimatePresence>
-        {success && (
+        {/* ── GRID OVERVIEW MODE ── */}
+        {!activeTemplate && (
           <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-6 flex items-center gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50/80 p-4 text-xs font-medium text-emerald-800 shadow-xs sm:text-sm"
+            transition={springTransition}
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
-            <Check className="h-4 w-4 shrink-0 text-emerald-600" /> {success}
-          </motion.div>
-        )}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            className="mb-6 flex items-center gap-2.5 rounded-xl border border-rose-200 bg-rose-50/80 p-4 text-xs font-medium text-rose-700 shadow-xs sm:text-sm"
-          >
-            <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" /> {error}
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── GRID OVERVIEW MODE ── */}
-      {!activeTemplate && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={springTransition}
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
-        >
-          {(Object.keys(templateConfig) as TemplateKey[]).map((key) => {
-            const config = templateConfig[key];
-            const customized = isCustomized(key);
-            return (
-              <button
-                key={key}
-                onClick={() => setActiveTemplate(key)}
-                className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
-              >
-                <div>
-                  <div className="mb-4 flex items-center justify-between">
-                    <div
-                      className={`flex h-10 w-10 items-center justify-center rounded-xl ${config.bg} ${config.color}`}
-                    >
-                      {config.icon}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {customized && (
-                        <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-600">
-                          Customized
-                        </span>
-                      )}
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600">
-                        <ChevronRight className="h-4 w-4" />
+            {(Object.keys(templateConfig) as TemplateKey[]).map((key) => {
+              const config = templateConfig[key];
+              const customized = isCustomized(key);
+              return (
+                <button
+                  key={key}
+                  onClick={() => setActiveTemplate(key)}
+                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
+                >
+                  <div>
+                    <div className="mb-4 flex items-center justify-between">
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-xl ${config.bg} ${config.color}`}
+                      >
+                        {config.icon}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {customized && (
+                          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-600">
+                            Customized
+                          </span>
+                        )}
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600">
+                          <ChevronRight className="h-4 w-4" />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900">{config.label}</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                    {config.description}
-                  </p>
-                </div>
-
-                <div className="mt-4 border-t border-slate-100 pt-3">
-                  <p className="truncate font-mono text-[11px] text-slate-400">
-                    <span className="font-semibold text-slate-500">Subj:</span>{' '}
-                    {templates[key].subject}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </motion.div>
-      )}
-
-      {/* ── TEMPLATE EDITOR MODE ── */}
-      <AnimatePresence mode="wait">
-        {activeTemplate && (
-          <motion.div
-            key={activeTemplate}
-            initial={{ opacity: 0, x: 15 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={springTransition}
-            className="space-y-6"
-          >
-            {/* Top Navigation Bar */}
-            <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
-              <button
-                onClick={() => setActiveTemplate(null)}
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" /> All Templates
-              </button>
-
-              <div
-                className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${templateConfig[activeTemplate].bg} ${templateConfig[activeTemplate].color}`}
-              >
-                {templateConfig[activeTemplate].icon}
-                <span>{templateConfig[activeTemplate].label}</span>
-              </div>
-            </div>
-
-            {/* Split Screen Workspace */}
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              {/* LEFT — EDITOR */}
-              <div className="space-y-5">
-                {/* Available Dynamic Tags */}
-                <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-                  <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-amber-500" />
-                      <p className="text-xs font-bold text-slate-800">
-                        Dynamic Variables
-                      </p>
-                    </div>
-                    <span className="text-[10px] font-medium text-slate-400">
-                      Click variable to copy
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 p-4">
-                    {availableVariables[activeTemplate].map((variable) => (
-                      <button
-                        key={variable}
-                        type="button"
-                        onClick={() => handleCopyVariable(variable)}
-                        className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] font-medium transition active:scale-95 ${
-                          copiedVar === variable
-                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'
-                        }`}
-                      >
-                        {variable}
-                        {copiedVar === variable ? (
-                          <Check className="h-3 w-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="h-3 w-3 text-slate-400" />
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Form Controls */}
-                <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-                  <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-indigo-500" />
-                      <p className="text-xs font-bold text-slate-800">Email Content</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleReset}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50"
-                    >
-                      <RotateCcw className="h-3 w-3 text-slate-400" /> Reset Default
-                    </button>
+                    <h3 className="text-sm font-bold text-slate-900">{config.label}</h3>
+                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                      {config.description}
+                    </p>
                   </div>
 
-                  <div className="space-y-4 p-4">
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        Subject Line
-                      </label>
-                      <input
-                        type="text"
-                        value={templates[activeTemplate].subject}
-                        onChange={(e) => handleUpdateTemplate('subject', e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        Email Body
-                      </label>
-                      <textarea
-                        value={templates[activeTemplate].body}
-                        onChange={(e) => handleUpdateTemplate('body', e.target.value)}
-                        rows={12}
-                        className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 font-mono text-xs leading-relaxed text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                      />
-                    </div>
+                  <div className="mt-4 border-t border-slate-100 pt-3">
+                    <p className="truncate font-mono text-[11px] text-slate-400">
+                      <span className="font-semibold text-slate-500">Subj:</span>{' '}
+                      {templates[key].subject}
+                    </p>
                   </div>
-
-                  <div className="border-t border-slate-100 bg-slate-50/30 p-4">
-                    <button
-                      onClick={handleSave}
-                      disabled={loading}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
-                    >
-                      {loading ? (
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                      ) : (
-                        <Save className="h-4 w-4" />
-                      )}
-                      {loading ? 'Saving Changes...' : 'Save Template'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* RIGHT — PREVIEW PANE */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
-                  <Eye className="h-3.5 w-3.5 text-slate-400" /> Live Preview
-                </div>
-                <EmailPreviewPane
-                  activeTemplate={activeTemplate}
-                  subject={templates[activeTemplate].subject}
-                  body={templates[activeTemplate].body}
-                  companySlug={company.slug}
-                />
-              </div>
-            </div>
+                </button>
+              );
+            })}
           </motion.div>
         )}
-      </AnimatePresence>
+
+        {/* ── TEMPLATE EDITOR MODE ── */}
+        <AnimatePresence mode="wait">
+          {activeTemplate && (
+            <motion.div
+              key={activeTemplate}
+              initial={{ opacity: 0, x: 15 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -15 }}
+              transition={springTransition}
+              className="space-y-6"
+            >
+              {/* Top Navigation Bar */}
+              <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
+                <button
+                  onClick={() => setActiveTemplate(null)}
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> All Templates
+                </button>
+
+                <div
+                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${templateConfig[activeTemplate].bg} ${templateConfig[activeTemplate].color}`}
+                >
+                  {templateConfig[activeTemplate].icon}
+                  <span>{templateConfig[activeTemplate].label}</span>
+                </div>
+              </div>
+
+              {/* Split Screen Workspace */}
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                {/* LEFT — EDITOR */}
+                <div className="space-y-5">
+                  {/* Available Dynamic Tags */}
+                  <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-4 w-4 text-amber-500" />
+                        <p className="text-xs font-bold text-slate-800">
+                          Dynamic Variables
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-medium text-slate-400">
+                        Click variable to copy
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 p-4">
+                      {availableVariables[activeTemplate].map((variable) => (
+                        <button
+                          key={variable}
+                          type="button"
+                          onClick={() => handleCopyVariable(variable)}
+                          className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] font-medium transition active:scale-95 ${
+                            copiedVar === variable
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'
+                          }`}
+                        >
+                          {variable}
+                          {copiedVar === variable ? (
+                            <Check className="h-3 w-3 text-emerald-600" />
+                          ) : (
+                            <Copy className="h-3 w-3 text-slate-400" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Form Controls */}
+                  <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-indigo-500" />
+                        <p className="text-xs font-bold text-slate-800">Email Content</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleReset}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50"
+                      >
+                        <RotateCcw className="h-3 w-3 text-slate-400" /> Reset Default
+                      </button>
+                    </div>
+
+                    <div className="space-y-4 p-4">
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                          Subject Line
+                        </label>
+                        <input
+                          type="text"
+                          value={templates[activeTemplate].subject}
+                          onChange={(e) => handleUpdateTemplate('subject', e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                          Email Body
+                        </label>
+                        <textarea
+                          value={templates[activeTemplate].body}
+                          onChange={(e) => handleUpdateTemplate('body', e.target.value)}
+                          rows={12}
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 font-mono text-xs leading-relaxed text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-slate-100 bg-slate-50/30 p-4">
+                      <button
+                        onClick={handleSave}
+                        disabled={loading}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                        ) : (
+                          <Save className="h-4 w-4" />
+                        )}
+                        {loading ? 'Saving Changes...' : 'Save Template'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT — PREVIEW PANE */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
+                    <Eye className="h-3.5 w-3.5 text-slate-400" /> Live Preview
+                  </div>
+                  <EmailPreviewPane
+                    activeTemplate={activeTemplate}
+                    subject={templates[activeTemplate].subject}
+                    body={templates[activeTemplate].body}
+                    companySlug={company.slug}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
