@@ -8,7 +8,7 @@ import {
 import { can, type PlanTier } from '@/lib/permissions';
 
 type StatusOption = { value: string; label: string; color: string; emoji?: string };
-type ViewMode = 'cards' | 'table' | 'calendar';
+type ViewMode = 'cards' | 'table';
 type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
 
 type DashboardFiltersProps = {
@@ -160,10 +160,9 @@ export default function DashboardFilters({
               : 'bg-white/90 border-slate-200/90 shadow-xs'
           }`}
         >
-          {[
+                 {[
             { id: 'cards', icon: LayoutGrid, feature: null },
             { id: 'table', icon: List, feature: 'table_view' },
-            { id: 'calendar', icon: Calendar, feature: 'calendar_view' },
           ].map((v) => {
             const locked = v.feature && !can(planTier, v.feature as any);
             const active = currentView === v.id;

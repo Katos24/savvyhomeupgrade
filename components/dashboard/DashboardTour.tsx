@@ -37,8 +37,8 @@ type DashboardTourProps = {
   isDark: boolean;
   planTier: PlanTier;
   onToggleTheme: () => void;
-  onToggleView: (view: 'cards' | 'table' | 'calendar') => void;
-  onOpenSidebar: () => void;
+  onToggleView: (view: 'cards' | 'table') => void;
+    onOpenSidebar: () => void;
   onOpenCreateModal: () => void;
   onComplete: () => void;
 };

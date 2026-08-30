@@ -330,9 +330,14 @@ export default function OverviewTab({
     <div className="min-h-screen bg-slate-50/50 px-3 py-4 sm:px-6 sm:py-10 lg:px-12 font-sans text-slate-900 antialiased">
       <div className="mx-auto max-w-7xl space-y-5 sm:space-y-8 pb-20">
         
-        {/* Page Title */}
-        <div className="pb-2 border-b border-slate-200">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Company Details</h1>
+               {/* Page Title — same shape as SetupTab's header row */}
+        <div className="flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Company Details</h1>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">
+              Manage your business profile, branding, and account settings.
+            </p>
+          </div>
         </div>
 
         {brandError && (
@@ -346,10 +351,12 @@ export default function OverviewTab({
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 items-start">
 
           {/* LEFT COLUMN: Company Profile & Details (7 cols) */}
-          <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-4">
+                  <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
 
-            {/* Header Actions */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+            {/* Header bar — same full-width treatment as SetupTab's
+                checklist header, not a bottom-border sitting inside the
+                card's own padding */}
+            <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                 <Building2 className="h-4 w-4 text-slate-700 shrink-0" /> Company Profile & Branding
               </h2>
@@ -384,6 +391,7 @@ export default function OverviewTab({
               )}
             </div>
 
+            <div className="p-4 sm:p-6">
             {/* Profile Table Component */}
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
               <table className="w-full table-auto text-left text-xs sm:text-sm">
@@ -547,8 +555,9 @@ export default function OverviewTab({
                       </div>
                     </td>
                   </tr>
-                </tbody>
+                              </tbody>
               </table>
+            </div>
             </div>
 
           </div>
@@ -557,10 +566,12 @@ export default function OverviewTab({
           <div className="xl:col-span-5 space-y-6">
                         
             {/* Card A: Automations */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-1">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-3 mb-2 border-b border-slate-200 flex items-center gap-2">
-                <Bell className="h-4 w-4 text-slate-700 shrink-0" /> Automations & Preferences
-              </h2>
+                        <div className="bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
+              <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
+                <Bell className="h-4 w-4 text-slate-700 shrink-0" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Automations & Preferences</h2>
+              </div>
+              <div className="p-4 sm:p-6 space-y-1">
 
               {/* 6:00 AM Daily Summary Toggle */}
               <div className="flex items-center justify-between py-3 sm:py-4 border-b border-slate-100 gap-3">
@@ -629,16 +640,19 @@ export default function OverviewTab({
                       }`}
                     />
                   </button>
-                </div>
+                        </div>
+              </div>
               </div>
             </div>
 
-            {/* Card B: Plan & Payment Status Table */}
-            <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-3">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-3 border-b border-slate-200 flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-slate-700 shrink-0" /> Plan & Payment Status
-              </h2>
+                       {/* Card B: Plan & Payment Status Table */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
+              <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
+                <CreditCard className="h-4 w-4 text-slate-700 shrink-0" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Plan & Payment Status</h2>
+              </div>
 
+              <div className="p-4 sm:p-6 space-y-3">
               <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
                 <table className="w-full text-left text-xs sm:text-sm">
                   <tbody className="divide-y divide-slate-200">
@@ -674,8 +688,9 @@ export default function OverviewTab({
                         <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
                       </td>
                     </tr>
-                  </tbody>
+                                  </tbody>
                 </table>
+              </div>
               </div>
             </div>
 
@@ -684,11 +699,13 @@ export default function OverviewTab({
         </div>
 
         {/* FULL WIDTH: Lead Intake / Booking Link */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-4 sm:p-6 shadow-lg shadow-slate-200/60 space-y-2">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
-            <LinkIcon className="h-4 w-4 text-slate-700 shrink-0" /> Lead Intake Link
-          </h2>
+               <div className="bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
+          <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
+            <LinkIcon className="h-4 w-4 text-slate-700 shrink-0" />
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Lead Intake Link</h2>
+          </div>
 
+          <div className="p-4 sm:p-6 space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between py-1 gap-3 sm:gap-4">
             <code className="font-mono text-xs sm:text-sm font-semibold text-slate-800 truncate bg-slate-50 px-3.5 py-2 rounded-md border border-slate-300 flex-1 min-w-0">
               {publicLink || `lead2project.com/${company.slug}`}
@@ -718,8 +735,9 @@ export default function OverviewTab({
                 title="Download QR Code"
               >
                 <Download className="h-4 w-4 text-slate-600" />
-              </button>
+                         </button>
             </div>
+          </div>
           </div>
         </div>
 

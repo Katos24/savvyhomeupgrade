@@ -19,9 +19,13 @@ import {
   ChevronRight,
   ArrowLeft,
   Eye,
+  CheckCircle2,
+  Info,
 } from 'lucide-react';
+
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 import EmailPreviewPane from '@/components/dashboard/EmailPreviewPane';
+import { defaultEmailTemplates as defaultTemplates } from '@/lib/emailTemplateDefaults';
 
 type TemplateKey =
   | 'quote'
@@ -30,100 +34,6 @@ type TemplateKey =
   | 'invoice'
   | 'lead_confirmation'
   | 'job_completion';
-
-const defaultTemplates = {
-  quote: {
-    subject: 'Your Quote from {{company_name}}',
-    body: `Hi {{customer_name}},
-
-Thank you for your inquiry! We've prepared a quote for your project.
-
-Quote Total: {{quote_total}}
-
-Please review the attached quote and let us know if you have any questions.
-
-Best regards,
-{{company_name}}
-{{company_phone}}`,
-  },
-  schedule: {
-    subject: 'Appointment Scheduled - {{company_name}}',
-    body: `Hi {{customer_name}},
-
-Your appointment has been scheduled!
-
-Date: {{scheduled_date}}
-Time: {{scheduled_time}}
-Address: {{customer_address}}
-
-We look forward to serving you!
-
-Best regards,
-{{company_name}}
-{{company_phone}}`,
-  },
-  payment: {
-    subject: 'Payment Reminder - {{company_name}}',
-    body: `Hi {{customer_name}},
-
-This is a friendly reminder about your upcoming payment.
-
-Amount Due: {{payment_amount}}
-Due Date: {{due_date}}
-
-Please contact us if you have any questions.
-
-Best regards,
-{{company_name}}
-{{company_phone}}`,
-  },
-  invoice: {
-    subject: 'Invoice {{invoice_number}} from {{company_name}}',
-    body: `Hi {{customer_name}},
-
-Please find your invoice attached for recent work completed.
-
-Invoice #: {{invoice_number}}
-Total: {{invoice_total}}
-Due Date: {{due_date}}
-
-If you have any questions, don't hesitate to reach out.
-
-Best regards,
-{{company_name}}
-{{company_phone}}`,
-  },
-  lead_confirmation: {
-    subject: 'We received your request - {{company_name}}',
-    body: `Hi {{customer_name}},
-
-Thank you for reaching out to {{company_name}}! We've received your request and will be in touch shortly.
-
-We typically respond within 24 hours.
-
-{{request_summary}}
-
-Best regards,
-{{company_name}}
-{{company_phone}}`,
-  },
-  job_completion: {
-    subject: 'Job Complete - Thank you, {{customer_name}}!',
-    body: `Hi {{customer_name}},
-
-We're happy to let you know that your job has been completed!
-
-It was a pleasure working with you. If you're satisfied with our work, we'd love if you left us a review.
-
-{{google_review_link}}
-
-Thank you for choosing {{company_name}}!
-
-Best regards,
-{{company_name}}
-{{company_phone}}`,
-  },
-};
 
 const availableVariables: Record<TemplateKey, string[]> = {
   quote: [
@@ -155,6 +65,9 @@ const availableVariables: Record<TemplateKey, string[]> = {
     '{{invoice_number}}',
     '{{invoice_total}}',
     '{{due_date}}',
+    '{{amount_label}}',
+    '{{amount_value}}',
+    '{{project_total}}',
   ],
   lead_confirmation: [
     '{{company_name}}',
@@ -172,49 +85,38 @@ const availableVariables: Record<TemplateKey, string[]> = {
 
 const templateConfig: Record<
   TemplateKey,
-  { icon: React.ReactNode; label: string; description: string; color: string; bg: string }
+  { icon: React.ReactNode; label: string; description: string }
 > = {
   lead_confirmation: {
-    icon: <MessageSquare className="h-5 w-5" />,
+    icon: <MessageSquare className="h-4 w-4" />,
     label: 'Lead Confirmation',
     description: 'Auto-reply sent immediately when a lead submits your form',
-    color: 'text-indigo-600',
-    bg: 'bg-indigo-50',
   },
   schedule: {
-    icon: <Calendar className="h-5 w-5" />,
+    icon: <Calendar className="h-4 w-4" />,
     label: 'Schedule',
     description: 'Sent when an appointment or job date is confirmed',
-    color: 'text-blue-600',
-    bg: 'bg-blue-50',
   },
   quote: {
-    icon: <FileText className="h-5 w-5" />,
+    icon: <FileText className="h-4 w-4" />,
     label: 'Quote',
     description: 'Sent when delivering an estimate or quote to a customer',
-    color: 'text-emerald-600',
-    bg: 'bg-emerald-50',
   },
   invoice: {
-    icon: <Receipt className="h-5 w-5" />,
-    label: 'Invoice',
-    description: 'Sent when delivering an official invoice for payment',
-    color: 'text-slate-700',
-    bg: 'bg-slate-100',
+    icon: <Receipt className="h-4 w-4" />,
+    label: 'Deposit / Balance / Invoice',
+    description:
+      'Sent when billing a customer — shows deposit or balance due automatically, whichever applies',
   },
   payment: {
-    icon: <CreditCard className="h-5 w-5" />,
+    icon: <CreditCard className="h-4 w-4" />,
     label: 'Payment Reminder',
     description: 'Sent to remind customers about pending balances or overdue bills',
-    color: 'text-amber-600',
-    bg: 'bg-amber-50',
   },
   job_completion: {
-    icon: <Star className="h-5 w-5" />,
+    icon: <Star className="h-4 w-4" />,
     label: 'Job Completion',
     description: 'Sent upon job wrap-up to thank clients and collect reviews',
-    color: 'text-orange-600',
-    bg: 'bg-orange-50',
   },
 };
 
@@ -232,6 +134,7 @@ export default function EmailTemplatesTab({
   const [error, setError] = useState('');
   const [copiedVar, setCopiedVar] = useState('');
   const [activeTemplate, setActiveTemplate] = useState<TemplateKey | null>(null);
+  const [showConfirmationInfo, setShowConfirmationInfo] = useState(false);
   const [templates, setTemplates] = useState<Record<TemplateKey, { subject: string; body: string }>>(
     (() => {
       let saved = {};
@@ -246,6 +149,8 @@ export default function EmailTemplatesTab({
       return { ...defaultTemplates, ...saved };
     })()
   );
+
+  const stripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
 
   const isCustomized = (key: TemplateKey) => {
     const def = defaultTemplates[key];
@@ -305,7 +210,7 @@ export default function EmailTemplatesTab({
   };
 
   return (
-    <div className="w-full font-sans text-slate-900 antialiased">
+    <div className="w-full text-[#1c1917]">
       <div className="w-full space-y-6">
         {(company.plan_tier === 'free' || company.plan_tier === 'basic') && (
           <SettingsUpgradeBanner
@@ -316,14 +221,11 @@ export default function EmailTemplatesTab({
           />
         )}
 
-        {/* Header */}
-        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center pb-4 border-b border-slate-200">
+        <div className="flex flex-col justify-between gap-4 border-b border-[#e7e2d8] pb-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900">
-              Email Templates
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500 font-medium">
-              Customize every automated email dispatched to customers with your branding.
+            <h2 className="text-xl font-semibold tracking-tight text-[#1c1917]">Emails</h2>
+            <p className="mt-0.5 text-xs font-medium text-[#78716c]">
+              Every automated email customers can receive — which ones you can customize, and which you can&apos;t.
             </p>
           </div>
 
@@ -331,19 +233,18 @@ export default function EmailTemplatesTab({
             <button
               onClick={handleSave}
               disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50 sm:text-sm"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1c1917] px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#292524] disabled:opacity-50 sm:text-sm"
             >
               {loading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
               ) : (
                 <Save className="h-4 w-4" />
               )}
-              {loading ? 'Saving Template...' : 'Save Template'}
+              {loading ? 'Saving...' : 'Save Template'}
             </button>
           )}
         </div>
 
-        {/* Alerts */}
         <AnimatePresence>
           {success && (
             <motion.div
@@ -367,60 +268,118 @@ export default function EmailTemplatesTab({
           )}
         </AnimatePresence>
 
-        {/* ── GRID OVERVIEW MODE ── */}
         {!activeTemplate && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={springTransition}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {(Object.keys(templateConfig) as TemplateKey[]).map((key) => {
-              const config = templateConfig[key];
-              const customized = isCustomized(key);
-              return (
-                <button
-                  key={key}
-                  onClick={() => setActiveTemplate(key)}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-5 text-left shadow-xs transition-all hover:border-slate-300 hover:shadow-md active:scale-[0.99]"
-                >
-                  <div>
-                    <div className="mb-4 flex items-center justify-between">
-                      <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-xl ${config.bg} ${config.color}`}
-                      >
-                        {config.icon}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {customized && (
-                          <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-0.5 text-[10px] font-bold text-indigo-600">
-                            Customized
-                          </span>
-                        )}
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-slate-400 group-hover:bg-slate-100 group-hover:text-slate-600">
-                          <ChevronRight className="h-4 w-4" />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {(Object.keys(templateConfig) as TemplateKey[]).map((key) => {
+                const config = templateConfig[key];
+                const customized = isCustomized(key);
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTemplate(key)}
+                    className="group flex flex-col justify-between rounded-2xl border border-[#e7e2d8] bg-white p-4 text-left transition-colors hover:border-[#d6d3d1]"
+                  >
+                    <div>
+                      <div className="mb-3 flex items-center justify-between">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f5f1e8] text-[#57534e]">
+                          {config.icon}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {customized ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
+                              Customized
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5f1e8] px-2 py-0.5 text-[10px] font-medium text-[#78716c]">
+                              Default
+                            </span>
+                          )}
+                          <ChevronRight className="h-4 w-4 text-[#d6d3d1] transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </div>
+                      <h3 className="text-sm font-semibold text-[#1c1917]">{config.label}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-[#78716c]">{config.description}</p>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900">{config.label}</h3>
-                    <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                      {config.description}
-                    </p>
-                  </div>
 
-                  <div className="mt-4 border-t border-slate-100 pt-3">
-                    <p className="truncate font-mono text-[11px] text-slate-400">
-                      <span className="font-semibold text-slate-500">Subj:</span>{' '}
-                      {templates[key].subject}
-                    </p>
+                    <div className="mt-3 border-t border-[#f0ece1] pt-2.5">
+                      <p className="truncate font-mono text-[11px] text-[#a8a29e]">
+                        <span className="font-medium text-[#78716c]">Subj:</span> {templates[key].subject}
+                      </p>
+                    </div>
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => setShowConfirmationInfo((v) => !v)}
+                className="flex flex-col justify-between rounded-2xl border border-dashed border-[#e7e2d8] bg-[#faf9f5] p-4 text-left transition-colors hover:border-[#d6d3d1]"
+              >
+                <div>
+                  <div className="mb-3 flex items-center justify-between">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f5f1e8] text-[#57534e]">
+                      <CheckCircle2 className="h-4 w-4" />
+                    </div>
+                    {stripeActive ? (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
+                        Automatic (Stripe)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        Not sent
+                      </span>
+                    )}
                   </div>
-                </button>
-              );
-            })}
+                  <h3 className="text-sm font-semibold text-[#1c1917]">Payment Confirmation</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-[#78716c]">
+                    {stripeActive
+                      ? "Stripe emails the customer a receipt automatically when they pay by card."
+                      : 'Nothing is sent when a payment is recorded manually — no template exists for this yet.'}
+                  </p>
+                </div>
+                <div className="mt-3 flex items-center gap-1.5 border-t border-[#f0ece1] pt-2.5 text-[11px] font-medium text-[#78716c]">
+                  <Info className="h-3 w-3" />
+                  {showConfirmationInfo ? 'Hide details' : 'Why isn\u2019t this editable?'}
+                </div>
+              </button>
+            </div>
+
+            <AnimatePresence>
+              {showConfirmationInfo && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3 rounded-2xl border border-[#e7e2d8] bg-white p-4 text-xs leading-relaxed text-[#57534e]">
+                    {stripeActive ? (
+                      <p>
+                        When a customer pays a Stripe checkout link, Stripe emails them its own
+                        receipt directly — that email isn&apos;t branded to your business and can&apos;t be
+                        edited here, since it&apos;s generated and sent by Stripe, not by this app.
+                      </p>
+                    ) : (
+                      <p>
+                        When you record a cash, check, or manual payment, the customer currently
+                        receives no confirmation from this app. If they need to know it was
+                        received, that&apos;s worth a personal follow-up for now.
+                      </p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
 
-        {/* ── TEMPLATE EDITOR MODE ── */}
         <AnimatePresence mode="wait">
           {activeTemplate && (
             <motion.div
@@ -431,39 +390,29 @@ export default function EmailTemplatesTab({
               transition={springTransition}
               className="space-y-6"
             >
-              {/* Top Navigation Bar */}
-              <div className="flex items-center justify-between border-b border-slate-200/80 pb-4">
+              <div className="flex items-center justify-between border-b border-[#e7e2d8] pb-4">
                 <button
                   onClick={() => setActiveTemplate(null)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-200 hover:text-slate-900"
+                  className="inline-flex items-center gap-2 rounded-lg bg-[#f5f1e8] px-3 py-1.5 text-xs font-semibold text-[#57534e] transition hover:bg-[#e7e2d8]"
                 >
-                  <ArrowLeft className="h-3.5 w-3.5" /> All Templates
+                  <ArrowLeft className="h-3.5 w-3.5" /> All Emails
                 </button>
 
-                <div
-                  className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold ${templateConfig[activeTemplate].bg} ${templateConfig[activeTemplate].color}`}
-                >
+                <div className="inline-flex items-center gap-2 rounded-full bg-[#f5f1e8] px-3 py-1 text-xs font-semibold text-[#57534e]">
                   {templateConfig[activeTemplate].icon}
                   <span>{templateConfig[activeTemplate].label}</span>
                 </div>
               </div>
 
-              {/* Split Screen Workspace */}
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                {/* LEFT — EDITOR */}
                 <div className="space-y-5">
-                  {/* Available Dynamic Tags */}
-                  <div className="rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
+                  <div className="rounded-2xl border border-[#e7e2d8] bg-white">
+                    <div className="flex items-center justify-between border-b border-[#e7e2d8] bg-[#faf9f5] px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-amber-500" />
-                        <p className="text-xs font-bold text-slate-800">
-                          Dynamic Variables
-                        </p>
+                        <p className="text-xs font-semibold text-[#1c1917]">Dynamic Variables</p>
                       </div>
-                      <span className="text-[10px] font-medium text-slate-400">
-                        Click variable to copy
-                      </span>
+                      <span className="text-[10px] font-medium text-[#a8a29e]">Click to copy</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 p-4">
                       {availableVariables[activeTemplate].map((variable) => (
@@ -474,83 +423,81 @@ export default function EmailTemplatesTab({
                           className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] font-medium transition active:scale-95 ${
                             copiedVar === variable
                               ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'
+                              : 'border-[#e7e2d8] bg-[#faf9f5] text-[#57534e] hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'
                           }`}
                         >
                           {variable}
                           {copiedVar === variable ? (
                             <Check className="h-3 w-3 text-emerald-600" />
                           ) : (
-                            <Copy className="h-3 w-3 text-slate-400" />
+                            <Copy className="h-3 w-3 text-[#a8a29e]" />
                           )}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  {/* Form Controls */}
-                  <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-xs">
-                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-4 py-3">
+                  <div className="overflow-hidden rounded-2xl border border-[#e7e2d8] bg-white">
+                    <div className="flex items-center justify-between border-b border-[#e7e2d8] bg-[#faf9f5] px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-indigo-500" />
-                        <p className="text-xs font-bold text-slate-800">Email Content</p>
+                        <p className="text-xs font-semibold text-[#1c1917]">Email Content</p>
                       </div>
                       <button
                         type="button"
                         onClick={handleReset}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 transition hover:bg-slate-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e2d8] bg-white px-2.5 py-1 text-[11px] font-medium text-[#57534e] transition hover:bg-[#f5f1e8]"
                       >
-                        <RotateCcw className="h-3 w-3 text-slate-400" /> Reset Default
+                        <RotateCcw className="h-3 w-3 text-[#a8a29e]" /> Reset Default
                       </button>
                     </div>
 
                     <div className="space-y-4 p-4">
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-[#78716c]">
                           Subject Line
                         </label>
                         <input
                           type="text"
                           value={templates[activeTemplate].subject}
                           onChange={(e) => handleUpdateTemplate('subject', e.target.value)}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                          className="w-full rounded-xl border border-[#e7e2d8] bg-[#faf9f5] px-3.5 py-2.5 text-sm font-medium text-[#1c1917] outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                         />
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-[#78716c]">
                           Email Body
                         </label>
                         <textarea
                           value={templates[activeTemplate].body}
                           onChange={(e) => handleUpdateTemplate('body', e.target.value)}
                           rows={12}
-                          className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 font-mono text-xs leading-relaxed text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                          className="w-full rounded-xl border border-[#e7e2d8] bg-[#faf9f5] p-3.5 font-mono text-xs leading-relaxed text-[#292524] outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                         />
                       </div>
                     </div>
 
-                    <div className="border-t border-slate-100 bg-slate-50/30 p-4">
+                    <div className="border-t border-[#e7e2d8] bg-[#faf9f5] p-4">
                       <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-bold uppercase tracking-wider text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1c1917] py-3 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-[#292524] disabled:opacity-50"
                       >
                         {loading ? (
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
                         ) : (
                           <Save className="h-4 w-4" />
                         )}
-                        {loading ? 'Saving Changes...' : 'Save Template'}
+                        {loading ? 'Saving...' : 'Save Template'}
                       </button>
                     </div>
                   </div>
                 </div>
 
-                {/* RIGHT — PREVIEW PANE */}
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase tracking-wider px-1">
-                    <Eye className="h-3.5 w-3.5 text-slate-400" /> Live Preview
+                  <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wide text-[#78716c]">
+                    <Eye className="h-3.5 w-3.5 text-[#a8a29e]" /> Live Preview
                   </div>
                   <EmailPreviewPane
                     activeTemplate={activeTemplate}

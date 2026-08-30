@@ -27,6 +27,18 @@ interface CustomerGroup {
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 
+const formatPhoneNumber = (value: string) => {
+  if (!value) return '';
+  const digits = value.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `(${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return value;
+};
+
 export default function CustomerListClient({
   projects = [],
   companySlug,
@@ -84,14 +96,13 @@ export default function CustomerListClient({
   return (
     <div className="min-h-screen bg-[#faf9f5]">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {/* Header — no back arrow, no custom nav; the persistent sidebar
-            already provides that */}
+        {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-[#1c1917]">Customers</h1>
           <p className="text-xs text-[#a8a29e] mt-1">{groupedCustomers.length} total</p>
         </div>
 
-        {/* Stats strip — same joined-strip pattern as DashboardStats */}
+        {/* Stats strip */}
         <div className="flex rounded-2xl border border-[#e7e2d8] bg-white overflow-hidden mb-6">
           {[
             { label: 'Total revenue', value: formatCurrency(totalRevenueAllCustomers), sub: 'Lifetime' },
@@ -127,6 +138,7 @@ export default function CustomerListClient({
             const isExpanded = expandedEmail === customer.email;
             const jobCount = customer.projects.length;
             const totalRevenue = customer.projects.reduce((sum, p) => sum + (parseFloat(String(p.quote_total || 0)) || 0), 0);
+            const formattedPhone = formatPhoneNumber(customer.phone);
 
             return (
               <div key={customer.email} className={idx > 0 ? 'border-t border-[#e7e2d8]' : ''}>
@@ -141,8 +153,12 @@ export default function CustomerListClient({
                     {customer.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-[#1c1917] text-sm">{customer.name}</h3>
-                    <div className="flex items-center gap-3 mt-1">
+                    <h3 className="font-semibold text-[#1c1917] text-sm truncate">{customer.name}</h3>
+                    <p className="text-xs text-[#78716c] truncate mt-0.5">
+                      {customer.email !== 'no-email@provided.com' ? customer.email : 'No email provided'}
+                      {formattedPhone ? ` • ${formattedPhone}` : ''}
+                    </p>
+                    <div className="flex items-center gap-3 mt-1.5">
                       <span className="flex items-center gap-1 text-xs text-[#a8a29e]">
                         <Briefcase className="w-3 h-3" /> {jobCount} {jobCount === 1 ? 'job' : 'jobs'}
                       </span>
@@ -176,15 +192,19 @@ export default function CustomerListClient({
 
                     <div className="flex flex-col gap-1.5 mb-4 text-xs text-[#78716c]">
                       <div className="flex items-center gap-1.5">
+                        <Mail className="w-3.5 h-3.5 text-[#d6d3d1]" />
+                        {customer.email !== 'no-email@provided.com' ? customer.email : 'No email provided'}
+                      </div>
+                      {formattedPhone && (
+                        <div className="flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5 text-[#d6d3d1]" />
+                          {formattedPhone}
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1.5">
                         <CalendarDays className="w-3.5 h-3.5 text-[#d6d3d1]" />
                         Customer since {new Date(customer.projects[customer.projects.length - 1].updated_at).getFullYear()}
                       </div>
-                      {customer.phone && (
-                        <div className="flex items-center gap-1.5">
-                          <Phone className="w-3.5 h-3.5 text-[#d6d3d1]" />
-                          {customer.phone}
-                        </div>
-                      )}
                     </div>
 
                     <p className="text-[11px] font-mono font-medium text-[#a8a29e] uppercase tracking-wider mb-2">Project history</p>

@@ -333,8 +333,8 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
       label: 'Running jobs',
       items: [
         { key: 'pipeline', label: 'Pipeline', icon: Workflow, locked: !can(planTier, 'settings_pipeline'), visible: isAdminForSections },
-        { key: 'email-templates', label: 'Email Templates', icon: Mail, locked: !can(planTier, 'settings_email_templates'), visible: isAdminForSections },
-        { key: 'team', label: 'Team', icon: Users, locked: !can(planTier, 'settings_team'), visible: isAdminForSections },
+      { key: 'email-templates', label: 'Emails', icon: Mail, locked: !can(planTier, 'settings_email_templates'), visible: isAdminForSections },
+              { key: 'team', label: 'Team', icon: Users, locked: !can(planTier, 'settings_team'), visible: isAdminForSections },
       ],
     },
     {

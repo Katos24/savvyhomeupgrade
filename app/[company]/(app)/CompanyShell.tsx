@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { Menu } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import type { CompanyShellData, ShellUser } from './layout';
 
@@ -78,7 +79,24 @@ export default function CompanyShell({
         />
       </div>
 
-      <div className="flex-1 min-w-0">{children}</div>
+      <div className="flex-1 min-w-0 flex flex-col">
+        {/* Mobile-only top bar — the only trigger for opening the nav
+            drawer on mobile now that individual pages (Home, etc.) no
+            longer build their own header. Without this there was no way
+            to open navigation on mobile outside of pages that happened
+            to have their own leftover hamburger. */}
+        <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 border-b border-[#e7e2d8] bg-white/90 backdrop-blur-sm px-4 py-3">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="p-1.5 -ml-1 rounded-lg text-[#57534e] hover:bg-[#f5f1e8] transition-colors"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <span className="text-sm font-semibold text-[#1c1917] truncate">{company.name}</span>
+        </div>
+        <div className="flex-1 min-w-0">{children}</div>
+      </div>
     </div>
   );
 }

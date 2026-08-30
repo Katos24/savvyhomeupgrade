@@ -45,11 +45,6 @@ function generateInvoiceNumber(projectNumber?: number): string {
 
 function fmtDate(d: string | null | undefined) {
   if (!d) return null;
-  // Date-only strings (e.g. "2026-08-20") are parsed as UTC midnight by
-  // new Date(), then shifted back a day when displayed in any timezone west
-  // of UTC. Building the Date from its own y/m/d in local time sidesteps
-  // that entirely — this matters for every date-only field (due_date,
-  // paid_on, payment_date), not just this one call site.
   const datePart = d.split('T')[0];
   const [year, month, day] = datePart.split('-').map(Number);
   if (!year || !month || !day) return null;
@@ -70,41 +65,35 @@ export default function BillingSection({
   payments: paymentsProp,
   activity: activityProp,
 }: BillingSectionProps) {
-  // ── UI / MODAL STATES ──
   const [showSendConfirm, setShowSendConfirm] = useState(false);
   const [showReminderConfirm, setShowReminderConfirm] = useState(false);
   const [showRecordPayment, setShowRecordPayment] = useState(false);
   const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
   const [paymentLinkData, setPaymentLinkData] = useState<{ url: string; kind: string | null; amount: number; method?: string; linkType?: string } | null>(null);
-    const [paymentLinkQr, setPaymentLinkQr] = useState<string | null>(null);
+  const [paymentLinkQr, setPaymentLinkQr] = useState<string | null>(null);
   const [loadingPaymentLink, setLoadingPaymentLink] = useState(false);
   const [paymentLinkError, setPaymentLinkError] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
-  // ── LOADING STATES ──
   const [downloading, setDownloading] = useState(false);
   const [sending, setSending] = useState(false);
   const [savingPayment, setSavingPayment] = useState(false);
   const [sendingReminder, setSendingReminder] = useState(false);
 
-  // ── INVOICE FIELDS ──
   const [dueDate, setDueDate] = useState('');
 
-  // ── DEPOSIT TERMS ──
   const [showDepositEditor, setShowDepositEditor] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>(lead?.deposit_type ? 'deposit' : 'full');
 
-    const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
+  const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
   const [depositValueDraft, setDepositValueDraft] = useState('');
   const [savingDeposit, setSavingDeposit] = useState(false);
 
-  // ── TAX RATE ──
   const [showTaxEditor, setShowTaxEditor] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState('');
   const [savingTax, setSavingTax] = useState(false);
 
-  // ── PAYMENT FIELDS ──
   const [paymentAmount, setPaymentAmount] = useState('');
   const [rawAmount, setRawAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('');
@@ -113,15 +102,13 @@ export default function BillingSection({
   const payments = paymentsProp ?? [];
   const activityLog = activityProp ?? [];
   const [deletingPaymentId, setDeletingPaymentId] = useState<number | null>(null);
-    const [confirmDeletePayment, setConfirmDeletePayment] = useState<any | null>(null);
+  const [confirmDeletePayment, setConfirmDeletePayment] = useState<any | null>(null);
   const [reverseAmountDraft, setReverseAmountDraft] = useState('');
   const [reverseNoteDraft, setReverseNoteDraft] = useState('');
 
-  // ── PERMISSIONS ──
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const canSendInvoice = can(planTier, 'send_invoice_email');
 
-  // ── DERIVED METRICS & CALCS ──
   const lineItems = (() => {
     try {
       const raw = lead?.quote_data;
@@ -155,7 +142,7 @@ export default function BillingSection({
 
   const depositLocked = paidAmount > 0;
   const taxLocked = paidAmount > 0;
-    const awaitingDeposit = hasDepositTerms && paidAmount === 0 && depositAmount > 0;
+  const awaitingDeposit = hasDepositTerms && paidAmount < depositAmount && depositAmount > 0;
 
   const isRefunded = lead?.payment_status === 'refunded';
   const isStripeVerified = !!lead?.stripe_payment_intent_id;
@@ -183,7 +170,7 @@ export default function BillingSection({
     ? paymentMethodLabels[company?.payment_link_type || 'other'] || 'your payment link'
     : null;
 
-   const isPaid = !isClosed && total > 0 && paidAmount >= total;
+  const isPaid = !isClosed && total > 0 && paidAmount >= total;
   const isPartial = !isClosed && paidAmount > 0 && !isPaid;
   const invoiceSent = !!lead?.invoice_sent_at;
   const lastReminderSent = lead?.reminder_sent_at || null;
@@ -191,53 +178,30 @@ export default function BillingSection({
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
     : null;
 
-   const depositPayments = payments.filter((p: any) => p.kind === 'deposit');
+  const depositPayments = payments.filter((p: any) => p.kind === 'deposit');
   const balancePayments = payments.filter((p: any) => p.kind === 'balance');
-  // Kept for anywhere else in this file still expecting a single row
-  // (e.g. the "latest" card brand/date lookups) — most recent by paid_on.
   const depositPayment = depositPayments[0];
   const balancePayment = balancePayments[0];
-  // "Complete" means the deposit is actually net-satisfied — not just that
-  // some money exists. $100 against a $400 deposit is progress, not done;
-  // it should still prompt collecting the $300 shortfall, not silently
-  // advance to Balance.
   const depositPaid = hasDepositTerms && paidAmount >= depositAmount;
 
-  // Ledger-derived rather than lead?.paid_at — confirmed against real data
-  // that paid_at goes empty once payment_status drops back to 'partial'
-  // after the quote grows post-settlement, silently hiding this banner
-  // exactly when it's most needed. A completed deposit-then-balance pair
-  // is itself proof the job was fully settled once, regardless of what
-  // paid_at currently holds — the customer already paid what they were
-  // originally invoiced; this new balance is for scope that was never
-  // actually invoiced yet. Framing this as a "resend" would suggest
-  // they're being asked to pay for something they've already covered.
   const wasSettledThenGrew = !!depositPayment && !!balancePayment && !isPaid && !isClosed && remaining > 0;
-  // The amount actually due right now — deposit only if nothing's been
-  // collected yet and deposit terms exist, otherwise the true remaining
-  // balance. Mirrors getOrCreateCheckoutSession's own kind-selection logic,
-  // so what's shown here always matches what Stripe will actually charge.
   const currentAmountDue = hasDepositTerms && !depositPaid ? depositAmount : remaining;
-    const balanceNotYetRequested =
-    !!depositPayment &&
-    !isPaid &&
-    !isClosed &&
-    remaining > 0 &&
-    (!lead?.invoice_sent_at ||
-      new Date(lead.invoice_sent_at).getTime() <
-  new Date(depositPayment.created_at).getTime()
-    )
+const balanceNotYetRequested =
+  !!depositPayment &&
+  !isPaid &&
+  !isClosed &&
+  remaining > 0 &&
+  (
+    !lead?.invoice_sent_at ||
+    new Date(lead.invoice_sent_at).getTime() < new Date(depositPayment.created_at).getTime()
+  );
 
 
-    const reversedAmountFor = (paymentId: number) =>
+  const reversedAmountFor = (paymentId: number) =>
   payments
     .filter((p2: any) => p2.kind === 'refund' && p2.reversed_payment_id === paymentId)
     .reduce((s: number, p2: any) => s + Math.abs(p2.amount), 0);
 
-  // Manual methods (Venmo/Zelle/etc.) have no webhook — nothing tells this
-  // app when money actually lands. Left alone, the card just sits on
-  // "awaiting payment" forever even if they were paid days ago. This nudges
-  // the company to go check themselves after enough time has passed.
   const isManualPaymentMethod = !stripeActive && hasManualLink;
   const daysSinceInvoiceSent = lead?.invoice_sent_at
     ? Math.floor((Date.now() - new Date(lead.invoice_sent_at).getTime()) / 86_400_000)
@@ -252,9 +216,7 @@ export default function BillingSection({
     daysSinceInvoiceSent !== null &&
     daysSinceInvoiceSent >= NUDGE_AFTER_DAYS;
 
-  // ── EFFECTS ──
-
-useEffect(() => {
+  useEffect(() => {
     setPaymentMode(lead?.deposit_type ? 'deposit' : 'full');
     setDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
     setPaymentMethod(lead?.payment_method || '');
@@ -266,7 +228,6 @@ useEffect(() => {
     );
   }, [lead?.id]);
 
-  // ── HANDLERS ──
   const handleDownload = async () => {
     if (!hasQuote) {
       toast.error('No invoice available');
@@ -369,7 +330,7 @@ useEffect(() => {
       } else {
         toast.error(result.error || 'Could not save deposit');
       }
-       } catch {
+    } catch {
       toast.error('Could not save deposit');
     } finally {
       setSavingDeposit(false);
@@ -447,7 +408,7 @@ useEffect(() => {
     }
   };
 
-    const handleReversePayment = async (paymentId: number, amount: number, note: string) => {
+  const handleReversePayment = async (paymentId: number, amount: number, note: string) => {
     setDeletingPaymentId(paymentId);
     try {
       const res = await fetch(`/api/company/${companySlug}/payments`, {
@@ -509,18 +470,15 @@ useEffect(() => {
         }),
       });
       const data = await res.json();
-            if (res.ok && data.success && data.url) {
+      if (res.ok && data.success && data.url) {
         setPaymentLinkData({ url: data.url, kind: data.kind, amount: data.amount, method: data.method, linkType: data.linkType });
 
-        // Rendered locally — the payment URL never leaves the browser to a
-        // third-party QR image service.
         try {
           const QRCode = (await import('qrcode')).default;
           const dataUrl = await QRCode.toDataURL(data.url, { width: 240, margin: 1 });
           setPaymentLinkQr(dataUrl);
         } catch (qrErr) {
           console.error('QR generation failed:', qrErr);
-          // Non-fatal — the raw link and copy button still work without it.
         }
       } else {
         setPaymentLinkError(data.error || 'Could not generate a payment link.');
@@ -544,7 +502,7 @@ useEffect(() => {
   };
 
   const loadPreview = async (entryId: number) => {
-    setPreviewHtml('<p style="padding:32px;font-family:sans-serif;color:#94a3b8">Loading preview…</p>');
+    setPreviewHtml('<p style="padding:32px;font-family:sans-serif;color:#a8a29e">Loading preview…</p>');
     try {
       const res = await fetch(
         `/api/company/${companySlug}/outbox-preview?lead_id=${lead.id}&body=1&entry_id=${entryId}`
@@ -552,23 +510,23 @@ useEffect(() => {
       const data = await res.json();
       setPreviewHtml(
         data?.entry?.html_body ||
-          '<p style="padding:32px;font-family:sans-serif;color:#64748b">Preview unavailable.</p>'
+          '<p style="padding:32px;font-family:sans-serif;color:#78716c">Preview unavailable.</p>'
       );
     } catch {
       setPreviewHtml(
-        '<p style="padding:32px;font-family:sans-serif;color:#64748b">Could not load preview.</p>'
+        '<p style="padding:32px;font-family:sans-serif;color:#78716c">Could not load preview.</p>'
       );
     }
   };
 
-   const openDepositEditor = () => {
+  const openDepositEditor = () => {
     setPaymentMode('deposit');
     setDepositTypeDraft(depositType ?? 'percent');
     setDepositValueDraft(depositValue > 0 ? String(depositValue) : '');
     setShowDepositEditor(true);
   };
 
-    const openTaxEditor = () => {
+  const openTaxEditor = () => {
     setTaxRateDraft(invoiceTaxRate > 0 ? String(invoiceTaxRate) : '');
     setShowTaxEditor(true);
   };
@@ -587,33 +545,22 @@ useEffect(() => {
 
   if (!hasQuote) {
     return (
-      <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center">
-        <div className="w-10 h-10 bg-slate-100 rounded-xl flex items-center justify-center mx-auto mb-3 text-slate-400">
+      <div className="bg-white border border-[#e7e2d8] rounded-2xl p-8 text-center">
+        <div className="w-10 h-10 bg-[#f5f1e8] rounded-xl flex items-center justify-center mx-auto mb-3 text-[#a8a29e]">
           <Receipt className="w-5 h-5" />
         </div>
-        <p className="text-sm font-semibold text-slate-700">No Invoice Generated</p>
-        <p className="text-[13px] text-slate-500 mt-1">Complete the quote to activate billing &amp; invoicing.</p>
+        <p className="text-sm font-semibold text-[#292524]">No Invoice Generated</p>
+        <p className="text-[13px] text-[#78716c] mt-1">Complete the quote to activate billing &amp; invoicing.</p>
       </div>
     );
   }
 
-// ── ACTION LOGIC ──
-  // Send/resend actions now live inline on whichever step is actionable in
-  // the checklist below, rather than as one shared CTA at the card level.
-
-  // Small, separate, outside the main card — not a competing CTA.
   const showReminderLink =
     canSendInvoice && invoiceSent && !isPaid && (!isClosed || refundedButOwing) && remaining > 0;
 
-  // ── PROGRESS STEPS ──
-  // Whether the balance has actually been (re)sent since the deposit was
-  // paid, vs. the deposit-send still being the last thing on record.
-   const balanceRequested = depositPaid && invoiceSent && !balanceNotYetRequested;
+  const balanceRequested = depositPaid && invoiceSent && !balanceNotYetRequested;
 
-  // Net of any linked refunds — "Paid $472.52" when $85 of that deposit
-  // was actually refunded is misleading, even though the aggregate Balance
-  // figure was already correct (payment_amount nets refunds via SUM).
-   const netOf = (p: any) => Math.max(p.amount - reversedAmountFor(p.id), 0);
+  const netOf = (p: any) => Math.max(p.amount - reversedAmountFor(p.id), 0);
   const depositCollected = depositPayments.reduce((s: number, p: any) => s + netOf(p), 0);
   const depositRemaining = Math.max(depositAmount - depositCollected, 0);
   const balanceCollected = balancePayments.reduce((s: number, p: any) => s + netOf(p), 0);
@@ -622,12 +569,6 @@ useEffect(() => {
     : Math.max(total - depositAmount, 0);
   const balanceRemaining = Math.max(balanceTargetAmount - balanceCollected, 0);
 
-  // Whether a given deposit/balance row actually completed that phase, or
-  // was just one installment toward it — a bare "DEPOSIT" badge on a $59
-  // row against a $635 deposit reads as "this was the deposit," when it's
-  // really 9% of it. Gross cumulative sum (not net-of-refund) in
-  // chronological order, so historical labeling reflects what was true
-  // when each payment landed, not what a later refund did to it.
   const chronological = (arr: any[]) =>
     [...arr].sort((a, b) => {
       const byDate = new Date(a.paid_on).getTime() - new Date(b.paid_on).getTime();
@@ -668,7 +609,7 @@ useEffect(() => {
         {
           key: 'deposit',
           title: 'Deposit',
-                   amount: depositAmount,
+          amount: depositAmount,
           status: depositPaid ? 'done' : depositPayments.length > 0 ? 'sent' : invoiceSent ? 'sent' : 'ready',
           sub: depositPaid
             ? `Paid in full ${fmtDate(depositPayments[depositPayments.length - 1]?.paid_on)}`
@@ -690,11 +631,11 @@ useEffect(() => {
                 onClick: openDepositEditor,
               }
             : undefined,
-                  },
+        },
         {
           key: 'balance',
           title: 'Balance',
-                   amount: isPaid ? total - depositAmount : depositPaid ? remaining : total - depositAmount,
+          amount: isPaid ? total - depositAmount : depositPaid ? remaining : total - depositAmount,
           status: isPaid ? 'done' : !depositPaid ? 'locked' : balancePayments.length > 0 ? 'sent' : balanceRequested ? 'sent' : 'ready',
           sub: isPaid
             ? `Paid in full ${fmtDate(lead?.payment_date)}`
@@ -745,30 +686,30 @@ useEffect(() => {
 
   return (
     <>
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-[#e7e2d8] rounded-2xl overflow-hidden">
         <div className="p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
 
           {/* LEFT: Total, progress checklist, actions, payment history */}
           <div className="space-y-6 min-w-0">
-            <div className="rounded-xl border border-slate-200 p-5">
+            <div className="rounded-xl border border-[#e7e2d8] p-5">
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Total</span>
-                <span className={`text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-                  invoiceSent ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                <span className="text-[11px] font-medium uppercase tracking-wide text-[#a8a29e]">Total</span>
+                <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                  invoiceSent ? 'bg-emerald-50 text-emerald-700' : 'bg-[#f5f1e8] text-[#78716c]'
                 }`}>
                   {invoiceNumber} · {invoiceSent ? 'Sent' : 'Draft'}
                 </span>
               </div>
-              <p className="text-3xl font-bold text-slate-900 tabular-nums leading-tight">{fmt(total)}</p>
-                            {taxLocked ? (
+              <p className="text-3xl font-semibold text-[#1c1917] tabular-nums leading-tight">{fmt(total)}</p>
+              {taxLocked ? (
                 invoiceTaxRate > 0 && (
-                  <p className="text-[11px] text-slate-400 mt-0.5 tabular-nums">Incl. {invoiceTaxRate}% tax</p>
+                  <p className="text-[11px] text-[#a8a29e] mt-0.5 tabular-nums">Incl. {invoiceTaxRate}% tax</p>
                 )
               ) : (
                 <button
                   type="button"
                   onClick={openTaxEditor}
-                  className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-500 hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+                  className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-2.5 py-0.5 text-[11px] font-medium text-[#78716c] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
                 >
                   <Edit2 className="w-2.5 h-2.5" />
                   {invoiceTaxRate > 0 ? `Incl. ${invoiceTaxRate}% tax` : 'Add tax'}
@@ -780,7 +721,7 @@ useEffect(() => {
                 </p>
               ) : null}
 
-              <div className="border-t border-slate-100 my-4" />
+              <div className="border-t border-[#f0ece1] my-4" />
 
               {wasSettledThenGrew && (
                 <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-[11px] text-blue-800">
@@ -793,22 +734,20 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Compact one-line status: every step at a glance, before the
-                  full checklist below spells out amounts/actions for each. */}
               {!(isClosed && !refundedButOwing) && (
                 <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-semibold">
                   {steps.map((step, i) => (
                     <span key={step.key} className="inline-flex items-center gap-1.5">
-                      {i > 0 && <span className="text-slate-300">→</span>}
+                      {i > 0 && <span className="text-[#d6d3d1]">→</span>}
                       <span
                         className={
                           step.status === 'done'
                             ? 'text-emerald-600'
                             : step.status === 'sent'
-                            ? 'text-amber-600'
+                            ? 'text-amber-700'
                             : step.status === 'ready'
                             ? 'text-brand-700'
-                            : 'text-slate-400'
+                            : 'text-[#a8a29e]'
                         }
                       >
                         {step.title}
@@ -873,7 +812,7 @@ useEffect(() => {
                         {i < steps.length - 1 && (
                           <span
                             className={`absolute left-3.5 top-7 bottom-0 w-px ${
-                              step.status === 'done' ? 'bg-emerald-300' : 'bg-slate-200'
+                              step.status === 'done' ? 'bg-emerald-300' : 'bg-[#e7e2d8]'
                             }`}
                           />
                         )}
@@ -885,7 +824,7 @@ useEffect(() => {
                               ? 'bg-amber-50 border border-amber-300 text-amber-600'
                               : step.status === 'ready'
                               ? 'bg-white border-2 border-brand-700 text-brand-700'
-                              : 'bg-slate-100 border border-slate-200 text-slate-400'
+                              : 'bg-[#f5f1e8] border border-[#e7e2d8] text-[#a8a29e]'
                           }`}
                         >
                           {step.status === 'done' ? (
@@ -901,19 +840,19 @@ useEffect(() => {
 
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className={`text-sm font-semibold ${step.status === 'locked' ? 'text-slate-400' : 'text-slate-900'}`}>
+                            <p className={`text-sm font-semibold ${step.status === 'locked' ? 'text-[#a8a29e]' : 'text-[#1c1917]'}`}>
                               {step.title}
                             </p>
                             {step.sub && (
                               <p
-                                className={`text-[11px] mt-0.5 ${
+                                className={`text-[12px] mt-0.5 ${
                                   step.status === 'done'
                                     ? 'text-emerald-600 font-medium'
                                     : step.status === 'sent'
-                                    ? 'text-amber-700 font-medium'
+                                    ? 'text-amber-800 font-semibold'
                                     : step.status === 'ready'
                                     ? 'text-brand-700 font-medium'
-                                    : 'text-slate-400'
+                                    : 'text-[#a8a29e]'
                                 }`}
                               >
                                 {step.sub}
@@ -922,26 +861,26 @@ useEffect(() => {
                           </div>
                           <p
                             className={`text-sm font-bold tabular-nums shrink-0 ${
-                              step.status === 'locked' ? 'text-slate-300' : 'text-slate-900'
+                              step.status === 'locked' ? 'text-[#d6d3d1]' : 'text-[#1c1917]'
                             }`}
                           >
                             {fmt(step.amount)}
                           </p>
                         </div>
 
-                                              {(step.action || step.needsUpgrade || step.editAction) && (
+                        {(step.action || step.needsUpgrade || step.editAction) && (
                           <div className="mt-2.5 flex flex-col items-start gap-2">
-                                                   {(step.key === 'deposit' ? depositPayments : step.key === 'balance' ? balancePayments : []).length > 1 && (
+                            {(step.key === 'deposit' ? depositPayments : step.key === 'balance' ? balancePayments : []).length > 1 && (
                           <div className="mt-2 space-y-1 pl-0.5">
                             {(step.key === 'deposit' ? depositPayments : balancePayments).map((p: any) => {
                               const refunded = reversedAmountFor(p.id);
                               return (
-                                <div key={p.id} className="flex items-center justify-between text-[11px] text-slate-500">
+                                <div key={p.id} className="flex items-center justify-between text-[11px] text-[#78716c]">
                                   <span>
                                     {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
-                                    {refunded > 0 && <span className="text-amber-600"> · {fmt(refunded)} refunded</span>}
+                                    {refunded > 0 && <span className="text-amber-700"> · {fmt(refunded)} refunded</span>}
                                   </span>
-                                  <span className="tabular-nums font-medium text-slate-600">
+                                  <span className="tabular-nums font-medium text-[#57534e]">
                                     {fmt(Math.max(p.amount - refunded, 0))}
                                   </span>
                                 </div>
@@ -960,7 +899,6 @@ useEffect(() => {
                             )}
                             {step.needsUpgrade && (
                               <a
-                              
                                 href={`/${company?.slug}/admin/settings#billing`}
                                 className="text-[11px] font-semibold text-brand-700 hover:underline"
                               >
@@ -970,7 +908,7 @@ useEffect(() => {
                             {step.editAction && (
                               <button
                                 onClick={step.editAction.onClick}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-3 py-1 text-[11px] font-semibold text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
                               >
                                 <Edit2 className="w-3 h-3" />
                                 {step.editAction.label}
@@ -985,23 +923,21 @@ useEffect(() => {
               )}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50/50 px-4 py-3">
-              {/* Download PDF + In-Person Payment — joined as a pair since
-                  both are "get me a document/link for this invoice" actions */}
-              <div className="inline-flex rounded-lg border border-slate-200 bg-white overflow-hidden shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#e7e2d8] bg-[#faf9f5] px-4 py-3">
+              <div className="inline-flex rounded-lg border border-[#e7e2d8] bg-white overflow-hidden shrink-0">
                 <button
                   onClick={handleDownload}
                   disabled={downloading}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] transition-colors disabled:opacity-50"
                 >
                   {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                   Download PDF
                 </button>
 
-                               {hasPayLink && !isPaid && (!isClosed || refundedButOwing) && remaining > 0 && (
+                {hasPayLink && !isPaid && (!isClosed || refundedButOwing) && remaining > 0 && (
                   <button
                     onClick={handleGetPaymentLink}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 border-l border-slate-200 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] border-l border-[#e7e2d8] transition-colors"
                   >
                     <QrCode className="w-3.5 h-3.5" />
                     In-Person Payment
@@ -1009,21 +945,19 @@ useEffect(() => {
                 )}
               </div>
 
-              {/* Send Reminder + Record Payment — both "chase/collect money"
-                  actions, grouped together on the other side */}
               <div className="flex items-center gap-2 flex-wrap">
                 {showReminderLink && (
                   <button
                     onClick={() => setShowReminderConfirm(true)}
                     disabled={daysSinceReminder === 0}
-                    className="inline-flex items-center gap-1 px-2 py-2 rounded-lg text-[10px] font-medium text-slate-400 hover:text-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    className="inline-flex items-center gap-1 px-2 py-2 rounded-lg text-[10px] font-medium text-[#a8a29e] hover:text-[#57534e] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                   >
                     <Clock className="w-3 h-3" />
                     {daysSinceReminder === 0 ? 'Reminder sent today' : 'Send reminder'}
                   </button>
                 )}
 
-                                {(!isClosed || refundedButOwing) && !isPaid && (
+                {(!isClosed || refundedButOwing) && !isPaid && (
                   <button
                     onClick={openRecordPaymentModal}
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-200 text-xs font-semibold text-emerald-700 bg-white hover:bg-emerald-50 transition-colors"
@@ -1036,21 +970,21 @@ useEffect(() => {
             </div>
 
             {payments.length > 0 && (
-              <div className="rounded-xl border border-slate-200 overflow-hidden">
-                <div className="px-4 pt-3.5 pb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-50/50">
+              <div className="rounded-xl border border-[#e7e2d8] overflow-hidden">
+                <div className="px-4 pt-3.5 pb-2 text-[11px] font-medium uppercase tracking-wide text-[#a8a29e] bg-[#faf9f5]">
                   Payment Transactions
                 </div>
-                <div className="divide-y divide-slate-100">
+                <div className="divide-y divide-[#f0ece1]">
                   {payments.map((p) => (
                     <div key={p.id} className="flex items-center justify-between px-4 py-3 text-xs">
                       <div>
-                        <div className="flex items-center gap-2 font-semibold text-slate-900 tabular-nums">
+                        <div className="flex items-center gap-2 font-semibold text-[#1c1917] tabular-nums">
                           <span>{p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}</span>
-                                                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 whitespace-nowrap">
+                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-[#f5f1e8] text-[#57534e] whitespace-nowrap">
                           {paymentBadgeLabel(p)}
                         </span>
                         </div>
-                                               <p className="text-[11px] text-slate-400 capitalize mt-0.5">
+                        <p className="text-[11px] text-[#a8a29e] capitalize mt-0.5">
                           {p.is_stripe && p.card_brand
                             ? `${p.card_brand} ····${p.card_last4}`
                             : !p.is_stripe && p.method === 'stripe'
@@ -1071,7 +1005,7 @@ useEffect(() => {
                             Stripe ↗
                           </a>
                         )}
-                                                 {!p.is_stripe && p.kind !== 'refund' && reversedAmountFor(p.id) < p.amount && (
+                        {!p.is_stripe && p.kind !== 'refund' && reversedAmountFor(p.id) < p.amount && (
                           <button
                             onClick={() => {
                               const remaining = p.amount - reversedAmountFor(p.id);
@@ -1080,10 +1014,10 @@ useEffect(() => {
                               setReverseNoteDraft('');
                             }}
                             disabled={deletingPaymentId === p.id}
-                            className="p-1.5 rounded-lg text-slate-300 hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                            className="p-1.5 rounded-lg text-[#d6d3d1] hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
                             aria-label="Reverse payment"
                           >
-                                                        {deletingPaymentId === p.id ? (
+                            {deletingPaymentId === p.id ? (
                               <Loader2 className="w-3.5 h-3.5 animate-spin" />
                             ) : (
                               <RotateCcw className="w-3.5 h-3.5" />
@@ -1098,27 +1032,27 @@ useEffect(() => {
             )}
           </div>
 
-          <div className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
+          <div className="bg-[#faf9f5] border border-[#e7e2d8] rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
             <div>
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+              <p className="text-[11px] font-medium text-[#a8a29e] uppercase tracking-wide mb-2.5">
                 Invoice Settings &amp; Dates
               </p>
               <div className="space-y-2.5 text-xs">
                 {hasDepositTerms && (
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-500">Deposit</span>
-                    <span className="font-medium text-slate-900 tabular-nums">
+                    <span className="text-[#78716c]">Deposit</span>
+                    <span className="font-medium text-[#1c1917] tabular-nums">
                       {depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}{' '}
-                      <span className="text-slate-400">({fmt(depositAmount)})</span>
+                      <span className="text-[#a8a29e]">({fmt(depositAmount)})</span>
                     </span>
                   </div>
                 )}
 
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Payment Due Date</span>
-                  <label className="cursor-pointer inline-flex items-center gap-1.5 font-medium text-slate-900 hover:text-brand-700">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    {dueDate ? fmtDate(dueDate) : <span className="text-slate-400">Set Date</span>}
+                  <span className="text-[#78716c]">Payment Due Date</span>
+                  <label className="cursor-pointer inline-flex items-center gap-1.5 font-medium text-[#1c1917] hover:text-brand-700">
+                    <Calendar className="w-3.5 h-3.5 text-[#a8a29e]" />
+                    {dueDate ? fmtDate(dueDate) : <span className="text-[#a8a29e]">Set Date</span>}
                     <input
                       type="date"
                       value={dueDate}
@@ -1129,13 +1063,13 @@ useEffect(() => {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Payment Link Gateway</span>
+                  <span className="text-[#78716c]">Payment Link Gateway</span>
                   {hasPayLink ? (
-                    <span className="font-medium text-slate-900">{activeMethodLabel}</span>
+                    <span className="font-medium text-[#1c1917]">{activeMethodLabel}</span>
                   ) : (
                     <a
                       href={`/${company?.slug}/home#payments`}
-                      className="text-slate-500 hover:text-slate-900 underline"
+                      className="text-[#78716c] hover:text-[#1c1917] underline"
                     >
                       Not Configured
                     </a>
@@ -1144,18 +1078,18 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="border-t border-slate-200/80 pt-4">
-              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">
+            <div className="border-t border-[#e7e2d8] pt-4">
+              <p className="text-[11px] font-medium text-[#a8a29e] uppercase tracking-wide mb-2.5">
                 Outbox &amp; Email History ({activityLog.length})
               </p>
               <div className="max-h-[280px] overflow-y-auto space-y-2 pr-1">
                 {activityLog.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-2 text-center">No emails sent yet.</p>
+                  <p className="text-xs text-[#a8a29e] py-2 text-center">No emails sent yet.</p>
                 ) : (
                   activityLog.map((entry: any, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-slate-200 text-xs"
+                      className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-[#e7e2d8] text-xs"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div
@@ -1164,7 +1098,7 @@ useEffect(() => {
                           }`}
                         />
                         <div className="min-w-0">
-                                                   <p className="font-medium text-slate-800 truncate">
+                          <p className="font-medium text-[#292524] truncate">
                             {entry.type === 'invoice'
                               ? entry.metadata?.kind === 'deposit'
                                 ? 'Deposit Sent'
@@ -1175,7 +1109,7 @@ useEffect(() => {
                               ? 'Reminder Sent'
                               : entry.type}
                           </p>
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[11px] text-[#a8a29e]">
                             {new Date(entry.created_at).toLocaleDateString(undefined, {
                               month: 'short',
                               day: 'numeric',
@@ -1192,7 +1126,7 @@ useEffect(() => {
                       {entry.has_body && (
                         <button
                           onClick={() => loadPreview(entry.id)}
-                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg text-[11px] font-medium transition-colors"
+                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-[#e7e2d8] text-[#57534e] hover:text-[#1c1917] hover:bg-[#f5f1e8] rounded-lg text-[11px] font-medium transition-colors"
                         >
                           <Eye className="w-3 h-3" /> Preview
                         </button>
@@ -1217,19 +1151,21 @@ useEffect(() => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !sending && setShowSendConfirm(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-semibold text-[#1c1917]">
                   {awaitingDeposit
-                    ? 'Send Deposit Request'
+                    ? depositPayments.length > 0
+                      ? 'Resend Deposit Request'
+                      : 'Send Deposit Request'
                     : invoiceSent
                     ? 'Resend Invoice'
                     : 'Send Invoice'}
@@ -1239,59 +1175,67 @@ useEffect(() => {
                   onClick={() => !sending && setShowSendConfirm(false)}
                   disabled={sending}
                   aria-label="Close"
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-                           <div className="space-y-3 mb-5">
+              <div className="space-y-3 mb-5">
                 <div className="flex items-center justify-between gap-3 px-0.5">
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 truncate">{lead?.name || 'Client'}</p>
-                    <p className="text-[11px] text-slate-500 truncate">{lead?.email || 'No email'}</p>
+                    <p className="text-sm font-semibold text-[#1c1917] truncate">{lead?.name || 'Client'}</p>
+                    <p className="text-[11px] text-[#78716c] truncate">{lead?.email || 'No email'}</p>
                   </div>
-                  <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full bg-slate-100 text-slate-500">
+                  <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-[#f5f1e8] text-[#78716c]">
                     {invoiceNumber}
                   </span>
                 </div>
 
                 {hasDepositTerms && !isPaid ? (
-                  <div className="rounded-xl border border-slate-200 overflow-hidden">
-                    <div className="p-3.5 bg-brand-50/60 border-b border-slate-200">
+                  <div className="rounded-xl border border-[#e7e2d8] overflow-hidden">
+                    <div className="p-3.5 bg-brand-50/60 border-b border-[#e7e2d8]">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-[11px] font-semibold text-brand-700">
                           {awaitingDeposit
                             ? `Deposit due now${depositType === 'percent' ? ` · ${depositValue}%` : ''}`
                             : 'Balance due now'}
                         </p>
-                        <p className="text-xl font-bold text-slate-900 tabular-nums shrink-0">
-                          {fmt(awaitingDeposit ? depositAmount : remaining)}
+                        <p className="text-xl font-bold text-[#1c1917] tabular-nums shrink-0">
+                          {fmt(awaitingDeposit ? depositRemaining : remaining)}
                         </p>
                       </div>
                     </div>
                     <div className="px-3.5 py-2.5 space-y-1 text-[11px]">
                       {awaitingDeposit ? (
-                        <div className="flex justify-between text-slate-500">
-                          <span>Balance due on completion</span>
-                          <span className="tabular-nums">{fmt(total - depositAmount)}</span>
-                        </div>
+                        <>
+                          {depositCollected > 0 && (
+                            <div className="flex justify-between text-emerald-600 font-medium">
+                              <span>Already paid toward deposit</span>
+                              <span className="tabular-nums">{fmt(depositCollected)}</span>
+                            </div>
+                          )}
+                          <div className="flex justify-between text-[#78716c]">
+                            <span>Balance due on completion</span>
+                            <span className="tabular-nums">{fmt(total - depositAmount)}</span>
+                          </div>
+                        </>
                       ) : (
                         <div className="flex justify-between text-emerald-600 font-medium">
                           <span>Deposit already paid</span>
-                          <span className="tabular-nums">{fmt(depositPayment?.amount ?? depositAmount)}</span>
+                          <span className="tabular-nums">{fmt(depositCollected)}</span>
                         </div>
                       )}
-                      <div className="flex justify-between font-semibold text-slate-700 pt-1 border-t border-slate-100">
+                      <div className="flex justify-between font-semibold text-[#57534e] pt-1 border-t border-[#f0ece1]">
                         <span>Total invoice</span>
                         <span className="tabular-nums">{fmt(total)}</span>
                       </div>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-slate-200 p-3.5 flex items-center justify-between gap-3">
-                    <p className="text-[11px] font-semibold text-slate-500">Amount billed</p>
-                    <p className="text-xl font-bold text-slate-900 tabular-nums">{fmt(remaining)}</p>
+                  <div className="rounded-xl border border-[#e7e2d8] p-3.5 flex items-center justify-between gap-3">
+                    <p className="text-[11px] font-semibold text-[#78716c]">Amount billed</p>
+                    <p className="text-xl font-bold text-[#1c1917] tabular-nums">{fmt(remaining)}</p>
                   </div>
                 )}
 
@@ -1315,8 +1259,8 @@ useEffect(() => {
                   )}
                 </div>
 
-                               <div>
-                  <label htmlFor="modal-due-date" className="block text-xs font-medium text-slate-600 mb-1">
+                <div>
+                  <label htmlFor="modal-due-date" className="block text-xs font-medium text-[#57534e] mb-1">
                     Invoice Due Date
                   </label>
                   <input
@@ -1325,9 +1269,9 @@ useEffect(() => {
                     value={dueDate || ''}
                     disabled={sending}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700"
+                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700"
                   />
-                                    {!dueDate && (
+                  {!dueDate && (
                     <div className="mt-2 flex items-start gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
                       <span>No due date set.</span>
@@ -1341,7 +1285,7 @@ useEffect(() => {
                   type="button"
                   onClick={() => setShowSendConfirm(false)}
                   disabled={sending}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
                 >
                   Cancel
                 </button>
@@ -1365,8 +1309,7 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-
-            {/* CONFIRM DELETE PAYMENT */}
+      {/* CONFIRM DELETE PAYMENT */}
       <AnimatePresence>
         {confirmDeletePayment && (
           <motion.div
@@ -1374,56 +1317,56 @@ useEffect(() => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => deletingPaymentId === null && setConfirmDeletePayment(null)}
-            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-base font-bold text-slate-900">Remove this payment?</h3>
+                <h3 className="text-base font-semibold text-[#1c1917]">Remove this payment?</h3>
                 <button
                   type="button"
                   onClick={() => setConfirmDeletePayment(null)}
                   disabled={deletingPaymentId !== null}
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-                           <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3 flex items-center justify-between text-sm">
-                <span className="text-slate-600 capitalize">
+              <div className="p-3 bg-[#faf9f5] rounded-xl border border-[#e7e2d8] mb-3 flex items-center justify-between text-sm">
+                <span className="text-[#57534e] capitalize">
                   {confirmDeletePayment.kind} · {confirmDeletePayment.method?.replace('_', ' ')}
                 </span>
-                <span className="font-bold text-slate-900 tabular-nums">
+                <span className="font-bold text-[#1c1917] tabular-nums">
                   {fmt(confirmDeletePayment.amount)}
                 </span>
               </div>
 
               <div className="space-y-3 mb-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Amount to reverse</label>
+                  <label className="block text-xs font-medium text-[#57534e] mb-1">Amount to reverse</label>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={reverseAmountDraft}
                     onChange={(e) => setReverseAmountDraft(e.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                    className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                   />
-                  <p className="mt-1 text-[11px] text-slate-400">Full amount by default — edit for a partial correction.</p>
+                  <p className="mt-1 text-[11px] text-[#a8a29e]">Full amount by default — edit for a partial correction.</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-600 mb-1">Reason</label>
+                  <label className="block text-xs font-medium text-[#57534e] mb-1">Reason</label>
                   <input
                     type="text"
                     value={reverseNoteDraft}
                     onChange={(e) => setReverseNoteDraft(e.target.value)}
                     placeholder="e.g. entered wrong amount"
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-700"
+                    className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm outline-none focus:border-brand-700"
                   />
                 </div>
               </div>
@@ -1441,7 +1384,7 @@ useEffect(() => {
                   type="button"
                   onClick={() => setConfirmDeletePayment(null)}
                   disabled={deletingPaymentId !== null}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
                 >
                   Cancel
                 </button>
@@ -1471,20 +1414,20 @@ useEffect(() => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !savingPayment && setShowRecordPayment(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">Record Manual Payment</h3>
+                <h3 className="text-base font-semibold text-[#1c1917]">Record Manual Payment</h3>
                 <button
                   onClick={() => !savingPayment && setShowRecordPayment(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1492,7 +1435,7 @@ useEffect(() => {
 
               <div className="space-y-3 mb-5 text-xs">
                 <div>
-                  <label className="block font-medium text-slate-600 mb-1">Amount Collected</label>
+                  <label className="block font-medium text-[#57534e] mb-1">Amount Collected</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -1517,19 +1460,14 @@ useEffect(() => {
                       }
                     }}
                     placeholder="0.00"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm font-bold tabular-nums outline-none focus:bg-white focus:border-brand-700"
+                    className="w-full px-3 py-2.5 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg text-sm font-bold tabular-nums outline-none focus:bg-white focus:border-brand-700"
                   />
 
-                  {/* QUICK FILLS */}
                   <div className="mt-2 grid gap-1.5">
-                                      {hasDepositTerms && !depositPaid && depositAmount > 0 && (
+                    {hasDepositTerms && !depositPaid && depositAmount > 0 && (
                       <button
                         type="button"
                         onClick={() => {
-                          // The shortfall, not the full original deposit —
-                          // if part of the deposit was already collected
-                          // (and, say, partially refunded since), asking
-                          // for the full amount again would double-charge.
                           const shortfall = Math.max(depositAmount - paidAmount, 0);
                           setRawAmount(shortfall.toString());
                           setPaymentAmount(
@@ -1540,7 +1478,7 @@ useEffect(() => {
                           );
                           if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
                         }}
-                        className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors text-[11px]"
+                        className="w-full p-2 rounded-lg border border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8] flex items-center justify-between transition-colors text-[11px]"
                       >
                         <span>Fill Required Deposit</span>
                         <span className="font-bold tabular-nums">{fmt(Math.max(depositAmount - paidAmount, 0))}</span>
@@ -1559,7 +1497,7 @@ useEffect(() => {
                           );
                           if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
                         }}
-                        className="w-full p-2 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors text-[11px]"
+                        className="w-full p-2 rounded-lg border border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8] flex items-center justify-between transition-colors text-[11px]"
                       >
                         <span>Fill Full Balance</span>
                         <span className="font-bold tabular-nums">{fmt(remaining)}</span>
@@ -1569,11 +1507,11 @@ useEffect(() => {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-slate-600 mb-1">Payment Method</label>
+                  <label className="block font-medium text-[#57534e] mb-1">Payment Method</label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
+                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
                   >
                     <option value="">Select Method...</option>
                     <option value="cash">Cash</option>
@@ -1587,12 +1525,12 @@ useEffect(() => {
                 </div>
 
                 <div>
-                  <label className="block font-medium text-slate-600 mb-1">Payment Date</label>
+                  <label className="block font-medium text-[#57534e] mb-1">Payment Date</label>
                   <input
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
+                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
                   />
                 </div>
               </div>
@@ -1601,7 +1539,7 @@ useEffect(() => {
                 <button
                   onClick={() => setShowRecordPayment(false)}
                   disabled={savingPayment}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
                 >
                   Cancel
                 </button>
@@ -1618,25 +1556,25 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-            {/* MODAL: EDIT DEPOSIT TERMS */}
+      {/* MODAL: EDIT DEPOSIT TERMS */}
       <AnimatePresence>
         {showDepositEditor && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-                       onClick={() => !savingDeposit && setShowDepositEditor(false)}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => !savingDeposit && setShowDepositEditor(false)}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-semibold text-[#1c1917]">
                   {hasDepositTerms ? 'Edit Deposit Terms' : 'Collect a Deposit First?'}
                 </h3>
                 <button
@@ -1644,18 +1582,18 @@ useEffect(() => {
                   onClick={() => !savingDeposit && setShowDepositEditor(false)}
                   disabled={savingDeposit}
                   aria-label="Close"
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="space-y-3 mb-5">
-                <p className="text-xs font-medium text-slate-600">
+                <p className="text-xs font-medium text-[#57534e]">
                   {hasDepositTerms ? 'Change the deposit amount' : 'How much is the deposit?'}
                 </p>
                 <div className="flex items-center gap-2">
-                  <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
+                  <div className="inline-flex overflow-hidden rounded-lg border border-[#e7e2d8] shrink-0">
                     {(['percent', 'fixed'] as const).map((t) => (
                       <button
                         key={t}
@@ -1663,7 +1601,7 @@ useEffect(() => {
                         className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                           depositTypeDraft === t
                             ? 'bg-brand-700 text-white'
-                            : 'bg-white text-slate-600 hover:bg-slate-50'
+                            : 'bg-white text-[#57534e] hover:bg-[#f5f1e8]'
                         }`}
                       >
                         {t === 'percent' ? '%' : '$'}
@@ -1678,8 +1616,8 @@ useEffect(() => {
                     max={depositTypeDraft === 'percent' ? 100 : undefined}
                     value={depositValueDraft}
                     onChange={(e) => setDepositValueDraft(e.target.value)}
-                                        placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
-                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                    placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
+                    className="min-w-0 flex-1 rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                   />
                 </div>
               </div>
@@ -1689,7 +1627,7 @@ useEffect(() => {
                   type="button"
                   onClick={() => setShowDepositEditor(false)}
                   disabled={savingDeposit}
-                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg border border-[#e7e2d8] text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1715,7 +1653,7 @@ useEffect(() => {
               </div>
             </motion.div>
           </motion.div>
-           )}
+        )}
       </AnimatePresence>
 
       {/* MODAL: EDIT TAX RATE */}
@@ -1725,18 +1663,18 @@ useEffect(() => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-                        onClick={() => !savingTax && setShowTaxEditor(false)}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            onClick={() => !savingTax && setShowTaxEditor(false)}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-semibold text-[#1c1917]">
                   {invoiceTaxRate > 0 ? 'Edit Tax Rate' : 'Add Tax'}
                 </h3>
                 <button
@@ -1744,7 +1682,7 @@ useEffect(() => {
                   onClick={() => !savingTax && setShowTaxEditor(false)}
                   disabled={savingTax}
                   aria-label="Close"
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1761,17 +1699,17 @@ useEffect(() => {
               )}
 
               <div className="space-y-3 mb-5">
-                <p className="text-xs font-medium text-slate-600">Tax rate for this quote</p>
+                <p className="text-xs font-medium text-[#57534e]">Tax rate for this quote</p>
                 <div className="flex items-center gap-2">
-                                   <input
+                  <input
                     type="text"
                     inputMode="decimal"
                     value={taxRateDraft}
                     onChange={(e) => setTaxRateDraft(e.target.value)}
                     placeholder="8.625"
-                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                    className="min-w-0 flex-1 rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                   />
-                  <span className="text-sm font-semibold text-slate-500 shrink-0">%</span>
+                  <span className="text-sm font-semibold text-[#78716c] shrink-0">%</span>
                 </div>
               </div>
 
@@ -1780,7 +1718,7 @@ useEffect(() => {
                   type="button"
                   onClick={() => setShowTaxEditor(false)}
                   disabled={savingTax}
-                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg border border-[#e7e2d8] text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1817,20 +1755,20 @@ useEffect(() => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowPaymentLinkModal(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">In-Person Payment</h3>
+                <h3 className="text-base font-semibold text-[#1c1917]">In-Person Payment</h3>
                 <button
                   onClick={() => setShowPaymentLinkModal(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
                   aria-label="Close"
                 >
                   <X className="w-4 h-4" />
@@ -1838,7 +1776,7 @@ useEffect(() => {
               </div>
 
               {loadingPaymentLink ? (
-                <div className="py-10 flex flex-col items-center gap-2 text-slate-400">
+                <div className="py-10 flex flex-col items-center gap-2 text-[#a8a29e]">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <p className="text-xs font-medium">Generating link...</p>
                 </div>
@@ -1855,14 +1793,14 @@ useEffect(() => {
               ) : paymentLinkData ? (
                 <div className="space-y-4">
                   <div className="text-center">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[#a8a29e]">
                       Customer pays
                     </p>
-                    <p className="text-2xl font-bold text-slate-900 tabular-nums">
+                    <p className="text-2xl font-bold text-[#1c1917] tabular-nums">
                       {fmt(paymentLinkData.amount)}
                     </p>
                     {paymentLinkData.kind && (
-                      <p className="text-xs text-slate-500 capitalize mt-0.5">{paymentLinkData.kind}</p>
+                      <p className="text-xs text-[#78716c] capitalize mt-0.5">{paymentLinkData.kind}</p>
                     )}
                   </div>
 
@@ -1871,22 +1809,22 @@ useEffect(() => {
                       <img
                         src={paymentLinkQr}
                         alt="Scan to pay"
-                        className="w-48 h-48 rounded-xl border border-slate-200"
+                        className="w-48 h-48 rounded-xl border border-[#e7e2d8]"
                       />
                     </div>
                   )}
 
-                  <p className="text-center text-xs text-slate-400">
+                  <p className="text-center text-xs text-[#a8a29e]">
                     {paymentLinkQr ? 'Customer scans with their phone camera' : 'Share this link with the customer'}
                   </p>
 
-                                   <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
-                    <p className="flex-1 text-[11px] text-slate-600 truncate font-mono">
+                  <div className="flex items-center gap-2 p-2.5 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg">
+                    <p className="flex-1 text-[11px] text-[#57534e] truncate font-mono">
                       {paymentLinkData.url}
                     </p>
                     <button
                       onClick={handleCopyPaymentLink}
-                      className="shrink-0 px-2.5 py-1.5 rounded-md bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-colors"
+                      className="shrink-0 px-2.5 py-1.5 rounded-md bg-[#1c1917] text-white text-[11px] font-semibold hover:bg-[#292524] transition-colors"
                     >
                       {linkCopied ? 'Copied!' : 'Copy'}
                     </button>
@@ -1914,35 +1852,35 @@ useEffect(() => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !sendingReminder && setShowReminderConfirm(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">Send Payment Reminder</h3>
+                <h3 className="text-base font-semibold text-[#1c1917]">Send Payment Reminder</h3>
                 <button
                   onClick={() => !sendingReminder && setShowReminderConfirm(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-5 text-xs space-y-1">
-                <p className="text-slate-500">
-                  Recipient: <span className="font-semibold text-slate-800">{lead?.name}</span>
+              <div className="p-3 bg-[#faf9f5] rounded-xl border border-[#e7e2d8] mb-5 text-xs space-y-1">
+                <p className="text-[#78716c]">
+                  Recipient: <span className="font-semibold text-[#292524]">{lead?.name}</span>
                 </p>
-                <p className="text-slate-500">
+                <p className="text-[#78716c]">
                   {hasDepositTerms && !depositPaid ? 'Deposit Due' : 'Balance Outstanding'}:{' '}
-                  <span className="font-bold text-slate-900 tabular-nums">{fmt(currentAmountDue)}</span>
+                  <span className="font-bold text-[#1c1917] tabular-nums">{fmt(currentAmountDue)}</span>
                 </p>
                 {lastReminderSent && (
-                  <p className="text-slate-400 pt-1">Last reminder sent {fmtDate(lastReminderSent)}</p>
+                  <p className="text-[#a8a29e] pt-1">Last reminder sent {fmtDate(lastReminderSent)}</p>
                 )}
               </div>
 
@@ -1950,7 +1888,7 @@ useEffect(() => {
                 <button
                   onClick={() => setShowReminderConfirm(false)}
                   disabled={sendingReminder}
-                  className="flex-1 py-2.5 border border-slate-200 text-slate-600 font-medium text-xs rounded-xl hover:bg-slate-50 transition-colors"
+                  className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
                 >
                   Cancel
                 </button>
@@ -1974,7 +1912,7 @@ useEffect(() => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[1000] bg-[#1c1917]/70 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setPreviewHtml(null)}
           >
             <motion.div
@@ -1984,18 +1922,18 @@ useEffect(() => {
               className="bg-white rounded-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
-                  <Mail className="w-4 h-4 text-slate-400" /> Outbox Email Preview
+              <div className="px-4 py-3 border-b border-[#e7e2d8] flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-[#292524]">
+                  <Mail className="w-4 h-4 text-[#a8a29e]" /> Outbox Email Preview
                 </div>
                 <button
                   onClick={() => setPreviewHtml(null)}
-                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-400 transition-colors"
+                  className="p-1 rounded-lg hover:bg-[#f5f1e8] text-[#a8a29e] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex-1 bg-slate-50 p-2">
+              <div className="flex-1 bg-[#faf9f5] p-2">
                 <iframe
                   title="Preview"
                   srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;}*{user-select:none!important;}</style>`}

@@ -18,8 +18,8 @@ type SidebarProps = {
   onLogout: () => void;
   isOpen: boolean;
   onClose: () => void;
-  currentView?: 'cards' | 'table' | 'calendar';
-  onViewChange?: (view: 'cards' | 'table') => void;
+  currentView?: 'cards' | 'table';
+    onViewChange?: (view: 'cards' | 'table') => void;
   brandColor1?: string;
   brandColor2?: string;
   /** Desktop-only slim mode. Left undefined/false for the mobile drawer

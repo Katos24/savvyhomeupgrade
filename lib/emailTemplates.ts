@@ -1,8 +1,9 @@
 import { neon } from '@neondatabase/serverless';
+import { defaultEmailTemplates } from './emailTemplateDefaults';
 
 const sql = neon(process.env.DATABASE_URL!);
 
-const defaultEmailTemplates = {
+export const emailTemplates = {
   quote: {
     subject: 'Your Quote from {{company_name}}',
     body: `Hi {{customer_name}},
@@ -17,6 +18,7 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
+
   schedule: {
     subject: 'Appointment Scheduled - {{company_name}}',
     body: `Hi {{customer_name}},
@@ -24,22 +26,23 @@ Best regards,
 Your appointment has been scheduled!
 
 Date: {{scheduled_date}}
-Time: {{scheduled_time}}{{#customer_address}}
-Address: {{customer_address}}{{/customer_address}}
+Time: {{scheduled_time}}
+{{#customer_address}}Address: {{customer_address}}{{/customer_address}}
 
 We look forward to serving you!
 
 Best regards,
 {{company_name}}`,
   },
+
   payment: {
     subject: 'Payment Reminder - {{company_name}}',
     body: `Hi {{customer_name}},
 
 This is a friendly reminder about your upcoming payment.
 
-Amount Due: {{payment_amount}}{{#due_date}}
-Due Date: {{due_date}}{{/due_date}}
+Amount Due: {{payment_amount}}
+{{#due_date}}Due Date: {{due_date}}{{/due_date}}
 
 Please contact us if you have any questions.
 
@@ -47,16 +50,17 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
-   invoice: {
+
+  invoice: {
     subject: 'Invoice {{invoice_number}} from {{company_name}}',
     body: `Hi {{customer_name}},
 
 Please find your invoice attached for recent work completed.
 
 Invoice #: {{invoice_number}}
-{{amount_label}}: {{amount_value}}{{#project_total}}
-Project Total: {{project_total}}{{/project_total}}{{#due_date}}
-Due Date: {{due_date}}{{/due_date}}
+{{amount_label}}: {{amount_value}}
+{{#project_total}}Project Total: {{project_total}}{{/project_total}}
+{{#due_date}}Due Date: {{due_date}}{{/due_date}}
 
 If you have any questions, don't hesitate to reach out.
 
@@ -64,7 +68,8 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
-lead_confirmation: {
+
+  lead_confirmation: {
     subject: 'We received your request - {{company_name}}',
     body: `Hi {{customer_name}},
 
@@ -78,6 +83,7 @@ Best regards,
 {{company_name}}
 {{company_phone}}`,
   },
+
   job_completion: {
     subject: 'Job Complete - Thank you, {{customer_name}}!',
     body: `Hi {{customer_name}},

@@ -4,10 +4,9 @@ import { Inbox, Download, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
-import CalendarView from '@/components/dashboard/views/CalendarView';
 import { can, type PlanTier } from '@/lib/permissions';
 
-type ViewMode = 'cards' | 'table' | 'calendar';
+type ViewMode = 'cards' | 'table';
 
 type DashboardLeadsSectionProps = {
   filteredLeads: any[];
@@ -118,7 +117,7 @@ export default function DashboardLeadsSection({
       {/* Leads Display */}
       <section aria-label="Leads" aria-live="polite" className="relative">
         {filteredLeads.length === 0 ? (
-          // Refined Empty State
+          /* Refined Empty State */
           <div className={`rounded-3xl p-1 bg-gradient-to-b to-transparent backdrop-blur-sm ${
             isDark ? 'from-slate-800/40' : 'from-slate-200/50'
           }`}>
@@ -151,22 +150,13 @@ export default function DashboardLeadsSection({
               )}
             </div>
           </div>
-        ) : currentView === 'calendar' ? (
-          <div className="animate-in fade-in zoom-in-95 duration-500">
-            <CalendarView
-              leads={allLeads}
-              onSelectLead={onSelectLead}
-              statusOptions={statusOptions}
-              isDark={isDark}
-            />
-          </div>
         ) : currentView === 'cards' ? (
+          /* Cards View */
           <div className="space-y-8 sm:space-y-12">
             {groups.map(
               ({ title, leads }) =>
                 leads.length > 0 && (
                   <section key={title} aria-label={`${title} leads`} className="relative">
-                    {/* Group Headers scroll normally with the page */}
                     <div className="flex items-center gap-4 mb-5 sm:mb-6 py-4 -mx-2 px-2 bg-transparent">
                       <div className="flex items-center gap-3">
                         <h2 className={`text-sm font-bold uppercase tracking-widest drop-shadow-sm ${
@@ -203,8 +193,8 @@ export default function DashboardLeadsSection({
             )}
           </div>
         ) : (
-                  <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
-            {/* Structural Table Header */}
+          /* Table View */
+          <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
             <div className="mb-4 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1">
               <div>
                 <h2 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>
@@ -264,7 +254,6 @@ export default function DashboardLeadsSection({
       {/* Refined Load More Section */}
       {pagination.page < pagination.pages && (
         <div className="flex flex-col items-center pt-12 pb-10 gap-3 relative">
-          {/* Subtle fade effect for the bottom of the list */}
           <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent to-transparent ${
             isDark ? 'via-slate-700/50' : 'via-slate-300/60'
           }`} />

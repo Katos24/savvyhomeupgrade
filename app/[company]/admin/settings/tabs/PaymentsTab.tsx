@@ -20,6 +20,8 @@ import {
   Mail,
   FileText,
   ClipboardCheck,
+  Calendar,
+  Bell,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────
@@ -442,10 +444,71 @@ function PreviewsSection({ company }: { company: any }) {
   const payLabel = effectiveType ? paymentMethodLabels[effectiveType] || 'Pay Now' : null;
   const accent = company.email_brand_color_1 || '#4F46E5';
   const companyName = company.name || 'Your Business Name';
-  const previewUrl = `/api/company/${company.slug}/preview-invoice`;
+   const previewUrl = `/api/company/${company.slug}/preview-invoice`;
 
-  return (
-    <div className="space-y-4">
+  // Grounded in the real send actions that actually exist today — not
+  // every conceivable email, just the ones this app can genuinely send.
+  const emailTypes = [
+    {
+      key: 'quote',
+      icon: FileText,
+      label: 'Quote',
+      trigger: 'Sent when you email a quote from the Quote tab.',
+      tag: 'Manual send',
+    },
+    {
+      key: 'schedule',
+      icon: Calendar,
+      label: 'Schedule Confirmation',
+      trigger: 'Sent when you schedule the job and notify the customer.',
+      tag: 'Manual send',
+    },
+    {
+      key: 'invoice',
+      icon: FileText,
+      label: 'Deposit / Balance / Invoice',
+      trigger: 'Sent when you send an invoice — automatically shows the deposit or remaining balance, whichever applies.',
+      tag: 'Manual send',
+    },
+    {
+      key: 'reminder',
+      icon: Bell,
+      label: 'Payment Reminder',
+      trigger: 'Sent when you remind a customer about an unpaid invoice.',
+      tag: 'Manual send',
+    },
+    {
+      key: 'confirmation',
+      icon: CheckCircle2,
+      label: 'Payment Confirmation',
+      trigger: stripeActive
+        ? "Stripe automatically emails the customer a receipt when they pay by card. That's a generic Stripe receipt, not a branded email from your business."
+        : "Nothing is sent automatically today. When you record cash, check, or Venmo manually, the customer isn't notified — worth a personal follow-up.",
+      tag: stripeActive ? 'Automatic (Stripe)' : 'Not sent yet',
+    },
+  ];
+
+    return (
+    <div className="space-y-6">
+      {/* Full catalog of email types lives in Settings > Emails — one
+          source of truth instead of a second copy here that could drift
+          out of sync with it. */}
+      <a
+        href={`/${company.slug}/home?section=email-templates`}
+        className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-300 hover:bg-slate-50"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <Mail className="h-4 w-4" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900">See every customer email type</p>
+            <p className="text-xs text-slate-500">Which ones are editable, and which aren't — in Settings → Emails</p>
+          </div>
+        </div>
+        <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400" />
+      </a>
+
       <div className="flex items-center gap-2">
         <button
           type="button"
