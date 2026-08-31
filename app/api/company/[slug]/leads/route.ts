@@ -54,6 +54,16 @@ export async function GET(request: Request, { params }: Props) {
     const startDate  = url.searchParams.get('startDate')?.trim()  || '';
     const endDate    = url.searchParams.get('endDate')?.trim()    || '';
 
+    // ── Calendar view: return every scheduled job in one shot instead of
+    // paginating by created_at (see Path C below). This is what was silently
+    // capping the calendar at the 20 most-recently-created leads before —
+    // any scheduled job outside that recent-20 window never reached the UI.
+    // 2000 is a generous safety cap, not a real pagination limit; a company
+    // actually hitting it is a signal to revisit this with date-range windowing.
+    const calendarAll = url.searchParams.get('calendarAll') === 'true';
+    const CALENDAR_SAFETY_LIMIT = 2000;
+    const effectiveLimit = calendarAll ? CALENDAR_SAFETY_LIMIT : limit;
+
     // ── Scheduled Today special case ──────────────────────────
     const isScheduledToday = timeFilter === 'scheduled_today';
     const today = new Date();
@@ -227,6 +237,77 @@ export async function GET(request: Request, { params }: Props) {
         LIMIT ${limit} OFFSET ${offset}
       `;
 
+    } else if (calendarAll) {
+      // ── Path C: Calendar view — every scheduled job, no created_at window,
+      // no default 20-item page cap. The calendar UI filters client-side
+      // across month/week/day/agenda views, so it needs the full scheduled
+      // set up front rather than a recency-limited slice.
+      countPromise = sql`
+        SELECT COUNT(*) as total
+        FROM leads l
+        LEFT JOIN projects p ON l.id = p.lead_id
+        WHERE l.company_id = ${companyId}
+          AND l.deleted = false
+          AND p.scheduled_date IS NOT NULL
+      `;
+
+      leadsPromise = sql`
+        SELECT
+          l.*,
+          p.id                     as project_id,
+          p.project_number,
+          p.status                 as job_status,
+          p.scheduled_date,
+          p.scheduled_time,
+          p.scheduled_end_time,
+          p.event_location,
+          p.assigned_to,
+          p.additional_assignees,
+          p.estimated_hours,
+          p.actual_hours,
+          p.quote_data,
+          p.ai_brief,
+          p.quote_total,
+          p.deposit_type,
+          p.deposit_value,
+          p.quote_tax_rate,
+          p.quote_sent_at,
+          p.quote_accepted_at,
+          p.quote_declined_at,
+          p.schedule_emails,
+          p.payment_status,
+          p.quote_emails,
+          p.payment_amount,
+          p.paid_at,
+          p.payment_date,
+          p.payment_method,
+          p.payment_notes,
+          p.payment_due_date,
+          p.reminder_sent_at,
+          p.invoice_data,
+          p.invoice_number,
+          p.invoice_sent_at,
+          p.stripe_payment_intent_id,
+          p.refunded_amount,
+          p.refunded_at,
+          p.before_photos,
+          p.after_photos,
+          p.documents,
+          p.completed_at           as job_completed_at,
+          p.notes                  as project_notes,
+          p.tasks                  as project_tasks,
+          p.follow_up_date,
+          p.internal_notes         as project_internal_notes,
+          p.follow_up_notes
+        FROM leads l
+        LEFT JOIN projects p ON l.id = p.lead_id
+        WHERE l.company_id = ${companyId}
+          AND l.deleted = false
+          AND p.scheduled_date IS NOT NULL
+        ORDER BY p.scheduled_date ASC, p.scheduled_time ASC NULLS LAST
+        LIMIT ${effectiveLimit}
+      `;
+
     } else {
       // ── Path B: Standard filters — filter by l.created_at ─────
       countPromise = sql`
@@ -347,7 +428,7 @@ export async function GET(request: Request, { params }: Props) {
     }, {});
     const total = parseInt(countResult[0].total);
 
-    const pages = Math.ceil(total / limit);
+    const pages = Math.ceil(total / effectiveLimit);
 
     // ── Process notes ─────────────────────────────────────────
     const processedLeads = leads.map((lead: any) => {
@@ -369,7 +450,7 @@ export async function GET(request: Request, { params }: Props) {
     return NextResponse.json({
       success: true,
       leads: processedLeads,
-      pagination: { page, pages, total, limit },
+      pagination: { page, pages, total, limit: effectiveLimit },
       statusCounts,
       globalStats,
     });

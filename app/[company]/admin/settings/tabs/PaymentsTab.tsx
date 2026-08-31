@@ -88,7 +88,7 @@ function SectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
       <div className="mb-5 flex items-start gap-3">
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
           <Icon className="h-4 w-4" />
@@ -115,7 +115,7 @@ function ActiveMethodBanner({ company }: { company: any }) {
 
   if (stripeActive) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-5">
+      <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-5">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
           <Zap className="h-4 w-4" />
         </div>
@@ -131,7 +131,7 @@ function ActiveMethodBanner({ company }: { company: any }) {
   }
 
   return (
-    <div className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
+    <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
         <PenLine className="h-4 w-4" />
       </div>
@@ -154,7 +154,7 @@ function ActiveMethodBanner({ company }: { company: any }) {
 function HowItWorksAccordion() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white">
+    <div className="rounded-xl border border-slate-200 bg-white">
       <button
         type="button"
         onClick={() => setOpen(!open)}
@@ -336,8 +336,60 @@ function StripeConnectSection({ company }: { company: any }) {
             <p className="flex items-center gap-2 font-semibold text-slate-800">
               <ShieldCheck className="h-4 w-4 text-indigo-600" /> Fast & secure setup
             </p>
-            <p>Connect an existing Stripe account or set one up in about 5 minutes. Identity verification is handled entirely by Stripe.</p>
+            <p>
+              Already have a Stripe account? Connecting takes under a minute — Stripe recognizes
+              you and skips straight to linking it. First time with Stripe? Plan on about 5–10
+              minutes; identity verification is handled entirely by Stripe, not by us.
+            </p>
           </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white p-3.5 sm:p-4">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+              If you're setting up Stripe for the first time, have these ready
+            </p>
+            <ul className="mt-2.5 space-y-2 text-xs text-slate-600 sm:text-sm">
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span>
+                  <span className="font-semibold text-slate-800">Tax ID</span> — an EIN if you're
+                  a registered business, or your SSN/ITIN if you're a sole proprietor
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span>
+                  <span className="font-semibold text-slate-800">Business basics</span> — legal
+                  name, address, and phone number
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span>
+                  <span className="font-semibold text-slate-800">Bank account &amp; routing
+                  number</span> — where your payouts get deposited
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span>
+                  <span className="font-semibold text-slate-800">Your personal details</span> —
+                  name, date of birth, and address, as the account's responsible person
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <span>
+                  Sometimes a <span className="font-semibold text-slate-800">photo ID</span> —
+                  only if Stripe can't verify your identity automatically
+                </span>
+              </li>
+            </ul>
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+              Exact requirements can vary by business type and location — Stripe will only ask
+              for what applies to you.
+            </p>
+          </div>
+
           <button
             type="button"
             onClick={handleConnect}
@@ -509,78 +561,109 @@ function PreviewsSection({ company }: { company: any }) {
         <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400" />
       </a>
 
-      <div className="flex items-center gap-2">
+      {/* Segmented control — one tab lifted on a white pill, the way
+          macOS/iOS switches between views, instead of two flat buttons */}
+      <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
         <button
           type="button"
           onClick={() => setActiveTab('email')}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-            activeTab === 'email' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+            activeTab === 'email' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          <Mail className="h-3.5 w-3.5" /> Email Preview
+          <Mail className="h-3.5 w-3.5" /> Email
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('invoice')}
-          className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-            activeTab === 'invoice' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
+            activeTab === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          <FileText className="h-3.5 w-3.5" /> Invoice Document
+          <FileText className="h-3.5 w-3.5" /> Invoice
         </button>
       </div>
 
       {activeTab === 'email' && (
-        <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-slate-100/70 p-3 sm:p-5">
-          <div className="mx-auto max-w-[440px] overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs">
-            <div className="px-5 py-6 text-center" style={{ backgroundColor: accent }}>
+        <div className="mx-auto w-full max-w-[580px] overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+          {/* Window chrome — frames this as "what lands in their inbox"
+              rather than a floating card with no context */}
+          <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+            <div className="flex gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            </div>
+            <p className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-500">
+              {companyName} &lt;{company.email || 'you@yourbusiness.com'}&gt;
+            </p>
+          </div>
+
+          <div className="border-b border-slate-100 px-6 py-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Subject</p>
+            <p className="mt-0.5 truncate text-sm font-bold text-slate-900">
+              Invoice {SAMPLE_INVOICE_NUMBER} from {companyName}
+            </p>
+          </div>
+
+          <div className="px-6 py-7 sm:px-8">
+            <div className="mb-6">
               {company.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={company.logo_url} alt={companyName} className="mx-auto h-7 object-contain" />
+                <img src={company.logo_url} alt={companyName} className="h-8 w-auto object-contain" />
               ) : (
-                <p className="text-base font-bold text-white">{companyName}</p>
+                <span className="text-sm font-extrabold tracking-tight text-slate-900">{companyName}</span>
               )}
             </div>
-            <div className="p-5 text-xs sm:text-sm">
-              <p className="font-medium text-slate-800">Hi {SAMPLE_CUSTOMER_NAME},</p>
-              <p className="mt-1.5 leading-relaxed text-slate-600">
-                Here is invoice <strong>{SAMPLE_INVOICE_NUMBER}</strong> for <strong>${SAMPLE_TOTAL.toFixed(2)}</strong>.
-                You can pay securely online or download your PDF below.
-              </p>
-              <div className="mt-4 space-y-2">
-                {payLabel ? (
-                  <div className="rounded-lg py-2.5 text-center text-xs font-bold text-white shadow-xs" style={{ backgroundColor: accent }}>
-                    {payLabel} — ${SAMPLE_TOTAL.toFixed(2)}
-                  </div>
-                ) : (
-                  <p className="rounded-lg bg-amber-50 p-2.5 text-center text-xs font-medium text-amber-800">
-                    No payment link attached yet
-                  </p>
-                )}
-                <div className="rounded-lg border border-slate-200 bg-white py-2 text-center text-xs font-semibold text-slate-700">
-                  Download Invoice PDF
+
+            <p className="text-sm font-semibold text-slate-900">Hi {SAMPLE_CUSTOMER_NAME},</p>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600">
+              Here's invoice <span className="font-semibold text-slate-900">{SAMPLE_INVOICE_NUMBER}</span> for{' '}
+              <span className="font-semibold text-slate-900">${SAMPLE_TOTAL.toFixed(2)}</span>. You can pay
+              securely online or download the PDF below.
+            </p>
+
+            <div className="mt-6 space-y-2.5">
+              {payLabel ? (
+                <div
+                  className="rounded-xl py-3 text-center text-sm font-bold text-white shadow-sm"
+                  style={{ backgroundColor: accent }}
+                >
+                  {payLabel} — ${SAMPLE_TOTAL.toFixed(2)}
                 </div>
+              ) : (
+                <p className="rounded-xl bg-amber-50 py-3 text-center text-xs font-semibold text-amber-800">
+                  No payment link attached yet
+                </p>
+              )}
+              <div className="rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-slate-700">
+                Download Invoice PDF
               </div>
-              <div className="mt-4 rounded-lg bg-slate-50 p-2.5 text-center text-xs text-slate-500">
-                Due by <strong>{SAMPLE_DUE_DATE}</strong>
-              </div>
+            </div>
+
+            <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+              <Calendar className="h-3.5 w-3.5" />
+              Due by <span className="font-semibold text-slate-600">{SAMPLE_DUE_DATE}</span>
             </div>
           </div>
         </div>
       )}
 
       {activeTab === 'invoice' && (
-        <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-slate-100/70 p-3 sm:p-5">
-          <div className="relative mx-auto h-[380px] max-w-[480px] overflow-hidden rounded-lg border border-slate-200/80 bg-white shadow-xs">
-            <iframe src={previewUrl} title="Sample invoice preview" className="h-full w-full border-0 pointer-events-none" />
-            <div className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-slate-900/40 to-transparent pb-4 pt-8">
-              <button
-                type="button"
-                onClick={() => setExpandedInvoice(true)}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-1.5 text-xs font-semibold text-slate-800 shadow-md transition hover:bg-slate-50"
-              >
-                Expand Full Screen <ExternalLink className="h-3 w-3" />
-              </button>
+        <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+            <span className="text-xs font-semibold text-slate-600">Live preview — reflects your real invoice template</span>
+            <button
+              type="button"
+              onClick={() => setExpandedInvoice(true)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50"
+            >
+              Open Full Screen <ExternalLink className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <div className="bg-slate-100/60 p-4 sm:p-6">
+            <div className="mx-auto h-[520px] w-full max-w-[640px] overflow-hidden rounded-lg border border-slate-200/70 bg-white shadow-xs">
+              <iframe src={previewUrl} title="Sample invoice preview" className="h-full w-full border-0 pointer-events-none" />
             </div>
           </div>
         </div>
@@ -616,19 +699,20 @@ function PreviewsSection({ company }: { company: any }) {
 
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
   return (
-    <div className="min-h-screen bg-slate-50/50 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-3xl space-y-6">
+    <div className="w-full font-sans text-slate-900 antialiased space-y-6">
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Payments & Invoicing</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">Payments & Invoicing</h1>
+          <p className="mt-0.5 text-xs font-medium text-slate-500">
             Connect Stripe for automatic card payments, or collect however you normally do and
             record it on the invoice.
           </p>
         </div>
+      </div>
 
         <ActiveMethodBanner company={company} />
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
           <StripeConnectSection company={company} />
         </div>
 
@@ -639,7 +723,6 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
         <SectionCard icon={Send} title="Sending & Client View" subtitle="When you send an invoice, this is what the customer sees.">
           <PreviewsSection company={company} />
         </SectionCard>
-      </div>
     </div>
   );
 }

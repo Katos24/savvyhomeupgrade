@@ -97,7 +97,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
 
   async function fetchScheduledJobs() {
     try {
-      const response = await fetch(`/api/company/${companySlug}/leads`);
+      const response = await fetch(`/api/company/${companySlug}/leads?calendarAll=true`);
       const data = await response.json();
       setEvents((data.leads || []).filter((l: Lead) => l.scheduled_date && !l.deleted));
     } catch (error) { 
@@ -393,13 +393,14 @@ function JobCard({
   return (
     <button
       onClick={() => onSelect(job)}
-      className="w-full text-left p-3 bg-white rounded-xl border border-[#D1C9BD]/70 shadow-xs hover:border-[#1a6645] transition-all group"
+      className="w-full text-left p-3.5 bg-white rounded-xl border border-[#D1C9BD]/70 shadow-xs hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
     >
       <div className="flex items-center justify-between gap-1 mb-1.5">
         <span
-          className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded text-white truncate max-w-[120px]"
-          style={{ backgroundColor: color }}
+          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded-full truncate max-w-[130px]"
+          style={{ backgroundColor: `${color}1A`, color }}
         >
+          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
           {statusConfig?.label || 'Scheduled'}
         </span>
         <span className="text-[9px] font-black text-slate-600 flex items-center gap-1 shrink-0">
@@ -458,7 +459,7 @@ function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus
         ))}
       </div>
 
-      <div className="grid grid-cols-7 divide-x divide-y divide-[#D1C9BD]/30">
+      <div className="grid grid-cols-7 divide-x divide-y divide-[#D1C9BD]/20">
         {cells.map((day, i) => {
           const isNull = !day;
           const cellDate = day ? new Date(year, month, day) : null;
@@ -470,10 +471,10 @@ function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus
             <div
               key={i}
               onClick={() => dStr && onOpenDrawer(dStr)}
-              className={`min-h-[64px] sm:min-h-[110px] p-1 sm:p-1.5 transition-colors flex flex-col justify-between ${
+              className={`min-h-[68px] sm:min-h-[124px] p-1.5 sm:p-2 transition-all flex flex-col justify-between ${
                 isNull 
                   ? 'bg-slate-50/30' 
-                  : 'bg-white hover:bg-slate-50 cursor-pointer'
+                  : 'bg-white hover:bg-slate-50/80 hover:shadow-[inset_0_0_0_1px_rgba(26,102,69,0.15)] cursor-pointer'
               } ${isToday ? 'bg-emerald-50/40' : ''}`}
             >
               {!isNull && (
@@ -503,11 +504,11 @@ function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus
                               evt.stopPropagation();
                               onSelect(e);
                             }}
-                            className="w-full flex items-center justify-between text-[8px] font-black px-1 py-0.5 rounded text-white uppercase truncate text-left shadow-2xs hover:brightness-110"
-                            style={{ backgroundColor: color }}
+                            className="w-full flex items-center justify-between gap-1 text-[8px] font-semibold px-1.5 py-1 rounded-md border-l-2 truncate text-left transition-all hover:shadow-sm hover:brightness-95"
+                            style={{ backgroundColor: `${color}14`, borderColor: color, color }}
                           >
-                            <span className="truncate">{e.name}</span>
-                            <span className="text-[7px] opacity-80 shrink-0 ml-1">{formatTime12h(e.scheduled_time)}</span>
+                            <span className="truncate normal-case">{e.name}</span>
+                            <span className="text-[7px] opacity-70 shrink-0 ml-1">{formatTime12h(e.scheduled_time)}</span>
                           </button>
                         );
                       })}
@@ -590,7 +591,7 @@ function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus }: any) {
                     <button
                       key={job.id}
                       onClick={() => onSelect(job)}
-                      className="w-full text-left p-2 rounded-lg bg-white border border-[#D1C9BD]/60 hover:border-[#1a6645] transition-all shadow-2xs group"
+                      className="w-full text-left p-2.5 rounded-lg bg-white border border-[#D1C9BD]/60 hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 shadow-2xs group"
                     >
                       <div className="flex items-center justify-between gap-1 mb-0.5">
                         <span className="text-[8px] font-black uppercase text-slate-500">
@@ -679,7 +680,7 @@ function AgendaListView({ events, onSelect, getStatus }: any) {
               <div
                 key={job.id}
                 onClick={() => onSelect(job)}
-                className="flex items-center justify-between gap-2 p-3 rounded-xl border border-[#D1C9BD]/60 bg-[#faf9f5] hover:bg-white hover:border-[#1a6645] transition-all cursor-pointer"
+                className="flex items-center justify-between gap-2 p-3 rounded-xl border border-[#D1C9BD]/60 bg-[#faf9f5] hover:bg-white hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="px-2 py-1 bg-[#0F1F3D] text-white rounded-lg text-center shrink-0 min-w-[55px]">
@@ -695,9 +696,10 @@ function AgendaListView({ events, onSelect, getStatus }: any) {
                 </div>
 
                 <span
-                  className="text-[8px] font-black uppercase tracking-wider px-2 py-0.5 rounded text-white shrink-0"
-                  style={{ backgroundColor: color }}
+                  className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0"
+                  style={{ backgroundColor: `${color}1A`, color }}
                 >
+                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                   {statusConfig?.label || 'Scheduled'}
                 </span>
               </div>

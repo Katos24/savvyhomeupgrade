@@ -234,13 +234,13 @@ function LockedControlRow({
   hint: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 transition-all opacity-80">
+    <div className="flex items-center gap-3 px-5 py-4">
       <Icon className="h-4 w-4 shrink-0 text-slate-400" />
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-bold text-slate-800">{label}</p>
         <p className="mt-0.5 truncate text-[11px] font-medium text-slate-500">{hint}</p>
       </div>
-      <span className="inline-flex items-center gap-1 rounded-md bg-slate-200/60 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-600">
+      <span className="inline-flex shrink-0 items-center gap-1 text-[10px] font-bold uppercase tracking-wide text-slate-400">
         <Lock className="h-3 w-3" /> Required
       </span>
     </div>
@@ -265,15 +265,7 @@ function ControlRow({
   companySlug?: string;
 }) {
   return (
-    <div
-      className={`flex items-center gap-3 rounded-xl border p-4 transition-all ${
-        planLocked
-          ? 'border-amber-200/80 bg-amber-50/40'
-          : enabled
-          ? 'border-slate-200 bg-white shadow-xs'
-          : 'border-slate-200 bg-slate-50/60'
-      }`}
-    >
+    <div className={`flex items-center gap-3 px-5 py-4 ${planLocked ? 'bg-amber-50/40' : ''}`}>
       <Icon className={`h-4 w-4 shrink-0 ${enabled && !planLocked ? 'text-slate-700' : 'text-slate-400'}`} />
 
       <div className="min-w-0 flex-1">
@@ -305,7 +297,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(company.custom_questions || []);
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [previewTab, setPreviewTab] = useState<'optional' | 'required'>('optional');
 
   const existingConfig = company.form_field_config;
   const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
@@ -378,6 +369,18 @@ export default function FormTab({ company, currentUser }: { company: any; curren
 
   const toggleField = (field: keyof FieldConfig) =>
     setFieldConfig((prev) => ({ ...prev, [field]: { ...prev[field], enabled: !prev[field].enabled } }));
+
+  // Preferred Date and Preferred Time aren't really two independent optional
+  // fields — a time slot picker only makes sense once a date is selected, so
+  // they're presented (and toggled) as one combined field now. Both keys are
+  // kept in the underlying config and save payload in lockstep, since other
+  // code (the public booking form, the settings API) may already read them
+  // as separate fields and I haven't seen those files to know for sure.
+  const togglePreferredDateTime = () =>
+    setFieldConfig((prev) => {
+      const next = !prev.preferred_date.enabled;
+      return { ...prev, preferred_date: { enabled: next }, preferred_time: { enabled: next } };
+    });
 
   const handleSaveAll = async () => {
     setLoading(true);
@@ -464,6 +467,12 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             Describe your project here...
           </div>
         </PhoneField>
+        <div
+          className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs"
+          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+        >
+          Submit Request
+        </div>
       </div>
     </PhoneFrame>
   );
@@ -552,8 +561,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
   );
 
   return (
-    <div className="min-h-screen bg-slate-50/50 px-6 py-8 lg:px-12 font-sans text-slate-900 antialiased">
-      <div className="mx-auto max-w-6xl space-y-6 pb-16">
+    <>
+    <div className="w-full font-sans text-slate-900 antialiased space-y-6 pb-16">
 
         {company.plan_tier === 'free' && (
           <SettingsUpgradeBanner
@@ -564,38 +573,17 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           />
         )}
 
-        {/* Page Title & Top Controls */}
-        <div className="pb-4 border-b border-slate-200 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Page Title — no header buttons. Preview now lives with the
+            fields it previews (below), and Save only appears, via the
+            floating bar, when there's actually something to save. Two
+            persistent buttons plus a third floating one was the
+            confusing part. */}
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-2.5">
-              <h1 className="text-2xl font-bold tracking-tight text-slate-900">Booking Form Editor</h1>
-              {isDirty && (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-700">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" /> Unsaved
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-slate-500 font-medium mt-1">
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Booking Form Editor</h1>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">
               Customize the interactive request intake form your clients see on mobile and web.
             </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setIsPreviewOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50"
-            >
-              <Eye className="h-4 w-4 text-slate-500" /> Preview Form
-            </button>
-            <button
-              onClick={handleSaveAll}
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
-            >
-              {loading && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
-              {loading ? 'Saving...' : 'Save Changes'}
-            </button>
           </div>
         </div>
 
@@ -664,64 +652,36 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         {/* Form Configuration Settings */}
         <div className="space-y-6 pt-2">
 
-          {/* 1. REQUIRED INTAKE FIELDS (Locked standard fields grid) */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Required Intake Fields (Step 1)
-              </h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                Instantly Sent to Dashboard
-              </span>
+          {/* ONE table for every field, required or optional — required
+              rows show a plain "Required" label instead of a toggle;
+              optional rows carry the toggle switch. The distinction is
+              carried by each row's own control, not by two separate
+              heavy card sections. */}
+          <div className="rounded-xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900">Form Fields</h2>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Required fields (Step 1) are always included and sent instantly. Optional fields
+                  (Step 2) are yours to toggle.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(true)}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                <Eye className="h-3.5 w-3.5 text-slate-500" /> Preview
+              </button>
             </div>
-            <p className="text-xs font-medium text-slate-500 mb-6">
-              These standard fields are automatically included on all request forms and cannot be disabled.
-            </p>
 
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <LockedControlRow
-                icon={User}
-                label="Full Name"
-                hint="Client's legal or full contact name"
-              />
-              <LockedControlRow
-                icon={Mail}
-                label="Email Address"
-                hint="For quote delivery and booking updates"
-              />
-              <LockedControlRow
-                icon={Phone}
-                label="Phone Number"
-                hint="For SMS updates and direct call-backs"
-              />
-              <LockedControlRow
-                icon={Sparkles}
-                label="Service Category"
-                hint="Required service item or package choices"
-              />
-              <LockedControlRow
-                icon={Edit2}
-                label="Project Description"
-                hint="Freeform scope or job details box"
-              />
-            </div>
-          </div>
+            <div className="divide-y divide-slate-100">
+              <LockedControlRow icon={User} label="Full Name" hint="Client's legal or full contact name" />
+              <LockedControlRow icon={Mail} label="Email Address" hint="For quote delivery and booking updates" />
+              <LockedControlRow icon={Phone} label="Phone Number" hint="For SMS updates and direct call-backs" />
+              <LockedControlRow icon={Sparkles} label="Service Category" hint="Required service item or package choices" />
+              <LockedControlRow icon={Edit2} label="Project Description" hint="Freeform scope or job details box" />
 
-          {/* 2. OPTIONAL INTAKE FIELDS (Configurable grid layout) */}
-          <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
-            <div className="flex items-center justify-between mb-1">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Optional Intake Fields (Step 2)
-              </h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                Captured & Appended to Lead
-              </span>
-            </div>
-            <p className="text-xs font-medium text-slate-500 mb-6">
-              Enable additional fields to gather specific job details during client request submission.
-            </p>
-
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
               <ControlRow
                 icon={MapPin}
                 label="Street Address"
@@ -762,7 +722,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             </div>
 
             {!canUsePhotoUpload && (
-              <div className="mt-4">
+              <div className="border-t border-slate-100 p-4">
                 <UpgradeNotice companySlug={company.slug} feature="Photo Uploads" />
               </div>
             )}
@@ -840,7 +800,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+    </div>
 
       {/* Slide-out Mobile & Desktop Live Preview Drawer */}
       <AnimatePresence>
@@ -877,43 +837,29 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 </button>
               </div>
 
-              {/* Drawer Tab Selectors */}
-              <div className="px-6 pt-4 pb-2">
-                <div className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200/80 bg-slate-100/60 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTab('optional')}
-                    className={`rounded-lg py-2 text-xs font-bold transition ${
-                      previewTab === 'optional'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    Combined Live View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTab('required')}
-                    className={`inline-flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition ${
-                      previewTab === 'required'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    <Lock className="h-3 w-3" /> Core Required
-                  </button>
+              {/* Drawer Body — both steps shown together as a scrollable
+                  list instead of a tab switcher. Seeing both phones at
+                  once is clearer than flipping between them. */}
+              <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6">
+                <div className="mx-auto flex max-w-xs flex-col gap-8">
+                  <div>
+                    <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Step 1 — Required Fields
+                    </p>
+                    {RequiredPhone}
+                  </div>
+                  <div>
+                    <p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      Step 2 — Optional Fields You've Enabled
+                    </p>
+                    {OptionalPhone}
+                  </div>
                 </div>
-              </div>
-
-              {/* Drawer Frame Body */}
-              <div className="flex-1 overflow-y-auto p-6 bg-slate-50/50 flex items-center justify-center">
-                {previewTab === 'required' ? RequiredPhone : OptionalPhone}
               </div>
             </motion.div>
           </>
         )}
       </AnimatePresence>
-
-    </div>
+    </>
   );
 }

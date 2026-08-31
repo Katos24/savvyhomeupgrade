@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   CreditCard,
@@ -58,6 +58,32 @@ export default function BillingTab({
         }
       : null
   );
+
+  // activePlan/pendingDowngrade above are only seeded from `company` on the
+  // first render (useState initial value). If the parent re-fetches company
+  // after a Stripe webhook lands — e.g. right after the checkout redirect
+  // returns, or a polling refresh confirms a plan change — this component
+  // would otherwise keep showing the stale plan as "current" until a full
+  // page reload. OverviewTab already handles this same class of prop drift
+  // with a sync effect (bccEnabled/digestEnabled); mirroring that here.
+  useEffect(() => {
+    setActivePlan(
+      company.plan_tier === 'pro'
+        ? 'pro'
+        : company.plan_tier === 'basic'
+        ? 'basic'
+        : 'free'
+    );
+    setPendingDowngrade(
+      company.pending_downgrade_at
+        ? {
+            periodEnd: Math.floor(
+              new Date(company.pending_downgrade_at).getTime() / 1000
+            ),
+          }
+        : null
+    );
+  }, [company.plan_tier, company.pending_downgrade_at]);
 
   const isTrialing = company.subscription_status === 'trialing';
   // What the trial is actually FOR — the plan/price the card gets charged
@@ -141,7 +167,7 @@ export default function BillingTab({
 
   if (currentUser.role !== 'owner') {
     return (
-      <div className="mx-auto flex max-w-md flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-xs">
+      <div className="mx-auto flex max-w-md flex-col items-center justify-center rounded-xl border border-slate-200 bg-white p-12 text-center shadow-xs">
         <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
           <Lock className="h-6 w-6" />
         </div>
@@ -199,15 +225,17 @@ export default function BillingTab({
         });
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 pb-16 px-4 sm:px-0">
+    <div className="w-full font-sans text-slate-900 antialiased space-y-6 pb-16">
       {/* ── HEADER ── */}
-      <div>
-        <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
-          Billing & Subscription
-        </h2>
-        <p className="mt-1 text-xs text-slate-500 sm:text-sm">
-          Manage your subscription tier, billing period, and payment settings.
-        </p>
+      <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight text-slate-900">
+            Billing & Subscription
+          </h1>
+          <p className="mt-0.5 text-xs font-medium text-slate-500">
+            Manage your subscription tier, billing period, and payment settings.
+          </p>
+        </div>
       </div>
 
       {/* ── STATUS CARDS ── */}
@@ -215,7 +243,7 @@ export default function BillingTab({
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`flex flex-col justify-between gap-4 rounded-2xl border p-5 shadow-xs md:col-span-2 sm:flex-row sm:items-center ${statusInfo.border} ${statusInfo.bg}`}
+          className={`flex flex-col justify-between gap-4 rounded-xl border p-5 shadow-xs md:col-span-2 sm:flex-row sm:items-center ${statusInfo.border} ${statusInfo.bg}`}
         >
           <div className="flex items-center gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white shadow-xs">
@@ -252,7 +280,7 @@ export default function BillingTab({
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.05 }}
-          className="flex flex-col justify-center rounded-2xl border border-slate-200/80 bg-white p-5 shadow-xs"
+          className="flex flex-col justify-center rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs"
         >
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">
             <Calendar className="h-3.5 w-3.5" /> Billing Cycle
@@ -267,7 +295,7 @@ export default function BillingTab({
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative overflow-hidden rounded-2xl border border-blue-200/80 bg-gradient-to-r from-blue-900 to-slate-900 p-6 text-white shadow-md"
+          className="relative overflow-hidden rounded-xl border border-blue-200/80 bg-gradient-to-r from-blue-900 to-slate-900 p-6 text-white shadow-md"
         >
           <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
@@ -344,7 +372,7 @@ export default function BillingTab({
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 rounded-2xl border border-amber-200/80 bg-amber-50/70 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between"
+          className="flex flex-col gap-4 rounded-xl border border-amber-200/80 bg-amber-50/70 p-4 shadow-xs sm:flex-row sm:items-center sm:justify-between"
         >
           <div className="flex items-start gap-3">
             <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
@@ -386,7 +414,7 @@ export default function BillingTab({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.08 }}
-              className={`relative flex flex-col justify-between rounded-2xl border p-6 shadow-xs transition-all duration-200 ${
+              className={`relative flex flex-col justify-between rounded-xl border p-6 shadow-xs transition-all duration-200 ${
                 isCurrent
                   ? 'border-blue-600 bg-white ring-1 ring-blue-600'
                   : 'border-slate-200/80 bg-white hover:border-slate-300'
@@ -504,7 +532,7 @@ export default function BillingTab({
               initial={{ scale: 0.95, opacity: 0, y: 10 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="relative z-10 w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl"
+              className="relative z-10 w-full max-w-sm rounded-xl border border-slate-200/80 bg-white p-6 shadow-2xl"
             >
               <div
                 className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${
@@ -523,8 +551,8 @@ export default function BillingTab({
               <h3 className="text-lg font-bold text-slate-900">Confirm Plan Change</h3>
               <p className="mt-2 text-xs leading-relaxed text-slate-500">
                 {confirmModal.plan === 'pro'
-                  ? 'Upgrade to Pro ($79.99/mo) and unlock custom intake forms, job photo uploads, full template customization, and more.'
-                  : 'Switching to Basic ($49.99/mo). Your current feature set will remain active until the end of your billing cycle.'}
+                  ? `Upgrade to Pro ($${PLAN_CONFIG.pro.price}/mo) and unlock custom intake forms, job photo uploads, full template customization, and more.`
+                  : `Switching to Basic ($${PLAN_CONFIG.basic.price}/mo). Your current feature set will remain active until the end of your billing cycle.`}
               </p>
 
               <div className="mt-6 space-y-2">

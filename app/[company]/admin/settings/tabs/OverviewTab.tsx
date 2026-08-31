@@ -327,11 +327,16 @@ export default function OverviewTab({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50/50 px-3 py-4 sm:px-6 sm:py-10 lg:px-12 font-sans text-slate-900 antialiased">
-      <div className="mx-auto max-w-7xl space-y-5 sm:space-y-8 pb-20">
+    <div className="w-full font-sans text-slate-900 antialiased">
+      <div className="w-full space-y-5 sm:space-y-8 pb-20">
         
-               {/* Page Title — same shape as SetupTab's header row */}
-        <div className="flex flex-col gap-1 border-b border-slate-200 pb-4 sm:flex-row sm:items-end sm:justify-between">
+               {/* Page Title — identical wrapper to SetupTab's header row.
+                   SetupTab carries no page-level padding or max-width of its
+                   own; the shared shell around every tab already handles
+                   that. This tab was adding a second layer on top of it,
+                   which is what pushed the title down and to the right
+                   compared to Setup. */}
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">Company Details</h1>
             <p className="mt-0.5 text-xs font-medium text-slate-500">
@@ -351,7 +356,7 @@ export default function OverviewTab({
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 items-start">
 
           {/* LEFT COLUMN: Company Profile & Details (7 cols) */}
-                  <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
+                  <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
 
             {/* Header bar — same full-width treatment as SetupTab's
                 checklist header, not a bottom-border sitting inside the
@@ -391,173 +396,154 @@ export default function OverviewTab({
               )}
             </div>
 
-            <div className="p-4 sm:p-6">
-            {/* Profile Table Component */}
-            <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-              <table className="w-full table-auto text-left text-xs sm:text-sm">
-                <tbody className="divide-y divide-slate-200">
-                  {/* LOGO & COMPANY NAME */}
-                  <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-2/5 sm:w-1/3 border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800">
-                      <span>Logo & Name</span>
-                    </td>
-                    <td className="w-3/5 sm:w-2/3 px-3 py-3.5 sm:px-5 align-middle bg-white">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
-                        <div className="relative group shrink-0 self-start sm:self-auto">
-                          <div className={`flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg border bg-white shadow-xs overflow-hidden ${
-                            missingLogo ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-300'
-                          }`}>
-                            {logoPreview ? (
-                              <img src={logoPreview} className="h-full w-full object-contain p-1" alt="Logo" />
-                            ) : (
-                              <span className="text-base font-bold text-slate-500">{companyName?.charAt(0)}</span>
-                            )}
+            <div className="divide-y divide-slate-100">
+              {/* LOGO & COMPANY NAME */}
+              <div className="flex flex-col gap-2.5 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Logo &amp; Name</span>
+                <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+                  <div className="relative group shrink-0 self-start sm:self-auto">
+                    <div className={`flex h-12 w-12 sm:h-13 sm:w-13 items-center justify-center rounded-lg border bg-white shadow-xs overflow-hidden ${
+                      missingLogo ? 'border-amber-400 ring-2 ring-amber-100' : 'border-slate-300'
+                    }`}>
+                      {logoPreview ? (
+                        <img src={logoPreview} className="h-full w-full object-contain p-1" alt="Logo" />
+                      ) : (
+                        <span className="text-base font-bold text-slate-500">{companyName?.charAt(0)}</span>
+                      )}
 
-                            {isEditingBrand && (
-                              <label className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center bg-slate-900/80 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                                <Camera className="h-4 w-4" />
-                                <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
-                              </label>
-                            )}
-                          </div>
-                        </div>
+                      {isEditingBrand && (
+                        <label className="absolute inset-0 flex cursor-pointer flex-col items-center justify-center bg-slate-900/80 text-white opacity-0 transition-opacity group-hover:opacity-100">
+                          <Camera className="h-4 w-4" />
+                          <input type="file" className="hidden" accept="image/*" onChange={handleLogoChange} />
+                        </label>
+                      )}
+                    </div>
+                  </div>
 
-                        {isEditingBrand ? (
+                  {isEditingBrand ? (
+                    <input
+                      type="text"
+                      value={companyName}
+                      onChange={(e) => setCompanyName(e.target.value)}
+                      placeholder="Company Name"
+                      className="w-full min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                    />
+                  ) : (
+                    <span className="text-sm sm:text-base font-bold text-slate-900 break-words min-w-0 flex-1">{companyName}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* REPLY-TO EMAIL */}
+              <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Reply-To Email</span>
+                <div className="min-w-0 flex-1">
+                  {isEditingBrand ? (
+                    <div className="w-full min-w-0">
+                      <input
+                        type="email"
+                        value={companyEmail}
+                        onChange={(e) => {
+                          setCompanyEmail(e.target.value);
+                          setEmailError('');
+                        }}
+                        placeholder="office@company.com"
+                        className={`w-full min-w-0 rounded-md border bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 ${
+                          emailError ? 'border-rose-400 focus:border-rose-600' : 'border-slate-300'
+                        }`}
+                      />
+                      {emailError && <p className="mt-1 text-xs font-semibold text-rose-600">{emailError}</p>}
+                    </div>
+                  ) : (
+                    <span className="text-xs sm:text-sm font-semibold text-slate-800 break-all">
+                      {company.email || <span className="text-slate-400 italic font-normal">Not configured</span>}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* PHONE NUMBER */}
+              <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Company Phone</span>
+                <div className="min-w-0 flex-1">
+                  {isEditingBrand ? (
+                    <input
+                      type="text"
+                      value={companyPhone}
+                      onChange={(e) => setCompanyPhone(formatPhone(e.target.value))}
+                      placeholder="(555) 000-0000"
+                      maxLength={14}
+                      className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                    />
+                  ) : (
+                    <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                      {company.phone ? formatPhone(company.phone) : <span className="text-slate-400 italic font-normal">Not configured</span>}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* WEBSITE */}
+              <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Website URL</span>
+                <div className="min-w-0 flex-1">
+                  {isEditingBrand ? (
+                    <input
+                      type="text"
+                      value={companyWebsite}
+                      onChange={(e) => setCompanyWebsite(e.target.value)}
+                      placeholder="https://company.com"
+                      className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                    />
+                  ) : company.website ? (
+                    <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-slate-900 hover:underline inline-flex items-center gap-1.5 font-semibold break-all">
+                      {company.website.replace(/^https?:\/\//, '')}
+                      <ExternalLink className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+                    </a>
+                  ) : (
+                    <span className="text-xs text-slate-400 italic font-normal">Not configured</span>
+                  )}
+                </div>
+              </div>
+
+              {/* BRAND COLORS */}
+              <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Brand Colors</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
+                    {isEditingBrand ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
                           <input
-                            type="text"
-                            value={companyName}
-                            onChange={(e) => setCompanyName(e.target.value)}
-                            placeholder="Company Name"
-                            className="w-full min-w-0 flex-1 rounded-md border border-slate-300 px-3 py-1.5 text-xs sm:text-sm font-semibold text-slate-900 outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                            type="color"
+                            value={color1}
+                            onChange={(e) => setColor1(e.target.value)}
+                            className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
                           />
-                        ) : (
-                          <span className="text-sm sm:text-base font-bold text-slate-900 break-words min-w-0 flex-1">{companyName}</span>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-
-                  {/* REPLY-TO EMAIL */}
-                  <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
-                      <span>Reply-To Email</span>
-                    </td>
-                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
-                      {isEditingBrand ? (
-                        <div className="w-full min-w-0">
-                          <input
-                            type="email"
-                            value={companyEmail}
-                            onChange={(e) => {
-                              setCompanyEmail(e.target.value);
-                              setEmailError('');
-                            }}
-                            placeholder="office@company.com"
-                            className={`w-full min-w-0 rounded-md border bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none transition focus:border-slate-900 focus:ring-1 focus:ring-slate-900 ${
-                              emailError ? 'border-rose-400 focus:border-rose-600' : 'border-slate-300'
-                            }`}
-                          />
-                          {emailError && <p className="mt-1 text-xs font-semibold text-rose-600">{emailError}</p>}
+                          <span className="text-[11px] font-mono font-bold text-slate-700 pr-1">{color1}</span>
                         </div>
-                      ) : (
-                        <span className="text-xs sm:text-sm font-semibold text-slate-800 break-all">
-                          {company.email || <span className="text-slate-400 italic font-normal">Not configured</span>}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-
-                  {/* PHONE NUMBER */}
-                  <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
-                      <span>Company Phone</span>
-                    </td>
-                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
-                      {isEditingBrand ? (
-                        <input
-                          type="text"
-                          value={companyPhone}
-                          onChange={(e) => setCompanyPhone(formatPhone(e.target.value))}
-                          placeholder="(555) 000-0000"
-                          maxLength={14}
-                          className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                        />
-                      ) : (
-                        <span className="text-xs sm:text-sm font-semibold text-slate-800">
-                          {company.phone ? formatPhone(company.phone) : <span className="text-slate-400 italic font-normal">Not configured</span>}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-
-                  {/* WEBSITE */}
-                  <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
-                      <span>Website URL</span>
-                    </td>
-                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
-                      {isEditingBrand ? (
-                        <input
-                          type="text"
-                          value={companyWebsite}
-                          onChange={(e) => setCompanyWebsite(e.target.value)}
-                          placeholder="https://company.com"
-                          className="w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
-                        />
-                      ) : company.website ? (
-                        <a href={company.website} target="_blank" rel="noopener noreferrer" className="text-xs sm:text-sm text-slate-900 hover:underline inline-flex items-center gap-1.5 font-semibold break-all">
-                          {company.website.replace(/^https?:\/\//, '')}
-                          <ExternalLink className="h-3.5 w-3.5 text-slate-500 shrink-0" />
-                        </a>
-                      ) : (
-                        <span className="text-xs text-slate-400 italic font-normal">Not configured</span>
-                      )}
-                    </td>
-                  </tr>
-
-                  {/* BRAND COLORS */}
-                  <tr className="hover:bg-slate-50/60 transition-colors">
-                    <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
-                      <span>Brand Colors</span>
-                    </td>
-                    <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
-                      <div className="flex flex-wrap items-center justify-between gap-3 min-w-0">
-                        {isEditingBrand ? (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
-                              <input
-                                type="color"
-                                value={color1}
-                                onChange={(e) => setColor1(e.target.value)}
-                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-                              />
-                              <span className="text-[11px] font-mono font-bold text-slate-700 pr-1">{color1}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
-                              <input
-                                type="color"
-                                value={color2}
-                                onChange={(e) => setColor2(e.target.value)}
-                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
-                              />
-                              <span className="text-[11px] font-mono font-bold text-slate-700 pr-1">{color2}</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <div className="h-4 w-4 rounded-md border border-slate-300 shadow-xs shrink-0" style={{ background: color1 }} />
-                            <div className="h-4 w-4 rounded-md border border-slate-300 shadow-xs shrink-0" style={{ background: color2 }} />
-                            <span className="text-xs font-mono text-slate-600 font-bold">{color1} / {color2}</span>
-                          </div>
-                        )}
-
-                        <BrandInvoicePreview company={company} refreshToken={invoicePreviewRefreshToken} />
+                        <div className="flex items-center gap-1.5 border border-slate-300 rounded-md p-1 bg-white">
+                          <input
+                            type="color"
+                            value={color2}
+                            onChange={(e) => setColor2(e.target.value)}
+                            className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent p-0"
+                          />
+                          <span className="text-[11px] font-mono font-bold text-slate-700 pr-1">{color2}</span>
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                              </tbody>
-              </table>
-            </div>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="h-4 w-4 rounded-md border border-slate-300 shadow-xs shrink-0" style={{ background: color1 }} />
+                        <div className="h-4 w-4 rounded-md border border-slate-300 shadow-xs shrink-0" style={{ background: color2 }} />
+                        <span className="text-xs font-mono text-slate-600 font-bold">{color1} / {color2}</span>
+                      </div>
+                    )}
+
+                    <BrandInvoicePreview company={company} refreshToken={invoicePreviewRefreshToken} />
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -566,15 +552,15 @@ export default function OverviewTab({
           <div className="xl:col-span-5 space-y-6">
                         
             {/* Card A: Automations */}
-                        <div className="bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
+                        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
               <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
                 <Bell className="h-4 w-4 text-slate-700 shrink-0" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Automations & Preferences</h2>
               </div>
-              <div className="p-4 sm:p-6 space-y-1">
+              <div className="divide-y divide-slate-100">
 
               {/* 6:00 AM Daily Summary Toggle */}
-              <div className="flex items-center justify-between py-3 sm:py-4 border-b border-slate-100 gap-3">
+              <div className="flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-slate-50/60">
                 <div className="flex items-center gap-1.5 pr-1 min-w-0">
                   <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">6:00 AM Daily Summary</label>
                   <div className="group relative cursor-pointer shrink-0">
@@ -614,7 +600,7 @@ export default function OverviewTab({
               </div>
 
               {/* Auto-BCC Emails Toggle */}
-              <div className="flex items-center justify-between py-3 sm:py-4 gap-3">
+              <div className="flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-slate-50/60">
                 <div className="flex items-center gap-1.5 pr-1 min-w-0">
                   <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">Auto-BCC Emails</label>
                   <div className="group relative cursor-pointer shrink-0">
@@ -640,57 +626,45 @@ export default function OverviewTab({
                       }`}
                     />
                   </button>
-                        </div>
+                </div>
               </div>
               </div>
             </div>
 
                        {/* Card B: Plan & Payment Status Table */}
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
               <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
                 <CreditCard className="h-4 w-4 text-slate-700 shrink-0" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Plan & Payment Status</h2>
               </div>
 
-              <div className="p-4 sm:p-6 space-y-3">
-              <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-                <table className="w-full text-left text-xs sm:text-sm">
-                  <tbody className="divide-y divide-slate-200">
-                    {/* Plan Tier Row */}
-                    <tr className="hover:bg-slate-50/60 transition-colors">
-                      <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
-                        <span>Plan Tier</span>
-                      </td>
-                      <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300 uppercase tracking-wide shrink-0">
-                            {isFreePlan ? 'Free Tier' : `${company.plan_tier} Tier`}
-                          </span>
-                          {isFreePlan && (
-                            <button
-                              type="button"
-                              onClick={() => onNavigateSection('billing')}
-                              className="text-xs font-bold text-slate-800 hover:underline cursor-pointer shrink-0"
-                            >
-                              Upgrade
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+              <div className="divide-y divide-slate-100">
+                {/* Plan Tier Row */}
+                <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                  <span className="text-xs font-semibold text-slate-800 sm:w-28 sm:shrink-0">Plan Tier</span>
+                  <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
+                    <span className="inline-flex items-center rounded-md bg-slate-100 px-2.5 py-1 text-xs font-bold text-slate-700 border border-slate-300 uppercase tracking-wide shrink-0">
+                      {isFreePlan ? 'Free Tier' : `${company.plan_tier} Tier`}
+                    </span>
+                    {isFreePlan && (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateSection('billing')}
+                        className="text-xs font-bold text-slate-800 hover:underline cursor-pointer shrink-0"
+                      >
+                        Upgrade
+                      </button>
+                    )}
+                  </div>
+                </div>
 
-                    {/* Payment Status Row */}
-                    <tr className="hover:bg-slate-50/60 transition-colors">
-                      <td className="w-auto border-r border-slate-200 bg-slate-100/70 px-3 py-3.5 sm:px-5 align-middle font-bold text-slate-800 whitespace-nowrap">
-                        <span>Payment Status</span>
-                      </td>
-                      <td className="w-full px-3 py-3.5 sm:px-5 align-middle bg-white">
-                        <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
-                      </td>
-                    </tr>
-                                  </tbody>
-                </table>
-              </div>
+                {/* Payment Status Row */}
+                <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                  <span className="text-xs font-semibold text-slate-800 sm:w-28 sm:shrink-0">Payment Status</span>
+                  <div className="min-w-0 flex-1">
+                    <StripeStatusBadge company={company} onNavigateSection={onNavigateSection} />
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -699,7 +673,7 @@ export default function OverviewTab({
         </div>
 
         {/* FULL WIDTH: Lead Intake / Booking Link */}
-               <div className="bg-white rounded-xl border border-slate-200/80 shadow-lg shadow-slate-200/60 overflow-hidden">
+               <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
             <LinkIcon className="h-4 w-4 text-slate-700 shrink-0" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Lead Intake Link</h2>

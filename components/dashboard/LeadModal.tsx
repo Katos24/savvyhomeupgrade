@@ -17,15 +17,14 @@ import CompletionSummaryModal from './CompletionSummaryModal';
 import { canDeleteLead, can, type PlanTier } from '@/lib/permissions';
 import LockedTabsPreview from '@/components/dashboard/LockedTabsPreview';
 
-
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 
 type LeadModalProps = {
   lead: any;
   onClose: () => void;
-onUpdateStatus: (id: number, status: string, oldStatus: string, sendReview?: boolean) => Promise<boolean>;
+  onUpdateStatus: (id: number, status: string, oldStatus: string, sendReview?: boolean) => Promise<boolean>;
   onAddNote: (id: number, noteText: string) => Promise<boolean>;
-    onDeleteLead: (id: number) => Promise<boolean>;
+  onDeleteLead: (id: number) => Promise<boolean>;
   onRefresh: () => Promise<void>;
   currentUser: any;
   statusOptions: any[];
@@ -38,7 +37,6 @@ onUpdateStatus: (id: number, status: string, oldStatus: string, sendReview?: boo
   activity?: any[];
 };
 
-
 export default function LeadModal({
   lead,
   onClose,
@@ -50,7 +48,7 @@ export default function LeadModal({
   statusOptions,
   categories = [],
   company,
- companySlug,
+  companySlug,
   teamMembers = [],
   payments,
   activity,
@@ -76,7 +74,7 @@ export default function LeadModal({
     setSelectedStatus(lead.status || statusOptions[0]?.value);
   }, [lead.id, lead.status]);
 
-    useEffect(() => {
+  useEffect(() => {
     if (!lead.name || !lead.city || !lead.company_id) return;
     const params = new URLSearchParams({
       name: lead.name, city: lead.city, company_id: String(lead.company_id),
@@ -88,20 +86,11 @@ export default function LeadModal({
       .catch(() => {});
   }, [lead.id]);
 
-  // The scrollable pane below (overflow-y-auto) never remounts on tab
-  // switch — only its content does, via key={activeTab} on the inner
-  // motion.div. That leaves scroll position stuck wherever it was on the
-  // previous tab. Reset it explicitly whenever the tab changes.
-   const contentPaneRef = useRef<HTMLDivElement>(null);
+  const contentPaneRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     contentPaneRef.current?.scrollTo(0, 0);
   }, [activeTab]);
 
-  // MobileTabBar is a normal flex child of the modal, not viewport-fixed —
-  // so any fixed-positioned bar elsewhere (e.g. QuoteSection's mobile
-  // save/send bar) needs to know its real height to sit above it instead
-  // of underneath it. Measured rather than hardcoded, since it varies with
-  // font size and safe-area-inset across devices.
   const tabBarWrapperRef = useRef<HTMLDivElement>(null);
   const [tabBarHeight, setTabBarHeight] = useState(0);
   useEffect(() => {
@@ -111,8 +100,6 @@ export default function LeadModal({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-
 
   const customerPhotos = useMemo(() =>
     Array.isArray(lead.file_urls)
@@ -165,11 +152,6 @@ export default function LeadModal({
     else toast.error('Failed to delete lead');
   };
 
-  {/* Locked preview for free plan non-project leads */}
-{!isProject && activeTab !== 'overview' && activeTab !== 'activity' && activeTab !== 'ai' && (
-  <LockedTabsPreview companySlug={companySlug} activeTab={activeTab} />
-)}
-
   const renderProjectTab = () => {
     if (activeTab === 'overview' || activeTab === 'activity' || activeTab === 'ai' || !isProject) return null;
 
@@ -217,7 +199,7 @@ export default function LeadModal({
         statusOptions={statusOptions}
         onUpdateStatus={onUpdateStatus}
         companySlug={companySlug}
-       defaultTab={activeTab}
+        defaultTab={activeTab}
         teamMembers={teamMembers}
         payments={payments}
         activity={activity}
@@ -230,7 +212,7 @@ export default function LeadModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end sm:items-center justify-center z-50"
+      className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end sm:items-stretch sm:justify-end z-50"
       onClick={onClose}
     >
       {/* ── LOCKED FEATURE MODAL ── */}
@@ -286,14 +268,14 @@ export default function LeadModal({
         })()}
       </AnimatePresence>
 
-      {/* ── MAIN MODAL ── */}
+      {/* ── MAIN DRAWER (SLIDE-OVER ON DESKTOP) ── */}
       <motion.div
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
+        initial={{ x: '100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                className="bg-white w-full sm:max-w-4xl lg:max-w-5xl xl:max-w-7xl 2xl:max-w-[1600px] sm:rounded-2xl shadow-2xl flex flex-col"
-style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tabBarHeight}px` }}
+        className="bg-white w-full sm:w-[650px] lg:w-[850px] xl:w-[1000px] 2xl:w-[1150px] h-[96vh] sm:h-full sm:rounded-l-2xl shadow-2xl flex flex-col border-l border-gray-200"
+        style={{ ['--mobile-tabbar-h' as any]: `${tabBarHeight}px` }}
         onClick={e => e.stopPropagation()}
       >
         {/* ── HEADER ── */}
@@ -343,9 +325,7 @@ style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tab
           )}
         </AnimatePresence>
 
-        {/* ── BODY — left nav rail (sm+) + scrollable content pane.
-              overflow-hidden on the row lets each side scroll independently
-              instead of the whole row growing with the content. ── */}
+        {/* ── BODY ── */}
         <div className="flex-1 flex overflow-hidden">
           <DesktopSidebarNav
             lead={lead}
@@ -355,7 +335,12 @@ style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tab
             onLockedTab={setLockedFeatureModal}
           />
 
-                    <div ref={contentPaneRef} className="flex-1 overflow-y-auto bg-gray-50">
+          <div ref={contentPaneRef} className="flex-1 overflow-y-auto bg-gray-50">
+            {/* Locked preview for free plan non-project leads */}
+            {!isProject && activeTab !== 'overview' && activeTab !== 'activity' && activeTab !== 'ai' && (
+              <LockedTabsPreview companySlug={companySlug} activeTab={activeTab} />
+            )}
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeTab}
@@ -371,7 +356,6 @@ style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tab
                     lead={lead}
                     company={company}
                     statusOptions={statusOptions}
-
                     currentUser={currentUser}
                     categories={categories}
                     companySlug={companySlug}
@@ -429,13 +413,8 @@ style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tab
           </div>
         </div>
 
-        {/* ── MOBILE BOTTOM TAB BAR ──
-              Sits as a normal flex child at the bottom of the modal shell
-              (not position:fixed to the viewport), so it stays inside the
-              modal's own rounded/bounded frame instead of the whole screen.
-              Desktop/tablet uses DesktopSidebarNav (left rail) instead —
-              exactly one nav mechanism is visible at any given width. ── */}
-                <div ref={tabBarWrapperRef}>
+        {/* ── MOBILE BOTTOM TAB BAR ── */}
+        <div ref={tabBarWrapperRef}>
           <MobileTabBar
             lead={lead}
             company={company}
@@ -444,7 +423,6 @@ style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tab
             onLockedTab={setLockedFeatureModal}
           />
         </div>
-
       </motion.div>
 
       {/* ── REPEAT CUSTOMER HISTORY DRAWER ── */}
@@ -508,7 +486,7 @@ style={{ maxHeight: '96vh', height: '96vh', ['--mobile-tabbar-h' as any]: `${tab
         {showCompletionSummary && (
           <CompletionSummaryModal
             lead={lead}
-onConfirm={(sendReview) => { setShowCompletionSummary(false); handleStatusChange(selectedStatus, sendReview); }}
+            onConfirm={(sendReview) => { setShowCompletionSummary(false); handleStatusChange(selectedStatus, sendReview); }}
             onCancel={() => { setShowCompletionSummary(false); setSelectedStatus(lead.status || statusOptions[0]?.value); }}
           />
         )}

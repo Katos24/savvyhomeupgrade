@@ -552,97 +552,99 @@ export default function QuoteSection({
             )}
 
             {/* Desktop — real table, one header row, full column labels */}
-            {quoteData.length > 0 && (
-            <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden">
-              <table className="w-full text-sm border-collapse table-fixed">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200">
-                    <th className="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide px-4 py-2 w-auto">
-                      Description
-                    </th>
-                    <th className="text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wide px-2 py-2 w-20">
-                      Price
-                    </th>
-                    <th className="text-center font-semibold text-slate-500 text-[10px] uppercase tracking-wide px-2 py-2 w-12">
-                      Qty
-                    </th>
-                    <th className="text-right font-semibold text-slate-500 text-[10px] uppercase tracking-wide px-3 py-2 w-20">
-                      Amount
-                    </th>
-                    <th className="w-9 px-2" />
-                  </tr>
-                </thead>
-                <tbody>
-                    {quoteData.map((item: any) => {
-                      const isNew = item.id === lastAddedId && !item.description;
-                      return (
-                        <tr
-                          key={item.id}
-                          ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-                          className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 group"
-                        >
-                          <td className="px-4 py-1.5 align-middle">
-                            <textarea
-                              ref={(el) => {
-                                if (isNew) newRowInputRef.current = el;
-                                autoResizeTextarea(el);
-                              }}
-                              rows={1}
-                              value={item.description}
-                              onChange={(e) => {
-                                handleUpdateCell(item.id, 'description', e.target.value);
-                                autoResizeTextarea(e.target);
-                              }}
-                              placeholder="Describe line item or service..."
-                              className="w-full bg-transparent text-sm font-medium text-slate-900 outline-none placeholder:font-normal placeholder:text-slate-300 resize-none overflow-hidden leading-snug block py-0.5"
-                            />
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <div className="flex items-center justify-end gap-0.5">
-                              <span className="text-xs text-slate-400">$</span>
-                              <input
-                                type="number"
-                                step="any"
-                                value={item.unitPrice || ''}
-                                onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                                onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                                placeholder="0.00"
-                                className={`w-14 bg-transparent text-sm text-slate-900 outline-none text-right tabular-nums ${noSpinners}`}
-                              />
-                            </div>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <input
-                              type="number"
-                              step="any"
-                              value={item.quantity || ''}
-                              onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                              onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                              placeholder="1"
-                              className={`w-full bg-transparent text-sm text-slate-900 outline-none text-center tabular-nums ${noSpinners}`}
-                            />
-                          </td>
-                          <td className="px-3 py-1.5 text-right">
-                            <span className="text-sm font-semibold text-slate-900 tabular-nums">
-                              {fmt(item.amount || 0)}
-                            </span>
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <button
-                              onClick={() => requestRemoveRow(item.id)}
-                              className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer opacity-0 group-hover:opacity-100"
-                              title="Delete row"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </td>
-                                            </tr>
-                      );
-                    })}
-                </tbody>
-              </table>
-            </div>
-            )}
+         {/* Desktop — real table, one header row, full column labels */}
+{quoteData.length > 0 && (
+  <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden font-sans antialiased">
+    <table className="w-full text-sm border-collapse table-fixed">
+      <thead>
+        <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium text-[11px] uppercase tracking-wider">
+          <th className="text-left px-4 py-2.5 w-auto">Description</th>
+          <th className="text-right px-2 py-2.5 w-24">Price</th>
+          <th className="text-center px-2 py-2.5 w-16">Qty</th>
+          <th className="text-right px-3 py-2.5 w-24">Amount</th>
+          <th className="w-9 px-2" />
+        </tr>
+      </thead>
+      <tbody>
+        {quoteData.map((item: any) => {
+          const isNew = item.id === lastAddedId && !item.description;
+          return (
+            <tr
+              key={item.id}
+              ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
+              className="border-b border-slate-100 last:border-b-0 hover:bg-slate-50/60 group"
+            >
+              {/* DESCRIPTION FIELD */}
+              <td className="px-4 py-2 align-middle">
+                <textarea
+                  ref={(el) => {
+                    if (isNew) newRowInputRef.current = el;
+                    autoResizeTextarea(el);
+                  }}
+                  rows={1}
+                  value={item.description}
+                  onChange={(e) => {
+                    handleUpdateCell(item.id, 'description', e.target.value);
+                    autoResizeTextarea(e.target);
+                  }}
+                  placeholder="Describe line item or service..."
+                  className="w-full bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none resize-none overflow-hidden leading-relaxed block py-0.5"
+                />
+              </td>
+
+              {/* PRICE INPUT */}
+              <td className="px-2 py-2 align-middle">
+                <div className="flex items-center justify-end gap-0.5">
+                  <span className="text-xs text-slate-400 font-mono">$</span>
+                  <input
+                    type="number"
+                    step="any"
+                    value={item.unitPrice || ''}
+                    onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                    onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                    placeholder="0.00"
+                    className={`w-16 bg-transparent text-sm font-mono font-medium tracking-tight text-slate-900 outline-none text-right tabular-nums ${noSpinners}`}
+                  />
+                </div>
+              </td>
+
+              {/* QUANTITY INPUT */}
+              <td className="px-2 py-2 align-middle">
+                <input
+                  type="number"
+                  step="any"
+                  value={item.quantity || ''}
+                  onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                  onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                  placeholder="1"
+                  className={`w-full bg-transparent text-sm font-mono font-medium tracking-tight text-slate-900 outline-none text-center tabular-nums ${noSpinners}`}
+                />
+              </td>
+
+              {/* TOTAL AMOUNT */}
+              <td className="px-3 py-2 text-right align-middle">
+                <span className="text-sm font-mono font-semibold tracking-tight text-slate-900 tabular-nums">
+                  {fmt(item.amount || 0)}
+                </span>
+              </td>
+
+              {/* DELETE BUTTON */}
+              <td className="px-2 py-2 align-middle">
+                <button
+                  onClick={() => requestRemoveRow(item.id)}
+                  className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer opacity-0 group-hover:opacity-100"
+                  title="Delete row"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </div>
+)}
 
             {/* Desktop Add Row + AI Toolbar */}
             {quoteData.length > 0 && (
