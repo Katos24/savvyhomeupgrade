@@ -27,7 +27,7 @@ function shape(row: TemplateRow) {
     id: row.id,
     category: row.category,
     items: Array.isArray(row.items) ? row.items : [],
-  tax_rate: Number(row.tax_rate) || 0,
+    tax_rate: Number(row.tax_rate) || 0,
     total: Number(row.total) || 0,
     // Null means no deposit — don't coerce to 0, the UI distinguishes them.
     deposit_type: row.deposit_type ?? null,
@@ -45,7 +45,7 @@ async function loadTemplates(companyId: number) {
   return rows.map(shape);
 }
 
-/** Auth + plan + membership. Returns the company or a response to bail with. */
+/** Auth + plan + membership. Returns the company & user in a single optimized DB join. */
 async function authorize(slug: string, requireWriteRole: boolean) {
   const cookieStore = await cookies();
   const token = cookieStore.get('auth-token')?.value;
@@ -54,20 +54,38 @@ async function authorize(slug: string, requireWriteRole: boolean) {
     return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  const decoded = jwt.verify(
-    token,
-    getJwtSecret()
-  ) as any;
-
-  const companies = await sql`
-    SELECT id, plan_tier FROM companies WHERE slug = ${slug} LIMIT 1
-  `;
-  if (companies.length === 0) {
-    return { error: NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 }) };
+  let decoded: { userId: string };
+  try {
+    decoded = jwt.verify(token, getJwtSecret()) as { userId: string };
+  } catch {
+    return { error: NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 }) };
   }
-  const company = companies[0];
 
-  if (!can((company.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
+  // Optimized single-query lookup joining company and user membership
+  const results = await sql`
+    SELECT 
+      c.id as company_id, 
+      c.plan_tier, 
+      u.id as user_id, 
+      u.role, 
+      u.company_id as user_company_id
+    FROM companies c
+    JOIN users u ON u.id = ${decoded.userId}
+    WHERE c.slug = ${slug}
+    LIMIT 1
+  `;
+
+  if (results.length === 0) {
+    return { error: NextResponse.json({ success: false, error: 'Company or user not found' }, { status: 404 }) };
+  }
+
+  const row = results[0];
+
+  if (row.user_company_id !== row.company_id) {
+    return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 }) };
+  }
+
+  if (!can((row.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
     return {
       error: NextResponse.json(
         {
@@ -80,23 +98,13 @@ async function authorize(slug: string, requireWriteRole: boolean) {
     };
   }
 
-  const users = await sql`SELECT id, role, company_id FROM users WHERE id = ${decoded.userId} LIMIT 1`;
-  const user = users[0];
-  if (!user) {
-    return { error: NextResponse.json({ success: false, error: 'User not found' }, { status: 404 }) };
-  }
-
-  if (user.company_id !== company.id) {
-    return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 }) };
-  }
-
-  if (requireWriteRole && !['owner', 'admin', 'manager'].includes(user.role)) {
+  if (requireWriteRole && !['owner', 'admin', 'manager'].includes(row.role)) {
     return {
       error: NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 }),
     };
   }
 
-  return { company, user };
+  return { company: { id: row.company_id, plan_tier: row.plan_tier }, user: { id: row.user_id, role: row.role } };
 }
 
 /* ═══════════════ GET ═══════════════ */
@@ -142,40 +150,39 @@ export async function POST(
     /* ── create ──
        Upsert on (company_id, category): the UI allows one template per
        category, so a double-submit should update rather than 409. */
-  if (action === 'create') {
-  if (!template?.id || !template?.category) {
-    return NextResponse.json({ success: false, error: 'Missing template id or category' }, { status: 400 });
-  }
+    if (action === 'create') {
+      if (!template?.id || !template?.category) {
+        return NextResponse.json({ success: false, error: 'Missing template id or category' }, { status: 400 });
+      }
 
-  await sql`
-    INSERT INTO quote_templates (id, company_id, category, items, tax_rate, total, deposit_type, deposit_value)
-    VALUES (
-      ${template.id},
-      ${companyId},
-      ${template.category},
-      ${JSON.stringify(template.items ?? [])}::jsonb,
-      ${Number(template.tax_rate) || 0},
-      ${Number(template.total) || 0},
-      ${template.deposit_type || null},
-      ${template.deposit_value ?? null}
-    )
-    ON CONFLICT (company_id, category) DO UPDATE SET
-      items         = EXCLUDED.items,
-      tax_rate      = EXCLUDED.tax_rate,
-      total         = EXCLUDED.total,
-      deposit_type  = EXCLUDED.deposit_type,
-      deposit_value = EXCLUDED.deposit_value
-  `;
+      await sql`
+        INSERT INTO quote_templates (id, company_id, category, items, tax_rate, total, deposit_type, deposit_value)
+        VALUES (
+          ${template.id},
+          ${companyId},
+          ${template.category},
+          ${JSON.stringify(template.items ?? [])}::jsonb,
+          ${Number(template.tax_rate) || 0},
+          ${Number(template.total) || 0},
+          ${template.deposit_type || null},
+          ${template.deposit_value ?? null}
+        )
+        ON CONFLICT (company_id, category) DO UPDATE SET
+          items         = EXCLUDED.items,
+          tax_rate      = EXCLUDED.tax_rate,
+          total         = EXCLUDED.total,
+          deposit_type  = EXCLUDED.deposit_type,
+          deposit_value = EXCLUDED.deposit_value
+      `;
 
-  return NextResponse.json({
-    success: true,
-    message: 'Template created',
-    templates: await loadTemplates(companyId),
-  });
-}
+      return NextResponse.json({
+        success: true,
+        message: 'Template created',
+        templates: await loadTemplates(companyId),
+      });
+    }
 
-    /* ── update ──
-       Scoped by company_id so an id from another tenant can't be touched. */
+    /* ── update ── */
     if (action === 'update') {
       if (!template?.id) {
         return NextResponse.json({ success: false, error: 'Missing template id' }, { status: 400 });
@@ -204,16 +211,13 @@ export async function POST(
       });
     }
 
-    /* ── update-many ──
-       One statement, so applying a tax rate across every template is
-       atomic. This is the case that was silently losing writes when it
-       was N parallel requests against a single jsonb column. */
+    /* ── update-many ── */
     if (action === 'update-many') {
       if (!Array.isArray(templates) || templates.length === 0) {
         return NextResponse.json({ success: false, error: 'templates must be a non-empty array' }, { status: 400 });
       }
 
-     const payload = templates.map((t: any) => ({
+      const payload = templates.map((t: any) => ({
         id: String(t.id),
         items: t.items ?? [],
         tax_rate: Number(t.tax_rate) || 0,
@@ -224,7 +228,7 @@ export async function POST(
 
       const updated = await sql`
         UPDATE quote_templates qt
-       SET items         = v.items,
+        SET items         = v.items,
             tax_rate      = v.tax_rate,
             total         = v.total,
             deposit_type  = v.deposit_type,

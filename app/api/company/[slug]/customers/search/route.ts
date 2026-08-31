@@ -4,6 +4,14 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '@/lib/auth';
 
+// Reuse connection across warm lambdas
+const sql = neon(process.env.DATABASE_URL!);
+
+/** Escape PostgreSQL LIKE / ILIKE wildcard characters (% and _) */
+function escapeLike(str: string): string {
+  return str.replace(/[%_\\]/g, '\\$&');
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -19,15 +27,14 @@ export async function GET(
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 
-    let decoded: any;
+    let decoded: { userId: string };
     try {
-      decoded = jwt.verify(token, getJwtSecret());
+      decoded = jwt.verify(token, getJwtSecret()) as { userId: string };
     } catch {
       return NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 });
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
+    // Auth & tenant isolation check
     const companies = await sql`
       SELECT c.id FROM companies c
       JOIN users u ON u.company_id = c.id
@@ -39,9 +46,10 @@ export async function GET(
     }
     const companyId = companies[0].id;
 
-    // One row per email — most recent lead's details win, so a repeat
-    // customer's latest address/phone is what gets suggested, not
-    // whatever they first typed months ago.
+    // Safely format search query pattern
+    const searchPattern = `%${escapeLike(q)}%`;
+
+    // Fetch matching customers (most recent lead details win per email)
     const rows = await sql`
       SELECT DISTINCT ON (email)
         id, name, email, phone, address_line_1, address_line_2, city, zip_code
@@ -49,7 +57,7 @@ export async function GET(
       WHERE company_id = ${companyId}
         AND deleted = false
         AND email IS NOT NULL AND email <> ''
-        AND (name ILIKE ${'%' + q + '%'} OR email ILIKE ${'%' + q + '%'} OR phone ILIKE ${'%' + q + '%'})
+        AND (name ILIKE ${searchPattern} OR email ILIKE ${searchPattern} OR phone ILIKE ${searchPattern})
       ORDER BY email, created_at DESC
       LIMIT 8
     `;

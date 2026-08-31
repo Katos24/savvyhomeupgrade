@@ -18,9 +18,8 @@ function shapePayment(row: any) {
     card_last4: row.card_last4,
     note: row.note,
     recorded_by: row.recorded_by,
-    // Non-null means it came from Stripe and can't be deleted in the UI.
     is_stripe: !!row.stripe_payment_intent_id,
-    stripe_payment_intent_id: row.stripe_payment_intent_id,   // ← add this
+    stripe_payment_intent_id: row.stripe_payment_intent_id,
     reversed_payment_id: row.reversed_payment_id,
     created_at: row.created_at,
   };
@@ -32,45 +31,44 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const leadId = parseInt(id);
+    const leadId = parseInt(id, 10);
     if (!leadId || Number.isNaN(leadId)) {
       return NextResponse.json({ success: false, error: 'Invalid id' }, { status: 400 });
     }
 
+    // ── 1. Auth & Company Scope Check ──────────────────────────
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
-    if (!token) return NextResponse.json({ success: false }, { status: 401 });
+    if (!token) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new Error('JWT_SECRET is not set');
 
-    let decoded: any;
+    let decoded: { userId: string };
     try {
-      decoded = jwt.verify(token, secret) as any;
+      decoded = jwt.verify(token, secret) as { userId: string };
     } catch {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    // Resolve the caller's company from their user row rather than trusting
-    // the token payload, then scope every query below to it. Without this,
-    // any authenticated user could read any lead by guessing an id.
     const users = await sql`
-      SELECT id, company_id FROM users WHERE id = ${decoded.userId} LIMIT 1
+      SELECT company_id FROM users WHERE id = ${decoded.userId} LIMIT 1
     `;
     const companyId = users[0]?.company_id;
     if (!companyId) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
+    // ── 2. Fetch Lead & Joined Project Data ────────────────────
     const leads = await sql`
       SELECT
         l.*,
         p.id as project_id,
         p.project_number,
         p.status as job_status,
-       p.scheduled_date,
+        p.scheduled_date,
         p.scheduled_time,
-       p.scheduled_end_time,
+        p.scheduled_end_time,
         p.event_location,
         p.assigned_to,
         p.additional_assignees,
@@ -128,16 +126,9 @@ export async function GET(
     const lead = leads[0];
     const projectId = lead.project_id;
 
-    // Payments and activity ship with the lead. They used to be two separate
-    // fetches from the billing panel, which meant the deposit box rendered as
-    // unpaid and the activity count as empty until they landed — both wrong
-    // rather than merely absent. One response can't be half-right.
-    //
-    // html_body is deliberately excluded: an invoice email is often 100KB+ and
-    // the list only renders a date and a label. The body is fetched from
-    // outbox-preview when Preview is clicked.
+    // ── 3. Parallel Fetch Payments & Email Activity ───────────
     const [paymentRows, activityRows] = await Promise.all([
-           projectId
+      projectId
         ? sql`
             SELECT id, amount, invoiced_total, method, kind, paid_on,
                    card_brand, card_last4, note, recorded_by,
@@ -147,7 +138,7 @@ export async function GET(
             ORDER BY paid_on DESC, id DESC
           `
         : Promise.resolve([] as any[]),
-           sql`
+      sql`
         SELECT id, type, status, error_message,
                sent_by_email, sent_by_name, subject,
                created_at, sent_at, metadata,

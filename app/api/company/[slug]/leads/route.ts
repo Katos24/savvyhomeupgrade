@@ -4,31 +4,33 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
 type Props = {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 };
+
+// Reuse connection across requests
+const sql = neon(process.env.DATABASE_URL!);
 
 export async function GET(request: Request, { params }: Props) {
   try {
     const { slug } = await params;
 
-    // ── Auth check ──────────────────────────────────────────
+    // ── 1. Auth check ──────────────────────────────────────────
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
-    let decoded: any;
+
+    let decoded: { userId: string };
     try {
       const secret = process.env.JWT_SECRET;
       if (!secret) throw new Error('JWT_SECRET is not set');
-      decoded = jwt.verify(token, secret);
+      decoded = jwt.verify(token, secret) as { userId: string };
     } catch {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
-    // ── Verify user belongs to this company ─────────────────
+    // ── 2. Verify user belongs to this company ─────────────────
     const companies = await sql`
       SELECT c.id FROM companies c
       JOIN users u ON u.company_id = c.id
@@ -40,44 +42,38 @@ export async function GET(request: Request, { params }: Props) {
     }
     const companyId = companies[0].id;
 
-    // ── Parse params ─────────────────────────────────────────
-    const url        = new URL(request.url);
-    const page       = Math.max(1, parseInt(url.searchParams.get('page') || '1'));
-    const limit      = 20;
-    const offset     = (page - 1) * limit;
-    const search     = url.searchParams.get('search')?.trim()     || '';
-    const status     = url.searchParams.get('status')?.trim()     || '';
-    const category   = url.searchParams.get('category')?.trim()   || '';
-    const assignee   = url.searchParams.get('assignee')?.trim()   || '';
-    const payment    = url.searchParams.get('payment')?.trim()    || '';
-    const timeFilter = url.searchParams.get('timeFilter')?.trim() || '';
-    const startDate  = url.searchParams.get('startDate')?.trim()  || '';
-    const endDate    = url.searchParams.get('endDate')?.trim()    || '';
+    // ── 3. Parse Params ─────────────────────────────────────────
+    const url = new URL(request.url);
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+    const limit = 20;
+    const offset = (page - 1) * limit;
 
-    // ── Calendar view: return every scheduled job in one shot instead of
-    // paginating by created_at (see Path C below). This is what was silently
-    // capping the calendar at the 20 most-recently-created leads before —
-    // any scheduled job outside that recent-20 window never reached the UI.
-    // 2000 is a generous safety cap, not a real pagination limit; a company
-    // actually hitting it is a signal to revisit this with date-range windowing.
+    const search = url.searchParams.get('search')?.trim() || '';
+    const status = url.searchParams.get('status')?.trim() || '';
+    const category = url.searchParams.get('category')?.trim() || '';
+    const assignee = url.searchParams.get('assignee')?.trim() || '';
+    const payment = url.searchParams.get('payment')?.trim() || '';
+    const timeFilter = url.searchParams.get('timeFilter')?.trim() || '';
+    const startDate = url.searchParams.get('startDate')?.trim() || '';
+    const endDate = url.searchParams.get('endDate')?.trim() || '';
+
     const calendarAll = url.searchParams.get('calendarAll') === 'true';
     const CALENDAR_SAFETY_LIMIT = 2000;
     const effectiveLimit = calendarAll ? CALENDAR_SAFETY_LIMIT : limit;
 
-    // ── Scheduled Today special case ──────────────────────────
     const isScheduledToday = timeFilter === 'scheduled_today';
     const today = new Date();
     const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-    // ── Build created_at time boundary (standard filters) ─────
+    // ── 4. Build created_at time boundary ───────────────────────
     let timeFrom: Date | null = null;
-    let timeTo:   Date | null = null;
+    let timeTo: Date | null = null;
     const now = new Date();
 
     if (!isScheduledToday) {
       if (startDate && endDate) {
         timeFrom = new Date(startDate);
-        timeTo   = new Date(endDate);
+        timeTo = new Date(endDate);
         timeTo.setHours(23, 59, 59, 999);
       } else if (startDate) {
         timeFrom = new Date(startDate);
@@ -97,19 +93,13 @@ export async function GET(request: Request, { params }: Props) {
     }
 
     const fromISO = timeFrom ? timeFrom.toISOString() : '2000-01-01T00:00:00.000Z';
-    const toISO   = timeTo   ? timeTo.toISOString()   : '2099-12-31T23:59:59.999Z';
+    const toISO = timeTo ? timeTo.toISOString() : '2099-12-31T23:59:59.999Z';
 
-    // ── Build all independent query promises (not awaited yet) ─
-
+    // ── 5. Independent Queries ─────────────────────────────────
     const statsPromise = sql`
       SELECT
         COUNT(*) as total_leads,
         COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
-        -- Cash actually collected, not contract value of closed jobs. The old
-        -- version filtered to payment_status = 'paid', so a collected deposit
-        -- was invisible in revenue AND still counted in full as pending.
-        -- payment_amount is maintained by sync_project_payment_totals from
-        -- SUM(payments), negatives included, so refunds reduce revenue too.
         COALESCE(SUM(p.payment_amount::numeric), 0) as revenue,
         COALESCE(SUM(
           GREATEST(COALESCE(p.quote_total::numeric, 0) - COALESCE(p.payment_amount::numeric, 0), 0)
@@ -132,7 +122,6 @@ export async function GET(request: Request, { params }: Props) {
     let leadsPromise;
 
     if (isScheduledToday) {
-      // ── Path A: Scheduled Today — filter by p.scheduled_date ──
       countPromise = sql`
         SELECT COUNT(*) as total
         FROM leads l
@@ -151,7 +140,7 @@ export async function GET(request: Request, { params }: Props) {
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (${payment} = '' OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
             (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
@@ -162,54 +151,21 @@ export async function GET(request: Request, { params }: Props) {
       leadsPromise = sql`
         SELECT
           l.*,
-          p.id                     as project_id,
-          p.project_number,
-          p.status                 as job_status,
-          p.scheduled_date,
-          p.scheduled_time,
-          p.scheduled_end_time,
-                    p.event_location,
-
-          p.assigned_to,
-                    p.additional_assignees,
-
-          p.estimated_hours,
-          p.actual_hours,
-         p.quote_data,
-          p.ai_brief,
-          p.quote_total,
-          p.deposit_type,
-          p.deposit_value,
-          p.quote_tax_rate,
-          p.quote_sent_at,
-          p.quote_accepted_at,
-          p.quote_declined_at,
-          p.schedule_emails,
-          p.payment_status,
-          p.quote_emails,
-          p.payment_amount,
-          p.paid_at,
-          p.payment_date,
-          p.payment_method,
-          p.payment_notes,
-          p.payment_due_date,
-          p.reminder_sent_at,
-           p.invoice_data,
-          p.invoice_number,
-          p.invoice_sent_at,
-          p.stripe_payment_intent_id,
-          p.refunded_amount,
-          p.refunded_at,
-          p.card_brand,
-          p.card_last4,
-          p.before_photos,
-          p.after_photos,
-          p.documents,
-          p.completed_at           as job_completed_at,
-          p.notes                  as project_notes,
-          p.tasks                  as project_tasks,
-          p.follow_up_date,
-          p.internal_notes         as project_internal_notes,
+          p.id as project_id, p.project_number, p.status as job_status,
+          p.scheduled_date, p.scheduled_time, p.scheduled_end_time,
+          p.event_location, p.assigned_to, p.additional_assignees,
+          p.estimated_hours, p.actual_hours, p.quote_data, p.ai_brief,
+          p.quote_total, p.deposit_type, p.deposit_value, p.quote_tax_rate,
+          p.quote_sent_at, p.quote_accepted_at, p.quote_declined_at,
+          p.schedule_emails, p.payment_status, p.quote_emails,
+          p.payment_amount, p.paid_at, p.payment_date, p.payment_method,
+          p.payment_notes, p.payment_due_date, p.reminder_sent_at,
+          p.invoice_data, p.invoice_number, p.invoice_sent_at,
+          p.stripe_payment_intent_id, p.refunded_amount, p.refunded_at,
+          p.card_brand, p.card_last4, p.before_photos, p.after_photos,
+          p.documents, p.completed_at as job_completed_at,
+          p.notes as project_notes, p.tasks as project_tasks,
+          p.follow_up_date, p.internal_notes as project_internal_notes,
           p.follow_up_notes
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
@@ -227,7 +183,7 @@ export async function GET(request: Request, { params }: Props) {
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (${payment} = '' OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
             (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
@@ -236,12 +192,7 @@ export async function GET(request: Request, { params }: Props) {
         ORDER BY p.scheduled_time ASC NULLS LAST
         LIMIT ${limit} OFFSET ${offset}
       `;
-
     } else if (calendarAll) {
-      // ── Path C: Calendar view — every scheduled job, no created_at window,
-      // no default 20-item page cap. The calendar UI filters client-side
-      // across month/week/day/agenda views, so it needs the full scheduled
-      // set up front rather than a recency-limited slice.
       countPromise = sql`
         SELECT COUNT(*) as total
         FROM leads l
@@ -254,51 +205,21 @@ export async function GET(request: Request, { params }: Props) {
       leadsPromise = sql`
         SELECT
           l.*,
-          p.id                     as project_id,
-          p.project_number,
-          p.status                 as job_status,
-          p.scheduled_date,
-          p.scheduled_time,
-          p.scheduled_end_time,
-          p.event_location,
-          p.assigned_to,
-          p.additional_assignees,
-          p.estimated_hours,
-          p.actual_hours,
-          p.quote_data,
-          p.ai_brief,
-          p.quote_total,
-          p.deposit_type,
-          p.deposit_value,
-          p.quote_tax_rate,
-          p.quote_sent_at,
-          p.quote_accepted_at,
-          p.quote_declined_at,
-          p.schedule_emails,
-          p.payment_status,
-          p.quote_emails,
-          p.payment_amount,
-          p.paid_at,
-          p.payment_date,
-          p.payment_method,
-          p.payment_notes,
-          p.payment_due_date,
-          p.reminder_sent_at,
-          p.invoice_data,
-          p.invoice_number,
-          p.invoice_sent_at,
-          p.stripe_payment_intent_id,
-          p.refunded_amount,
-          p.refunded_at,
-          p.before_photos,
-          p.after_photos,
-          p.documents,
-          p.completed_at           as job_completed_at,
-          p.notes                  as project_notes,
-          p.tasks                  as project_tasks,
-          p.follow_up_date,
-          p.internal_notes         as project_internal_notes,
-          p.follow_up_notes
+          p.id as project_id, p.project_number, p.status as job_status,
+          p.scheduled_date, p.scheduled_time, p.scheduled_end_time,
+          p.event_location, p.assigned_to, p.additional_assignees,
+          p.estimated_hours, p.actual_hours, p.quote_data, p.ai_brief,
+          p.quote_total, p.deposit_type, p.deposit_value, p.quote_tax_rate,
+          p.quote_sent_at, p.quote_accepted_at, p.quote_declined_at,
+          p.schedule_emails, p.payment_status, p.quote_emails,
+          p.payment_amount, p.paid_at, p.payment_date, p.payment_method,
+          p.payment_notes, p.payment_due_date, p.reminder_sent_at,
+          p.invoice_data, p.invoice_number, p.invoice_sent_at,
+          p.stripe_payment_intent_id, p.refunded_amount, p.refunded_at,
+          p.before_photos, p.after_photos, p.documents,
+          p.completed_at as job_completed_at, p.notes as project_notes,
+          p.tasks as project_tasks, p.follow_up_date,
+          p.internal_notes as project_internal_notes, p.follow_up_notes
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
@@ -307,9 +228,7 @@ export async function GET(request: Request, { params }: Props) {
         ORDER BY p.scheduled_date ASC, p.scheduled_time ASC NULLS LAST
         LIMIT ${effectiveLimit}
       `;
-
     } else {
-      // ── Path B: Standard filters — filter by l.created_at ─────
       countPromise = sql`
         SELECT COUNT(*) as total
         FROM leads l
@@ -322,12 +241,12 @@ export async function GET(request: Request, { params }: Props) {
             l.phone       ILIKE ${'%' + search + '%'} OR
             l.description ILIKE ${'%' + search + '%'}
           ))
-          AND (${status} = ''   OR l.status = ${status})
+          AND (${status} = '' OR l.status = ${status})
           AND (${category} = ''
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (${payment} = '' OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
             (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
@@ -340,51 +259,21 @@ export async function GET(request: Request, { params }: Props) {
       leadsPromise = sql`
         SELECT
           l.*,
-          p.id                     as project_id,
-          p.project_number,
-          p.status                 as job_status,
-        p.scheduled_date,
-          p.scheduled_time,
-          p.scheduled_end_time,
-          p.event_location,
-          p.assigned_to,
-          p.additional_assignees,
-          p.estimated_hours,
-          p.actual_hours,
-          p.quote_data,
-          p.ai_brief,
-          p.quote_total,
-          p.deposit_type,
-          p.deposit_value,
-          p.quote_tax_rate,
-          p.quote_sent_at,
-          p.quote_accepted_at,
-          p.quote_declined_at,
-          p.schedule_emails,
-          p.payment_status,
-          p.quote_emails,
-          p.payment_amount,
-          p.paid_at,
-          p.payment_date,
-          p.payment_method,
-          p.payment_notes,
-          p.payment_due_date,
-          p.reminder_sent_at,
-        p.invoice_data,
-          p.invoice_number,
-          p.invoice_sent_at,
-          p.stripe_payment_intent_id,
-          p.refunded_amount,
-          p.refunded_at,
-          p.before_photos,
-          p.after_photos,
-          p.documents,
-          p.completed_at           as job_completed_at,
-          p.notes                  as project_notes,
-          p.tasks                  as project_tasks,
-          p.follow_up_date,
-          p.internal_notes         as project_internal_notes,
-          p.follow_up_notes
+          p.id as project_id, p.project_number, p.status as job_status,
+          p.scheduled_date, p.scheduled_time, p.scheduled_end_time,
+          p.event_location, p.assigned_to, p.additional_assignees,
+          p.estimated_hours, p.actual_hours, p.quote_data, p.ai_brief,
+          p.quote_total, p.deposit_type, p.deposit_value, p.quote_tax_rate,
+          p.quote_sent_at, p.quote_accepted_at, p.quote_declined_at,
+          p.schedule_emails, p.payment_status, p.quote_emails,
+          p.payment_amount, p.paid_at, p.payment_date, p.payment_method,
+          p.payment_notes, p.payment_due_date, p.reminder_sent_at,
+          p.invoice_data, p.invoice_number, p.invoice_sent_at,
+          p.stripe_payment_intent_id, p.refunded_amount, p.refunded_at,
+          p.before_photos, p.after_photos, p.documents,
+          p.completed_at as job_completed_at, p.notes as project_notes,
+          p.tasks as project_tasks, p.follow_up_date,
+          p.internal_notes as project_internal_notes, p.follow_up_notes
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
@@ -395,12 +284,12 @@ export async function GET(request: Request, { params }: Props) {
             l.phone       ILIKE ${'%' + search + '%'} OR
             l.description ILIKE ${'%' + search + '%'}
           ))
-          AND (${status} = ''   OR l.status = ${status})
+          AND (${status} = '' OR l.status = ${status})
           AND (${category} = ''
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (${payment} = ''  OR p.payment_status = ${payment})
+          AND (${payment} = '' OR p.payment_status = ${payment})
           AND (
             ${assignee} = '' OR
             (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
@@ -413,7 +302,7 @@ export async function GET(request: Request, { params }: Props) {
       `;
     }
 
-    // ── Run all four independent queries in parallel ─────────
+    // ── 6. Execute in Parallel ─────────────────────────────────
     const [statsResult, statusCountsResult, countResult, leads] = await Promise.all([
       statsPromise,
       statusCountsPromise,
@@ -423,14 +312,13 @@ export async function GET(request: Request, { params }: Props) {
 
     const globalStats = statsResult[0];
     const statusCounts = statusCountsResult.reduce((acc: Record<string, number>, row: any) => {
-      acc[row.status] = parseInt(row.count);
+      acc[row.status] = parseInt(row.count, 10);
       return acc;
     }, {});
-    const total = parseInt(countResult[0].total);
-
+    const total = parseInt(countResult[0]?.total || '0', 10);
     const pages = Math.ceil(total / effectiveLimit);
 
-    // ── Process notes ─────────────────────────────────────────
+    // ── 7. Process notes ──────────────────────────────────────
     const processedLeads = leads.map((lead: any) => {
       let notes: any[] = [];
       if (lead.project_notes) {

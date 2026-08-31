@@ -4,10 +4,14 @@ import { sendPaymentReminderEmail } from '@/lib/email';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
-
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
 
+// Reuse single connection across warm lambdas
+const sql = neon(process.env.DATABASE_URL!);
+
 type Props = { params: Promise<{ slug: string }> };
+
+/* ═══════════════ GET ═══════════════ */
 
 export async function GET(req: Request, { params }: Props) {
   try {
@@ -17,19 +21,14 @@ export async function GET(req: Request, { params }: Props) {
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    let decoded: any;
+    let decoded: { userId: string };
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+      decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     } catch {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
-    // Verifies both that the company exists AND that this specific
-    // authenticated user actually belongs to it — checking the slug alone
-    // let any logged-in user from any company pull another company's
-    // customer names, emails, and amounts owed by guessing a slug.
+    // ── Single query: verify slug ownership & get company + plan ──────────────
     const companies = await sql`
       SELECT c.id, c.plan_tier
       FROM companies c
@@ -37,11 +36,14 @@ export async function GET(req: Request, { params }: Props) {
       WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
       LIMIT 1
     `;
+    
     if (!companies[0]) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
-    if (!can((companies[0].plan_tier ?? 'free') as PlanTier, 'send_payment_reminder')) {
+    const company = companies[0];
+
+    if (!can((company.plan_tier ?? 'free') as PlanTier, 'send_payment_reminder')) {
       const requiredPlan = FEATURE_PLAN_MAP.send_payment_reminder;
       return NextResponse.json({
         success: false,
@@ -51,11 +53,11 @@ export async function GET(req: Request, { params }: Props) {
       }, { status: 403 });
     }
 
-    const companyId = companies[0].id;
-
+    const companyId = company.id;
     const url = new URL(req.url);
     const showAll = url.searchParams.get('all') === 'true';
 
+    // ── Fetch Reminders ────────────────────────────────────────────────────────
     const reminders = await sql`
       SELECT
         l.id as lead_id,
@@ -121,6 +123,7 @@ export async function GET(req: Request, { params }: Props) {
   }
 }
 
+/* ═══════════════ POST ═══════════════ */
 
 export async function POST(req: Request, { params }: Props) {
   try {
@@ -132,36 +135,14 @@ export async function POST(req: Request, { params }: Props) {
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
 
-    let decoded: any;
+    let decoded: { userId: string };
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+      decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
     } catch {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
-
-    // Confirms the authenticated user actually belongs to this company —
-    // without this, anyone logged in (or previously, anyone at all, since
-    // this handler had no auth check whatsoever) could POST a guessed
-    // lead_id/project_id and trigger a real email plus a real Stripe
-    // checkout session for someone else's customer.
-    const authCheck = await sql`
-      SELECT c.id
-      FROM companies c
-      JOIN users u ON u.company_id = c.id
-      WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
-      LIMIT 1
-    `;
-    if (!authCheck[0]) {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
-    }
-    const companyId = authCheck[0].id;
-
-    // ── Fetch project + company data ──────────────────────────────────────────
-    // Scoped to companyId (resolved above from the authenticated user), not
-    // just the URL's slug — the lead/project must actually belong to the
-    // company this user was just verified to belong to.
+    // ── Single query: Auth check & Fetch project + company + dedup in 1 roundtrip ──
     const result = await sql`
       SELECT
         l.name as customer_name,
@@ -169,6 +150,7 @@ export async function POST(req: Request, { params }: Props) {
         p.payment_due_date::text as payment_due_date,
         p.payment_amount,
         p.quote_total,
+        p.reminder_sent_at,
         c.id as company_id,
         c.name as company_name,
         c.phone as company_phone,
@@ -181,19 +163,21 @@ export async function POST(req: Request, { params }: Props) {
       FROM projects p
       JOIN leads l ON p.lead_id = l.id
       JOIN companies c ON l.company_id = c.id
+      JOIN users u ON u.company_id = c.id
       WHERE p.id = ${project_id}
         AND l.id = ${lead_id}
-        AND c.id = ${companyId}
+        AND c.slug = ${slug}
+        AND u.id = ${decoded.userId}
       LIMIT 1
     `;
 
     if (!result[0]) {
-      return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Project not found or unauthorized' }, { status: 404 });
     }
 
     const r = result[0];
 
-    // Server-side plan check
+    // ── Server-side plan check ────────────────────────────────────────────────
     if (!can((r.plan_tier ?? 'free') as PlanTier, 'send_payment_reminder')) {
       const requiredPlan = FEATURE_PLAN_MAP.send_payment_reminder;
       return NextResponse.json({
@@ -205,12 +189,8 @@ export async function POST(req: Request, { params }: Props) {
     }
 
     // ── Dedup check — don't send if reminder sent in last 24 hours ────────────
-    const projectCheck = await sql`
-      SELECT reminder_sent_at FROM projects WHERE id = ${project_id}
-    `;
-    if (projectCheck[0]?.reminder_sent_at) {
-      const lastSent = new Date(projectCheck[0].reminder_sent_at);
-      const hoursSince = (Date.now() - lastSent.getTime()) / (1000 * 60 * 60);
+    if (r.reminder_sent_at) {
+      const hoursSince = (Date.now() - new Date(r.reminder_sent_at).getTime()) / (1000 * 60 * 60);
       if (hoursSince < 24) {
         return NextResponse.json({
           success: false,
@@ -262,7 +242,7 @@ export async function POST(req: Request, { params }: Props) {
         customerName:  r.customer_name,
         companyName:   r.company_name,
         companyPhone:  r.company_phone,
-        companyId: r.company_id,
+        companyId:     r.company_id,
         amountDue,
         dueDate:       r.payment_due_date,
         isOverdue,
@@ -336,7 +316,7 @@ export async function POST(req: Request, { params }: Props) {
     await sql`
       UPDATE projects
       SET reminder_sent_at = NOW(), updated_at = NOW()
-      WHERE id = ${project_id}
+      WHERE id = ${project_id} AND company_id = ${r.company_id}
     `;
 
     return NextResponse.json({ success: true, message: 'Reminder sent!' });
