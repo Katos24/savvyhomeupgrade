@@ -71,9 +71,9 @@ const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appear
 
 function LockedCategoriesSection({ companySlug }: { companySlug: string }) {
   return (
-    <div className="min-h-screen bg-slate-50/50 px-4 py-6 sm:px-6 sm:py-10 lg:px-12 font-sans text-slate-900 antialiased">
+    <div className="w-full font-sans text-slate-900 antialiased">
       <div className="mx-auto max-w-4xl">
-        <div className="rounded-xl border border-slate-200/80 bg-white py-16 text-center shadow-lg shadow-slate-200/60">
+        <div className="rounded-xl border border-slate-200/80 bg-white py-16 text-center shadow-xs">
           <Lock className="mx-auto mb-3 h-6 w-6 text-slate-300" />
           <p className="text-sm font-bold text-slate-800">Services &amp; pricing is on the Basic plan</p>
           <a
@@ -145,11 +145,13 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [editingQId, setEditingQId] = useState<string | null>(null);
   const [questionLabelError, setQuestionLabelError] = useState('');
 
-  // Per-template values being edited in the pricing modal. Moved up here with
-  // the rest of the state — it was previously declared mid-component.
-  const [editingTaxRateValue, setEditingTaxRateValue] = useState<number>(0);
-  const [editingDepositType, setEditingDepositType] = useState<DepositType | null>(null);
-  const [editingDepositValue, setEditingDepositValue] = useState<number>(0);
+  // Tax rate and deposit terms used to be independently editable per pricing
+  // template here. Per your note that this added clutter, quote templates
+  // now simply always use the company-wide tax/deposit settings (below) at
+  // save time — there's nothing to override per template anymore. "Apply to
+  // all templates" (further down) still exists, since it's still the only
+  // way to push a changed default onto templates that haven't been re-saved
+  // since.
 
   // Company-wide defaults.
   const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
@@ -393,12 +395,6 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
       : [];
     setEditingLineItems(mapped);
     setEditingQuoteId(existing?.id || null);
-    // New templates inherit the company's current tax rate and deposit terms.
-    // Existing templates keep whatever they were saved with — changing a
-    // company default later doesn't retroactively touch saved templates.
-    setEditingTaxRateValue(existing ? (existing.tax_rate ?? 0) : taxRate);
-    setEditingDepositType(existing ? (existing.deposit_type ?? null) : depositType);
-    setEditingDepositValue(existing ? (existing.deposit_value ?? 0) : depositValue);
     setNewDesc(''); setNewPrice(''); setNewQty('1');
     setAddingItem(false); setLineItemError(''); setQuoteError('');
     setQuoteEditorCatValue(catValue);
@@ -428,20 +424,18 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const saveQuoteTemplate = async () => {
     if (newDesc.trim() || newPrice) { setLineItemError('Click + to add this item first.'); return; }
     if (editingLineItems.length === 0) { setQuoteError('Add at least one line item.'); return; }
-    if (editingDepositType === 'percent' && editingDepositValue > 100) {
-      setQuoteError('A percent deposit can\'t exceed 100.'); return;
-    }
     setQuoteSaving(true); setQuoteError('');
     const subtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
-    const total = subtotal + subtotal * (editingTaxRateValue / 100);
+    // Always the company's current tax/deposit — no per-template override.
+    const total = subtotal + subtotal * (taxRate / 100);
     const templateData = {
       id: editingQuoteId || `custom_${Date.now()}`,
       category: quoteEditorCatValue,
       items: editingLineItems,
       total,
-      tax_rate: editingTaxRateValue,
-      deposit_type: editingDepositValue > 0 ? editingDepositType : null,
-      deposit_value: editingDepositValue > 0 ? editingDepositValue : null,
+      tax_rate: taxRate,
+      deposit_type: depositValue > 0 ? depositType : null,
+      deposit_value: depositValue > 0 ? depositValue : null,
     };
     try {
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
@@ -542,9 +536,9 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const questionsForActiveService = customQuestions.filter(q => q.category === questionEditorCatValue);
 
   const quoteEditorSubtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
-  const quoteEditorTaxAmount = quoteEditorSubtotal * (editingTaxRateValue / 100);
+  const quoteEditorTaxAmount = quoteEditorSubtotal * (taxRate / 100);
   const quoteEditorTotal = quoteEditorSubtotal + quoteEditorTaxAmount;
-  const quoteEditorDeposit = depositFor(quoteEditorTotal, editingDepositType, editingDepositValue);
+  const quoteEditorDeposit = depositFor(quoteEditorTotal, depositType, depositValue);
   const quoteEditorBalance = quoteEditorTotal - quoteEditorDeposit;
 
   // Plan gate lives after every hook above, so hook order never changes
@@ -554,40 +548,30 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50 px-4 py-6 sm:px-6 sm:py-10 lg:px-12 font-sans text-slate-900 antialiased">
-      <div className="mx-auto max-w-7xl space-y-6 sm:space-y-8 pb-24">
+    <>
+    <div className="w-full font-sans text-slate-900 antialiased space-y-6 sm:space-y-8 pb-24">
 
-        {/* ── TITLE + ACTIONS ── */}
-        <div className="pb-2 border-b border-slate-200 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-2.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Services</h1>
-            {isDirty && (
-              <span className="inline-flex items-center gap-1.5 rounded-md border border-amber-200/80 bg-amber-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-amber-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" /> Unsaved changes
-              </span>
-            )}
+        {/* ── TITLE ── no header button: Save lives only in the floating
+            bar below, matching the Booking Form Editor pattern. */}
+        <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Services</h1>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">
+              Manage the services customers can request on your booking form, their pricing, and any extra questions.
+            </p>
           </div>
-          {isDirty && (
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50"
-            >
-              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-              {saving ? 'Saving...' : 'Save changes'}
-            </button>
-          )}
         </div>
 
         {/* ── HEADLINE CARD ── */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60">
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
           <h2 className="text-sm sm:text-base font-bold leading-snug text-slate-900">
-            Set up each service so quotes and intake are ready to go
+            These are the services customers pick from on your booking form
           </h2>
           <ul className="mt-3 space-y-1.5 text-xs sm:text-sm font-medium leading-relaxed text-slate-600 list-disc pl-4">
+            <li>Every service below shows up as a choice on your public booking form.</li>
             <li>Pricing templates are just a starting point — everything's editable per job.</li>
             <li>Task checklists auto-load when a job in that service is created.</li>
-            <li>Custom questions only show customers who are requesting that specific service.</li>
+            <li>Custom questions only show customers who picked that specific service.</li>
           </ul>
           <button
             onClick={() => setShowQuotePreview(true)}
@@ -635,7 +619,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         )}
 
         {/* ── ADD SERVICE + COMPANY DEFAULTS ── */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-lg shadow-slate-200/60 space-y-2">
+        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-2">
           <AnimatePresence mode="wait">
             {showAddForm ? (
               <motion.div
@@ -818,7 +802,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   key={cat.value}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="group bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-lg shadow-slate-200/60 transition-shadow hover:shadow-slate-300/60"
+                  className="group bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-xs transition-shadow hover:shadow-sm"
                 >
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
                   {/* LEFT: identity + badges */}
@@ -991,17 +975,17 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
               initial={{ y: 80, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
-              className="sticky bottom-0 z-40 border-t border-slate-200 bg-white px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.08)]"
+              className="sticky bottom-4 z-40 mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-4 shadow-xl backdrop-blur-md"
             >
-              <div className="mx-auto flex max-w-7xl flex-col items-stretch gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                <p className="flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-slate-800">
-                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+              <div className="flex items-center justify-between gap-4">
+                <p className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                  <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
                   You have unsaved changes.
                 </p>
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50 sm:w-auto"
+                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition"
                 >
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   {saving ? 'Saving...' : 'Save changes'}
@@ -1010,6 +994,8 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
             </motion.div>
           )}
         </AnimatePresence>
+
+    </div>
 
         {/* ── TASK EDITOR MODAL ── */}
         {taskEditorCatIndex !== null && (
@@ -1259,9 +1245,9 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                     <span>Subtotal</span>
                     <span>{fmt(quoteEditorSubtotal)}</span>
                   </div>
-                  {editingTaxRateValue > 0 && (
+                  {taxRate > 0 && (
                     <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                      <span>Tax ({editingTaxRateValue}%)</span>
+                      <span>Tax ({taxRate}%)</span>
                       <span>{fmt(quoteEditorTaxAmount)}</span>
                     </div>
                   )}
@@ -1271,103 +1257,27 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                   </div>
                 </div>
 
-                {/* ── TAX RATE & DEPOSIT GRID (LEFT TO RIGHT) ── */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-
-                  {/* Tax Rate Block */}
-                  <div className="flex flex-col justify-between rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                        <Percent className="h-3.5 w-3.5 text-emerald-600" />
-                        Tax Rate
-                      </label>
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          step="0.001"
-                          min="0"
-                          max="100"
-                          value={editingTaxRateValue}
-                          onChange={(e) => setEditingTaxRateValue(parseFloat(e.target.value) || 0)}
-                          className="w-16 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-semibold text-slate-900 outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
-                        />
-                        <span className="text-xs font-semibold text-slate-500">%</span>
-                      </div>
-                    </div>
-                    <div className="border-t border-slate-200 pt-2 mt-2 text-[11px] font-medium text-slate-500">
-                      Amount: <span className="font-semibold text-slate-800">{fmt(quoteEditorTaxAmount)}</span>
-                    </div>
-                  </div>
-
-                  {/* Deposit Terms Block */}
-                  <div className="flex flex-col justify-between space-y-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <label className="flex items-center gap-1.5 text-xs font-semibold text-slate-700">
-                        <HandCoins className="h-3.5 w-3.5 text-amber-600" />
-                        Deposit
-                      </label>
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <div className="flex overflow-hidden rounded-md border border-slate-200">
-                          {(['percent', 'fixed'] as DepositType[]).map((t) => (
-                            <button
-                              key={t}
-                              onClick={() => setEditingDepositType(t)}
-                              className={`px-2 py-1 text-[11px] font-bold transition-colors ${
-                                editingDepositType === t
-                                  ? 'bg-amber-500 text-white'
-                                  : 'bg-white text-slate-500 hover:bg-slate-50'
-                              }`}
-                            >
-                              {t === 'percent' ? '%' : '$'}
-                            </button>
-                          ))}
-                        </div>
-                        <input
-                          type="number"
-                          step="0.001"
-                          min="0"
-                          max={editingDepositType === 'percent' ? 100 : undefined}
-                          value={editingDepositValue || ''}
-                          placeholder="0"
-                          onChange={(e) => {
-                            const v = parseFloat(e.target.value) || 0;
-                            setEditingDepositValue(v);
-                            if (v > 0 && !editingDepositType) setEditingDepositType('percent');
-                          }}
-                          className={`w-16 rounded-md border border-slate-200 bg-white px-2 py-1 text-right text-xs font-semibold text-slate-900 outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 ${noSpinners}`}
-                        />
-                        {editingDepositValue > 0 && (
-                          <button
-                            onClick={() => { setEditingDepositValue(0); setEditingDepositType(null); }}
-                            className="text-[10px] font-semibold text-slate-400 hover:text-rose-600 transition"
-                          >
-                            Clear
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {quoteEditorDeposit > 0 ? (
-                      <div className="space-y-0.5 border-t border-slate-200 pt-2 text-[11px] font-semibold">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500">Signing:</span>
-                          <span className="text-amber-700">{fmt(quoteEditorDeposit)}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500">Balance:</span>
-                          <span className="text-slate-700">{fmt(quoteEditorBalance)}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="border-t border-slate-200 pt-2 text-[11px] font-medium text-slate-400">
-                        No deposit required.
-                      </p>
-                    )}
-                  </div>
-
+                {/* Tax and deposit are company-wide settings, edited from
+                    the buttons at the top of the Services page — this modal
+                    just shows what will apply, nothing to configure here. */}
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-3 text-xs font-medium text-slate-600">
+                  <span className="flex items-center gap-1.5">
+                    <Percent className="h-3.5 w-3.5 text-emerald-600" />
+                    Tax: <span className="font-semibold text-slate-800">{taxRate}%</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <HandCoins className="h-3.5 w-3.5 text-amber-600" />
+                    Deposit: <span className="font-semibold text-slate-800">{depositLabel(depositType, depositValue)}</span>
+                  </span>
+                  {quoteEditorDeposit > 0 && (
+                    <span className="text-[11px] text-slate-500 sm:ml-auto">
+                      Due at signing: <span className="font-semibold text-amber-700">{fmt(quoteEditorDeposit)}</span>
+                      {' '}· Balance: <span className="font-semibold text-slate-700">{fmt(quoteEditorBalance)}</span>
+                    </span>
+                  )}
                 </div>
 
-                {editingDepositType === 'fixed' && editingDepositValue > quoteEditorTotal && quoteEditorTotal > 0 && (
+                {depositType === 'fixed' && depositValue > quoteEditorTotal && quoteEditorTotal > 0 && (
                   <p className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700">
                     <AlertCircle className="h-3 w-3 shrink-0" />
                     Deposit is more than the estimate. It will be capped at the total.
@@ -1431,6 +1341,16 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
               </div>
 
               <div className="flex-1 space-y-4 overflow-y-auto p-5">
+                {/* Make the booking-form connection obvious up front,
+                    not just a small subtitle line in the header above. */}
+                <div className="flex items-start gap-2.5 rounded-lg border border-blue-100 bg-blue-50/60 px-3.5 py-2.5 text-[11px] font-medium leading-relaxed text-blue-800">
+                  <HelpCircle className="h-3.5 w-3.5 shrink-0 text-blue-500 mt-0.5" />
+                  <span>
+                    These only appear on the booking form when a customer selects{' '}
+                    <span className="font-bold">{activeQuestionEditorCat?.label}</span> as their service.
+                  </span>
+                </div>
+
                 {/* Inline add/edit form */}
                 <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/60 p-4">
                   <div>
@@ -1695,7 +1615,6 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </>
   );
 }

@@ -479,8 +479,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
 
   const enabledCount =
     Number(fieldConfig.address.enabled) +
-    Number(fieldConfig.preferred_date.enabled) +
-    Number(fieldConfig.preferred_time.enabled) +
+    Number(fieldConfig.preferred_date.enabled) + // covers date & time together now
     Number(fieldConfig.lead_source.enabled) +
     Number(fieldConfig.file_upload.enabled) +
     (canUseCustomQuestions ? customQuestions.length : 0);
@@ -504,13 +503,11 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </PhoneField>
         )}
         {fieldConfig.preferred_date.enabled && (
-          <PhoneField label="Preferred Date">
-            <div className={fieldBox}><Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />MM / DD / YYYY</div>
-          </PhoneField>
-        )}
-        {fieldConfig.preferred_time.enabled && (
-          <PhoneField label="Preferred Time">
-            <div className={fieldBox}><Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />Morning</div>
+          <PhoneField label="Preferred Date & Time">
+            <div className="space-y-2">
+              <div className={fieldBox}><Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />MM / DD / YYYY</div>
+              <div className={fieldBox}><Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />Morning</div>
+            </div>
           </PhoneField>
         )}
         {fieldConfig.lead_source.enabled && (
@@ -587,47 +584,51 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
-        {/* Public Live Link Bar with "Try it Yourself" Callout */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
-          <div className="flex items-center gap-2 min-w-0">
-            <Link2 className="h-4 w-4 shrink-0 text-slate-400" />
-            <span className="text-xs font-semibold text-slate-500">Live URL:</span>
-            <code className="truncate font-mono text-xs font-bold text-slate-800">{publicUrl}</code>
+        {/* Your link + how it works — one box instead of two, and the
+            URL now gets its own full-width line instead of truncating */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
+          <div className="space-y-3 p-4">
+            <div className="flex items-center gap-2">
+              <Link2 className="h-4 w-4 shrink-0 text-slate-400" />
+              <span className="text-xs font-semibold text-slate-500">Your Live Booking Link</span>
+            </div>
+            <code className="block w-full break-all rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs font-bold text-slate-800">
+              {publicUrl}
+            </code>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(publicUrl);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 1800);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : null}
+                {linkCopied ? 'Copied' : 'Copy'}
+              </button>
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+              >
+                Test Form Live <ArrowUpRight className="h-3.5 w-3.5" />
+              </a>
+              <span className="ml-auto hidden items-center gap-1 text-[11px] font-bold text-slate-500 sm:inline-flex">
+                ✨ <span className="text-slate-800">Try it out yourself!</span> Own your business growth.
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
-            <span className="hidden md:inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 mr-1">
-              ✨ <span className="text-slate-800">Try it out yourself!</span> Own your business growth.
-            </span>
-            <button
-              onClick={() => {
-                navigator.clipboard.writeText(publicUrl);
-                setLinkCopied(true);
-                setTimeout(() => setLinkCopied(false), 1800);
-              }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
-            >
-              {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : null}
-              {linkCopied ? 'Copied' : 'Copy'}
-            </button>
-            <a
-              href={publicUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
-            >
-              Test Form Live <ArrowUpRight className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </div>
 
-        {/* Instant Lead Capture Notice */}
-        <div className="flex items-start gap-3 rounded-xl border border-blue-200/80 bg-blue-50/60 p-4 text-xs font-medium text-blue-950 shadow-xs">
-          <Zap className="h-4 w-4 shrink-0 text-blue-600 mt-0.5" />
-          <div className="space-y-1">
-            <p className="font-bold text-blue-900">How Lead Capture Works</p>
-            <p className="text-blue-800/90 leading-relaxed">
-              When a customer completes the <span className="font-bold">Required Intake Fields</span> (Step 1) and taps submit, their request <span className="font-bold underline decoration-blue-300">lands on your dashboard immediately as a new lead</span>! If they proceed to complete any optional fields, site photos, or custom questions, those details will automatically update on their existing lead ticket.
-            </p>
+          <div className="flex items-start gap-3 border-t border-blue-100 bg-blue-50/60 p-4 text-xs font-medium text-blue-950">
+            <Zap className="h-4 w-4 shrink-0 text-blue-600 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-blue-900">How Lead Capture Works</p>
+              <p className="text-blue-800/90 leading-relaxed">
+                When a customer completes the <span className="font-bold">Required Intake Fields</span> (Step 1) and taps submit, their request <span className="font-bold underline decoration-blue-300">lands on your dashboard immediately as a new lead</span>! If they proceed to complete any optional fields, site photos, or custom questions, those details will automatically update on their existing lead ticket.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -669,7 +670,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               <button
                 type="button"
                 onClick={() => setIsPreviewOpen(true)}
-                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-100"
               >
                 <Eye className="h-3.5 w-3.5 text-slate-500" /> Preview
               </button>
@@ -691,17 +692,10 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               />
               <ControlRow
                 icon={Calendar}
-                label="Preferred Date"
-                hint="Let clients select target start dates"
+                label="Preferred Date & Time"
+                hint="Clients pick a target date, then a morning/afternoon/evening slot"
                 enabled={fieldConfig.preferred_date.enabled}
-                onToggle={() => toggleField('preferred_date')}
-              />
-              <ControlRow
-                icon={Clock}
-                label="Preferred Time"
-                hint="Allow morning/afternoon timeframe picks"
-                enabled={fieldConfig.preferred_time.enabled}
-                onToggle={() => toggleField('preferred_time')}
+                onToggle={togglePreferredDateTime}
               />
               <ControlRow
                 icon={Megaphone}
@@ -734,10 +728,11 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               <Tag className="h-4 w-4" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-bold text-slate-900">Managing Offered Services?</p>
+              <p className="text-xs font-bold text-slate-900">Managing Services & Questions?</p>
               <p className="mt-0.5 text-xs text-slate-500">
-                Service item selections on this form are managed under{' '}
-                <span className="font-semibold text-slate-800">Categories & Pricing</span>.
+                Service item selections and any custom questions you add are managed under{' '}
+                <span className="font-semibold text-slate-800">Categories & Pricing</span> — they'll
+                show up here automatically, under Step 2 of this form.
               </p>
             </div>
           </div>

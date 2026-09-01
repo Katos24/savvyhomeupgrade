@@ -45,6 +45,51 @@ async function loadTemplates(companyId: number) {
   return rows.map(shape);
 }
 
+type AuthRow = {
+  company_id: number;
+  plan_tier: string | null;
+  user_id: string;
+  role: string;
+  user_company_id: number;
+};
+
+/**
+ * The actual business rules — membership, plan tier, role — pulled out so
+ * both authorize() (used by the write paths below) and GET's batched query
+ * path can apply the exact same checks without duplicating them. This
+ * function does no I/O itself; it just judges a row that's already in hand.
+ */
+function validateAuthRow(row: AuthRow | undefined, requireWriteRole: boolean) {
+  if (!row) {
+    return { error: NextResponse.json({ success: false, error: 'Company or user not found' }, { status: 404 }) };
+  }
+
+  if (row.user_company_id !== row.company_id) {
+    return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 }) };
+  }
+
+  if (!can((row.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
+    return {
+      error: NextResponse.json(
+        {
+          success: false,
+          error: 'Quote templates are available on the Basic plan',
+          upgrade_required: true,
+        },
+        { status: 403 }
+      ),
+    };
+  }
+
+  if (requireWriteRole && !['owner', 'admin', 'manager'].includes(row.role)) {
+    return {
+      error: NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 }),
+    };
+  }
+
+  return { company: { id: row.company_id, plan_tier: row.plan_tier }, user: { id: row.user_id, role: row.role } };
+}
+
 /** Auth + plan + membership. Returns the company & user in a single optimized DB join. */
 async function authorize(slug: string, requireWriteRole: boolean) {
   const cookieStore = await cookies();
@@ -75,36 +120,7 @@ async function authorize(slug: string, requireWriteRole: boolean) {
     LIMIT 1
   `;
 
-  if (results.length === 0) {
-    return { error: NextResponse.json({ success: false, error: 'Company or user not found' }, { status: 404 }) };
-  }
-
-  const row = results[0];
-
-  if (row.user_company_id !== row.company_id) {
-    return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 }) };
-  }
-
-  if (!can((row.plan_tier ?? 'basic') as PlanTier, 'quote_templates')) {
-    return {
-      error: NextResponse.json(
-        {
-          success: false,
-          error: 'Quote templates are available on the Basic plan',
-          upgrade_required: true,
-        },
-        { status: 403 }
-      ),
-    };
-  }
-
-  if (requireWriteRole && !['owner', 'admin', 'manager'].includes(row.role)) {
-    return {
-      error: NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 }),
-    };
-  }
-
-  return { company: { id: row.company_id, plan_tier: row.plan_tier }, user: { id: row.user_id, role: row.role } };
+  return validateAuthRow(results[0] as AuthRow | undefined, requireWriteRole);
 }
 
 /* ═══════════════ GET ═══════════════ */
