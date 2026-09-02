@@ -63,6 +63,15 @@ type DashboardStats = {
   }>;
   revenue_this_month: number;
   ready_to_invoice: { count: number; value: number };
+  recent_payments: Array<{
+    id: number;
+    amount: string | number;
+    kind: string;
+    method: string;
+    paid_on: string;
+    customer_name: string;
+    payment_status: string | null;
+  }>;
 };
 
 const fmtMoney = (n: number) =>
@@ -81,6 +90,30 @@ const fmtTime = (t: string | null) => {
 const formatCategoryLabel = (value?: string | null) =>
   (value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
+// Same defensive pattern as BillingSection.tsx's fmtDate — splits on 'T'
+// before parsing, so it works whether paid_on arrives as a bare
+// "2026-09-02" or a full ISO timestamp "2026-09-02T00:00:00.000Z".
+// Naively appending 'T00:00:00' onto an already-ISO string is what
+// produced "Invalid Date" here.
+const fmtShortDate = (d: string | null | undefined) => {
+  if (!d) return null;
+  const datePart = d.split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// Maps the project's current payment_status onto a short label + color for
+// the Recent Payments list. Reads the field the payments_sync_project
+// trigger already maintains — no recomputation here.
+const paymentStatusBadge = (status: string | null) => {
+  if (status === 'paid') return { label: 'Paid in Full', tint: 'emerald' as const };
+  if (status === 'partially_paid') return { label: 'Partial', tint: 'amber' as const };
+  if (status === 'refunded') return { label: 'Refunded', tint: 'rose' as const };
+  if (status === 'partially_refunded') return { label: 'Partially Refunded', tint: 'rose' as const };
+  return null;
+};
+
 export default function CompanyDashboardClient({ company }: { company: Company }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -96,6 +129,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [selectedLead, setSelectedLead] = useState<any>(null);
   const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
@@ -129,10 +163,22 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     } catch (e) { console.error('fetchCurrentUser:', e); }
   }, []);
 
+  const fetchTeamMembers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/team/members');
+      const data = await res.json();
+      if (data.success) {
+        const assigneeList = (data.allAssignees || []).map((name: string) => ({ id: name, name }));
+        setTeamMembers(assigneeList);
+      }
+    } catch (e) { console.error('fetchTeamMembers:', e); }
+  }, []);
+
   useEffect(() => {
     fetchStats();
     fetchCurrentUser();
-  }, [fetchStats, fetchCurrentUser]);
+    fetchTeamMembers();
+  }, [fetchStats, fetchCurrentUser, fetchTeamMembers]);
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -444,7 +490,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   )}
                   <div className={`px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
                     <button
-                      onClick={() => router.push(`/${company.slug}/calendar`)}
+                      onClick={() => router.push(`/${company.slug}/dashboard/calendar`)}
                       className={`text-sm font-semibold inline-flex items-center gap-1 ${cardText}`}
                     >
                       View full schedule <ArrowRight className="w-3.5 h-3.5" />
@@ -479,6 +525,67 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 </div>
               </div>
             </div>
+
+            {/* Recent Payments — unlike the stat cards above, this one goes
+                to Financials, not Leads, since a payment ledger belongs
+                there, not in the leads-working view. */}
+            <div className="mt-8">
+              <h2 className={`text-lg font-semibold mb-3 ${heading}`}>Recent Payments</h2>
+              <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
+                {stats.recent_payments.length === 0 ? (
+                  <div className="px-5 py-10 text-center">
+                    <p className={`text-sm ${subText}`}>No payments recorded yet.</p>
+                  </div>
+                ) : (
+                  <div className={`divide-y ${isDark ? 'divide-white/10' : 'divide-[#e7e2d8]'}`}>
+                    {stats.recent_payments.map((p) => {
+                      const badge = paymentStatusBadge(p.payment_status);
+                      const badgeTint = badge
+                        ? {
+                            emerald: isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-700',
+                            amber: isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700',
+                            rose: isDark ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-50 text-rose-700',
+                          }[badge.tint]
+                        : '';
+                      return (
+                        <button
+                          key={p.id}
+                          onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
+                          className={`w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition ${isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]'}`}
+                        >
+                          <div className="min-w-0">
+                            <p className={`font-semibold truncate ${cardText}`}>{p.customer_name}</p>
+                            <p className={`text-xs ${subText}`}>
+                              {p.kind === 'deposit' ? 'Deposit' : p.kind === 'balance' ? 'Balance' : 'Payment'}
+                              {' · '}
+                              {fmtShortDate(p.paid_on)}
+                            </p>
+                          </div>
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <p className={`text-sm font-semibold tabular-nums ${cardText}`}>
+                              {fmtMoney(parseFloat(String(p.amount)))}
+                            </p>
+                            {badge && (
+                              <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeTint}`}>
+                                {badge.label}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className={`px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                  <button
+                    onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
+                    className={`text-sm font-semibold inline-flex items-center gap-1 ${cardText}`}
+                  >
+                    View all payments <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </>
         )}
       </main>
@@ -492,7 +599,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           currentUser={currentUser} statusOptions={company.status_options || []}
           categories={company.form_categories || []} company={company}
           companySlug={company.slug}
-          teamMembers={[]}
+          teamMembers={teamMembers}
         />
       )}
 

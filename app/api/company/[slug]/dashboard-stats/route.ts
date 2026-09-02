@@ -150,12 +150,37 @@ export async function GET(request: Request, { params }: Props) {
         AND p.quote_total::numeric > 0
     `;
 
+    // Recent payments — real transactions from the ledger, not a project's
+    // running total. Excludes refunds ('money that came in', not money
+    // going back out) — a refund showing up in a "recent payments" list
+    // would read as new revenue when it's the opposite.
+    //
+    // pr.payment_status reflects the project's CURRENT state (as of now),
+    // not necessarily "was this the exact payment that completed it" — for
+    // an older row where a later payment finished the job, this still
+    // correctly shows the job as paid, just not credited to this specific
+    // row's payment as the one that tipped it over. Good enough for an
+    // at-a-glance list; a precise per-row running total would need a
+    // window function and isn't worth the complexity here.
+    const recentPaymentsPromise = sql`
+      SELECT
+        pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,
+        l.name as customer_name, pr.payment_status
+      FROM payments pay
+      JOIN projects pr ON pay.project_id = pr.id
+      JOIN leads l ON pr.lead_id = l.id
+      WHERE pay.company_id = ${companyId}
+        AND pay.kind <> 'refund'
+      ORDER BY pay.paid_on DESC, pay.created_at DESC
+      LIMIT 6
+    `;
+
     const [
       leadsResult, estimatesResult, jobsResult, invoicesResult,
-      schedule, revenueResult, readyResult,
+      schedule, revenueResult, readyResult, recentPayments,
     ] = await Promise.all([
       leadsPromise, estimatesPromise, jobsPromise, invoicesPromise,
-      schedulePromise, revenuePromise, readyToInvoicePromise,
+      schedulePromise, revenuePromise, readyToInvoicePromise, recentPaymentsPromise,
     ]);
 
     return NextResponse.json({
@@ -182,6 +207,7 @@ export async function GET(request: Request, { params }: Props) {
         count: parseInt(readyResult[0]?.ready_count || '0', 10),
         value: parseFloat(readyResult[0]?.ready_value || '0'),
       },
+      recent_payments: recentPayments,
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

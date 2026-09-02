@@ -62,9 +62,10 @@ export default function Sidebar({
   }> = [
     { href: `/${companySlug}/dashboard`,            icon: LayoutGrid, label: 'Dashboard',  exactMatch: true,  color: null },
     { href: `/${companySlug}/leads`,                icon: ListChecks, label: 'Leads',      exactMatch: false, color: '#38bdf8' },
+        { href: `/${companySlug}/dashboard/calendar`,   icon: Calendar,   label: 'Calendar',   exactMatch: false, color: '#34d399' },
+
     { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false, color: '#fbbf24' },
     { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
-    { href: `/${companySlug}/dashboard/calendar`,   icon: Calendar,   label: 'Calendar',   exactMatch: false, color: '#34d399' },
     { href: `/${companySlug}/outbox`,               icon: Mail,       label: 'Outbox',     exactMatch: false, color: '#fb923c' },
   ];
 

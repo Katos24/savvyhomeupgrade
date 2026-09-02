@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Calendar from '@/components/dashboard/Calendar';
 import LeadModal from '@/components/dashboard/LeadModal';
 import { Toaster } from 'sonner';
@@ -18,11 +18,19 @@ type Company = {
 
 export default function CalendarClient({ company }: { company: Company }) {
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  // Previously never fetched at all for leads opened from the calendar —
+  // the list endpoint that feeds the calendar grid doesn't include either
+  // of these, so BillingSection silently showed no payment history for
+  // any lead opened this way, even ones that had real payments recorded.
+  const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
+  const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
 
   useEffect(() => {
     fetchCurrentUser();
+    fetchTeamMembers();
   }, []);
 
   async function fetchCurrentUser() {
@@ -34,6 +42,19 @@ export default function CalendarClient({ company }: { company: Company }) {
       }
     } catch (error) {
       console.error('Failed to fetch user:', error);
+    }
+  }
+
+  async function fetchTeamMembers() {
+    try {
+      const res = await fetch('/api/team/members');
+      const data = await res.json();
+      if (data.success) {
+        const assigneeList = (data.allAssignees || []).map((name: string) => ({ id: name, name }));
+        setTeamMembers(assigneeList);
+      }
+    } catch (error) {
+      console.error('Failed to fetch team members:', error);
     }
   }
 
@@ -117,25 +138,45 @@ export default function CalendarClient({ company }: { company: Company }) {
     }
   }
 
-  async function refreshModalLead() {
+  // Calendar's own list fetch has no payments/activity — this is the same
+  // "show what we have immediately, then fill in the real detail" pattern
+  // already used in LeadsClient.tsx and CompanyDashboardClient.tsx. Without
+  // this, selectedLead stayed permanently stuck on the bare list row.
+  const openLead = useCallback(async (job: any) => {
+    setSelectedLead(job);
+    setSelectedLeadPayments([]);
+    setSelectedLeadActivity([]);
     try {
-      const response = await fetch(`/api/company/${company.slug}/leads`, {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Pragma': 'no-cache'
-        }
-      });
-      const data = await response.json();
-      
-      if (selectedLead) {
-        const updatedLead = data.leads.find((l: any) => l.id === selectedLead.id);
-        if (updatedLead) {
-          setSelectedLead(updatedLead);
-        }
+      const res = await fetch(`/api/leads/${job.id}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.lead) {
+        setSelectedLead(data.lead);
+        setSelectedLeadPayments(data.payments || []);
+        setSelectedLeadActivity(data.activity || []);
       }
-      
-      setCalendarRefreshKey(prev => prev + 1);
+    } catch (error) {
+      console.error('Failed to load lead detail:', error);
+    }
+  }, []);
+
+  // Was refetching the whole calendar list and matching a row out of it —
+  // the same incomplete shape as the initial click, so "refresh" never
+  // actually recovered payments/activity either. Now refetches the single
+  // lead's real detail, same as openLead above.
+  async function refreshModalLead() {
+    setCalendarRefreshKey(prev => prev + 1);
+    if (!selectedLead) return;
+    try {
+      const res = await fetch(`/api/leads/${selectedLead.id}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' },
+      });
+      const data = await res.json();
+      if (data.success && data.lead) {
+        setSelectedLead(data.lead);
+        setSelectedLeadPayments(data.payments || []);
+        setSelectedLeadActivity(data.activity || []);
+      }
     } catch (error) {
       console.error('Failed to refresh:', error);
     }
@@ -154,7 +195,7 @@ export default function CalendarClient({ company }: { company: Company }) {
   <Toaster position="top-right" />
   <Calendar
     companySlug={company.slug}
-    onSelectLead={setSelectedLead}
+    onSelectLead={openLead}
     statusOptions={statusOptions}
     key={calendarRefreshKey}
   />
@@ -168,11 +209,14 @@ export default function CalendarClient({ company }: { company: Company }) {
           onAddNote={addNote}
           onDeleteLead={deleteLead}
           onRefresh={refreshModalLead}
+          payments={selectedLeadPayments}
+          activity={selectedLeadActivity}
           currentUser={currentUser}
           statusOptions={statusOptions}
           categories={company.form_categories || []}
           companySlug={company.slug}
           company={company}
+          teamMembers={teamMembers}
         />
       )}
     </div>
