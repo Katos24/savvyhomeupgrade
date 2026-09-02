@@ -7,7 +7,7 @@ import {
   LayoutGrid, Calendar, LogOut, X,
   User, Mail, Users as UsersIcon,
   ChevronRight, ChevronsLeft, ChevronsRight, Sparkles,
-  DollarSign, Home
+  DollarSign, Settings, ListChecks
 } from 'lucide-react';
 
 type SidebarProps = {
@@ -53,8 +53,15 @@ export default function Sidebar({
   const homeHref = `/${companySlug}/home`;
   const homeActive = isActive(homeHref, true);
 
-  const navItems = [
+  const navItems: Array<{
+    href: string;
+    icon: any;
+    label: string;
+    exactMatch: boolean;
+    color: string | null;
+  }> = [
     { href: `/${companySlug}/dashboard`,            icon: LayoutGrid, label: 'Dashboard',  exactMatch: true,  color: null },
+    { href: `/${companySlug}/leads`,                icon: ListChecks, label: 'Leads',      exactMatch: false, color: '#38bdf8' },
     { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false, color: '#fbbf24' },
     { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
     { href: `/${companySlug}/dashboard/calendar`,   icon: Calendar,   label: 'Calendar',   exactMatch: false, color: '#34d399' },
@@ -168,30 +175,6 @@ export default function Sidebar({
             <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] px-3 mb-2">Navigation</p>
           )}
 
-          <Link
-            href={homeHref}
-            title={collapsed ? 'Home' : undefined}
-            className={`flex items-center rounded-xl font-semibold text-sm transition-all relative ${
-              collapsed ? 'justify-center py-3' : 'gap-3 px-3 py-3'
-            } ${homeActive ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
-            style={
-              homeActive
-                ? { background: `${brandColor1}1f`, border: `1px solid ${brandColor1}33` }
-                : { border: '1px solid transparent' }
-            }
-          >
-            {homeActive && !collapsed && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full" style={{ background: brandColor1 }} />
-            )}
-            <Home className="w-4 h-4 shrink-0" style={{ color: homeActive ? brandColor1 : undefined }} />
-            {!collapsed && (
-              <>
-                <span className="flex-1">Home</span>
-                {homeActive && <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
-              </>
-            )}
-          </Link>
-
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, item.exactMatch);
@@ -226,6 +209,30 @@ export default function Sidebar({
               </Link>
             );
           })}
+
+          <Link
+            href={homeHref}
+            title={collapsed ? 'Settings' : undefined}
+            className={`flex items-center rounded-xl font-semibold text-sm transition-all relative ${
+              collapsed ? 'justify-center py-3' : 'gap-3 px-3 py-3'
+            } ${homeActive ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}
+            style={
+              homeActive
+                ? { background: `${brandColor1}1f`, border: `1px solid ${brandColor1}33` }
+                : { border: '1px solid transparent' }
+            }
+          >
+            {homeActive && !collapsed && (
+              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full" style={{ background: brandColor1 }} />
+            )}
+            <Settings className="w-4 h-4 shrink-0" style={{ color: homeActive ? brandColor1 : undefined }} />
+            {!collapsed && (
+              <>
+                <span className="flex-1">Settings</span>
+                {homeActive && <ChevronRight className="w-3.5 h-3.5 text-slate-500" />}
+              </>
+            )}
+          </Link>
         </nav>
 
         {/* User Section */}

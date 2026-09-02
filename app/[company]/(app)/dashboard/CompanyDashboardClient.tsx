@@ -1,34 +1,27 @@
 'use client';
 
-import {
-  useState, useEffect, useRef, useMemo, useCallback, useTransition,
-} from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import LeadModal from '@/components/dashboard/LeadModal';
+import { Loader2, Plus, ArrowRight, Sun, Moon } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
+import LeadModal from '@/components/dashboard/LeadModal';
+import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
+import { AiChatWidget, LockedFeatureModal } from '@/components/dashboard/DashboardModals';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
-import { type PlanTier } from '@/lib/permissions';
 import PaymentReminderBanner from '@/components/PaymentReminderBanner';
-import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
-import DashboardTour from '@/components/dashboard/DashboardTour';
-import DashboardFilters from '@/components/dashboard/DashboardFilters';
-import { AiChatWidget, LockedFeatureModal } from '@/components/dashboard/DashboardModals';
-import FreePlanBanner from '@/components/dashboard/FreePlanBanner';
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardStats from '@/components/dashboard/DashboardStats';
-import DashboardExportModal from '@/components/dashboard/DashboardExportModal';
-import DashboardLeadsSection from '@/components/dashboard/DashboardLeadsSection';
-import { DEFAULT_STATUSES } from '@/lib/formCategories';
 import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
+import { type PlanTier } from '@/lib/permissions';
 
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-type StatusOption = { value: string; label: string; color: string; emoji?: string };
+// This file was previously the combined leads+stats dashboard. The leads
+// list, filters, search, and bulk actions now live at app/[company]/(app)/leads
+// (LeadsClient.tsx) — this file is Dashboard-only: a daily overview that
+// deep-links into Leads/a specific lead, not a place to work leads directly.
+//
+// Two things from the reference design are deliberately NOT here — see
+// the comments in dashboard-stats/route.ts for why: "New Requests" (no
+// corresponding feature exists in this codebase) and the "Route" panel
+// under Today's Schedule (no route-sequencing system exists either).
 
 type Company = {
   id: number;
@@ -40,7 +33,7 @@ type Company = {
   email?: string;
   email_brand_color_1?: string | null;
   email_brand_color_2?: string | null;
-  status_options?: StatusOption[];
+  status_options?: any[];
   form_categories?: any[];
   form_field_config?: any;
   custom_questions?: any[];
@@ -53,153 +46,80 @@ type Company = {
   subscription_cancel_at?: string | null;
 };
 
-type ViewMode = 'cards' | 'table' | 'calendar';
-type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
+type DashboardStats = {
+  leads: { new_this_week: number };
+  estimates: { open: number; accepted: number };
+  jobs: { active: number; active_value: number };
+  invoices: { awaiting_payment: number; draft: number; past_due: number };
+  todays_schedule: Array<{
+    lead_id: number;
+    project_id: number;
+    customer_name: string;
+    category: string | null;
+    scheduled_time: string | null;
+    scheduled_end_time: string | null;
+    job_status: string;
+    quote_total: string | number | null;
+  }>;
+  revenue_this_month: number;
+  ready_to_invoice: { count: number; value: number };
+};
 
+const fmtMoney = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 
+const fmtTime = (t: string | null) => {
+  if (!t) return null;
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
+};
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function getDateBoundaries() {
-  const now = new Date();
-  const todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
-  const yesterdayStart = new Date(todayStart.getTime() - 86_400_000);
-  const weekStart = new Date(now);
-  weekStart.setDate(now.getDate() - now.getDay());
-  weekStart.setHours(0, 0, 0, 0);
-  if (weekStart >= yesterdayStart) weekStart.setTime(yesterdayStart.getTime());
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  return { now, todayStart, yesterdayStart, weekStart, monthStart };
-}
-
-// ---------------------------------------------------------------------------
-// Main Component
-// ---------------------------------------------------------------------------
+// Category values are stored as snake_case ("full_roof_replacement") — same
+// display fix already applied in FormTab.tsx and BillingSummaryPanel.tsx.
+const formatCategoryLabel = (value?: string | null) =>
+  (value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function CompanyDashboardClient({ company }: { company: Company }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
 
-  // Lead data
-  const [allLeads, setAllLeads] = useState<any[]>([]);
-  const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
-  const [serverStatusCounts, setServerStatusCounts] = useState<Record<string, number>>({});
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [globalStats, setGlobalStats] = useState<any>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [loadError, setLoadError] = useState('');
-  const [newLeadCount, setNewLeadCount] = useState(0);
-
-  // UI state
- const [selectedLead, setSelectedLead] = useState<any>(null);
-  // Payments and activity ship with the lead from /api/leads/[id] so the
-  // billing panel has no loading states of its own to get wrong.
-  const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
-  const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
-    const [currentView, setCurrentView] = useState<ViewMode>(() => {
-    if (typeof window === 'undefined') return 'table';
-    return (localStorage.getItem('dashboard-view') as ViewMode) || 'table';
-  });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
+  const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
+
   const [isDark, setIsDark] = useState<boolean>(() => {
     if (typeof window === 'undefined') return true;
     return localStorage.getItem('dashboard-theme') !== 'light';
   });
-
-  // Filter state
-  const [searchQuery, setSearchQuery] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterAssignee, setFilterAssignee] = useState('all');
-  const [filterPayment, setFilterPayment] = useState('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [showExportModal, setShowExportModal] = useState(false);
-
-  // User / team
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
-
-  // Tour
-  const [tourActive, setTourActive] = useState(false);
-
-  // Persist preferences
-  useEffect(() => { localStorage.setItem('dashboard-view', currentView); }, [currentView]);
   useEffect(() => { localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light'); }, [isDark]);
-
-  // Tour — only from URL param or manual trigger, never auto
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('tour') === '1') {
-      setTourActive(true);
-      window.history.replaceState({}, '', `/${company.slug}/dashboard`);
-    }
-  }, [company.slug]);
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
 
-  const statusOptions: StatusOption[] = company.status_options?.length
-    ? company.status_options
-    : DEFAULT_STATUSES;
-
-  // -------------------------------------------------------------------------
-  // Data fetching
-  // -------------------------------------------------------------------------
-
-  const fetchLeads = useCallback(async (page = 1, silent = false, overrides: Record<string, string> = {}) => {
+  const fetchStats = useCallback(async () => {
     try {
-      if (page === 1 && isInitialLoad) {
-        // first load — loading screen handles it
-      } else if (!silent) {
-        setIsRefreshing(true);
-      }
-      const params = new URLSearchParams({ page: String(page) });
-      const search   = overrides.search    !== undefined ? overrides.search    : searchQuery;
-      const status   = overrides.status    !== undefined ? overrides.status    : filterStatus;
-      const category = overrides.category  !== undefined ? overrides.category  : filterCategory;
-      const assignee = overrides.assignee  !== undefined ? overrides.assignee  : filterAssignee;
-      const payment  = overrides.payment   !== undefined ? overrides.payment   : filterPayment;
-      const tFilter  = overrides.timeFilter!== undefined ? overrides.timeFilter: timeFilter;
-      const sDate    = overrides.startDate !== undefined ? overrides.startDate : startDate;
-      const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDate;
-
-      if (search)                        params.set('search',     search);
-      if (status   && status   !== 'all') params.set('status',     status);
-      if (category && category !== 'all') params.set('category',   category);
-      if (assignee && assignee !== 'all') params.set('assignee',   assignee);
-      if (payment  && payment  !== 'all') params.set('payment',    payment);
-      if (tFilter  && tFilter  !== 'all') params.set('timeFilter', tFilter);
-      if (sDate) params.set('startDate', sDate);
-      if (eDate) params.set('endDate',   eDate);
-
-      const res = await fetch(`/api/company/${company.slug}/leads?${params}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' },
-      });
+      const res = await fetch(`/api/company/${company.slug}/dashboard-stats`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const fresh = (data.leads || []).filter((l: any) => !l.deleted);
-      setAllLeads(prev => (page === 1 ? fresh : [...prev, ...fresh]));
-      setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
-      if (data.statusCounts) setServerStatusCounts(data.statusCounts);
-      if (data.globalStats) setGlobalStats(data.globalStats);
-      setRefreshKey(k => k + 1);
+      if (!data.success) throw new Error(data.error || 'Failed to load');
+      setStats(data);
       setLoadError('');
     } catch (e) {
-      console.error('Failed to fetch leads:', e);
-      setLoadError('Could not load leads. Check your connection and try again.');
+      console.error('Failed to fetch dashboard stats:', e);
+      setLoadError('Could not load dashboard. Check your connection and try again.');
     } finally {
-      setIsInitialLoad(false);
-      setIsRefreshing(false);
+      setLoading(false);
     }
-  }, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate]);
+  }, [company.slug]);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -209,126 +129,37 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     } catch (e) { console.error('fetchCurrentUser:', e); }
   }, []);
 
-  const fetchTeamMembers = useCallback(async () => {
-    try {
-      const res = await fetch('/api/team/members');
-      const data = await res.json();
-      if (data.success) {
-        const assigneeList = (data.allAssignees || []).map((name: string) => ({ id: name, name }));
-        setTeamMembers(assigneeList);
-      }
-    } catch (e) { console.error('fetchTeamMembers:', e); }
-  }, []);
-
   useEffect(() => {
-    fetchLeads(1);
+    fetchStats();
     fetchCurrentUser();
-    fetchTeamMembers();
-  }, []);
-
-  useEffect(() => {
-    if (isInitialLoad) return;
-    fetchLeads(1, true);
-  }, [filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, fetchLeads]);
-
-  // Deep-link to lead from URL
-   // Deep-link to lead from URL. Always fetches full detail regardless of
-  // isInitialLoad — previously, if isInitialLoad was still true at the
-  // exact render this effect fired, the fetch was skipped entirely, but
-  // the URL param had already been stripped a few lines above. That left
-  // no way to retry: the modal opened with the bare list-row lead (no
-  // payments) permanently, until some unrelated action forced a refetch.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const leadId = params.get('lead');
-    if (!leadId) return;
-    const lead = allLeads.find(l => l.id === parseInt(leadId));
-    if (lead) {
-      // The list row has no payments or activity — open with what we have
-      // and let the detail fetch below fill them in.
-      setSelectedLead(lead);
-    }
-    window.history.replaceState({}, '', window.location.pathname);
-    fetch(`/api/leads/${leadId}`, { cache: 'no-store' })
-      .then(r => r.json())
-      .then(data => {
-        if (data.success && data.lead) {
-          setSelectedLead(data.lead);
-          setSelectedLeadPayments(data.payments || []);
-          setSelectedLeadActivity(data.activity || []);
-        }
-      })
-      .catch(() => {});
-  }, [allLeads]);
-
-  // Poll for new leads
-  const lastPollCount = useRef<number | null>(null);
-
-  useEffect(() => {
-    if (isInitialLoad) return;
-
-    const interval = setInterval(async () => {
-      if (document.hidden) return;
-      try {
-        const res = await fetch(`/api/company/${company.slug}/leads/count`, {
-          cache: 'no-store',
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (!data.success) return;
-
-        if (lastPollCount.current === null) {
-          lastPollCount.current = data.count;
-          return;
-        }
-
-        if (data.count > lastPollCount.current) {
-          setNewLeadCount(data.count - lastPollCount.current);
-        }
-      } catch {}
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [isInitialLoad, company.slug]);
-
-  // -------------------------------------------------------------------------
-  // Actions
-  // -------------------------------------------------------------------------
-
-  const userMeta = () => ({
-    user_name: currentUser?.name || currentUser?.email || 'Unknown User',
-    user_email: currentUser?.email || '',
-  });
+  }, [fetchStats, fetchCurrentUser]);
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     startTransition(() => router.push('/login'));
   }, [router]);
 
+  const userMeta = () => ({
+    user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+    user_email: currentUser?.email || '',
+  });
+
   const updateLeadStatus = useCallback(async (id: number, status: string, oldStatus: string, sendReview = true) => {
     try {
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id,
-          status,
-          action: 'update_status',
-          old_status: oldStatus,
-          send_review_request: sendReview,
-          ...userMeta(),
-        }),
+        body: JSON.stringify({ id, status, action: 'update_status', old_status: oldStatus, send_review_request: sendReview, ...userMeta() }),
       });
       const result = await res.json();
       if (res.ok && result.success) {
-        setAllLeads(prev => prev.map(l => l.id === id ? { ...l, status } : l));
-        setRefreshKey(k => k + 1);
         if (selectedLead?.id === id) setSelectedLead((prev: any) => ({ ...prev, status }));
+        fetchStats();
         return true;
       }
       return false;
     } catch (e) { console.error('updateLeadStatus:', e); return false; }
-  }, [selectedLead, currentUser]);
+  }, [selectedLead, currentUser, fetchStats]);
 
   const addNote = useCallback(async (id: number, noteText: string) => {
     try {
@@ -350,258 +181,56 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         body: JSON.stringify({ id, ...userMeta() }),
       });
       const result = await res.json();
-      if (res.ok && result.success) {
-        setAllLeads(prev => prev.filter(l => l.id !== id));
-        setRefreshKey(k => k + 1);
-        return true;
-      }
+      if (res.ok && result.success) { fetchStats(); return true; }
       return false;
     } catch (e) { console.error('deleteLead:', e); return false; }
-  }, [currentUser]);
+  }, [currentUser, fetchStats]);
 
-  const handleBulkUpdate = useCallback(async (leadIds: number[], updates: any) => {
-    const res = await fetch('/api/leads/bulk-update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadIds, updates, ...userMeta() }),
-    });
-    const result = await res.json();
-    if (res.ok && result.success) await fetchLeads(1, true);
-    else throw new Error(result.error || 'Bulk update failed');
-  }, [fetchLeads, currentUser]);
-
-  const handleBulkDelete = useCallback(async (leadIds: number[]) => {
-    const res = await fetch('/api/leads/bulk-delete', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ leadIds, ...userMeta() }),
-    });
-    const result = await res.json();
-    if (res.ok && result.success) {
-      setAllLeads(prev => prev.filter(l => !leadIds.includes(l.id)));
-      setRefreshKey(k => k + 1);
-    } else throw new Error(result.error || 'Bulk delete failed');
-  }, [currentUser]);
-
-  const refreshModalLead = useCallback(async () => {
-    await fetchLeads(1, true);
-    if (!selectedLead) return;
+  const openLead = useCallback(async (leadId: number) => {
     try {
-      const res = await fetch(`/api/leads/${selectedLead.id}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      const data = await res.json();
-      if (data.success && data.lead) {
-        console.log('refreshModalLead status:', data.lead.status);
-        setSelectedLead(data.lead);
-        setSelectedLeadPayments(data.payments || []);
-        setSelectedLeadActivity(data.activity || []);
-      }
-    } catch (e) { console.error('refreshModalLead:', e); }
-  }, [fetchLeads, selectedLead]);
-
-// Opening from the list used to hand the modal a row from allLeads, which
-  // has no payments or activity. Show it immediately, then fetch the detail.
-  const openLead = useCallback(async (lead: any) => {
-    setSelectedLead(lead);
-    setSelectedLeadPayments([]);
-    setSelectedLeadActivity([]);
-    try {
-      const res = await fetch(`/api/leads/${lead.id}`, { cache: 'no-store' });
+      const res = await fetch(`/api/leads/${leadId}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && data.lead) {
         setSelectedLead(data.lead);
         setSelectedLeadPayments(data.payments || []);
         setSelectedLeadActivity(data.activity || []);
       }
-    } catch (e) {
-      console.error('openLead:', e);
-    }
+    } catch (e) { console.error('openLead:', e); }
   }, []);
 
-  const clearFilters = useCallback(() => {
-    setSearchQuery('');
-    setFilterCategory('all');
-    setFilterStatus('all');
-    setFilterAssignee('all');
-    setFilterPayment('all');
-    setTimeFilter('all');
-    setStartDate('');
-    setEndDate('');
-    fetchLeads(1, true, {
-      search: '', status: 'all', category: 'all',
-      assignee: 'all', payment: 'all', timeFilter: 'all',
-      startDate: '', endDate: '',
-    });
-  }, [fetchLeads]);
+  const refreshModalLead = useCallback(async () => {
+    if (!selectedLead) return;
+    await openLead(selectedLead.id);
+    fetchStats();
+  }, [selectedLead, openLead, fetchStats]);
 
-  // -------------------------------------------------------------------------
-  // Derived data
-  // -------------------------------------------------------------------------
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return 'Good morning';
+    if (h < 18) return 'Good afternoon';
+    return 'Good evening';
+  })();
 
-  const { todayStart, yesterdayStart, weekStart } = getDateBoundaries();
+  const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const accentColor = company.email_brand_color_1 || '#2563eb';
 
-  const filteredLeads = useMemo(() => allLeads, [allLeads]);
+  const bg = isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]';
+  const cardBg = isDark ? 'bg-[#0f1420] border border-white/10' : 'bg-white border border-[#e7e2d8]';
+  const cardText = isDark ? 'text-white' : 'text-[#1c1917]';
+  const subText = isDark ? 'text-slate-400' : 'text-[#78716c]';
+  const heading = isDark ? 'text-slate-100' : 'text-[#1c1917]';
 
-const groups = useMemo(() => [
-    { title: 'Today', leads: filteredLeads.filter(l => new Date(l.created_at) >= todayStart) },
-    { title: 'Yesterday', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= yesterdayStart && d < todayStart; }) },
-    { title: 'Earlier This Week', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= weekStart && d < yesterdayStart; }) },
-    { title: 'Older', leads: filteredLeads.filter(l => new Date(l.created_at) < weekStart) },
-  ], [filteredLeads]);
-
-  const categories = useMemo(() =>
-    company.form_categories?.map((c: any) => c.value || c).filter(Boolean) ||
-    [...new Set(allLeads.map(l => l.category).filter(Boolean))],
-  [company.form_categories, allLeads]);
-
-  const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || filterAssignee !== 'all'
-    || filterPayment !== 'all' || timeFilter !== 'all' || !!startDate || !!endDate || !!searchQuery;
-
- 
-
-  // -------------------------------------------------------------------------
-  // Modern Branded Loading Screen with Contrast-Aware Text & Logo
-  // -------------------------------------------------------------------------
-
-  const brandColor1 = company.email_brand_color_1 || '#2563eb';
-  const brandColor2 = company.email_brand_color_2 || '#4f46e5';
-
-  // Helper to determine if a hex color is dark (returns true if dark, false if light)
-  const isColorDark = (hex: string) => {
-    const cleanHex = hex.replace('#', '');
-    if (cleanHex.length !== 6) return true; // fallback safe
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
-    // Standard relative luminance formula
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance < 0.5;
-  };
-
-  const isBrand1Dark = isColorDark(brandColor1);
-  const isBrand2Dark = isColorDark(brandColor2);
-
-  if (isInitialLoad) {
+  if (loading) {
     return (
-      <div
-              className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-colors ${
-isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
-        }`}
-        role="status"
-        aria-label="Loading dashboard"
-      >
-        {/* Ambient Glow Orbs */}
-        <div
-          className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-35 animate-pulse"
-          style={{ background: brandColor1 }}
-          aria-hidden="true"
-        />
-        <div
-          className="absolute -bottom-24 -right-24 w-96 h-96 rounded-full blur-3xl opacity-25 animate-pulse"
-          style={{ background: brandColor2, animationDelay: '1s' }}
-          aria-hidden="true"
-        />
-
-        {/* Glassmorphic Loading Card */}
-        <div
-          className={`relative z-10 flex flex-col items-center p-8 sm:p-10 rounded-3xl border backdrop-blur-xl transition-all shadow-2xl ${
-            isDark
-              ? 'bg-slate-900/70 border-slate-800/80 shadow-black/50'
-              : 'bg-white/80 border-slate-200/80 shadow-slate-200/60'
-          }`}
-        >
-          {/* Logo Container with Orbit Spinner */}
-          <div className="relative flex items-center justify-center mb-6">
-            {/* Ambient Logo Glow */}
-            <div
-              className="absolute w-20 h-20 rounded-full blur-xl opacity-40 animate-pulse"
-              style={{ background: `radial-gradient(circle, ${brandColor1}, ${brandColor2})` }}
-            />
-
-            {/* Orbiting Spinner Ring around Logo */}
-            <div className="absolute inset-0 -m-3.5 flex items-center justify-center">
-              <Loader2
-                className="w-20 h-20 animate-spin opacity-85"
-                style={{ color: brandColor1 }}
-                aria-hidden
-              />
-            </div>
-
-            {/* Company Logo / Fallback Avatar */}
-            <div
-              className={`relative z-10 w-14 h-14 rounded-2xl p-2 flex items-center justify-center overflow-hidden border shadow-inner ${
-                isDark ? 'bg-slate-900/90 border-slate-700/60' : 'bg-white border-slate-200'
-              }`}
-            >
-              {company.logo_url ? (
-                <img
-                  src={company.logo_url}
-                  alt={company.name}
-                  className="w-full h-full object-contain rounded-xl"
-                />
-              ) : (
-                /* Fallback initial with dynamic high-contrast text color */
-                <div
-                  className="w-full h-full rounded-xl flex items-center justify-center font-bold text-xl uppercase tracking-wider shadow-sm"
-                  style={{
-                    background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})`,
-                    color: isBrand1Dark && isBrand2Dark ? '#ffffff' : '#0f172a',
-                  }}
-                >
-                  {company.name?.charAt(0) || 'C'}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Typography */}
-          <p
-            className={`text-base font-semibold tracking-wide ${
-              isDark ? 'text-slate-100' : 'text-slate-900'
-            }`}
-          >
-            Loading dashboard
-          </p>
-
-          {/* Contrast-Aware Brand Subtitle Pill */}
-          <div
-            className="mt-2.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase shadow-xs transition-colors"
-            style={{
-              backgroundColor: brandColor1,
-              color: isBrand1Dark ? '#ffffff' : '#0f172a',
-            }}
-          >
-            {company.name}
-          </div>
-        </div>
+      <div className={`min-h-screen flex items-center justify-center ${bg}`} role="status" aria-label="Loading dashboard">
+        <Loader2 className="w-10 h-10 animate-spin" style={{ color: accentColor }} />
       </div>
     );
   }
 
-  // -------------------------------------------------------------------------
-  // Render
-  // -------------------------------------------------------------------------
-const accentColor = company.email_brand_color_1 || '#2563eb';
-
-return (
-<div className={`min-h-screen relative selection:bg-blue-500/30 transition-colors ${
-isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
-
-}`}>
-   <div
-        className="pointer-events-none fixed inset-x-0 top-0 h-[480px] z-0"
-        style={{
-          background: `radial-gradient(ellipse at top, ${accentColor}${isDark ? '1f' : '0d'}, transparent 70%)`,
-        }}
-        aria-hidden="true"
-      />
+  return (
+    <div className={`min-h-screen relative transition-colors ${bg}`}>
       <Toaster position="top-right" richColors />
-
-      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-blue-500 focus:text-white focus:rounded-lg focus:font-bold">
-        Skip to main content
-      </a>
 
       {/* Sidebar overlay */}
       <div
@@ -626,15 +255,14 @@ isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
             onLogout={handleLogout}
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
-            currentView={currentView}
-            onViewChange={setCurrentView}
+            currentView="cards"
+            onViewChange={() => {}}
             brandColor1={company.email_brand_color_1 || '#2563eb'}
-  brandColor2={company.email_brand_color_2 || '#4f46e5'}
+            brandColor2={company.email_brand_color_2 || '#4f46e5'}
           />
         </aside>
       </div>
 
-            {/* Banners */}
       <div className="relative z-10">
         <TrialBanner
           subscriptionStatus={company.subscription_status || 'inactive'}
@@ -647,136 +275,237 @@ isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
         <PaymentReminderBanner
           slug={company.slug}
           planTier={planTier}
-          onSelectLead={openLead}
-          allLeads={allLeads}
+          onSelectLead={(lead: any) => openLead(lead.id)}
+          allLeads={[]}
         />
         <PaymentToastPoller
           slug={company.slug}
-          onSelectLead={(leadId) => {
-            const lead = allLeads.find((l) => l.id === leadId);
-            if (lead) openLead(lead);
-          }}
+          onSelectLead={(leadId) => openLead(leadId)}
         />
       </div>
 
-      {/* MAIN */}
-      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
+      <main className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
 
-   <DashboardHeader
-          company={company}
-          isDark={isDark}
-          isRefreshing={isRefreshing}
-          planTier={planTier}
-          onSidebarOpen={() => setSidebarOpen(true)}
-          onCreateLead={() => setIsCreateModalOpen(true)}
-          onLockedFeature={setLockedDashboardModal}
-          onRefresh={() => fetchLeads(1, false)}
-          accentColor={accentColor}
-        />
-
-    
-
-<DashboardStats
-  globalStats={globalStats}
-  allLeads={allLeads}
-  isDark={isDark}
-  accentColor={accentColor}
-/>
-        <div className="mb-4 sm:mb-6">
-          <FreePlanBanner
-            company={company}
-            isDark={isDark}
-            onStartTour={() => setTourActive(true)}
-            onCreateLead={() => setIsCreateModalOpen(true)}
-            leadCount={allLeads.length}
-            allLeads={allLeads}
-          />
+        {/* Header */}
+        <div className="flex flex-wrap items-start justify-between mb-8 gap-4">
+          <div className="min-w-0">
+            <p className={`text-sm ${subText}`}>{todayLabel}</p>
+            <h1 className={`text-4xl sm:text-5xl font-light leading-tight ${heading}`}>
+              {greeting}, {currentUser?.name?.split(' ')[0] || 'there'}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {company.logo_url ? (
+              <div
+                className="inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5"
+                style={{ background: `${accentColor}1a`, border: `1px solid ${accentColor}33` }}
+              >
+                <img
+                  src={company.logo_url}
+                  alt={company.name}
+                  className="w-6 h-6 rounded-full object-contain bg-white"
+                />
+                <span
+                  className="text-xs font-bold uppercase tracking-widest"
+                  style={{ color: accentColor }}
+                >
+                  {company.name}
+                </span>
+              </div>
+            ) : (
+              <div
+                className="inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5"
+                style={{ background: `${accentColor}1a`, border: `1px solid ${accentColor}33` }}
+              >
+                <div
+                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-black"
+                  style={{ background: accentColor }}
+                >
+                  {company.name?.charAt(0) || 'C'}
+                </div>
+                <span
+                  className="text-xs font-bold uppercase tracking-widest"
+                  style={{ color: accentColor }}
+                >
+                  {company.name}
+                </span>
+              </div>
+            )}
+            <button
+              onClick={() => setIsDark((v) => !v)}
+              className={`p-2.5 rounded-xl border transition-colors ${
+                isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
+              }`}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2.5 rounded-xl border border-[#e7e2d8] bg-white"
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
+          </div>
         </div>
 
         {loadError && (
-          <div className="mb-8 p-4 sm:p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs sm:text-sm font-bold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-            <div className="flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-              <span>{loadError}</span>
-            </div>
-            <button onClick={() => fetchLeads(1)} className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors">Retry</button>
+          <div className="mb-8 p-4 sm:p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-sm font-bold flex items-center justify-between">
+            <span>{loadError}</span>
+            <button onClick={fetchStats} className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-2 rounded-lg">Retry</button>
           </div>
         )}
 
-        <div className="mb-8 sm:mb-10">
-          <DashboardFilters
-            searchQuery={searchQuery} filterStatus={filterStatus} timeFilter={timeFilter}
-            filterCategory={filterCategory} filterAssignee={filterAssignee}
-            filterPayment={filterPayment} startDate={startDate} endDate={endDate}
-            currentView={currentView} isDark={isDark} planTier={planTier}
-            isSearching={isSearching} hasActiveFilters={hasActiveFilters}
-            serverStatusCounts={serverStatusCounts}
-            statusOptions={statusOptions} teamMembers={teamMembers} categories={categories}
-            setSearchQuery={setSearchQuery} setFilterStatus={setFilterStatus}
-            setTimeFilter={setTimeFilter} setFilterCategory={setFilterCategory}
-            setFilterAssignee={setFilterAssignee} setFilterPayment={setFilterPayment}
-            setStartDate={setStartDate} setEndDate={setEndDate}
-            setCurrentView={setCurrentView} setIsDark={setIsDark} setIsSearching={setIsSearching}
-            fetchLeads={fetchLeads} clearFilters={clearFilters}
-            onLockedFeature={setLockedDashboardModal}
-          />
-        </div>
+        {stats && (
+          <>
+            {/* Stat row: Leads / Estimates / Jobs / Invoices */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className={`rounded-2xl p-6 ${cardBg}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <p className={`text-lg ${cardText}`}>Leads</p>
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-[#1c1917] rounded-full px-3 py-1.5 hover:opacity-90 transition"
+                  >
+                    <Plus className="w-3 h-3" /> Add lead
+                  </button>
+                </div>
+                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.leads.new_this_week}</p>
+                <p className={`text-sm font-medium mt-2 ${cardText}`}>New</p>
+                <p className={`text-xs ${subText}`}>New this week</p>
+              </div>
 
-        <DashboardLeadsSection
-          filteredLeads={filteredLeads}
-          allLeads={allLeads}
-          groups={groups}
-          currentView={currentView}
-          isDark={isDark}
-          planTier={planTier}
-          statusOptions={statusOptions}
-          teamMembers={teamMembers}
-          company={company}
-          hasActiveFilters={hasActiveFilters}
-          clearFilters={clearFilters}
-          onSelectLead={openLead}
-          newLeadCount={newLeadCount}
-          onDismissNewLeads={() => {
-            setNewLeadCount(0);
-            lastPollCount.current = null;
-            fetchLeads(1);
-          }}
-          
-          refreshKey={refreshKey}
-          onBulkUpdate={handleBulkUpdate}
-          onBulkDelete={handleBulkDelete}
-          onShowExportModal={() => setShowExportModal(true)}
-          onLockedFeature={setLockedDashboardModal}
-          pagination={pagination}
-          onLoadMore={() => fetchLeads(pagination.page + 1, false)}
-          accentColor={accentColor}
-        />
+              <button
+                onClick={() => router.push(`/${company.slug}/leads?status=quoted`)}
+                className={`text-left rounded-2xl p-6 ${cardBg} hover:opacity-90 transition`}
+              >
+                <p className={`text-lg ${cardText} mb-3`}>Estimates</p>
+                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.estimates.open}</p>
+                <p className={`text-sm font-medium mt-2 ${cardText}`}>Open</p>
+                <p className={`text-xs ${subText}`}>{stats.estimates.accepted} accepted</p>
+              </button>
+
+              <button
+                onClick={() => router.push(`/${company.slug}/leads`)}
+                className={`text-left rounded-2xl p-6 ${cardBg} hover:opacity-90 transition`}
+              >
+                <p className={`text-lg ${cardText} mb-3`}>Jobs</p>
+                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.jobs.active}</p>
+                <p className={`text-sm font-medium mt-2 ${cardText}`}>Active</p>
+                <p className={`text-xs ${subText}`}>{fmtMoney(stats.jobs.active_value)} booked</p>
+              </button>
+
+              <button
+                onClick={() => router.push(`/${company.slug}/leads?payment=awaiting`)}
+                className={`text-left rounded-2xl p-6 ${cardBg} hover:opacity-90 transition`}
+              >
+                <p className={`text-lg ${cardText} mb-3`}>Invoices</p>
+                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.invoices.awaiting_payment}</p>
+                <p className={`text-sm font-medium mt-2 ${cardText}`}>Awaiting payment</p>
+                <p className={`text-xs ${subText}`}>{stats.invoices.draft} draft · {stats.invoices.past_due} past due</p>
+              </button>
+            </div>
+
+            {/* Today's Schedule + Business Performance */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+              <div>
+                <h2 className={`text-lg font-semibold mb-3 ${heading}`}>Today&rsquo;s Schedule</h2>
+                <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
+                  <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                    <p className={`text-2xl font-semibold ${cardText}`}>
+                      {fmtMoney(stats.todays_schedule.reduce((s, j) => s + (parseFloat(String(j.quote_total || '0')) || 0), 0))}{' '}
+                      <span className={`text-sm font-normal ${subText}`}>booked today</span>
+                    </p>
+                    <span className={`text-sm ${subText}`}>{stats.todays_schedule.length} job{stats.todays_schedule.length === 1 ? '' : 's'}</span>
+                  </div>
+                  {stats.todays_schedule.length === 0 ? (
+                    <div className="px-5 py-10 text-center">
+                      <p className={`text-sm ${subText}`}>Nothing scheduled for today.</p>
+                    </div>
+                  ) : (
+                    <div className={`divide-y ${isDark ? 'divide-white/10' : 'divide-[#e7e2d8]'}`}>
+                      {stats.todays_schedule.map((job) => (
+                        <button
+                          key={job.project_id}
+                          onClick={() => openLead(job.lead_id)}
+                          className={`w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition ${isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]'}`}
+                        >
+                          <div className="min-w-0">
+                            <p className={`text-sm font-mono ${subText}`}>{fmtTime(job.scheduled_time) || 'No time set'}</p>
+                            <p className={`font-semibold truncate ${cardText}`}>{job.customer_name}</p>
+                            <p className={`text-xs truncate ${subText}`}>{formatCategoryLabel(job.category) || 'General'}</p>
+                          </div>
+                          <ArrowRight className={`w-4 h-4 shrink-0 ${subText}`} />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div className={`px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                    <button
+                      onClick={() => router.push(`/${company.slug}/calendar`)}
+                      className={`text-sm font-semibold inline-flex items-center gap-1 ${cardText}`}
+                    >
+                      View full schedule <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h2 className={`text-lg font-semibold mb-3 ${heading}`}>Business Performance</h2>
+                <div className="space-y-4">
+                  <div className={`rounded-2xl p-5 ${cardBg}`}>
+                    <div className="flex items-center justify-between">
+                      <p className={`text-sm font-semibold ${cardText}`}>Revenue</p>
+                      <ArrowRight className={`w-4 h-4 ${subText}`} />
+                    </div>
+                    <p className={`text-xs ${subText} mb-1`}>This month so far</p>
+                    <p className={`text-3xl font-semibold tabular-nums ${cardText}`}>{fmtMoney(stats.revenue_this_month)}</p>
+                  </div>
+
+                  <button
+                    onClick={() => router.push(`/${company.slug}/leads?status=completed`)}
+                    className={`w-full text-left rounded-2xl p-5 ${cardBg} hover:opacity-90 transition`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p className={`text-sm font-semibold ${cardText}`}>Ready to invoice</p>
+                      <ArrowRight className={`w-4 h-4 ${subText}`} />
+                    </div>
+                    <p className={`text-xs ${subText} mb-1`}>Completed jobs not yet billed</p>
+                    <p className={`text-3xl font-semibold tabular-nums ${cardText}`}>{fmtMoney(stats.ready_to_invoice.value)}</p>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </main>
 
-      {/* Modals & Components */}
       {selectedLead && (
         <LeadModal
           lead={selectedLead} onClose={() => setSelectedLead(null)}
           onUpdateStatus={updateLeadStatus} onAddNote={addNote}
           onDeleteLead={deleteLead} onRefresh={refreshModalLead}
           payments={selectedLeadPayments} activity={selectedLeadActivity}
-          currentUser={currentUser} statusOptions={statusOptions}
+          currentUser={currentUser} statusOptions={company.status_options || []}
           categories={company.form_categories || []} company={company}
           companySlug={company.slug}
-          teamMembers={teamMembers}
+          teamMembers={[]}
         />
       )}
- 
+
       <CreateLeadModal
         isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => fetchLeads(1, true)} companySlug={company.slug}
+        onSuccess={() => fetchStats()} companySlug={company.slug}
         companyId={company.id} categories={company.form_categories || []}
         company={company}
       />
 
       <AiChatWidget
         planTier={planTier}
-        allLeads={allLeads}
+        allLeads={[]}
         company={company}
         isVisible={!selectedLead && !isCreateModalOpen}
         onLockedFeature={setLockedDashboardModal}
@@ -786,25 +515,6 @@ isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
         featureKey={lockedDashboardModal}
         companySlug={company.slug}
         onClose={() => setLockedDashboardModal(null)}
-      />
-
-      {tourActive && (
-        <DashboardTour
-          companyName={company.name} companySlug={company.slug}
-          userName={currentUser?.name} isDark={isDark} planTier={planTier}
-          onToggleTheme={() => setIsDark(v => !v)}
-          onToggleView={(view) => setCurrentView(view)}
-          onOpenSidebar={() => setSidebarOpen(true)}
-          onOpenCreateModal={() => setIsCreateModalOpen(true)}
-          onComplete={() => setTourActive(false)}
-        />
-      )}
-
-      <DashboardExportModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        companySlug={company.slug}
-        isDark={isDark}
       />
     </div>
   );

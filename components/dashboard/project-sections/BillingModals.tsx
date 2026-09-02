@@ -110,6 +110,15 @@ type BillingModalsProps = {
   setTaxRateDraft: React.Dispatch<React.SetStateAction<string>>;
   handleSaveTaxRate: (clear?: boolean) => void;
 
+  // Edit Due Date
+  showDueDateEditor: boolean;
+  setShowDueDateEditor: React.Dispatch<React.SetStateAction<boolean>>;
+  savingDueDate: boolean;
+  currentDueDate: string;
+  dueDateDraft: string;
+  setDueDateDraft: React.Dispatch<React.SetStateAction<string>>;
+  handleDueDateChange: (newDate: string) => void;
+
   // In-Person Payment Link
   showPaymentLinkModal: boolean;
   setShowPaymentLinkModal: React.Dispatch<React.SetStateAction<boolean>>;
@@ -196,6 +205,13 @@ export default function BillingModals({
   taxRateDraft,
   setTaxRateDraft,
   handleSaveTaxRate,
+  showDueDateEditor,
+  setShowDueDateEditor,
+  savingDueDate,
+  currentDueDate,
+  dueDateDraft,
+  setDueDateDraft,
+  handleDueDateChange,
   showPaymentLinkModal,
   setShowPaymentLinkModal,
   loadingPaymentLink,
@@ -345,6 +361,34 @@ export default function BillingModals({
                     onChange={(e) => setDueDate(e.target.value)}
                     className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700"
                   />
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {[
+                      { label: 'Due on receipt', days: 0 },
+                      { label: '+7 days', days: 7 },
+                      { label: '+14 days', days: 14 },
+                      { label: '+30 days', days: 30 },
+                    ].map((preset) => {
+                      const presetDate = new Date();
+                      presetDate.setDate(presetDate.getDate() + preset.days);
+                      const presetDateStr = presetDate.toISOString().split('T')[0];
+                      const isSelected = dueDate === presetDateStr;
+                      return (
+                        <button
+                          key={preset.days}
+                          type="button"
+                          disabled={sending}
+                          onClick={() => setDueDate(presetDateStr)}
+                          className={`px-3 py-2 rounded-full border text-[11px] font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                            isSelected
+                              ? 'bg-brand-700 border-brand-700 text-white'
+                              : 'border-[#e7e2d8] text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
                   {!dueDate && (
                     <div className="mt-2 flex items-start gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
@@ -814,6 +858,119 @@ export default function BillingModals({
                 >
                   {savingTax && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {savingTax ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* MODAL: EDIT DUE DATE */}
+      <AnimatePresence>
+        {showDueDateEditor && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !savingDueDate && setShowDueDateEditor(false)}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-base font-semibold text-[#1c1917]">Edit Due Date</h3>
+                <button
+                  type="button"
+                  onClick={() => !savingDueDate && setShowDueDateEditor(false)}
+                  disabled={savingDueDate}
+                  aria-label="Close"
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {invoiceSent && (
+                <div className="flex items-start gap-2 p-2.5 mb-3 rounded-xl border border-amber-200 bg-amber-50 text-[11px] text-amber-800">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
+                  <span>
+                    This invoice was already sent. The customer&rsquo;s copy still shows the old
+                    date — resend to update what they see.
+                  </span>
+                </div>
+              )}
+
+              <div className="space-y-3 mb-5">
+                <p className="text-xs font-medium text-[#57534e]">When is payment due?</p>
+                <input
+                  type="date"
+                  value={dueDateDraft || ''}
+                  disabled={savingDueDate}
+                  onChange={(e) => setDueDateDraft(e.target.value)}
+                  className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold outline-none focus:border-brand-700"
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Due on receipt', days: 0 },
+                    { label: '+7 days', days: 7 },
+                    { label: '+14 days', days: 14 },
+                    { label: '+30 days', days: 30 },
+                  ].map((preset) => {
+                    const presetDate = new Date();
+                    presetDate.setDate(presetDate.getDate() + preset.days);
+                    const presetDateStr = presetDate.toISOString().split('T')[0];
+                    const isSelected = dueDateDraft === presetDateStr;
+                    return (
+                      <button
+                        key={preset.days}
+                        type="button"
+                        disabled={savingDueDate}
+                        onClick={() => setDueDateDraft(presetDateStr)}
+                        className={`px-3 py-2 rounded-full border text-[11px] font-semibold transition-colors disabled:opacity-50 ${
+                          isSelected
+                            ? 'bg-brand-700 border-brand-700 text-white'
+                            : 'border-[#e7e2d8] text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDueDateEditor(false)}
+                  disabled={savingDueDate}
+                  className="px-3 py-2 rounded-lg border border-[#e7e2d8] text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                {currentDueDate && (
+                  <button
+                    type="button"
+                    onClick={() => handleDueDateChange('')}
+                    disabled={savingDueDate}
+                    className="px-3 py-2 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50"
+                  >
+                    Clear due date
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleDueDateChange(dueDateDraft)}
+                  disabled={savingDueDate || !dueDateDraft}
+                  className="px-3 py-2 rounded-lg bg-brand-700 text-white text-xs font-semibold hover:bg-brand-800 disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {savingDueDate && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  {savingDueDate ? 'Saving...' : 'Save'}
                 </button>
               </div>
             </motion.div>

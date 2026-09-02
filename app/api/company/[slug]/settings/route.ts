@@ -251,6 +251,24 @@ case 'update-deposit-default': {
   return NextResponse.json({ success: true, company: result[0] });
 }
 
+// ── Default balance due-date window ──
+// No equivalent setting for deposits — those are conventionally due
+// immediately, not on a countdown, so that default is hardcoded on the
+// client rather than stored here.
+case 'update-balance-due-days': {
+  const days = parseInt(data.default_balance_due_days, 10);
+  if (isNaN(days) || days < 0) {
+    return NextResponse.json({ success: false, error: 'Due date window must be zero or more days.' }, { status: 400 });
+  }
+  const result = await sql`
+    UPDATE companies
+    SET default_balance_due_days = ${days}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
       case 'update-pipeline':
         await sql`
           UPDATE companies

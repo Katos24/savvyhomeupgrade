@@ -31,7 +31,7 @@ function fmtDate(d: string | null | undefined) {
   });
 }
 
-type StepStatus = 'locked' | 'ready' | 'sent' | 'done';
+type StepStatus = 'locked' | 'ready' | 'sent' | 'overdue' | 'done';
 type Step = {
   key: string;
   title: string;
@@ -63,6 +63,8 @@ type BillingSummaryPanelProps = {
   remaining: number;
 
   wasSettledThenGrew: boolean;
+  amountDueNow: number;
+  dueNowLabel: string;
 
   steps: Step[];
   depositPayments: any[];
@@ -93,7 +95,9 @@ type BillingSummaryPanelProps = {
   depositValue: number;
   depositAmount: number;
   dueDate: string;
-  handleDueDateChange: (newDate: string) => void;
+  isOverdue: boolean;
+  dueDateLocked: boolean;
+  openDueDateEditor: () => void;
   activeMethodLabel: string | null;
   activityLog: any[];
   loadPreview: (entryId: number) => void;
@@ -116,6 +120,8 @@ export default function BillingSummaryPanel({
   refundedAmount,
   remaining,
   wasSettledThenGrew,
+  amountDueNow,
+  dueNowLabel,
   steps,
   depositPayments,
   balancePayments,
@@ -139,7 +145,9 @@ export default function BillingSummaryPanel({
   depositValue,
   depositAmount,
   dueDate,
-  handleDueDateChange,
+  isOverdue,
+  dueDateLocked,
+  openDueDateEditor,
   activeMethodLabel,
   activityLog,
   loadPreview,
@@ -180,6 +188,23 @@ export default function BillingSummaryPanel({
               </p>
             ) : null}
 
+            {amountDueNow > 0 && (
+              <div
+                className={`mt-4 rounded-xl border p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${
+                  isOverdue ? 'border-rose-200 bg-rose-50' : 'border-brand-100 bg-brand-50/60'
+                }`}
+              >
+                <p
+                  className={`text-[11px] font-bold uppercase tracking-wide ${
+                    isOverdue ? 'text-rose-700' : 'text-brand-700'
+                  }`}
+                >
+                  {dueNowLabel}
+                </p>
+                <p className="text-2xl font-bold text-[#1c1917] tabular-nums">{fmt(amountDueNow)}</p>
+              </div>
+            )}
+
             <div className="border-t border-[#f0ece1] my-4" />
 
             {wasSettledThenGrew && (
@@ -202,6 +227,8 @@ export default function BillingSummaryPanel({
                       className={
                         step.status === 'done'
                           ? 'text-emerald-600'
+                          : step.status === 'overdue'
+                          ? 'text-rose-600'
                           : step.status === 'sent'
                           ? 'text-amber-700'
                           : step.status === 'ready'
@@ -279,6 +306,8 @@ export default function BillingSummaryPanel({
                         className={`absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
                           step.status === 'done'
                             ? 'bg-emerald-500 text-white'
+                            : step.status === 'overdue'
+                            ? 'bg-rose-50 border border-rose-300 text-rose-600'
                             : step.status === 'sent'
                             ? 'bg-amber-50 border border-amber-300 text-amber-600'
                             : step.status === 'ready'
@@ -288,6 +317,8 @@ export default function BillingSummaryPanel({
                       >
                         {step.status === 'done' ? (
                           <CheckCircle className="w-4 h-4" />
+                        ) : step.status === 'overdue' ? (
+                          <AlertCircle className="w-3.5 h-3.5" />
                         ) : step.status === 'sent' ? (
                           <Clock className="w-3.5 h-3.5" />
                         ) : step.status === 'locked' ? (
@@ -307,6 +338,8 @@ export default function BillingSummaryPanel({
                               className={`text-[12px] mt-0.5 ${
                                 step.status === 'done'
                                   ? 'text-emerald-600 font-medium'
+                                  : step.status === 'overdue'
+                                  ? 'text-rose-700 font-semibold'
                                   : step.status === 'sent'
                                   ? 'text-amber-800 font-semibold'
                                   : step.status === 'ready'
@@ -507,18 +540,39 @@ export default function BillingSummaryPanel({
                 </div>
               )}
 
-              <div className="flex justify-between items-center">
+              <div className="flex flex-wrap justify-between items-center gap-x-3 gap-y-1">
                 <span className="text-[#78716c]">Payment Due Date</span>
-                <label className="cursor-pointer inline-flex items-center gap-1.5 font-medium text-[#1c1917] hover:text-brand-700">
-                  <Calendar className="w-3.5 h-3.5 text-[#a8a29e]" />
-                  {dueDate ? fmtDate(dueDate) : <span className="text-[#a8a29e]">Set Date</span>}
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => handleDueDateChange(e.target.value)}
-                    className="sr-only"
-                  />
-                </label>
+                {dueDateLocked ? (
+                  <span className="font-medium text-[#1c1917]">
+                    {dueDate ? fmtDate(dueDate) : 'Not set'}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={openDueDateEditor}
+                    className={`cursor-pointer inline-flex items-center gap-1.5 font-semibold rounded-lg px-2 py-1 -mr-2 transition-colors ${
+                      isOverdue
+                        ? 'text-rose-700 bg-rose-50 hover:bg-rose-100'
+                        : !dueDate
+                        ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
+                        : 'text-[#1c1917] hover:text-brand-700'
+                    }`}
+                  >
+                    <Calendar
+                      className={`w-3.5 h-3.5 ${
+                        isOverdue ? 'text-rose-500' : !dueDate ? 'text-amber-500' : 'text-[#a8a29e]'
+                      }`}
+                    />
+                    {dueDate ? (
+                      <>
+                        {fmtDate(dueDate)}
+                        {isOverdue && <span className="text-[10px] font-bold uppercase tracking-wide">· Overdue</span>}
+                      </>
+                    ) : (
+                      'Set Date'
+                    )}
+                  </button>
+                )}
               </div>
 
               <div className="flex justify-between items-center">

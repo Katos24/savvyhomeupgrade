@@ -1,14 +1,17 @@
 import { getJwtSecret } from '@/lib/auth';
-import { neon } from '@neondatabase/serverless';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getCompanyBySlug } from '@/lib/getCompany';
 import CalendarClient from './CalendarClient';
 
 type PageProps = {
   params: Promise<{ company: string }>;
 };
 
+// Documents the fields this page reads directly — getCompanyBySlug's
+// SELECT * means every Stripe/payment column (and anything added later)
+// is already on the row regardless of what's listed here.
 type Company = {
   id: number;
   name: string;
@@ -25,47 +28,10 @@ type Company = {
   address_required: boolean;
 };
 
-async function getCompany(slug: string): Promise<Company | null> {
-  const sql = neon(process.env.DATABASE_URL!);
-  const companies = await sql`
-    SELECT 
-      id,
-      name,
-      slug,
-      email,
-      phone,
-      logo_url,
-      created_at,
-      business_type,
-     status_options,
-      form_categories,
-      plan_tier,
-      address_enabled,
-      address_required
-    FROM companies 
-    WHERE slug = ${slug}
-  `;
-  
-  if (companies.length === 0) return null;
-  
-  const company = companies[0] as Company;
-  
-  // Parse JSON fields if they're strings
-  if (typeof company.status_options === 'string') {
-    company.status_options = JSON.parse(company.status_options);
-  }
-  if (typeof company.form_categories === 'string') {
-    company.form_categories = JSON.parse(company.form_categories);
-  }
-  
-  return company;
-}
-
 async function verifyAuth(companySlug: string) {
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token');
-    
     if (!token) {
       redirect('/login');
     }
@@ -91,24 +57,25 @@ async function verifyAuth(companySlug: string) {
 
 export default async function CalendarPage({ params }: PageProps) {
   const { company: companySlug } = await params;
-  
   // Verify authentication and authorization
   await verifyAuth(companySlug);
-  
-  const company = await getCompany(companySlug);
-  
+  const company = (await getCompanyBySlug(companySlug)) as Company | null;
   if (!company) {
     notFound();
   }
 
-// Transform company to match CalendarClient's expected type
-const companyData = {
-...company,
-status_options: Array.isArray(company.status_options) && company.status_options.length > 0
-? company.status_options 
-: [],
-form_categories: company.form_categories || [],
-plan_tier: company.plan_tier || 'free',
-};
+  // Transform company to match CalendarClient's expected type. No JSON.parse
+  // needed here — getCompanyBySlug's SELECT * already comes back with JSONB
+  // columns deserialized as native arrays/objects (confirmed by this same
+  // pattern already working for the Dashboard and Financials pages).
+  const companyData = {
+    ...company,
+    status_options: Array.isArray(company.status_options) && company.status_options.length > 0
+      ? company.status_options
+      : [],
+    form_categories: company.form_categories || [],
+    plan_tier: company.plan_tier || 'free',
+  };
 
-return <CalendarClient company={companyData} />;} 
+  return <CalendarClient company={companyData} />;
+}

@@ -1,23 +1,19 @@
 import { getJwtSecret } from '@/lib/auth';
-import { neon } from '@neondatabase/serverless';
 import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import type { Metadata } from 'next';
+import { neon } from '@neondatabase/serverless';
 import { getCompanyBySlug } from '@/lib/getCompany';
-import CompanyDashboardClient from './CompanyDashboardClient';
+import LeadsClient from './LeadsClient';
 
 export const dynamic = 'force-dynamic';
 
-// ---------------------------------------------------------------------------
-// Types
-//
-// This no longer needs to enumerate every column companies fetch uses —
-// getCompanyBySlug() does SELECT *, so every field below (and every field
-// any other part of the app adds later, like default_deposit_type or
-// default_balance_due_days) is already present on the returned row. This
-// interface just documents/type-hints the fields this specific page reads.
-// ---------------------------------------------------------------------------
+// Mirrors app/[company]/(app)/dashboard/page.tsx exactly — same auth,
+// same plan-gating, same getCompanyBySlug pattern. Kept as a near-duplicate
+// on purpose rather than sharing a helper, since the two pages' redirect
+// targets differ (this one has no reason to exist yet, so if either page's
+// gating logic needs to diverge later, they aren't secretly coupled).
 
 interface Company {
   id: number;
@@ -42,17 +38,7 @@ interface Company {
   onboarding_steps?: Record<string, boolean>;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
-  stripe_connect_account_id?: string | null;
-  stripe_connect_onboarded?: boolean;
-  stripe_payment_status?: string | null;
-  payment_link_url?: string | null;
-  payment_link_type?: string | null;
-  default_tax_rate?: number | null;
 }
-
-// ---------------------------------------------------------------------------
-// Metadata — dynamically generated per company
-// ---------------------------------------------------------------------------
 
 export async function generateMetadata(
   { params }: { params: Promise<{ company: string }> }
@@ -60,19 +46,15 @@ export async function generateMetadata(
   const { company: slug } = await params;
   const sql = neon(process.env.DATABASE_URL!);
   const rows = await sql`SELECT name FROM companies WHERE slug = ${slug} LIMIT 1`;
-  const name = rows[0]?.name ?? 'Dashboard';
+  const name = rows[0]?.name ?? 'Leads';
 
   return {
-    title: `${name} | Dashboard`,
+    title: `${name} | Leads`,
     description: `Manage leads and projects for ${name}.`,
     robots: { index: false, follow: false },
-    openGraph: { title: `${name} | Dashboard` },
+    openGraph: { title: `${name} | Leads` },
   };
 }
-
-// ---------------------------------------------------------------------------
-// Auth — verify JWT and company membership
-// ---------------------------------------------------------------------------
 
 async function verifyAuth(companySlug: string): Promise<void> {
   const cookieStore = await cookies();
@@ -115,11 +97,7 @@ async function verifyAuth(companySlug: string): Promise<void> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
-export default async function CompanyDashboardPage({
+export default async function LeadsPage({
   params,
 }: {
   params: Promise<{ company: string }>;
@@ -152,5 +130,5 @@ export default async function CompanyDashboardPage({
     redirect(`/${companySlug}/admin/settings#billing`);
   }
 
-  return <CompanyDashboardClient company={company} />;
+  return <LeadsClient company={company} />;
 }

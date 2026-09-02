@@ -65,6 +65,9 @@ export default function BillingSection({
   const [sendingReminder, setSendingReminder] = useState(false);
 
   const [dueDate, setDueDate] = useState('');
+  const [showDueDateEditor, setShowDueDateEditor] = useState(false);
+  const [dueDateDraft, setDueDateDraft] = useState('');
+  const [savingDueDate, setSavingDueDate] = useState(false);
 
   const [showDepositEditor, setShowDepositEditor] = useState(false);
   const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>(lead?.deposit_type ? 'deposit' : 'full');
@@ -156,6 +159,7 @@ export default function BillingSection({
   const isPaid = !isClosed && total > 0 && paidAmount >= total;
   const isPartial = !isClosed && paidAmount > 0 && !isPaid;
   const invoiceSent = !!lead?.invoice_sent_at;
+  const dueDateLocked = isPaid || isClosed;
   const lastReminderSent = lead?.reminder_sent_at || null;
   const daysSinceReminder = lastReminderSent
     ? Math.floor((Date.now() - new Date(lastReminderSent).getTime()) / 86_400_000)
@@ -169,6 +173,22 @@ export default function BillingSection({
 
   const wasSettledThenGrew = !!depositPayment && !!balancePayment && !isPaid && !isClosed && remaining > 0;
   const currentAmountDue = hasDepositTerms && !depositPaid ? depositAmount : remaining;
+
+  // Pure date-string comparison (YYYY-MM-DD sorts correctly as a string,
+  // same as numerically) — avoids timezone drift from constructing Date
+  // objects out of a date-only value.
+  const todayStr = new Date().toISOString().split('T')[0];
+  const isOverdue = !!dueDate && dueDate < todayStr && !isPaid && !isClosed;
+  const daysOverdue = isOverdue
+    ? Math.round((new Date(todayStr).getTime() - new Date(dueDate).getTime()) / 86_400_000)
+    : 0;
+  const overdueSuffix = isOverdue ? ` — ${daysOverdue} day${daysOverdue === 1 ? '' : 's'} overdue` : '';
+
+  // Falls back to 14 if the company hasn't set one yet (or if whatever
+  // fetches `company` for this page hasn't been updated to select the new
+  // column) — this is deliberately safe-by-default rather than crashing
+  // or silently defaulting to 0.
+  const defaultBalanceDueDays = company?.default_balance_due_days ?? 14;
 
   const reversedAmountFor = (paymentId: number) =>
   payments
@@ -200,6 +220,25 @@ export default function BillingSection({
       num > 0 ? num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
     );
   }, [lead?.id]);
+
+  // A draft, scoped to the Send modal only — NOT the same state the
+  // sidebar's "Payment Due Date" row reads. Pre-filling `dueDate` directly
+  // here would make the sidebar show a date the moment the modal opens,
+  // even if the contractor cancels without sending anything real.
+  const [sendDueDateDraft, setSendDueDateDraft] = useState('');
+
+  useEffect(() => {
+    if (!showSendConfirm) return;
+    if (dueDate) {
+      setSendDueDateDraft(dueDate);
+      return;
+    }
+    const days = awaitingDeposit ? 0 : defaultBalanceDueDays;
+    const d = new Date();
+    d.setDate(d.getDate() + days);
+    setSendDueDateDraft(d.toISOString().split('T')[0]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showSendConfirm]);
 
   const handleDownload = async () => {
     if (!hasQuote) {
@@ -240,7 +279,7 @@ export default function BillingSection({
           action: 'send_invoice_to_customer',
           invoice_number: invoiceNumber,
           invoice_data: lineItems,
-          due_date: dueDate || null,
+          due_date: sendDueDateDraft || null,
           user_name: currentUser?.name || 'Unknown',
           user_email: currentUser?.email || '',
         }),
@@ -248,6 +287,7 @@ export default function BillingSection({
       const result = await res.json();
       if (result.success) {
         toast.success('Invoice sent');
+        setDueDate(sendDueDateDraft); // now genuinely saved — safe to reflect in the sidebar
         setShowSendConfirm(false);
         await onRefresh();
       } else toast.error(result.error || 'Failed to send invoice');
@@ -259,7 +299,7 @@ export default function BillingSection({
   };
 
   const handleDueDateChange = async (newDate: string) => {
-    setDueDate(newDate);
+    setSavingDueDate(true);
     try {
       await fetch('/api/leads/update', {
         method: 'POST',
@@ -273,10 +313,14 @@ export default function BillingSection({
           user_email: currentUser?.email || '',
         }),
       });
+      setDueDate(newDate);
+      setShowDueDateEditor(false);
       await onRefresh();
       toast.success('Due date updated');
     } catch {
       toast.error('Failed to update due date');
+    } finally {
+      setSavingDueDate(false);
     }
   };
 
@@ -504,6 +548,11 @@ export default function BillingSection({
     setShowTaxEditor(true);
   };
 
+  const openDueDateEditor = () => {
+    setDueDateDraft(dueDate);
+    setShowDueDateEditor(true);
+  };
+
   const openRecordPaymentModal = () => {
     const prefill = currentAmountDue;
     if (prefill > 0) {
@@ -552,6 +601,13 @@ export default function BillingSection({
     : Math.max(total - depositAmount, 0);
   const balanceRemaining = Math.max(balanceTargetAmount - balanceCollected, 0);
 
+  // The one number that answers "what happens if I hit Send right now" —
+  // used for the prominent callout box, separate from the per-step amounts
+  // in the timeline below (which show the full deposit/balance targets,
+  // not necessarily what's still outstanding on a partially-paid step).
+  const amountDueNow = isPaid || isClosed ? 0 : hasDepositTerms && !depositPaid ? depositRemaining : remaining;
+  const dueNowLabel = hasDepositTerms && !depositPaid ? 'Deposit Due Now' : hasDepositTerms ? 'Balance Due Now' : 'Amount Due Now';
+
   const chronological = (arr: any[]) =>
     [...arr].sort((a, b) => {
       const byDate = new Date(a.paid_on).getTime() - new Date(b.paid_on).getTime();
@@ -575,7 +631,7 @@ export default function BillingSection({
     return p.kind;
   };
 
-  type StepStatus = 'locked' | 'ready' | 'sent' | 'done';
+  type StepStatus = 'locked' | 'ready' | 'sent' | 'overdue' | 'done';
   type Step = {
     key: string;
     title: string;
@@ -593,13 +649,17 @@ export default function BillingSection({
           key: 'deposit',
           title: 'Deposit',
           amount: depositAmount,
-          status: depositPaid ? 'done' : depositPayments.length > 0 ? 'sent' : depositRequestSent ? 'sent' : 'ready',
+          status: depositPaid
+            ? 'done'
+            : depositPayments.length > 0 || depositRequestSent
+            ? (isOverdue ? 'overdue' : 'sent')
+            : 'ready',
           sub: depositPaid
             ? `Paid in full ${fmtDate(depositPayments[depositPayments.length - 1]?.paid_on)}`
-            : depositPayments.length > 0
-            ? `${fmt(depositCollected)} paid so far · ${fmt(depositRemaining)} remaining`
+            : depositCollected > 0
+            ? `${fmt(depositCollected)} paid so far · ${fmt(depositRemaining)} remaining${overdueSuffix}`
             : depositRequestSent
-            ? `Sent ${fmtDate(depositSentEntry?.created_at)} — awaiting payment`
+            ? `Sent ${fmtDate(depositSentEntry?.created_at)}${isOverdue ? ` — ${daysOverdue} day${daysOverdue === 1 ? '' : 's'} overdue` : ' — awaiting payment'}`
             : canSendInvoice
             ? undefined
             : 'Emailing invoices needs the Basic plan',
@@ -619,15 +679,21 @@ export default function BillingSection({
           key: 'balance',
           title: 'Balance',
           amount: isPaid ? total - depositAmount : depositPaid ? remaining : total - depositAmount,
-          status: isPaid ? 'done' : !depositPaid ? 'locked' : balancePayments.length > 0 ? 'sent' : balanceRequestSent ? 'sent' : 'ready',
+          status: isPaid
+            ? 'done'
+            : !depositPaid
+            ? 'locked'
+            : balancePayments.length > 0 || balanceRequestSent
+            ? (isOverdue ? 'overdue' : 'sent')
+            : 'ready',
           sub: isPaid
             ? `Paid in full ${fmtDate(lead?.payment_date)}`
             : !depositPaid
             ? 'Unlocks once the deposit is paid'
-            : balancePayments.length > 0
-            ? `${fmt(balanceCollected)} paid so far · ${fmt(balanceRemaining)} remaining`
+            : balanceCollected > 0
+            ? `${fmt(balanceCollected)} paid so far · ${fmt(balanceRemaining)} remaining${overdueSuffix}`
             : balanceRequestSent
-            ? `Sent ${fmtDate(balanceSentEntry?.created_at)} — awaiting payment`
+            ? `Sent ${fmtDate(balanceSentEntry?.created_at)}${isOverdue ? ` — ${daysOverdue} day${daysOverdue === 1 ? '' : 's'} overdue` : ' — awaiting payment'}`
             : canSendInvoice
             ? 'Ready to send'
             : 'Emailing invoices needs the Basic plan',
@@ -650,11 +716,11 @@ export default function BillingSection({
           key: 'invoice',
           title: 'Invoice',
           amount: paidAmount > 0 ? remaining : total,
-          status: isPaid ? 'done' : invoiceSent ? 'sent' : 'ready',
+          status: isPaid ? 'done' : invoiceSent ? (isOverdue ? 'overdue' : 'sent') : 'ready',
           sub: isPaid
             ? `Paid ${fmtDate(lead?.payment_date)}`
             : invoiceSent
-            ? `Sent ${fmtDate(lead?.invoice_sent_at)} — awaiting payment`
+            ? `Sent ${fmtDate(lead?.invoice_sent_at)}${isOverdue ? ` — ${daysOverdue} day${daysOverdue === 1 ? '' : 's'} overdue` : ' — awaiting payment'}`
             : canSendInvoice
             ? undefined
             : 'Emailing invoices needs the Basic plan',
@@ -686,6 +752,8 @@ export default function BillingSection({
         refundedAmount={refundedAmount}
         remaining={remaining}
         wasSettledThenGrew={wasSettledThenGrew}
+        amountDueNow={amountDueNow}
+        dueNowLabel={dueNowLabel}
         steps={steps}
         depositPayments={depositPayments}
         balancePayments={balancePayments}
@@ -709,7 +777,9 @@ export default function BillingSection({
         depositValue={depositValue}
         depositAmount={depositAmount}
         dueDate={dueDate}
-        handleDueDateChange={handleDueDateChange}
+        isOverdue={isOverdue}
+        dueDateLocked={dueDateLocked}
+        openDueDateEditor={openDueDateEditor}
         activeMethodLabel={activeMethodLabel}
         activityLog={activityLog}
         loadPreview={loadPreview}
@@ -736,8 +806,15 @@ export default function BillingSection({
         depositAmount={depositAmount}
         hasPayLink={hasPayLink}
         activeMethodLabel={activeMethodLabel}
-        dueDate={dueDate}
-        setDueDate={setDueDate}
+        dueDate={sendDueDateDraft}
+        setDueDate={setSendDueDateDraft}
+        showDueDateEditor={showDueDateEditor}
+        setShowDueDateEditor={setShowDueDateEditor}
+        savingDueDate={savingDueDate}
+        currentDueDate={dueDate}
+        dueDateDraft={dueDateDraft}
+        setDueDateDraft={setDueDateDraft}
+        handleDueDateChange={handleDueDateChange}
         handleSendInvoice={handleSendInvoice}
         confirmDeletePayment={confirmDeletePayment}
         setConfirmDeletePayment={setConfirmDeletePayment}

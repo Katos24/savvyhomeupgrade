@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '@/lib/auth';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -23,9 +24,7 @@ export async function GET(request: Request, { params }: Props) {
 
     let decoded: { userId: string };
     try {
-      const secret = process.env.JWT_SECRET;
-      if (!secret) throw new Error('JWT_SECRET is not set');
-      decoded = jwt.verify(token, secret) as { userId: string };
+      decoded = jwt.verify(token, getJwtSecret()) as { userId: string };
     } catch {
       return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
     }
@@ -60,6 +59,13 @@ export async function GET(request: Request, { params }: Props) {
     const calendarAll = url.searchParams.get('calendarAll') === 'true';
     const CALENDAR_SAFETY_LIMIT = 2000;
     const effectiveLimit = calendarAll ? CALENDAR_SAFETY_LIMIT : limit;
+
+    // Global company-wide stats (revenue/active jobs/etc.) are the same
+    // regardless of search/filters, and only the pre-split combined
+    // dashboard view renders them. Computing them on every keystroke in
+    // the Leads page's search box — which never displays them — was pure
+    // waste. Opt-in, not opt-out, since fewer callers need this now.
+    const includeStats = url.searchParams.get('includeStats') === 'true';
 
     const isScheduledToday = timeFilter === 'scheduled_today';
     const today = new Date();
@@ -96,19 +102,23 @@ export async function GET(request: Request, { params }: Props) {
     const toISO = timeTo ? timeTo.toISOString() : '2099-12-31T23:59:59.999Z';
 
     // ── 5. Independent Queries ─────────────────────────────────
-    const statsPromise = sql`
-      SELECT
-        COUNT(*) as total_leads,
-        COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
-        COALESCE(SUM(p.payment_amount::numeric), 0) as revenue,
-        COALESCE(SUM(
-          GREATEST(COALESCE(p.quote_total::numeric, 0) - COALESCE(p.payment_amount::numeric, 0), 0)
-        ) FILTER (WHERE p.quote_total IS NOT NULL), 0) as pending
-      FROM leads l
-      LEFT JOIN projects p ON l.id = p.lead_id
-      WHERE l.company_id = ${companyId}
-        AND l.deleted = false
-    `;
+    // Skipped entirely (not even sent to Postgres) unless a caller asks
+    // for it via includeStats=true.
+    const statsPromise = includeStats
+      ? sql`
+          SELECT
+            COUNT(*) as total_leads,
+            COUNT(*) FILTER (WHERE l.status NOT IN ('completed','cancelled','lost')) as active_jobs,
+            COALESCE(SUM(p.payment_amount::numeric), 0) as revenue,
+            COALESCE(SUM(
+              GREATEST(COALESCE(p.quote_total::numeric, 0) - COALESCE(p.payment_amount::numeric, 0), 0)
+            ) FILTER (WHERE p.quote_total IS NOT NULL), 0) as pending
+          FROM leads l
+          LEFT JOIN projects p ON l.id = p.lead_id
+          WHERE l.company_id = ${companyId}
+            AND l.deleted = false
+        `
+      : Promise.resolve([null]);
 
     const statusCountsPromise = sql`
       SELECT status, COUNT(*) as count
@@ -118,39 +128,17 @@ export async function GET(request: Request, { params }: Props) {
       GROUP BY status
     `;
 
-    let countPromise;
+    // Each branch below folds the total count into the same query as the
+    // page of rows via COUNT(*) OVER(), instead of running an identical
+    // WHERE clause twice as a separate COUNT(*) query. Same filtering,
+    // one query instead of two, for all three branches.
     let leadsPromise;
 
     if (isScheduledToday) {
-      countPromise = sql`
-        SELECT COUNT(*) as total
-        FROM leads l
-        LEFT JOIN projects p ON l.id = p.lead_id
-        WHERE l.company_id = ${companyId}
-          AND l.deleted = false
-          AND p.scheduled_date IS NOT NULL
-          AND CAST(p.scheduled_date AS date) = CAST(${todayDateStr} AS date)
-          AND (${search} = '' OR (
-            l.name        ILIKE ${'%' + search + '%'} OR
-            l.email       ILIKE ${'%' + search + '%'} OR
-            l.phone       ILIKE ${'%' + search + '%'} OR
-            l.description ILIKE ${'%' + search + '%'}
-          ))
-          AND (${category} = ''
-            OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-            OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-          )
-          AND (${payment} = '' OR p.payment_status = ${payment})
-          AND (
-            ${assignee} = '' OR
-            (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
-            p.assigned_to = ${assignee}
-          )
-      `;
-
       leadsPromise = sql`
         SELECT
           l.*,
+          COUNT(*) OVER() as total_count,
           p.id as project_id, p.project_number, p.status as job_status,
           p.scheduled_date, p.scheduled_time, p.scheduled_end_time,
           p.event_location, p.assigned_to, p.additional_assignees,
@@ -193,18 +181,10 @@ export async function GET(request: Request, { params }: Props) {
         LIMIT ${limit} OFFSET ${offset}
       `;
     } else if (calendarAll) {
-      countPromise = sql`
-        SELECT COUNT(*) as total
-        FROM leads l
-        LEFT JOIN projects p ON l.id = p.lead_id
-        WHERE l.company_id = ${companyId}
-          AND l.deleted = false
-          AND p.scheduled_date IS NOT NULL
-      `;
-
       leadsPromise = sql`
         SELECT
           l.*,
+          COUNT(*) OVER() as total_count,
           p.id as project_id, p.project_number, p.status as job_status,
           p.scheduled_date, p.scheduled_time, p.scheduled_end_time,
           p.event_location, p.assigned_to, p.additional_assignees,
@@ -216,10 +196,11 @@ export async function GET(request: Request, { params }: Props) {
           p.payment_notes, p.payment_due_date, p.reminder_sent_at,
           p.invoice_data, p.invoice_number, p.invoice_sent_at,
           p.stripe_payment_intent_id, p.refunded_amount, p.refunded_at,
-          p.before_photos, p.after_photos, p.documents,
-          p.completed_at as job_completed_at, p.notes as project_notes,
-          p.tasks as project_tasks, p.follow_up_date,
-          p.internal_notes as project_internal_notes, p.follow_up_notes
+          p.card_brand, p.card_last4, p.before_photos, p.after_photos,
+          p.documents, p.completed_at as job_completed_at,
+          p.notes as project_notes, p.tasks as project_tasks,
+          p.follow_up_date, p.internal_notes as project_internal_notes,
+          p.follow_up_notes
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
@@ -229,36 +210,10 @@ export async function GET(request: Request, { params }: Props) {
         LIMIT ${effectiveLimit}
       `;
     } else {
-      countPromise = sql`
-        SELECT COUNT(*) as total
-        FROM leads l
-        LEFT JOIN projects p ON l.id = p.lead_id
-        WHERE l.company_id = ${companyId}
-          AND l.deleted = false
-          AND (${search} = '' OR (
-            l.name        ILIKE ${'%' + search + '%'} OR
-            l.email       ILIKE ${'%' + search + '%'} OR
-            l.phone       ILIKE ${'%' + search + '%'} OR
-            l.description ILIKE ${'%' + search + '%'}
-          ))
-          AND (${status} = '' OR l.status = ${status})
-          AND (${category} = ''
-            OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-            OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
-          )
-          AND (${payment} = '' OR p.payment_status = ${payment})
-          AND (
-            ${assignee} = '' OR
-            (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
-            p.assigned_to = ${assignee}
-          )
-          AND l.created_at >= ${fromISO}
-          AND l.created_at <= ${toISO}
-      `;
-
       leadsPromise = sql`
         SELECT
           l.*,
+          COUNT(*) OVER() as total_count,
           p.id as project_id, p.project_number, p.status as job_status,
           p.scheduled_date, p.scheduled_time, p.scheduled_end_time,
           p.event_location, p.assigned_to, p.additional_assignees,
@@ -270,10 +225,11 @@ export async function GET(request: Request, { params }: Props) {
           p.payment_notes, p.payment_due_date, p.reminder_sent_at,
           p.invoice_data, p.invoice_number, p.invoice_sent_at,
           p.stripe_payment_intent_id, p.refunded_amount, p.refunded_at,
-          p.before_photos, p.after_photos, p.documents,
-          p.completed_at as job_completed_at, p.notes as project_notes,
-          p.tasks as project_tasks, p.follow_up_date,
-          p.internal_notes as project_internal_notes, p.follow_up_notes
+          p.card_brand, p.card_last4, p.before_photos, p.after_photos,
+          p.documents, p.completed_at as job_completed_at,
+          p.notes as project_notes, p.tasks as project_tasks,
+          p.follow_up_date, p.internal_notes as project_internal_notes,
+          p.follow_up_notes
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
@@ -303,19 +259,21 @@ export async function GET(request: Request, { params }: Props) {
     }
 
     // ── 6. Execute in Parallel ─────────────────────────────────
-    const [statsResult, statusCountsResult, countResult, leads] = await Promise.all([
+    const [statsResult, statusCountsResult, leads] = await Promise.all([
       statsPromise,
       statusCountsPromise,
-      countPromise,
       leadsPromise,
     ]);
 
-    const globalStats = statsResult[0];
+    const globalStats = includeStats ? statsResult[0] : null;
     const statusCounts = statusCountsResult.reduce((acc: Record<string, number>, row: any) => {
       acc[row.status] = parseInt(row.count, 10);
       return acc;
     }, {});
-    const total = parseInt(countResult[0]?.total || '0', 10);
+    // COUNT(*) OVER() puts the total on every returned row — read it off
+    // the first one. Zero rows means zero total (there's no row to read
+    // total_count from, and there's nothing to paginate either).
+    const total = leads.length > 0 ? parseInt((leads[0] as any).total_count, 10) : 0;
     const pages = Math.ceil(total / effectiveLimit);
 
     // ── 7. Process notes ──────────────────────────────────────
@@ -331,7 +289,9 @@ export async function GET(request: Request, { params }: Props) {
       notes.sort((a: any, b: any) =>
         new Date(a.timestamp || 0).getTime() - new Date(b.timestamp || 0).getTime()
       );
-      const { project_notes, ...leadWithoutProjectNotes } = lead;
+      // total_count was only ever needed to compute `total` above — strip
+      // it back out so it doesn't leak into the lead objects the client sees.
+      const { project_notes, total_count, ...leadWithoutProjectNotes } = lead;
       return { ...leadWithoutProjectNotes, notes: JSON.stringify(notes) };
     });
 

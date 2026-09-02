@@ -15,7 +15,9 @@ export default async function FinancialsPage({
   const sql = neon(process.env.DATABASE_URL!);
 
   const companyRows = await sql`
-    SELECT id, name, slug, logo_url, plan_tier
+    SELECT id, name, slug, logo_url, plan_tier,
+           stripe_connect_onboarded, stripe_payment_status,
+           payment_link_url, payment_link_type
     FROM companies
     WHERE slug = ${companySlug}
     LIMIT 1
