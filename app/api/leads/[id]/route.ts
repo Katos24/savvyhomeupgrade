@@ -80,6 +80,7 @@ export async function GET(
         p.quote_tax_rate,
         p.deposit_type,
         p.deposit_value,
+        p.deposit_paid_at,
         p.quote_sent_at as project_quote_sent_at,
         p.quote_accepted_at as project_quote_accepted_at,
         p.quote_declined_at as project_quote_declined_at,

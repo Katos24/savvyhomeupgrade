@@ -5,7 +5,15 @@ import { Download, ChevronDown } from 'lucide-react';
 import FinancialsOverview from './FinancialsOverview';
 import InvoicesList from './InvoicesList';
 
-type Props = { company: any; projects: any[]; isBookkeeperView?: boolean };
+type Props = {
+  company: any;
+  projects: any[];
+  isBookkeeperView?: boolean;
+  // Real transactions from the payments ledger — one row per actual
+  // payment, not one row per job. See page.tsx for why this had to become
+  // a separate query instead of being derived from `projects` below.
+  recentPayments?: any[];
+};
 
 const PERIODS = [
   { label: 'This year', value: 'year' },
@@ -71,7 +79,7 @@ function invoiceState(p: any): InvoiceState {
 
 export type Tab = 'overview' | 'invoices';
 
-export default function FinancialsClient({ company, projects, isBookkeeperView = false }: Props) {
+export default function FinancialsClient({ company, projects, isBookkeeperView = false, recentPayments: realPayments = [] }: Props) {
   const [period, setPeriod] = useState('year');
   const [periodOpen, setPeriodOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('overview');
@@ -125,15 +133,22 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
     [aging]
   );
 
-  // Real data — the same jobs already fetched, filtered to ones with a
-  // real payment_date, not a fabricated activity feed.
+  // Mapped from the real payments-table rows fetched in page.tsx, into the
+  // exact shape FinancialsOverview already expects (id / customer_name /
+  // payment_date / _collected) — FinancialsOverview itself needed zero
+  // changes, since it was always correctly rendering whatever shape it
+  // was handed. paid_on is a plain DATE column ("2026-09-02"), unlike the
+  // ISO-timestamp gotcha that caused the Dashboard "Invalid Date" bug, so
+  // no special parsing is needed here.
   const recentPayments = useMemo(
     () =>
-      withMoney
-        .filter((p) => p.payment_date)
-        .sort((a, b) => new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime())
-        .slice(0, 6),
-    [withMoney]
+      realPayments.map((p) => ({
+        id: p.id,
+        customer_name: p.customer_name,
+        payment_date: p.paid_on,
+        _collected: parseFloat(p.amount) || 0,
+      })),
+    [realPayments]
   );
 
   const exportHref = (() => {

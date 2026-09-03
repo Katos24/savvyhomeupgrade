@@ -47,8 +47,24 @@ export async function GET(request: Request, { params }: Props) {
     const limit = 20;
     const offset = (page - 1) * limit;
 
-    const search = url.searchParams.get('search')?.trim() || '';
-    const status = url.searchParams.get('status')?.trim() || '';
+ const search = url.searchParams.get('search')?.trim() || '';
+ 
+    // Whitelisted on purpose — column identifiers can't safely go through
+    // the same ${value} interpolation as values, so this maps a small,
+    // fixed set of allowed sort keys to real column references. Anything
+    // not in this list (or no sort param at all) falls back to the
+    // existing default order.
+    const SORT_COLUMNS: Record<string, string> = {
+      name: 'l.name',
+      status: 'l.status',
+      scheduled_date: 'p.scheduled_date',
+      quote_total: 'p.quote_total',
+      payment_amount: 'p.payment_amount',
+    };
+    const sortParam = url.searchParams.get('sort') || '';
+    const sortColumn = SORT_COLUMNS[sortParam] || null;
+    const sortDirection = url.searchParams.get('sortDir') === 'asc' ? 'ASC' : 'DESC';
+        const status = url.searchParams.get('status')?.trim() || '';
     const category = url.searchParams.get('category')?.trim() || '';
     const assignee = url.searchParams.get('assignee')?.trim() || '';
     const payment = url.searchParams.get('payment')?.trim() || '';
@@ -253,7 +269,7 @@ export async function GET(request: Request, { params }: Props) {
           )
           AND l.created_at >= ${fromISO}
           AND l.created_at <= ${toISO}
-        ORDER BY l.created_at DESC
+        ORDER BY ${sortColumn ? sql.unsafe(`${sortColumn} ${sortDirection}, l.created_at DESC`) : sql.unsafe('l.created_at DESC')}
         LIMIT ${limit} OFFSET ${offset}
       `;
     }

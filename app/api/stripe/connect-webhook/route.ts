@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { headers } from 'next/headers';
 import { parseAccountStatus } from '@/lib/stripe/parseAccountStatus';
+import { getCollectionKind } from '@/lib/billing';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -68,7 +69,7 @@ if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
       // company_id is NOT NULL on payments and drives RLS, so read it here.
       const projectRows = await sql`
         SELECT company_id, quote_total, payment_amount,
-               deposit_type, deposit_value
+               deposit_type, deposit_value, deposit_paid_at
         FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
       `;
       const projectRow = projectRows[0];
@@ -112,32 +113,29 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
       }
 
       // A session created for a balance is smaller than quote_total, so
-      // classify rather than assuming this settles the job.
-     // The job's deposit terms decide this, not the amount. Inferring from
-      // amount labelled any first partial a 'deposit' even when the contractor
-      // never set deposit terms. Derived here rather than read from
-      // session.metadata so a replayed session can't mislabel the row.
-           const alreadyPaidAmount = parseFloat(projectRow.payment_amount || '0');
+      // classify rather than assuming this settles the job. The job's
+      // deposit terms decide this, not the amount — derived here rather
+      // than read from session.metadata so a replayed session can't
+      // mislabel the row.
+      //
+      // Reads from lib/billing.ts, the single source of truth, instead of
+      // its own inline copy of this math. This one mattered more than most
+      // of the other instances of this bug: unlike a live display that
+      // self-corrects the moment the code is fixed, this determines the
+      // permanent 'kind' value written to the payments table below — a
+      // misclassification here doesn't fix itself later, it's baked into
+      // the historical record. See the note above this file's edit for
+      // whether any already-recorded rows need a separate data correction.
       const projectQuoteTotal = parseFloat(projectRow.quote_total || '0');
-      const hasDepositTerms =
-        !!projectRow.deposit_type && Number(projectRow.deposit_value) > 0;
-      const depositAmountForKind = hasDepositTerms
-        ? Math.min(
-            Math.round(
-              (projectRow.deposit_type === 'percent'
-                ? (projectQuoteTotal * Number(projectRow.deposit_value)) / 100
-                : Number(projectRow.deposit_value)) * 100
-            ) / 100,
-            projectQuoteTotal
-          )
-        : 0;
-      // "Deposit" until the deposit itself is net-satisfied, not just
-      // until the first dollar ever landed — see getOrCreateCheckoutSession
-      // for the full reasoning. A partial deposit refund now correctly
-      // re-opens deposit collection instead of permanently jumping to
-      // "balance" for the rest of the job.
-      const paymentKind =
-        hasDepositTerms && alreadyPaidAmount < depositAmountForKind ? 'deposit' : 'balance';
+      const alreadyPaidAmount = parseFloat(projectRow.payment_amount || '0');
+      const rawKind = getCollectionKind({
+        total: projectQuoteTotal,
+        paidAmount: alreadyPaidAmount,
+        depositType: projectRow.deposit_type,
+        depositValue: projectRow.deposit_value,
+        depositPaidAt: projectRow.deposit_paid_at,
+      });
+      const paymentKind: 'deposit' | 'balance' = rawKind === 'deposit' ? 'deposit' : 'balance';
 
       const insertedPayment = await sql`
        INSERT INTO payments (
@@ -169,9 +167,6 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
       }
 
       // payments_sync_project recomputes projects.payment_amount,
-      // payment_status, payment_method, payment_date, card_brand, card_last4
-      // and paid_at from SUM(payments.amount). Nothing else to write.
-     // payments_sync_project recomputes projects.payment_amount,
       // payment_status, payment_method, payment_date, card_brand, card_last4
       // and paid_at from SUM(payments.amount). Nothing else to write.
       console.log(

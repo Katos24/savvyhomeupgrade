@@ -24,7 +24,19 @@ interface TableViewProps {
   categories?: any[];
   customQuestions?: CustomQuestion[];
   isDark?: boolean;
+  // Sort now happens server-side — leads arrives pre-sorted for whatever
+  // page is currently loaded. Previously this component held its own
+  // sortConfig and sorted the `leads` prop locally, which only ever
+  // sorted the 20 (or however many) rows already fetched — correct
+  // relative to each other, but not relative to the leads that hadn't
+  // been loaded yet. "Sorted by Quote descending" now means the highest
+  // quotes across the whole company, not just within whatever page
+  // happened to be in memory.
+  sortKey: string | null;
+  sortDir: 'asc' | 'desc';
+  onSortChange: (key: string) => void;
 }
+ 
 
 type SortConfig = { key: string; direction: 'asc' | 'desc' } | null;
 
@@ -61,6 +73,7 @@ export default function TableView({
   onBulkUpdate, onBulkDelete,
   teamMembers = [], categories = [],
   isDark = true,
+  sortKey, sortDir, onSortChange,
 }: TableViewProps) {
   // Dark mode keeps every color routed through the app's existing shared
   // theme tokens, untouched. Light mode is a new, separately hardcoded
@@ -69,7 +82,6 @@ export default function TableView({
   // different from the rest of the app's current light theme.
   const t = getTheme(isDark);
 
-  const [sortConfig, setSortConfig] = useState<SortConfig>(null);
   const [editMode, setEditMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showActionsMenu, setShowActionsMenu] = useState(false);
@@ -80,13 +92,8 @@ export default function TableView({
   const getHex = (color: string) => STATUS_COLORS[color] || '#3b82f6';
   const getTextHex = (color: string) => STATUS_TEXT_COLORS[color] || '#374151';
 
-  const handleSort = (key: string) => {
-    setSortConfig(prev =>
-      prev?.key === key && prev.direction === 'asc'
-        ? { key, direction: 'desc' }
-        : { key, direction: 'asc' }
-    );
-  };
+   const handleSort = (key: string) => onSortChange(key);
+
 
   const toggleEditMode = () => { setEditMode(e => !e); setSelectedIds(new Set()); setShowActionsMenu(false); };
   const toggleSelectAll = () => setSelectedIds(selectedIds.size === leads.length ? new Set() : new Set(leads.map(l => l.id)));
@@ -119,28 +126,12 @@ export default function TableView({
     finally { setBulkActionLoading(false); }
   };
 
-  const sortedLeads = sortConfig ? [...leads].sort((a, b) => {
-    let av: any, bv: any;
-    switch (sortConfig.key) {
-      case 'name': av = a.name?.toLowerCase() || ''; bv = b.name?.toLowerCase() || ''; break;
-      case 'status':
-        av = statusOptions.findIndex(s => s.value === (a.status || statusOptions[0].value));
-        bv = statusOptions.findIndex(s => s.value === (b.status || statusOptions[0].value));
-        break;
-      case 'scheduled_date': av = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0; bv = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0; break;
-      case 'quote_total': av = a.quote_total || 0; bv = b.quote_total || 0; break;
-      case 'payment_amount': av = a.payment_amount || 0; bv = b.payment_amount || 0; break;
-      default: return 0;
-    }
-    if (av < bv) return sortConfig.direction === 'asc' ? -1 : 1;
-    if (av > bv) return sortConfig.direction === 'asc' ? 1 : -1;
-    return 0;
-  }) : leads;
+ const sortedLeads = leads;
 
   const SortIcon = ({ k }: { k: string }) =>
-    sortConfig?.key !== k
+    sortKey !== k
       ? null
-      : sortConfig.direction === 'asc'
+      : sortDir === 'asc'
         ? <span className="ml-1">&#8593;</span>
         : <span className="ml-1">&#8595;</span>;
 

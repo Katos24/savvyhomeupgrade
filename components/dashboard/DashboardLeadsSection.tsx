@@ -31,8 +31,11 @@ type DashboardLeadsSectionProps = {
   onLockedFeature: (key: string) => void;
   pagination: { page: number; pages: number; total: number };
   onLoadMore: () => void;
+  sortKey: string | null;
+  sortDir: 'asc' | 'desc';
+  onSortChange: (key: string) => void;
 };
-
+ 
 function getContrastTextColor(input: string): string {
   let c = input.trim().replace('#', '');
   if (c.length === 3) {
@@ -69,8 +72,11 @@ export default function DashboardLeadsSection({
   onBulkDelete,
   onShowExportModal,
   onLockedFeature,
-  pagination,
+   pagination,
   onLoadMore,
+  sortKey,
+  sortDir,
+  onSortChange,
 }: DashboardLeadsSectionProps) {
   const buttonTextColor = getContrastTextColor(accentColor);
 
@@ -235,7 +241,7 @@ export default function DashboardLeadsSection({
             <div className={`rounded-2xl overflow-hidden border ${
               isDark ? 'border-slate-800/80 bg-[#0A0C14]/60 shadow-2xl backdrop-blur-md' : 'border-[#e7e2d8] bg-white shadow-sm'
             }`}>
-              <TableView
+            <TableView
                 leads={filteredLeads}
                 onSelectLead={onSelectLead}
                 statusOptions={statusOptions}
@@ -245,6 +251,9 @@ export default function DashboardLeadsSection({
                 categories={company.form_categories || []}
                 customQuestions={company.custom_questions || []}
                 isDark={isDark}
+                sortKey={sortKey}
+                sortDir={sortDir}
+                onSortChange={onSortChange}
               />
             </div>
           </div>

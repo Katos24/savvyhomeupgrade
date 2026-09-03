@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getCollectionKind } from '@/lib/billing';
 
 const VALID_METHODS = ['cash', 'check', 'credit_card', 'zelle', 'venmo', 'paypal', 'stripe', 'other'];
 const fmtAmount = (n: number) => `$${n.toFixed(2)}`;
@@ -94,7 +95,7 @@ async function loadPayments(projectId: number, companyId: number) {
 async function loadProject(projectId: number, companyId: number) {
   const rows = await sql`
     SELECT id, company_id, quote_total, payment_amount, payment_status,
-       deposit_type, deposit_value
+       deposit_type, deposit_value, deposit_paid_at
 FROM projects
 WHERE id = ${projectId} AND company_id = ${companyId}
 LIMIT 1
@@ -299,30 +300,25 @@ export async function POST(
     const method = VALID_METHODS.includes(body.method) ? body.method : 'other';
 
     // Classify from what's already recorded, so the list reads sensibly.
-   // 'deposit' is the first partial, 'balance' is the one that settles it,
-    // anything in between is just a payment. Labelling every subsequent
-    // payment 'balance' was misleading — $700 against a $3,000 job isn't one.
-    // The job's own deposit terms decide this, not the amount. Inferring
-    // from amount mislabelled a $700 payment on a $3,000 job as a deposit
-    // even when the contractor never set deposit terms.
+    // Was its own inline copy of the deposit-target and "is it satisfied"
+    // math (duplicated across at least eight other files) — now reads
+    // from lib/billing.ts, the single source of truth. getCollectionKind
+    // is sticky-aware (project.deposit_paid_at), so a quote that grew
+    // after the deposit was already satisfied still correctly classifies
+    // this payment as 'balance', not a reopened 'deposit'.
        const alreadyPaid = Number(project.payment_amount) || 0;
     const total = Number(project.quote_total) || 0;
-    const hasDepositTerms =
-      !!project.deposit_type && Number(project.deposit_value) > 0;
-    const depositAmountForKind = hasDepositTerms
-      ? Math.min(
-          Math.round(
-            (project.deposit_type === 'percent'
-              ? (total * Number(project.deposit_value)) / 100
-              : Number(project.deposit_value)) * 100
-          ) / 100,
-          total
-        )
-      : 0;
-    // Same corrected rule as the webhook and getOrCreateCheckoutSession —
-    // "deposit" until the deposit is net-satisfied, not just until the
-    // first dollar ever landed.
-    const kind = hasDepositTerms && alreadyPaid < depositAmountForKind ? 'deposit' : 'balance';
+    const kind = getCollectionKind({
+      total,
+      paidAmount: alreadyPaid,
+      depositType: project.deposit_type,
+      depositValue: project.deposit_value,
+      depositPaidAt: project.deposit_paid_at,
+    });
+    // getCollectionKind can return 'full' — collapse to 'balance' since this
+    // route has no forceFull concept and the payments table's kind column
+    // only accepts 'deposit' | 'payment' | 'balance' | 'refund'.
+    const resolvedKind: 'deposit' | 'balance' = kind === 'deposit' ? 'deposit' : 'balance';
 
     // Guard against fat-fingering an extra zero.
     if (total > 0 && alreadyPaid + amount > total * 1.5) {
@@ -360,7 +356,7 @@ export async function POST(
         ${amount},
         ${total || null},
         ${method},
-        ${kind},
+        ${resolvedKind},
         ${paidOn ?? new Date().toISOString().split('T')[0]},
         ${note},
         ${auth.user.name || auth.user.email || 'Unknown'}

@@ -117,13 +117,39 @@ export default function LeadsClient({ company }: { company: Company }) {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('all');
+  // Deep-linked from Dashboard's stat cards (?status=quoted, ?payment=...).
+  // Lazy initializers, not a useEffect — same reasoning as currentView and
+  // isDark below using localStorage this way. The mount effect a few lines
+  // down calls fetchLeads(1) synchronously on first render; if these were
+  // set via an effect instead, that first fetch would already have gone
+  // out with 'all' before the URL-derived value ever took effect.
+  //
+  // NOTE on ?payment=awaiting specifically: reading it here is necessary
+  // regardless, but the backend's payment filter does a literal
+  // `payment_status = ${payment}` match, and 'awaiting' was never a real
+  // stored value — it's a compound Dashboard-only concept (invoice_sent_at
+  // set AND payment_status not 'paid'). Until the backend either gains a
+  // real 'awaiting' branch or that link points somewhere else, this will
+  // read correctly but the resulting fetch will silently return zero
+  // leads. Wiring it here doesn't fix that — see the backend route.
+  const [filterStatus, setFilterStatus] = useState(() => {
+    if (typeof window === 'undefined') return 'all';
+    return new URLSearchParams(window.location.search).get('status') || 'all';
+  });
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterAssignee, setFilterAssignee] = useState('all');
-  const [filterPayment, setFilterPayment] = useState('all');
-  const [startDate, setStartDate] = useState('');
+  const [filterPayment, setFilterPayment] = useState(() => {
+    if (typeof window === 'undefined') return 'all';
+    return new URLSearchParams(window.location.search).get('payment') || 'all';
+  });
+ const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  // Table View's sort — drives both the column header arrows and the
+  // actual server-side ORDER BY. null sortKey means "server default"
+  // (created_at DESC), same as today's unsorted state.
+  const [sortKey, setSortKey] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showExportModal, setShowExportModal] = useState(false);
 
   // User / team
@@ -142,6 +168,17 @@ export default function LeadsClient({ company }: { company: Company }) {
     const params = new URLSearchParams(window.location.search);
     if (params.get('tour') === '1') {
       setTourActive(true);
+      window.history.replaceState({}, '', `/${company.slug}/leads`);
+    }
+  }, [company.slug]);
+ 
+  // Clean the URL after reading ?status=/?payment= above — the values are
+  // already captured in filterStatus/filterPayment's lazy initializers, so
+  // this just prevents a page refresh from re-applying (or getting stuck
+  // showing) a stale deep-link filter in the address bar.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('status') || params.get('payment')) {
       window.history.replaceState({}, '', `/${company.slug}/leads`);
     }
   }, [company.slug]);
@@ -171,7 +208,9 @@ export default function LeadsClient({ company }: { company: Company }) {
       const payment  = overrides.payment   !== undefined ? overrides.payment   : filterPayment;
       const tFilter  = overrides.timeFilter!== undefined ? overrides.timeFilter: timeFilter;
       const sDate    = overrides.startDate !== undefined ? overrides.startDate : startDate;
-      const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDate;
+const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDate;
+      const sKey     = overrides.sortKey   !== undefined ? overrides.sortKey   : sortKey;
+      const sDir     = overrides.sortDir   !== undefined ? overrides.sortDir   : sortDir;
 
       if (search)                        params.set('search',     search);
       if (status   && status   !== 'all') params.set('status',     status);
@@ -179,8 +218,9 @@ export default function LeadsClient({ company }: { company: Company }) {
       if (assignee && assignee !== 'all') params.set('assignee',   assignee);
       if (payment  && payment  !== 'all') params.set('payment',    payment);
       if (tFilter  && tFilter  !== 'all') params.set('timeFilter', tFilter);
-      if (sDate) params.set('startDate', sDate);
+    if (sDate) params.set('startDate', sDate);
       if (eDate) params.set('endDate',   eDate);
+      if (sKey)  { params.set('sort', sKey); params.set('sortDir', sDir); }
 
       const res = await fetch(`/api/company/${company.slug}/leads?${params}`, {
         cache: 'no-store',
@@ -202,7 +242,7 @@ export default function LeadsClient({ company }: { company: Company }) {
       setIsInitialLoad(false);
       setIsRefreshing(false);
     }
-  }, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate]);
+}, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir]);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -229,10 +269,10 @@ export default function LeadsClient({ company }: { company: Company }) {
     fetchTeamMembers();
   }, []);
 
-  useEffect(() => {
+ useEffect(() => {
     if (isInitialLoad) return;
     fetchLeads(1, true);
-  }, [filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, fetchLeads]);
+  }, [filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir, fetchLeads]);
 
   // Deep-link to lead from URL. Always fetches full detail regardless of
   // isInitialLoad — previously, if isInitialLoad was still true at the
@@ -436,6 +476,17 @@ export default function LeadsClient({ company }: { company: Company }) {
       startDate: '', endDate: '',
     });
   }, [fetchLeads]);
+ 
+  // Same toggle behavior TableView used to own locally: click a new
+  // column -> sort desc; click the same column again -> flip direction.
+  const handleSortChange = useCallback((key: string) => {
+    if (sortKey === key) {
+      setSortDir(prevDir => (prevDir === 'desc' ? 'asc' : 'desc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  }, [sortKey]);
 
   // -------------------------------------------------------------------------
   // Derived data
@@ -738,9 +789,12 @@ export default function LeadsClient({ company }: { company: Company }) {
           onBulkDelete={handleBulkDelete}
           onShowExportModal={() => setShowExportModal(true)}
           onLockedFeature={setLockedDashboardModal}
-          pagination={pagination}
+           pagination={pagination}
           onLoadMore={() => fetchLeads(pagination.page + 1, false)}
           accentColor={accentColor}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={handleSortChange}
         />
       </main>
 

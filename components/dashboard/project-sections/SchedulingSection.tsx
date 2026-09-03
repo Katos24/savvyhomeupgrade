@@ -1,13 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Calendar, User,
   X, Eye,
-  ChevronDown, CheckCircle2, Clock,
+  CheckCircle2, Clock,
   History, Loader2, Save, Mail, MapPin
 } from 'lucide-react';
 import SchedulingCalendarModal from './SchedulingCalendarModal';
@@ -23,6 +22,12 @@ type SchedulingSectionProps = {
   companySlug: string;
   teamMembers?: any[];
 };
+
+// Category values are stored as snake_case ("full_roof_replacement") — same
+// display fix used elsewhere (FormTab, BillingSummaryPanel, Dashboard).
+// Used here for the "Busy · <category>" line on a conflicting booking.
+const formatCategoryLabel = (value?: string) =>
+  (value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 export default function SchedulingSection({ 
   lead, 
@@ -43,8 +48,19 @@ export default function SchedulingSection({
   const [timeMinute, setTimeMinute] = useState('');
   const [timeAmPm, setTimeAmPm] = useState('AM');
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
-  const [assigneePickerOpen, setAssigneePickerOpen] = useState(false);
+
+  // ── Assignee modal — replaces the old anchored dropdown entirely.
+  // Cards instead of a checkbox list, Available/Busy status per person,
+  // and "+ Add someone not listed" only reveals the free-text input when
+  // clicked, instead of that input sitting permanently visible and
+  // competing with the actual picker. ──
+  const [showAssigneeModal, setShowAssigneeModal] = useState(false);
+  const [showCustomNameInput, setShowCustomNameInput] = useState(false);
   const [customNameInput, setCustomNameInput] = useState('');
+  const [assigneeAvailability, setAssigneeAvailability] = useState<
+    Record<string, { available: boolean; conflict: { customer_name?: string; category?: string } | null }>
+  >({});
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
 
   const assignedTo = selectedAssignees[0] || '';
   const additionalAssignees = selectedAssignees.slice(1);
@@ -63,48 +79,6 @@ export default function SchedulingSection({
 
   // Track initial state to indicate dirty / unsaved changes
   const [initialState, setInitialState] = useState<any>({});
-
-  // Outside click ref for Assignee Dropdown
-  const assigneeRef = useRef<HTMLDivElement>(null);
-  const assigneeTriggerRef = useRef<HTMLButtonElement>(null);
-  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
-  const [assigneeDropdownPos, setAssigneeDropdownPos] = useState({ top: 0, left: 0, width: 0 });
-
-  const positionAssigneeDropdown = () => {
-    if (!assigneeTriggerRef.current) return;
-    const rect = assigneeTriggerRef.current.getBoundingClientRect();
-    setAssigneeDropdownPos({ top: rect.bottom + 4, left: rect.left, width: rect.width });
-  };
-
-  const toggleAssigneePicker = () => {
-    if (!assigneePickerOpen) positionAssigneeDropdown();
-    setAssigneePickerOpen((o) => !o);
-  };
-
-  // Keep the portaled dropdown aligned with its trigger while open
-  useEffect(() => {
-    if (!assigneePickerOpen) return;
-    positionAssigneeDropdown();
-    window.addEventListener('scroll', positionAssigneeDropdown, true);
-    window.addEventListener('resize', positionAssigneeDropdown);
-    return () => {
-      window.removeEventListener('scroll', positionAssigneeDropdown, true);
-      window.removeEventListener('resize', positionAssigneeDropdown);
-    };
-  }, [assigneePickerOpen]);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      const insideTrigger = assigneeRef.current && assigneeRef.current.contains(target);
-      const insideDropdown = assigneeDropdownRef.current && assigneeDropdownRef.current.contains(target);
-      if (!insideTrigger && !insideDropdown) {
-        setAssigneePickerOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   useEffect(() => {
     setScheduledEndTime(lead?.scheduled_end_time ? lead.scheduled_end_time : '');
@@ -210,6 +184,32 @@ export default function SchedulingSection({
     setScheduledTime(buildTimeString(timeHour, timeMinute, timeAmPm));
   }, [timeHour, timeMinute, timeAmPm]);
 
+  // Fetches whenever the modal is open and there's actually a date+time to
+  // check against — no date/time yet means nothing to compare, so the
+  // modal shows a plain "set a date & time first" note instead of calling
+  // this. Re-fires if the date/time/end-time changes while the modal
+  // happens to be open, so switching times updates who's shown as busy
+  // without needing to close and reopen.
+  useEffect(() => {
+    if (!showAssigneeModal || !scheduledDate || !scheduledTime || teamMembers.length === 0) {
+      setAssigneeAvailability({});
+      return;
+    }
+    setLoadingAvailability(true);
+    const names = teamMembers.map((m: any) => m.name).filter(Boolean).join(',');
+    const params = new URLSearchParams({ date: scheduledDate, start: scheduledTime, names });
+    if (schedulingConfig.showEndTime && scheduledEndTime) params.set('end', scheduledEndTime);
+    if (lead?.project_id) params.set('excludeProjectId', String(lead.project_id));
+
+    fetch(`/api/company/${companySlug}/availability/assignees?${params}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setAssigneeAvailability(data.availability || {});
+      })
+      .catch(() => {})
+      .finally(() => setLoadingAvailability(false));
+  }, [showAssigneeModal, scheduledDate, scheduledTime, scheduledEndTime, teamMembers, companySlug, lead?.project_id, schedulingConfig.showEndTime]);
+
   const isDirty = useMemo(() => {
     return (
       scheduledDate !== initialState.date ||
@@ -292,6 +292,21 @@ export default function SchedulingSection({
     }
   };
 
+  const closeAssigneeModal = useCallback(() => {
+    setShowAssigneeModal(false);
+    setShowCustomNameInput(false);
+    setCustomNameInput('');
+  }, []);
+
+  const addCustomName = useCallback(() => {
+    const val = customNameInput.trim();
+    if (val && !selectedAssignees.includes(val)) {
+      setSelectedAssignees((prev) => [...prev, val]);
+    }
+    setCustomNameInput('');
+    setShowCustomNameInput(false);
+  }, [customNameInput, selectedAssignees]);
+
   return (
     <div className="max-w-4xl mx-auto w-full space-y-4">
       {/* SEND EMAIL MODAL */}
@@ -336,6 +351,178 @@ export default function SchedulingSection({
         bufferMinutes={schedulingConfig.bufferMinutes}
         showEndTime={schedulingConfig.showEndTime}
       />
+
+      {/* ASSIGNEE MODAL — same centered, all-screen-sizes shell as the Job
+          Hours modal further down in this file, for consistency. Cards
+          with Available/Busy status instead of a checkbox dropdown; "+ Add
+          someone not listed" only reveals the free-text input on demand
+          instead of it sitting permanently visible. */}
+      <AnimatePresence>
+        {showAssigneeModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={closeAssigneeModal}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.96, y: 12 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              className="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              style={{ maxHeight: '85vh' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2">
+                  <User size={14} className="text-slate-400" />
+                  <h3 className="text-xs font-bold text-slate-800">Assign to job</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeAssigneeModal}
+                  className="p-1 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600 touch-manipulation"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {(!scheduledDate || !scheduledTime) ? (
+                <div className="px-5 py-3 bg-amber-50 border-b border-amber-100 text-[11px] text-amber-700 font-medium shrink-0">
+                  Set a date &amp; time above to see who&rsquo;s available.
+                </div>
+              ) : loadingAvailability ? (
+                <div className="px-5 py-3 bg-slate-50 border-b border-slate-100 text-[11px] text-slate-500 font-medium shrink-0 flex items-center gap-2">
+                  <Loader2 size={12} className="animate-spin" /> Checking availability...
+                </div>
+              ) : null}
+
+              {/* Only this list scrolls — the add-custom row and Done stay
+                  pinned below, always visible regardless of list length.
+                  (Previously the whole dropdown — list, custom input, and
+                  Done — was one scrolling block, so Done could end up
+                  scrolled out of view entirely.) */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                {teamMembers.length === 0 && (
+                  <p className="text-xs text-slate-400 text-center py-6">No team members yet — add someone below.</p>
+                )}
+                {teamMembers.map((m: any) => {
+                  const checked = selectedAssignees.includes(m.name);
+                  const avail = assigneeAvailability[m.name];
+                  const showStatus = !!scheduledDate && !!scheduledTime && !!avail;
+
+                  return (
+                    <button
+                      key={m.id ?? m.name}
+                      type="button"
+                      onClick={() =>
+                        setSelectedAssignees((prev) =>
+                          checked ? prev.filter((n) => n !== m.name) : [...prev, m.name]
+                        )
+                      }
+                      className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition touch-manipulation min-h-[56px] ${
+                        checked ? 'border-blue-300 bg-blue-50/60' : 'border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div
+                        className={`w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
+                          checked ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {m.name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
+                        {showStatus && !avail.available && avail.conflict && (
+                          <p className="text-[10px] text-amber-700 truncate mt-0.5">
+                            Busy · {avail.conflict.customer_name || 'another job'}
+                            {avail.conflict.category ? ` (${formatCategoryLabel(avail.conflict.category)})` : ''}
+                          </p>
+                        )}
+                      </div>
+                      {showStatus && (
+                        <span
+                          className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${
+                            avail.available ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'
+                          }`}
+                        >
+                          {avail.available ? 'Available' : 'Busy'}
+                        </span>
+                      )}
+                      {checked && <CheckCircle2 size={16} className="text-blue-600 shrink-0" />}
+                    </button>
+                  );
+                })}
+
+                {/* Anyone typed in previously who isn't in the known
+                    roster (a one-off custom name from before) still shows
+                    as a plain checked chip, so it isn't silently dropped. */}
+                {selectedAssignees
+                  .filter((name) => !teamMembers.some((m: any) => m.name === name))
+                  .map((name) => (
+                    <div
+                      key={name}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl border border-blue-300 bg-blue-50/60"
+                    >
+                      <div className="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">
+                        {name.charAt(0).toUpperCase()}
+                      </div>
+                      <p className="flex-1 min-w-0 text-sm font-semibold text-slate-900 truncate">{name}</p>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedAssignees((prev) => prev.filter((n) => n !== name))}
+                        className="p-1.5 -m-1 text-slate-400 hover:text-slate-700 rounded-md touch-manipulation"
+                        aria-label={`Remove ${name}`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+              </div>
+
+              <div className="border-t border-slate-100 shrink-0">
+                {showCustomNameInput ? (
+                  <div className="flex gap-1.5 p-3">
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Custom name..."
+                      value={customNameInput}
+                      onChange={(e) => setCustomNameInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && addCustomName()}
+                      className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[16px] sm:text-xs font-medium text-slate-900 outline-none focus:border-blue-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={addCustomName}
+                      className="px-3.5 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition touch-manipulation"
+                    >
+                      Add
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowCustomNameInput(true)}
+                    className="w-full py-3 text-xs font-semibold text-blue-600 hover:bg-blue-50/60 transition touch-manipulation min-h-[44px]"
+                  >
+                    + Add someone not listed
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={closeAssigneeModal}
+                  className="w-full py-3 bg-slate-900 text-white text-xs font-bold hover:bg-slate-800 transition touch-manipulation border-t border-slate-800 min-h-[44px]"
+                >
+                  Done
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
@@ -438,16 +625,16 @@ export default function SchedulingSection({
           {/* LEFT 2 COLS: ASSIGNEE, DATE & TIME */}
           <div className="lg:col-span-2 space-y-4">
             
-            {/* ASSIGNED TO */}
-            <div className="relative" ref={assigneeRef}>
+            {/* ASSIGNED TO — trigger button only now; the picker itself
+                lives in the modal above. */}
+            <div>
               <label className="flex items-center gap-1.5 text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5">
                 <User size={12} className="text-slate-400" /> Assigned to
               </label>
 
               <button
-                ref={assigneeTriggerRef}
                 type="button"
-                onClick={toggleAssigneePicker}
+                onClick={() => setShowAssigneeModal(true)}
                 className="w-full flex flex-wrap items-center gap-1.5 min-h-[44px] px-3.5 py-2 bg-slate-50/70 border border-slate-200/80 rounded-xl text-left hover:bg-slate-50 transition touch-manipulation"
               >
                 {selectedAssignees.length === 0 ? (
@@ -474,80 +661,7 @@ export default function SchedulingSection({
                     </span>
                   ))
                 )}
-                <ChevronDown className="ml-auto w-4 h-4 text-slate-400 shrink-0" />
               </button>
-
-              {assigneePickerOpen && typeof document !== 'undefined' && createPortal(
-                <div
-                  ref={assigneeDropdownRef}
-                  style={{
-                    position: 'fixed',
-                    top: assigneeDropdownPos.top,
-                    left: assigneeDropdownPos.left,
-                    width: assigneeDropdownPos.width,
-                  }}
-                  className="z-[500] bg-white border border-slate-200 rounded-xl shadow-xl p-2 max-h-60 overflow-y-auto"
-                >
-                  {teamMembers.map((m: any) => {
-                    const checked = selectedAssignees.includes(m.name);
-                    return (
-                      <label
-                        key={m.id}
-                        className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs font-medium text-slate-700 transition touch-manipulation"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={() => {
-                            setSelectedAssignees((prev) =>
-                              checked ? prev.filter((n) => n !== m.name) : [...prev, m.name]
-                            );
-                          }}
-                          className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
-                        />
-                        {m.name}
-                      </label>
-                    );
-                  })}
-                  <div className="flex gap-1.5 mt-1.5 pt-2 border-t border-slate-100">
-                    <input
-                      type="text"
-                      placeholder="Custom name..."
-                      value={customNameInput}
-                      onChange={(e) => setCustomNameInput(e.target.value)}
-                      onKeyDown={(e) => {
-                        const val = customNameInput.trim();
-                        if (e.key === 'Enter' && val && !selectedAssignees.includes(val)) {
-                          setSelectedAssignees((prev) => [...prev, val]);
-                          setCustomNameInput('');
-                        }
-                      }}
-                      className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[16px] sm:text-xs font-medium text-slate-900 outline-none focus:border-blue-400"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const val = customNameInput.trim();
-                        if (val && !selectedAssignees.includes(val)) {
-                          setSelectedAssignees((prev) => [...prev, val]);
-                          setCustomNameInput('');
-                        }
-                      }}
-                      className="px-3 py-2 bg-slate-900 text-white rounded-lg text-xs font-medium hover:bg-slate-800 transition touch-manipulation"
-                    >
-                      Add
-                    </button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setAssigneePickerOpen(false)}
-                    className="w-full mt-2 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 rounded-lg transition touch-manipulation"
-                  >
-                    Done
-                  </button>
-                </div>,
-                document.body
-              )}
             </div>
 
             {/* DATE & START TIME */}

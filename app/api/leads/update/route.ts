@@ -9,6 +9,8 @@ import { stripe } from '@/lib/stripe'
 import { autoAdvanceStatus } from '@/lib/statusAutomation';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
 import { getSchedulingConfig } from '@/lib/schedulingConfig';
+import { getDepositAmount, isDepositSatisfied, getAmountDueNow } from '@/lib/billing';
+
 
 
 export async function POST(request: Request) {
@@ -1171,7 +1173,7 @@ else if (action === 'send_invoice_to_customer') {
 const leadCheck = await sql`
    SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total, p.quote_tax_rate,
          p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
-         p.deposit_type, p.deposit_value,
+         p.deposit_type, p.deposit_value, p.deposit_paid_at,
          c.name as company_name, c.phone as company_phone,
          c.email as company_email,
          c.id as company_id, c.slug as company_slug, c.plan_tier,
@@ -1240,12 +1242,17 @@ const leadCheck = await sql`
       )
     : 0;
   const paidSoFar = parseFloat(lead.payment_amount || '0');
-  // Same corrected rule as the webhook, the manual payments route, and
-  // getOrCreateCheckoutSession: still "deposit" until the deposit is
-  // actually net-satisfied, not just until the first dollar ever landed —
-  // and the amount charged is the remaining shortfall, not the full
-  // original deposit re-asked.
-  const depositSatisfied = hasDepositTerms && paidSoFar >= fullDepositAmount;
+  // Sticky, not recomputed — same fix applied to BillingSection.tsx,
+  // LeadModalHeader.tsx, and lib/billing.ts. The old rule recalculated
+  // fullDepositAmount against the CURRENT invoiceTotal every time this ran,
+  // so raising the quote after the deposit was already satisfied would
+  // silently flip this back to "deposit" mode — meaning collectionKind
+  // below becomes 'deposit' instead of 'balance', and the customer
+  // receives an email/PDF asking for another deposit-sized payment on a
+  // job where the deposit was already paid in full. This is the
+  // highest-stakes instance of this bug found across the app, since it's
+  // what actually goes out to a real customer, not just an internal display.
+  const depositSatisfied = hasDepositTerms && !!lead.deposit_paid_at;
 
    const collectionKind: 'deposit' | 'balance' | 'full' = hasDepositTerms
     ? (depositSatisfied ? 'balance' : 'deposit')
@@ -1374,7 +1381,7 @@ const leadCheck = await sql`
 else if (action === 'get_payment_link') {
   const leadCheck = await sql`
     SELECT l.id, l.name, l.email, l.project_id,
-           p.quote_total, p.payment_amount, p.deposit_type, p.deposit_value,
+           p.quote_total, p.payment_amount, p.deposit_type, p.deposit_value, p.deposit_paid_at,
            c.slug as company_slug, c.plan_tier,
            c.stripe_connect_account_id, c.stripe_payment_status,
            c.payment_link_url, c.payment_link_type
@@ -1399,20 +1406,27 @@ else if (action === 'get_payment_link') {
     return NextResponse.json({ success: false, error: 'No quote total to charge.' }, { status: 400 });
   }
 
-  // Same deposit-vs-balance math as BillingSection's currentAmountDue, so
-  // this modal always shows the same number the billing card does.
+  // Reads from lib/billing.ts, the single source of truth — this used to
+  // have its own inline copy, and the "is it satisfied" check was the most
+  // naive version found anywhere in the app: paidSoFar > 0, which flips to
+  // "satisfied" the instant ANY money exists, even a single dollar toward
+  // a much larger deposit. That's backwards from most of the other
+  // instances of this bug (which were too RELUCTANT to consider a deposit
+  // satisfied) — this one was too EAGER, handing out a "pay the whole
+  // remaining balance" link to someone who'd only made a small partial
+  // payment toward their deposit.
   const paidSoFar = parseFloat(lead.payment_amount || '0');
-  const depositType = lead.deposit_type || null;
-  const depositValueRaw = parseFloat(lead.deposit_value || '0');
-  const hasDepositTerms = !!depositType && depositValueRaw > 0;
-  const depositAmount = hasDepositTerms
-    ? Math.min(
-        Math.round((depositType === 'percent' ? (invoiceTotal * depositValueRaw) / 100 : depositValueRaw) * 100) / 100,
-        invoiceTotal
-      )
-    : 0;
-  const depositPaid = hasDepositTerms && paidSoFar > 0;
-  const amountDue = hasDepositTerms && !depositPaid ? depositAmount : Math.max(invoiceTotal - paidSoFar, 0);
+  const billingInputs = {
+    total: invoiceTotal,
+    paidAmount: paidSoFar,
+    depositType: lead.deposit_type,
+    depositValue: lead.deposit_value,
+    depositPaidAt: lead.deposit_paid_at,
+  };
+  const hasDepositTerms = getDepositAmount(billingInputs) > 0;
+  const depositAmount = getDepositAmount(billingInputs);
+  const depositPaid = isDepositSatisfied(billingInputs);
+  const amountDue = getAmountDueNow(billingInputs);
 
   if (amountDue <= 0) {
     return NextResponse.json({ success: false, error: 'This invoice is already fully paid.' }, { status: 400 });

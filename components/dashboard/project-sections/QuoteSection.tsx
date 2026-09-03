@@ -79,6 +79,13 @@ export default function QuoteSection({
   // next to each other and get mixed up.
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  // Subtotal/Deposit/Tax breakdown collapsed by default — only Total shows
+  // until this is toggled. Part of freeing width back to the table: the
+  // old fixed 240px side column stayed that wide whether or not anyone was
+  // looking at the breakdown, which was the actual cause of the table
+  // feeling squished. Now the table gets the full container width, and
+  // this renders as a compact bar underneath instead of a side rail.
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   // ── DEPOSIT TERMS ── (same save_deposit_terms action BillingSection uses)
   const [showDepositEditor, setShowDepositEditor] = useState(false);
@@ -446,36 +453,97 @@ export default function QuoteSection({
         animate={{ opacity: 1, y: 0 }}
         className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden"
       >
-               {/* TOP ACTION BAR — Quote label left, Save right. Send Estimate
-            moved into the Actions menu below (with Accept/Clear) since it
-            was sitting right next to Save and getting mixed up with it. */}
+               {/* TOP ACTION BAR — Quote label left, Save + Actions right.
+            Actions moved up here from the bottom summary bar — it was
+            getting clipped by this card's own overflow-hidden once the
+            table had enough rows that the dropdown, opening downward from
+            near the bottom, had nowhere to expand into. Near the top of
+            the container, it always has room regardless of table length. */}
         <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2 flex-wrap">
           <h3 className="text-sm font-bold text-slate-900">Quote</h3>
-          <button
-            onClick={handleManualSave}
-            disabled={!hasProject || saving || hasIncompleteItems}
-            title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
-            className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-              isDirty
-                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-            }`}
-          >
-            {saving ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            ) : isDirty ? (
-              <Save className="w-3.5 h-3.5" />
-            ) : (
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleManualSave}
+              disabled={!hasProject || saving || hasIncompleteItems}
+              title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
+              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                isDirty
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              {saving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : isDirty ? (
+                <Save className="w-3.5 h-3.5" />
+              ) : (
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              )}
+              {isDirty ? 'Save Changes' : 'Saved'}
+            </button>
+
+            {quoteData.length > 0 && (
+              <div className="relative">
+                <button
+                  onClick={() => setShowActionsMenu((v) => !v)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Actions
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showActionsMenu ? 'rotate-180' : ''}`} />
+                </button>
+                <AnimatePresence>
+                  {showActionsMenu && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setShowActionsMenu(false)} />
+                      <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden"
+                      >
+                        <button
+                          onClick={() => { setShowActionsMenu(false); setShowEmailModal(true); }}
+                          disabled={!hasProject || quoteData.length === 0 || hasIncompleteItems}
+                          title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Mail className="w-3.5 h-3.5 text-slate-400" />
+                          {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
+                        </button>
+                        {!quoteAccepted && (
+                          <button
+                            onClick={() => { setShowActionsMenu(false); setShowAcceptConfirm(true); }}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer border-t border-slate-100"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            Mark Accepted Manually
+                          </button>
+                        )}
+                        <button
+                          onClick={() => { setShowActionsMenu(false); setShowClearAllConfirm(true); }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer border-t border-slate-100"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Clear All Items
+                        </button>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
             )}
-            {isDirty ? 'Save Changes' : 'Saved'}
-          </button>
+          </div>
         </div>
 
-            {/* MAIN BODY GRID */}
-        <div className="p-4 sm:p-5 lg:p-6 grid gap-5 lg:gap-6 lg:grid-cols-[1fr_240px] items-start">
+            {/* MAIN BODY — table now takes the full container width. The
+                summary used to be a permanently docked 240px side column
+                regardless of whether its content needed that much room —
+                that fixed allocation was the actual cause of the table
+                feeling squished, not the table's own column widths. Summary
+                now renders as a compact bar below the table instead. */}
+        <div className="p-4 sm:p-5 lg:p-6 space-y-5">
 
-                    {/* LEFT: TABLE & LINE ITEMS */}
+                    {/* TABLE & LINE ITEMS */}
           <div className="space-y-3 min-w-0">
             {/* EMPTY STATE — one deliberate choice, same on every screen size.
                 Previously scattered across a dismissible template banner, a
@@ -548,7 +616,7 @@ export default function QuoteSection({
         <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium text-[11px] uppercase tracking-wider">
           <th className="text-left px-4 py-2.5 w-auto">Description</th>
           <th className="text-right px-2 py-2.5 w-24">Price</th>
-          <th className="text-center px-2 py-2.5 w-16">Qty</th>
+          <th className="text-center px-2 py-2.5 w-20">Qty</th>
           <th className="text-right px-3 py-2.5 w-24">Amount</th>
           <th className="w-9 px-2" />
         </tr>
@@ -809,132 +877,95 @@ export default function QuoteSection({
             )}
           </div>
 
-                     {/* RIGHT: SUMMARY — plain table, no color, subtotal/deposit/tax/total */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden lg:sticky lg:top-4">
-            <table className="w-full text-sm border-collapse">
-              <tbody>
-                <tr className="border-b border-slate-100">
-                  <td className="px-4 py-2.5 text-slate-600">Subtotal</td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
-                    {fmt(subtotal)}
-                  </td>
-                </tr>
+                     {/* COMPACT SUMMARY BAR — Total is always visible; the
+              Subtotal/Deposit/Tax breakdown is tucked behind a Details
+              toggle instead of being permanently expanded. Actions now
+              lives in the top bar next to Save — see the note up there
+              for why. */}
+          <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-3 flex-wrap">
+              <button
+                onClick={() => setShowBreakdown((v) => !v)}
+                className="flex items-center gap-2 py-1 cursor-pointer"
+              >
+                <span className="text-xs font-medium text-slate-500">Total</span>
+                <span className="text-lg font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showBreakdown ? 'rotate-180' : ''}`}
+                />
+              </button>
+            </div>
 
-                               <tr className="border-b border-slate-100 group">
-                  <td className="px-4 py-2.5 text-slate-600">
-                    <span className="inline-flex items-center gap-1.5">
-                      Deposit{depositAmount > 0 ? ` (${depositType === 'percent' ? `${depositValue}%` : 'Fixed'})` : ''}
-                      {depositLocked ? (
-                                                  depositAmount > 0 && (
-                                                       <span
+            <AnimatePresence>
+              {showBreakdown && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  className="overflow-hidden border-t border-slate-100"
+                >
+                  <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-0.5">Subtotal</p>
+                      <p className="text-sm font-semibold text-slate-900 tabular-nums">{fmt(subtotal)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-0.5 flex items-center gap-1">
+                        Deposit{depositAmount > 0 ? ` (${depositType === 'percent' ? `${depositValue}%` : 'Fixed'})` : ''}
+                        {depositLocked ? (
+                          depositAmount > 0 && (
+                            <span
                               title="Locked — a payment has already been collected against these terms. Refund it in Billing to make changes."
-                              className="p-0.5 inline-flex"
+                              className="inline-flex"
                             >
                               <Lock className="w-3 h-3 text-slate-300" />
                             </span>
                           )
-                      ) : (
-                        <button
-                          onClick={openDepositEditor}
-                          className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
-                          title={depositAmount > 0 ? 'Edit deposit terms' : 'Require a deposit'}
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                      )}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
-                    {depositAmount > 0 ? fmt(depositAmount) : '—'}
-                  </td>
-                </tr>
-
-                               <tr className="border-b border-slate-100 group">
-                  <td className="px-4 py-2.5 text-slate-600">
-                    <span className="inline-flex items-center gap-1.5">
-                      Tax{taxRate > 0 ? ` (${taxRate}%)` : ''}
-                      {taxLocked ? (
-                                                <span
-                          title="Locked — a payment has already been collected against these terms. Refund it in Billing to make changes."
-                          className="p-0.5 inline-flex"
-                        >
-                          <Lock className="w-3 h-3 text-slate-300" />
-                        </span>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setTaxRateDraft(taxRate ? String(taxRate) : '');
-                            setEditingTaxRate(true);
-                          }}
-                          className="p-0.5 text-slate-300 hover:text-slate-600 rounded transition cursor-pointer opacity-70 group-hover:opacity-100"
-                          title="Edit tax rate"
-                        >
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                      )}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5 text-right font-semibold text-slate-900 tabular-nums">
-                    {taxRate > 0 ? fmt(taxAmount) : '—'}
-                  </td>
-                </tr>
-
-                <tr>
-                  <td className="px-4 py-3 font-bold text-slate-900">Total</td>
-                  <td className="px-4 py-3 text-right font-bold text-slate-900 tabular-nums">
-                    {fmt(total)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            {quoteData.length > 0 && (
-              <div className="border-t border-slate-100">
-                <button
-                  onClick={() => setShowActionsMenu((v) => !v)}
-                  className="w-full py-2.5 px-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-                >
-                  Actions
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showActionsMenu ? 'rotate-180' : ''}`} />
-                </button>
-                <AnimatePresence>
-                  {showActionsMenu && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="overflow-hidden border-t border-slate-100"
-                    >
-                      <button
-                        onClick={() => { setShowActionsMenu(false); setShowEmailModal(true); }}
-                        disabled={!hasProject || quoteData.length === 0 || hasIncompleteItems}
-                        title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        <Mail className="w-3.5 h-3.5 text-slate-400" />
-                        {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
-                      </button>
-                      {!quoteAccepted && (
-                        <button
-                          onClick={() => { setShowActionsMenu(false); setShowAcceptConfirm(true); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer border-t border-slate-100"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                          Mark Accepted Manually
-                        </button>
-                      )}
-                      <button
-                        onClick={() => { setShowActionsMenu(false); setShowClearAllConfirm(true); }}
-                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer border-t border-slate-100"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        Clear All Items
-                      </button>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            )}
+                        ) : (
+                          <button
+                            onClick={openDepositEditor}
+                            className="text-slate-300 hover:text-slate-600 transition cursor-pointer"
+                            title={depositAmount > 0 ? 'Edit deposit terms' : 'Require a deposit'}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900 tabular-nums">
+                        {depositAmount > 0 ? fmt(depositAmount) : '—'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-0.5 flex items-center gap-1">
+                        Tax{taxRate > 0 ? ` (${taxRate}%)` : ''}
+                        {taxLocked ? (
+                          <span
+                            title="Locked — a payment has already been collected against these terms. Refund it in Billing to make changes."
+                            className="inline-flex"
+                          >
+                            <Lock className="w-3 h-3 text-slate-300" />
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setTaxRateDraft(taxRate ? String(taxRate) : '');
+                              setEditingTaxRate(true);
+                            }}
+                            className="text-slate-300 hover:text-slate-600 transition cursor-pointer"
+                            title="Edit tax rate"
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                        )}
+                      </p>
+                      <p className="text-sm font-semibold text-slate-900 tabular-nums">
+                        {taxRate > 0 ? fmt(taxAmount) : '—'}
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

@@ -86,16 +86,17 @@ export default function LeadModalHeader({
   const depositValue = lead.deposit_value ? parseFloat(lead.deposit_value) : 0;
   const depositAmount = quoteTotal ? getDepositAmount({ total: quoteTotal, depositType, depositValue }) : 0;
   const hasDepositTerms = depositAmount > 0;
-    // Same corrected rule as everywhere else today: "deposit satisfied" means
-  // net collected has reached the deposit amount, not just that some money
-  // exists. This was still on the old rule, so the label flipped to
-  // "Balance due" the instant any partial payment landed, even while
-  // getAmountDueNow (used for the dollar figure right below it) was
-  // already correctly still showing the deposit shortfall.
-  const depositAlreadyPaid = hasDepositTerms && !!paymentAmount && paymentAmount >= depositAmount;
+  // Sticky, not recomputed — same fix as BillingSection.tsx's depositPaid.
+  // The previous version here (paymentAmount >= depositAmount) independently
+  // duplicated the exact same bug: depositAmount is derived from the CURRENT
+  // quote_total, so raising the quote after the deposit was already satisfied
+  // could silently flip this label back to "Deposit due." Reading
+  // lead.deposit_paid_at directly means once the database has marked it
+  // satisfied, this can never un-satisfy itself just because the quote grew.
+  const depositAlreadyPaid = hasDepositTerms && !!lead?.deposit_paid_at;
 
   const amountDueNow = quoteTotal
-    ? getAmountDueNow({ total: quoteTotal, paidAmount: paymentAmount || 0, depositType, depositValue })
+    ? getAmountDueNow({ total: quoteTotal, paidAmount: paymentAmount || 0, depositType, depositValue, depositPaidAt: lead?.deposit_paid_at })
     : 0;
 
   const paymentLabel = paymentStatus === 'paid'

@@ -56,5 +56,32 @@ export default async function FinancialsPage({
     ORDER BY p.created_at DESC
   `;
 
-  return <FinancialsClient company={company as any} projects={projectRows as any} />;
+  // Real transactions from the payments ledger — one row per actual
+  // payment event, not one row per job. Same shape as Dashboard's
+  // dashboard-stats/route.ts, which already gets this right: the previous
+  // version of "recent payments" here was derived from projectRows above
+  // (one row per job, using payment_amount — a lifetime running total),
+  // which structurally could never show two separate payments on the same
+  // job as two separate entries. Excludes refunds for the same reason
+  // Dashboard's does — "money that came in," not money going back out.
+  const paymentRows = await sql`
+    SELECT
+      pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,
+      l.name as customer_name
+    FROM payments pay
+    JOIN projects pr ON pay.project_id = pr.id
+    JOIN leads l ON pr.lead_id = l.id
+    WHERE pay.company_id = ${company.id}
+      AND pay.kind <> 'refund'
+    ORDER BY pay.paid_on DESC, pay.created_at DESC
+    LIMIT 6
+  `;
+
+  return (
+    <FinancialsClient
+      company={company as any}
+      projects={projectRows as any}
+      recentPayments={paymentRows as any}
+    />
+  );
 }

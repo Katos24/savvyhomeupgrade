@@ -128,7 +128,15 @@ export default function BillingSection({
 
   const depositLocked = paidAmount > 0;
   const taxLocked = paidAmount > 0;
-  const awaitingDeposit = hasDepositTerms && paidAmount < depositAmount && depositAmount > 0;
+  // Sticky, not recomputed — mirrors depositPaid further down (same bug,
+  // same fix). This is what actually drove the "Resend Deposit Request"
+  // modal title in BillingModals.tsx staying wrong: the old version
+  // (paidAmount < depositAmount) recalculated the target against the
+  // CURRENT quote_total, so a quote that grew after the deposit was
+  // already satisfied would flip this back to true, even with depositPaid
+  // itself already correctly showing false. Two variables, same intent,
+  // only one had been fixed — this was the other one.
+  const awaitingDeposit = hasDepositTerms && !lead?.deposit_paid_at;
 
   const isRefunded = lead?.payment_status === 'refunded';
   const isStripeVerified = !!lead?.stripe_payment_intent_id;
@@ -169,7 +177,13 @@ export default function BillingSection({
   const balancePayments = payments.filter((p: any) => p.kind === 'balance');
   const depositPayment = depositPayments[0];
   const balancePayment = balancePayments[0];
-  const depositPaid = hasDepositTerms && paidAmount >= depositAmount;
+  // Sticky, not recomputed: once mark_deposit_satisfied has set this in the
+  // database, it stays true forever, regardless of the quote growing later.
+  // The old version (hasDepositTerms && paidAmount >= depositAmount) recomputed
+  // the target live against the CURRENT quote_total every render — so raising
+  // the quote after a deposit was already collected could silently flip an
+  // already-satisfied deposit back to "not paid," which is the bug this fixes.
+  const depositPaid = hasDepositTerms && !!lead?.deposit_paid_at;
 
   const wasSettledThenGrew = !!depositPayment && !!balancePayment && !isPaid && !isClosed && remaining > 0;
   const currentAmountDue = hasDepositTerms && !depositPaid ? depositAmount : remaining;

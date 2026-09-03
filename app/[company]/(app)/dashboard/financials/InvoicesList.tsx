@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { Search, ChevronDown, ChevronUp, BellRing, Loader2, X, ExternalLink } from 'lucide-react';
@@ -118,6 +118,23 @@ export default function InvoicesList({
     return sorted;
   }, [withMoney, filter, search, sortKey, sortDir]);
 
+  const PAGE_SIZE = 25;
+  const [page, setPage] = useState(1);
+ 
+  // Any change to what's being filtered/sorted lands back on page 1 —
+  // otherwise narrowing a filter while sitting on page 5 could show "No
+  // invoices match" even when matches exist, just not on the page you're
+  // stuck on.
+  useEffect(() => {
+    setPage(1);
+  }, [filter, search, sortKey, sortDir]);
+ 
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  const pagedRows = useMemo(
+    () => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+    [rows, page]
+  );
+ 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
       if (sortDir === 'asc') {
@@ -221,8 +238,8 @@ export default function InvoicesList({
         {rows.length === 0 ? (
           <p className="px-5 py-14 text-center text-[14px] text-stone-400">No invoices match.</p>
         ) : (
-          rows.map((p, i) => {
-            const meta = STATE_META[p._state as InvoiceState];
+pagedRows.map((p, i) => {
+                const meta = STATE_META[p._state as InvoiceState];
             const alreadyReminded = p._remindedToday || remindedIds.has(p.id);
             const canRemind = !isBookkeeperView && p._owed > 0.005 && p._invoiced;
             return (
@@ -274,11 +291,37 @@ export default function InvoicesList({
         )}
       </div>
 
+     
       {rows.length > 0 && (
-        <p className="mt-3 text-[12px] tabular-nums text-stone-400">
-          {rows.length} invoice{rows.length === 1 ? '' : 's'}
-        </p>
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-[12px] tabular-nums text-stone-400">
+            Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, rows.length)} of{' '}
+            {rows.length} invoice{rows.length === 1 ? '' : 's'}
+          </p>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-[12px] font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Previous
+              </button>
+              <span className="text-[12px] tabular-nums text-stone-500">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-[12px] font-medium text-stone-600 transition-colors hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
       )}
+ 
 
             {selected && (
         <InvoiceDetailDrawer

@@ -3,6 +3,7 @@ import { neon } from '@neondatabase/serverless';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
+import { getDepositAmount, isDepositSatisfied } from '@/lib/billing';
 
 // Reuse single connection instance across warm serverless invocations
 const sql = neon(process.env.DATABASE_URL!);
@@ -67,7 +68,7 @@ export async function GET(
           p.id, p.invoice_number, p.quote_total, p.quote_tax_rate, p.quote_data,
           p.payment_status, p.payment_amount, p.payment_due_date,
           p.invoice_sent_at, p.created_at, p.stripe_checkout_session_id,
-          p.deposit_type, p.deposit_value,
+          p.deposit_type, p.deposit_value, p.deposit_paid_at,
           l.company_id, l.name as customer_name, l.email as customer_email,
           l.phone as customer_phone, l.address_line_1, l.city, l.zip_code
         FROM projects p
@@ -116,19 +117,26 @@ export async function GET(
     const dueDate = fmtPaymentDate(project.payment_due_date);
 
     // ── 3. Calculate Deposit Terms & Payments in Parallel ────────────────────────
-    const depositType = project.deposit_type || null;
-    const depositValue = parseFloat(project.deposit_value || '0');
-    const hasDepositTerms = !!depositType && depositValue > 0;
-    const fullDepositAmount = hasDepositTerms
-      ? Math.min(
-          Math.round((depositType === 'percent' ? (contractTotal * depositValue) / 100 : depositValue) * 100) / 100,
-          contractTotal
-        )
-      : 0;
-
+    // Was its own inline copy of the deposit-target and satisfaction math —
+    // now reads from lib/billing.ts, the single source of truth, so this
+    // PDF can never disagree with the checkout session, the email, or the
+    // billing card about what's actually owed. isDepositSatisfied is
+    // sticky (projects.deposit_paid_at), so a quote that grew after the
+    // deposit was already paid correctly keeps showing "balance," not a
+    // reopened deposit shortfall.
     const paidSoFar = parseFloat(project.payment_amount || '0');
+    const billingInputs = {
+      total: contractTotal,
+      paidAmount: paidSoFar,
+      depositType: project.deposit_type,
+      depositValue: project.deposit_value,
+      depositPaidAt: project.deposit_paid_at,
+    };
+    const fullDepositAmount = getDepositAmount(billingInputs);
+    const hasDepositTerms = fullDepositAmount > 0;
+    const depositSatisfied = isDepositSatisfied(billingInputs);
     const pdfDepositAmount: number | undefined =
-      hasDepositTerms && paidSoFar < fullDepositAmount
+      hasDepositTerms && !depositSatisfied
         ? Math.round((fullDepositAmount - paidSoFar) * 100) / 100
         : undefined;
 

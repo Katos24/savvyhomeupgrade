@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
 import { can, FEATURE_PLAN_MAP, PLAN_CONFIG, type PlanTier } from '@/lib/permissions';
+import { getBillingState, getAmountDueNow } from '@/lib/billing';
 
 // Reuse single connection across warm lambdas
 const sql = neon(process.env.DATABASE_URL!);
@@ -72,6 +73,7 @@ export async function GET(req: Request, { params }: Props) {
         p.quote_total,
         p.deposit_type,
         p.deposit_value,
+        p.deposit_paid_at,
         p.reminder_sent_at
       FROM projects p
       JOIN leads l ON p.lead_id = l.id
@@ -93,22 +95,24 @@ export async function GET(req: Request, { params }: Props) {
     const result = reminders.map(r => {
       const quoteTotal = parseFloat(r.quote_total || '0');
       const collected = parseFloat(r.payment_amount || '0');
-      const depositValue = parseFloat(r.deposit_value || '0');
-      const hasDepositTerms = !!r.deposit_type && depositValue > 0;
-      const depositAmount = hasDepositTerms
-        ? Math.min(
-            r.deposit_type === 'percent' ? (quoteTotal * depositValue) / 100 : depositValue,
-            quoteTotal
-          )
-        : 0;
-      const amountDue = hasDepositTerms && collected === 0
-        ? depositAmount
-        : Math.max(quoteTotal - collected, 0);
+      // Was its own inline copy using "collected === 0" as the satisfaction
+      // check — the OLDEST, most naive version of this bug found across the
+      // app: it flipped to "balance" the instant ANY payment landed, even a
+      // single cent toward a much larger deposit. Now reads from
+      // lib/billing.ts like everywhere else, sticky-aware via
+      // deposit_paid_at.
+      const billing = getBillingState({
+        total: quoteTotal,
+        paidAmount: collected,
+        depositType: r.deposit_type,
+        depositValue: r.deposit_value,
+        depositPaidAt: r.deposit_paid_at,
+      });
 
       return {
         ...r,
-        amount_due: Math.round(amountDue * 100) / 100,
-        is_deposit: hasDepositTerms && collected === 0,
+        amount_due: Math.round(billing.amountDueNow * 100) / 100,
+        is_deposit: billing.collectionKind === 'deposit',
         is_overdue: new Date(r.payment_due_date) < now,
         reminder_sent_recently: r.reminder_sent_at
           ? (now.getTime() - new Date(r.reminder_sent_at).getTime()) < 24 * 60 * 60 * 1000
@@ -150,6 +154,9 @@ export async function POST(req: Request, { params }: Props) {
         p.payment_due_date::text as payment_due_date,
         p.payment_amount,
         p.quote_total,
+        p.deposit_type,
+        p.deposit_value,
+        p.deposit_paid_at,
         p.reminder_sent_at,
         c.id as company_id,
         c.name as company_name,
@@ -203,7 +210,21 @@ export async function POST(req: Request, { params }: Props) {
     // ── Calculate amount due ──────────────────────────────────────────────────
     const quoteTotal  = parseFloat(r.quote_total  || '0');
     const paid        = parseFloat(r.payment_amount || '0');
-    let amountDue     = paid > 0 ? Math.max(quoteTotal - paid, 0) : quoteTotal;
+    // Was "paid > 0 ? remaining : quoteTotal" — completely ignored deposit
+    // terms in this fallback. If Stripe wasn't connected, or the checkout
+    // call below failed, THIS wrong number is what actually went into the
+    // reminder email — a deposit-based job would get reminded for the full
+    // remaining balance instead of just the deposit shortfall. Now
+    // deposit-aware and sticky via deposit_paid_at, same as every other
+    // surface. Still gets overridden below if the Stripe checkout succeeds,
+    // same as before — this only matters as the fallback.
+    let amountDue = getAmountDueNow({
+      total: quoteTotal,
+      paidAmount: paid,
+      depositType: r.deposit_type,
+      depositValue: r.deposit_value,
+      depositPaidAt: r.deposit_paid_at,
+    });
     const isOverdue   = r.payment_due_date ? new Date(r.payment_due_date) < new Date() : false;
     const daysOverdue = isOverdue && r.payment_due_date
       ? Math.floor((Date.now() - new Date(r.payment_due_date).getTime()) / 86400000)

@@ -1,5 +1,6 @@
 import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
+import { getDepositAmount, getCollectionKind, getAmountDueNow } from '@/lib/billing';
 
 export type CollectionKind = 'deposit' | 'balance';
 
@@ -29,18 +30,19 @@ export type CheckoutResult = {
 };
 
 /**
- * Deposit on the tax-inclusive total, capped at it. Mirrors depositFor() in
- * CategoriesTab so settings, quote, and checkout all agree.
+ * @deprecated Use getDepositAmount from '@/lib/billing' directly. Kept as a
+ * thin wrapper so any existing import of this name from this file keeps
+ * working — it now delegates to the canonical implementation instead of
+ * duplicating the formula. This file used to have its own copy of this
+ * exact math under this name, which is precisely the kind of duplication
+ * that let the deposit-satisfied bug drift out of sync across the app.
  */
 export function depositFor(
   total: number,
   type: string | null | undefined,
   value: number | null | undefined
 ): number {
-  const v = Number(value) || 0;
-  if (!type || v <= 0 || total <= 0) return 0;
-  const raw = type === 'percent' ? (total * v) / 100 : v;
-  return Math.min(Math.round(raw * 100) / 100, total);
+  return getDepositAmount({ total, depositType: type as any, depositValue: value });
 }
 
 /**
@@ -48,8 +50,10 @@ export function depositFor(
  * ledger says has been collected — never passed in — so a stale client or a
  * re-sent invoice can't charge the full total twice.
  *
- * Nothing collected yet + deposit terms  -> deposit for the deposit amount
- * Otherwise                              -> balance for total minus collected
+ * Deposit/balance classification and the actual amount now both come from
+ * lib/billing.ts — this function used to compute both independently, which
+ * was the actual root of the bug where a satisfied deposit's checkout link
+ * kept charging its original (now stale) amount after the quote grew.
  */
 export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutResult> {
  const {
@@ -63,7 +67,7 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
   } = args;
 
   const rows = await sql`
-    SELECT deposit_type, deposit_value, stripe_checkout_session_id,
+    SELECT deposit_type, deposit_value, deposit_paid_at, stripe_checkout_session_id,
            COALESCE(payment_amount, 0) AS collected
     FROM projects
     WHERE id = ${projectId}
@@ -78,18 +82,28 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
   if (contractTotal <= 0) return { url: null, kind: null, amount: 0, reason: 'no_total' };
   if (remaining <= 0) return { url: null, kind: null, amount: 0, reason: 'fully_paid' };
 
-   const depositAmount = depositFor(contractTotal, project.deposit_type, project.deposit_value);
-
-  // "Deposit" applies until the deposit itself is actually net-satisfied,
-  // not just until the first dollar has ever landed. Previously this
-  // checked collected === 0, so once ANY money existed — even if a later
-  // refund brought the net deposit back down — every subsequent link
-  // permanently classified as "balance" for the rest of the job's life.
   const wantsFull = collect === 'full';
-  const depositShortfall = Math.round((depositAmount - collected) * 100) / 100;
-  const kind: CollectionKind =
-    !wantsFull && depositAmount > 0 && depositShortfall > 0 ? 'deposit' : 'balance';
-  const amount = kind === 'deposit' ? depositShortfall : remaining;
+  const billingInputs = {
+    total: contractTotal,
+    paidAmount: collected,
+    depositType: project.deposit_type,
+    depositValue: project.deposit_value,
+    // The sticky fact — this is the one piece that was missing entirely
+    // before. Without it, "is the deposit satisfied" had no way to know
+    // about anything except the current amounts, which is exactly what
+    // let a grown quote silently reopen an already-satisfied deposit.
+    depositPaidAt: project.deposit_paid_at,
+  };
+
+  // getCollectionKind can return 'full' when wantsFull is true — collapsed
+  // to 'balance' below for the RETURNED kind, since every downstream
+  // consumer (email templates, PDF, Stripe session label) only expects
+  // 'deposit' | 'balance'. 'full' is an internal modifier meaning "bill
+  // everything regardless of deposit terms," not a third distinct state
+  // those consumers need to know about.
+  const rawKind = getCollectionKind(billingInputs, wantsFull);
+  const kind: CollectionKind = rawKind === 'deposit' ? 'deposit' : 'balance';
+  const amount = rawKind === 'full' ? remaining : getAmountDueNow(billingInputs, false);
 
   if (amount <= 0) return { url: null, kind: null, amount: 0, reason: 'nothing_due' };
 
