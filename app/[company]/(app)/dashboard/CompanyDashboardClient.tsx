@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, ArrowRight, Sun, Moon } from 'lucide-react';
+import { Loader2, Plus, ArrowRight, Sun, Moon, Menu } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import LeadModal from '@/components/dashboard/LeadModal';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
@@ -12,16 +12,6 @@ import TrialBanner from '@/components/TrialBanner';
 import PaymentReminderBanner from '@/components/PaymentReminderBanner';
 import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 import { type PlanTier } from '@/lib/permissions';
-
-// This file was previously the combined leads+stats dashboard. The leads
-// list, filters, search, and bulk actions now live at app/[company]/(app)/leads
-// (LeadsClient.tsx) — this file is Dashboard-only: a daily overview that
-// deep-links into Leads/a specific lead, not a place to work leads directly.
-//
-// Two things from the reference design are deliberately NOT here — see
-// the comments in dashboard-stats/route.ts for why: "New Requests" (no
-// corresponding feature exists in this codebase) and the "Route" panel
-// under Today's Schedule (no route-sequencing system exists either).
 
 type Company = {
   id: number;
@@ -85,16 +75,9 @@ const fmtTime = (t: string | null) => {
   return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
 };
 
-// Category values are stored as snake_case ("full_roof_replacement") — same
-// display fix already applied in FormTab.tsx and BillingSummaryPanel.tsx.
 const formatCategoryLabel = (value?: string | null) =>
   (value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-// Same defensive pattern as BillingSection.tsx's fmtDate — splits on 'T'
-// before parsing, so it works whether paid_on arrives as a bare
-// "2026-09-02" or a full ISO timestamp "2026-09-02T00:00:00.000Z".
-// Naively appending 'T00:00:00' onto an already-ISO string is what
-// produced "Invalid Date" here.
 const fmtShortDate = (d: string | null | undefined) => {
   if (!d) return null;
   const datePart = d.split('T')[0];
@@ -103,9 +86,6 @@ const fmtShortDate = (d: string | null | undefined) => {
   return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-// Maps the project's current payment_status onto a short label + color for
-// the Recent Payments list. Reads the field the payments_sync_project
-// trigger already maintains — no recomputation here.
 const paymentStatusBadge = (status: string | null) => {
   if (status === 'paid') return { label: 'Paid in Full', tint: 'emerald' as const };
   if (status === 'partially_paid') return { label: 'Partial', tint: 'amber' as const };
@@ -135,7 +115,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     if (typeof window === 'undefined') return true;
     return localStorage.getItem('dashboard-theme') !== 'light';
   });
-  useEffect(() => { localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light'); }, [isDark]);
+
+  useEffect(() => {
+    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
 
@@ -160,7 +143,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       const res = await fetch('/api/auth/me');
       const data = await res.json();
       if (data.success) setCurrentUser(data.user);
-    } catch (e) { console.error('fetchCurrentUser:', e); }
+    } catch (e) {
+      console.error('fetchCurrentUser:', e);
+    }
   }, []);
 
   const fetchTeamMembers = useCallback(async () => {
@@ -171,7 +156,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         const assigneeList = (data.allAssignees || []).map((name: string) => ({ id: name, name }));
         setTeamMembers(assigneeList);
       }
-    } catch (e) { console.error('fetchTeamMembers:', e); }
+    } catch (e) {
+      console.error('fetchTeamMembers:', e);
+    }
   }, []);
 
   useEffect(() => {
@@ -190,47 +177,75 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     user_email: currentUser?.email || '',
   });
 
-  const updateLeadStatus = useCallback(async (id: number, status: string, oldStatus: string, sendReview = true) => {
-    try {
-      const res = await fetch('/api/leads/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, status, action: 'update_status', old_status: oldStatus, send_review_request: sendReview, ...userMeta() }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) {
-        if (selectedLead?.id === id) setSelectedLead((prev: any) => ({ ...prev, status }));
-        fetchStats();
-        return true;
+  const updateLeadStatus = useCallback(
+    async (id: number, status: string, oldStatus: string, sendReview = true) => {
+      try {
+        const res = await fetch('/api/leads/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            status,
+            action: 'update_status',
+            old_status: oldStatus,
+            send_review_request: sendReview,
+            ...userMeta(),
+          }),
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          if (selectedLead?.id === id) setSelectedLead((prev: any) => ({ ...prev, status }));
+          fetchStats();
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.error('updateLeadStatus:', e);
+        return false;
       }
-      return false;
-    } catch (e) { console.error('updateLeadStatus:', e); return false; }
-  }, [selectedLead, currentUser, fetchStats]);
+    },
+    [selectedLead, currentUser, fetchStats]
+  );
 
-  const addNote = useCallback(async (id: number, noteText: string) => {
-    try {
-      const res = await fetch('/api/leads/update', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, notes: noteText, action: 'add_note', ...userMeta() }),
-      });
-      const result = await res.json();
-      return res.ok && result.success;
-    } catch (e) { console.error('addNote:', e); return false; }
-  }, [currentUser]);
+  const addNote = useCallback(
+    async (id: number, noteText: string) => {
+      try {
+        const res = await fetch('/api/leads/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, notes: noteText, action: 'add_note', ...userMeta() }),
+        });
+        const result = await res.json();
+        return res.ok && result.success;
+      } catch (e) {
+        console.error('addNote:', e);
+        return false;
+      }
+    },
+    [currentUser]
+  );
 
-  const deleteLead = useCallback(async (id: number) => {
-    try {
-      const res = await fetch('/api/leads/delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...userMeta() }),
-      });
-      const result = await res.json();
-      if (res.ok && result.success) { fetchStats(); return true; }
-      return false;
-    } catch (e) { console.error('deleteLead:', e); return false; }
-  }, [currentUser, fetchStats]);
+  const deleteLead = useCallback(
+    async (id: number) => {
+      try {
+        const res = await fetch('/api/leads/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, ...userMeta() }),
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          fetchStats();
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.error('deleteLead:', e);
+        return false;
+      }
+    },
+    [currentUser, fetchStats]
+  );
 
   const openLead = useCallback(async (leadId: number) => {
     try {
@@ -241,7 +256,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         setSelectedLeadPayments(data.payments || []);
         setSelectedLeadActivity(data.activity || []);
       }
-    } catch (e) { console.error('openLead:', e); }
+    } catch (e) {
+      console.error('openLead:', e);
+    }
   }, []);
 
   const refreshModalLead = useCallback(async () => {
@@ -257,7 +274,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     return 'Good evening';
   })();
 
-  const todayLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  const todayLabel = new Date().toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+  });
   const accentColor = company.email_brand_color_1 || '#2563eb';
 
   const bg = isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]';
@@ -269,7 +290,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${bg}`} role="status" aria-label="Loading dashboard">
-        <Loader2 className="w-10 h-10 animate-spin" style={{ color: accentColor }} />
+        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" style={{ color: accentColor }} />
       </div>
     );
   }
@@ -285,11 +306,15 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         aria-hidden={!sidebarOpen}
       >
         <div
-          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
+            sidebarOpen ? 'opacity-100' : 'opacity-0'
+          }`}
           onClick={() => setSidebarOpen(false)}
         />
         <aside
-          className={`absolute left-0 top-0 bottom-0 w-72 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] transition-transform duration-300 ${
+            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
           style={{ zIndex: sidebarOpen ? 10001 : 110 }}
           aria-label="Navigation sidebar"
         >
@@ -324,151 +349,152 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           onSelectLead={(lead: any) => openLead(lead.id)}
           allLeads={[]}
         />
-        <PaymentToastPoller
-          slug={company.slug}
-          onSelectLead={(leadId) => openLead(leadId)}
-        />
+        <PaymentToastPoller slug={company.slug} onSelectLead={(leadId) => openLead(leadId)} />
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
-
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-5 sm:py-8 lg:py-12 relative z-10 font-sans">
         {/* Header */}
-        <div className="flex flex-wrap items-start justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 sm:mb-8 gap-4">
           <div className="min-w-0">
-            <p className={`text-sm ${subText}`}>{todayLabel}</p>
-            <h1 className={`text-4xl sm:text-5xl font-light leading-tight ${heading}`}>
+            <p className={`text-xs sm:text-sm font-medium ${subText}`}>{todayLabel}</p>
+            <h1 className={`text-2xl sm:text-4xl lg:text-5xl font-light leading-tight truncate ${heading}`}>
               {greeting}, {currentUser?.name?.split(' ')[0] || 'there'}
             </h1>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {company.logo_url ? (
-              <div
-                className="inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5"
-                style={{ background: `${accentColor}1a`, border: `1px solid ${accentColor}33` }}
-              >
+
+          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
+            <div
+              className="inline-flex items-center gap-2 rounded-full pl-2 pr-3.5 py-1.5 max-w-[200px] sm:max-w-none"
+              style={{ background: `${accentColor}1a`, border: `1px solid ${accentColor}33` }}
+            >
+              {company.logo_url ? (
                 <img
                   src={company.logo_url}
                   alt={company.name}
-                  className="w-6 h-6 rounded-full object-contain bg-white"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-contain bg-white shrink-0"
                 />
-                <span
-                  className="text-xs font-bold uppercase tracking-widest"
-                  style={{ color: accentColor }}
-                >
-                  {company.name}
-                </span>
-              </div>
-            ) : (
-              <div
-                className="inline-flex items-center gap-2 rounded-full pl-2 pr-4 py-1.5"
-                style={{ background: `${accentColor}1a`, border: `1px solid ${accentColor}33` }}
-              >
+              ) : (
                 <div
-                  className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-black"
+                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-white text-[10px] sm:text-[11px] font-black shrink-0"
                   style={{ background: accentColor }}
                 >
                   {company.name?.charAt(0) || 'C'}
                 </div>
-                <span
-                  className="text-xs font-bold uppercase tracking-widest"
-                  style={{ color: accentColor }}
-                >
-                  {company.name}
-                </span>
-              </div>
-            )}
-            <button
-              onClick={() => setIsDark((v) => !v)}
-              className={`p-2.5 rounded-xl border transition-colors ${
-                isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
-              }`}
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2.5 rounded-xl border border-[#e7e2d8] bg-white"
-              aria-label="Open menu"
-            >
-              ☰
-            </button>
+              )}
+              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate" style={{ color: accentColor }}>
+                {company.name}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                onClick={() => setIsDark((v) => !v)}
+                className={`p-2 sm:p-2.5 rounded-xl border transition-colors ${
+                  isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
+                }`}
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className={`lg:hidden p-2 sm:p-2.5 rounded-xl border transition-colors ${
+                  isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
+                }`}
+                aria-label="Open menu"
+              >
+                <Menu className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
         {loadError && (
-          <div className="mb-8 p-4 sm:p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-sm font-bold flex items-center justify-between">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <span>{loadError}</span>
-            <button onClick={fetchStats} className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-2 rounded-lg">Retry</button>
+            <button
+              onClick={fetchStats}
+              className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-1.5 rounded-lg w-full sm:w-auto text-center"
+            >
+              Retry
+            </button>
           </div>
         )}
 
         {stats && (
           <>
             {/* Stat row: Leads / Estimates / Jobs / Invoices */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <div className={`rounded-2xl p-6 ${cardBg}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+              {/* Leads Card */}
+              <div className={`rounded-2xl p-4 sm:p-6 ${cardBg}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={`text-lg ${cardText}`}>Leads</p>
+                  <p className={`text-base sm:text-lg font-medium ${cardText}`}>Leads</p>
                   <button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-[#1c1917] rounded-full px-3 py-1.5 hover:opacity-90 transition"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-[#1c1917] rounded-full px-3 py-1.5 hover:opacity-90 transition min-h-[32px]"
                   >
                     <Plus className="w-3 h-3" /> Add lead
                   </button>
                 </div>
-                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.leads.new_this_week}</p>
-                <p className={`text-sm font-medium mt-2 ${cardText}`}>New</p>
+                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.leads.new_this_week}</p>
+                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>New</p>
                 <p className={`text-xs ${subText}`}>New this week</p>
               </div>
 
+              {/* Estimates Card */}
               <button
                 onClick={() => router.push(`/${company.slug}/leads?status=quoted`)}
-                className={`text-left rounded-2xl p-6 ${cardBg} hover:opacity-90 transition`}
+                className={`text-left rounded-2xl p-4 sm:p-6 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
               >
-                <p className={`text-lg ${cardText} mb-3`}>Estimates</p>
-                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.estimates.open}</p>
-                <p className={`text-sm font-medium mt-2 ${cardText}`}>Open</p>
+                <p className={`text-base sm:text-lg font-medium ${cardText} mb-3`}>Estimates</p>
+                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.estimates.open}</p>
+                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>Open</p>
                 <p className={`text-xs ${subText}`}>{stats.estimates.accepted} accepted</p>
               </button>
 
+              {/* Jobs Card */}
               <button
                 onClick={() => router.push(`/${company.slug}/leads`)}
-                className={`text-left rounded-2xl p-6 ${cardBg} hover:opacity-90 transition`}
+                className={`text-left rounded-2xl p-4 sm:p-6 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
               >
-                <p className={`text-lg ${cardText} mb-3`}>Jobs</p>
-                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.jobs.active}</p>
-                <p className={`text-sm font-medium mt-2 ${cardText}`}>Active</p>
+                <p className={`text-base sm:text-lg font-medium ${cardText} mb-3`}>Jobs</p>
+                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.jobs.active}</p>
+                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>Active</p>
                 <p className={`text-xs ${subText}`}>{fmtMoney(stats.jobs.active_value)} booked</p>
               </button>
 
+              {/* Invoices Card */}
               <button
                 onClick={() => router.push(`/${company.slug}/leads?payment=awaiting`)}
-                className={`text-left rounded-2xl p-6 ${cardBg} hover:opacity-90 transition`}
+                className={`text-left rounded-2xl p-4 sm:p-6 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
               >
-                <p className={`text-lg ${cardText} mb-3`}>Invoices</p>
-                <p className={`text-4xl font-semibold tabular-nums ${cardText}`}>{stats.invoices.awaiting_payment}</p>
-                <p className={`text-sm font-medium mt-2 ${cardText}`}>Awaiting payment</p>
+                <p className={`text-base sm:text-lg font-medium ${cardText} mb-3`}>Invoices</p>
+                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.invoices.awaiting_payment}</p>
+                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>Awaiting payment</p>
                 <p className={`text-xs ${subText}`}>{stats.invoices.draft} draft · {stats.invoices.past_due} past due</p>
               </button>
             </div>
 
             {/* Today's Schedule + Business Performance */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
-              <div>
-                <h2 className={`text-lg font-semibold mb-3 ${heading}`}>Today&rsquo;s Schedule</h2>
+              {/* Today's Schedule */}
+              <div className="min-w-0">
+                <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Today&rsquo;s Schedule</h2>
                 <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
-                  <div className={`flex items-center justify-between px-5 py-4 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
-                    <p className={`text-2xl font-semibold ${cardText}`}>
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                    <p className={`text-xl sm:text-2xl font-semibold ${cardText}`}>
                       {fmtMoney(stats.todays_schedule.reduce((s, j) => s + (parseFloat(String(j.quote_total || '0')) || 0), 0))}{' '}
-                      <span className={`text-sm font-normal ${subText}`}>booked today</span>
+                      <span className={`text-xs sm:text-sm font-normal block sm:inline ${subText}`}>booked today</span>
                     </p>
-                    <span className={`text-sm ${subText}`}>{stats.todays_schedule.length} job{stats.todays_schedule.length === 1 ? '' : 's'}</span>
+                    <span className={`text-xs sm:text-sm mt-1 sm:mt-0 ${subText}`}>
+                      {stats.todays_schedule.length} job{stats.todays_schedule.length === 1 ? '' : 's'}
+                    </span>
                   </div>
+
                   {stats.todays_schedule.length === 0 ? (
-                    <div className="px-5 py-10 text-center">
-                      <p className={`text-sm ${subText}`}>Nothing scheduled for today.</p>
+                    <div className="px-4 sm:px-5 py-8 sm:py-10 text-center">
+                      <p className={`text-xs sm:text-sm ${subText}`}>Nothing scheduled for today.</p>
                     </div>
                   ) : (
                     <div className={`divide-y ${isDark ? 'divide-white/10' : 'divide-[#e7e2d8]'}`}>
@@ -476,11 +502,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         <button
                           key={job.project_id}
                           onClick={() => openLead(job.lead_id)}
-                          className={`w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition ${isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]'}`}
+                          className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 text-left transition ${
+                            isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5] active:bg-black/5'
+                          }`}
                         >
-                          <div className="min-w-0">
-                            <p className={`text-sm font-mono ${subText}`}>{fmtTime(job.scheduled_time) || 'No time set'}</p>
-                            <p className={`font-semibold truncate ${cardText}`}>{job.customer_name}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-xs font-mono font-medium ${subText}`}>{fmtTime(job.scheduled_time) || 'No time set'}</p>
+                            <p className={`text-sm sm:text-base font-semibold truncate ${cardText}`}>{job.customer_name}</p>
                             <p className={`text-xs truncate ${subText}`}>{formatCategoryLabel(job.category) || 'General'}</p>
                           </div>
                           <ArrowRight className={`w-4 h-4 shrink-0 ${subText}`} />
@@ -488,10 +516,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                       ))}
                     </div>
                   )}
-                  <div className={`px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+
+                  <div className={`px-4 sm:px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
                     <button
                       onClick={() => router.push(`/${company.slug}/dashboard/calendar`)}
-                      className={`text-sm font-semibold inline-flex items-center gap-1 ${cardText}`}
+                      className={`text-xs sm:text-sm font-semibold inline-flex items-center gap-1 py-1 ${cardText}`}
                     >
                       View full schedule <ArrowRight className="w-3.5 h-3.5" />
                     </button>
@@ -499,42 +528,45 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 </div>
               </div>
 
-              <div>
-                <h2 className={`text-lg font-semibold mb-3 ${heading}`}>Business Performance</h2>
-                <div className="space-y-4">
-                  <div className={`rounded-2xl p-5 ${cardBg}`}>
+              {/* Business Performance */}
+              <div className="min-w-0">
+                <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Business Performance</h2>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className={`rounded-2xl p-4 sm:p-5 ${cardBg}`}>
                     <div className="flex items-center justify-between">
-                      <p className={`text-sm font-semibold ${cardText}`}>Revenue</p>
+                      <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Revenue</p>
                       <ArrowRight className={`w-4 h-4 ${subText}`} />
                     </div>
                     <p className={`text-xs ${subText} mb-1`}>This month so far</p>
-                    <p className={`text-3xl font-semibold tabular-nums ${cardText}`}>{fmtMoney(stats.revenue_this_month)}</p>
+                    <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
+                      {fmtMoney(stats.revenue_this_month)}
+                    </p>
                   </div>
 
                   <button
                     onClick={() => router.push(`/${company.slug}/leads?status=completed`)}
-                    className={`w-full text-left rounded-2xl p-5 ${cardBg} hover:opacity-90 transition`}
+                    className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
                   >
                     <div className="flex items-center justify-between">
-                      <p className={`text-sm font-semibold ${cardText}`}>Ready to invoice</p>
+                      <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Ready to invoice</p>
                       <ArrowRight className={`w-4 h-4 ${subText}`} />
                     </div>
                     <p className={`text-xs ${subText} mb-1`}>Completed jobs not yet billed</p>
-                    <p className={`text-3xl font-semibold tabular-nums ${cardText}`}>{fmtMoney(stats.ready_to_invoice.value)}</p>
+                    <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
+                      {fmtMoney(stats.ready_to_invoice.value)}
+                    </p>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* Recent Payments — unlike the stat cards above, this one goes
-                to Financials, not Leads, since a payment ledger belongs
-                there, not in the leads-working view. */}
-            <div className="mt-8">
-              <h2 className={`text-lg font-semibold mb-3 ${heading}`}>Recent Payments</h2>
+            {/* Recent Payments */}
+            <div className="mt-6 sm:mt-8">
+              <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Recent Payments</h2>
               <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
                 {stats.recent_payments.length === 0 ? (
-                  <div className="px-5 py-10 text-center">
-                    <p className={`text-sm ${subText}`}>No payments recorded yet.</p>
+                  <div className="px-4 sm:px-5 py-8 sm:py-10 text-center">
+                    <p className={`text-xs sm:text-sm ${subText}`}>No payments recorded yet.</p>
                   </div>
                 ) : (
                   <div className={`divide-y ${isDark ? 'divide-white/10' : 'divide-[#e7e2d8]'}`}>
@@ -551,10 +583,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         <button
                           key={p.id}
                           onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
-                          className={`w-full flex items-center justify-between gap-3 px-5 py-4 text-left transition ${isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]'}`}
+                          className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 text-left transition ${
+                            isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5] active:bg-black/5'
+                          }`}
                         >
-                          <div className="min-w-0">
-                            <p className={`font-semibold truncate ${cardText}`}>{p.customer_name}</p>
+                          <div className="min-w-0 flex-1">
+                            <p className={`text-sm sm:text-base font-semibold truncate ${cardText}`}>{p.customer_name}</p>
                             <p className={`text-xs ${subText}`}>
                               {p.kind === 'deposit' ? 'Deposit' : p.kind === 'balance' ? 'Balance' : 'Payment'}
                               {' · '}
@@ -562,11 +596,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                             </p>
                           </div>
                           <div className="flex flex-col items-end gap-1 shrink-0">
-                            <p className={`text-sm font-semibold tabular-nums ${cardText}`}>
+                            <p className={`text-xs sm:text-sm font-semibold tabular-nums ${cardText}`}>
                               {fmtMoney(parseFloat(String(p.amount)))}
                             </p>
                             {badge && (
-                              <span className={`text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeTint}`}>
+                              <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeTint}`}>
                                 {badge.label}
                               </span>
                             )}
@@ -576,10 +610,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     })}
                   </div>
                 )}
-                <div className={`px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                <div className={`px-4 sm:px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
                   <button
                     onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
-                    className={`text-sm font-semibold inline-flex items-center gap-1 ${cardText}`}
+                    className={`text-xs sm:text-sm font-semibold inline-flex items-center gap-1 py-1 ${cardText}`}
                   >
                     View all payments <ArrowRight className="w-3.5 h-3.5" />
                   </button>
@@ -592,21 +626,30 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
       {selectedLead && (
         <LeadModal
-          lead={selectedLead} onClose={() => setSelectedLead(null)}
-          onUpdateStatus={updateLeadStatus} onAddNote={addNote}
-          onDeleteLead={deleteLead} onRefresh={refreshModalLead}
-          payments={selectedLeadPayments} activity={selectedLeadActivity}
-          currentUser={currentUser} statusOptions={company.status_options || []}
-          categories={company.form_categories || []} company={company}
+          lead={selectedLead}
+          onClose={() => setSelectedLead(null)}
+          onUpdateStatus={updateLeadStatus}
+          onAddNote={addNote}
+          onDeleteLead={deleteLead}
+          onRefresh={refreshModalLead}
+          payments={selectedLeadPayments}
+          activity={selectedLeadActivity}
+          currentUser={currentUser}
+          statusOptions={company.status_options || []}
+          categories={company.form_categories || []}
+          company={company}
           companySlug={company.slug}
           teamMembers={teamMembers}
         />
       )}
 
       <CreateLeadModal
-        isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => fetchStats()} companySlug={company.slug}
-        companyId={company.id} categories={company.form_categories || []}
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={() => fetchStats()}
+        companySlug={company.slug}
+        companyId={company.id}
+        categories={company.form_categories || []}
         company={company}
       />
 
