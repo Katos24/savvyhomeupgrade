@@ -1,4 +1,3 @@
-// app/[company]/CompanyShell.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -19,6 +18,27 @@ export default function CompanyShell({
     const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Same localStorage key Dashboard/Leads already read/write for their own
+  // theme state. CompanyShell doesn't own theme — it just needs to match
+  // whatever the current page is showing, so its own mobile top bar
+  // (rendered outside any individual page's control) doesn't look like a
+  // leftover light-mode bar stacked on top of a dark-themed page.
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    return localStorage.getItem('dashboard-theme') !== 'light';
+  });
+  useEffect(() => {
+    const onStorage = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+    window.addEventListener('storage', onStorage);
+    // Pages toggle theme via their own state, not a cross-tab storage
+    // event, so also re-check on focus/navigation — cheap, and keeps this
+    // bar in sync without needing a shared context just for one value.
+    window.addEventListener('focus', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onStorage);
+    };
+  }, []);
   // Home has its own dense sub-navigation rail — running the full-width
   // main sidebar at the same time leaves too little room for content
   // (this is what caused OverviewTab's fields to overflow). Nudge to
@@ -44,7 +64,7 @@ export default function CompanyShell({
   };
 
   return (
-    <div className="min-h-screen lg:flex">
+    <div className={`min-h-screen lg:flex ${isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'}`}>
       {/* Desktop: pinned, always visible, part of the layout flow.
           Mobile: same overlay-drawer behavior Sidebar already had —
           isOpen/onClose still control it, just triggered from here
@@ -81,19 +101,29 @@ export default function CompanyShell({
 
       <div className="flex-1 min-w-0 flex flex-col">
         {/* Mobile-only top bar — the only trigger for opening the nav
-            drawer on mobile now that individual pages (Home, etc.) no
-            longer build their own header. Without this there was no way
-            to open navigation on mobile outside of pages that happened
-            to have their own leftover hamburger. */}
-        <div className="lg:hidden sticky top-0 z-20 flex items-center gap-3 border-b border-[#e7e2d8] bg-white/90 backdrop-blur-sm px-4 py-3">
+            drawer on mobile. Now theme-aware: previously hardcoded light
+            (bg-white/90, dark text) regardless of the page underneath, so
+            a dark-themed page (Dashboard, Leads with isDark on) showed
+            this bar looking like a stray leftover light-mode strip on top
+            of dark content — the same category of mismatch fixed in
+            Scheduling earlier, just at the shared-layout level this time. */}
+        <div className={`lg:hidden sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-sm transition-colors ${
+          isDark
+            ? 'bg-[#0b0f17]/90 border-white/10'
+            : 'bg-white/90 border-[#e7e2d8]'
+        }`}>
           <button
             onClick={() => setSidebarOpen(true)}
-            className="p-1.5 -ml-1 rounded-lg text-[#57534e] hover:bg-[#f5f1e8] transition-colors"
+            className={`p-1.5 -ml-1 rounded-lg transition-colors ${
+              isDark ? 'text-slate-300 hover:bg-white/10' : 'text-[#57534e] hover:bg-[#f5f1e8]'
+            }`}
             aria-label="Open navigation menu"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="text-sm font-semibold text-[#1c1917] truncate">{company.name}</span>
+          <span className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>
+            {company.name}
+          </span>
         </div>
         <div className="flex-1 min-w-0">{children}</div>
       </div>

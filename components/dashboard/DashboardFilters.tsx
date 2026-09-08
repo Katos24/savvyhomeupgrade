@@ -46,7 +46,6 @@ type DashboardFiltersProps = {
   onLockedFeature: (feature: string) => void;
 };
 
-// Intelligent text contrast evaluator & pure-black/dark color fallback
 function getContrastTextColor(input: string): string {
   let c = input.trim().replace('#', '');
   if (c.length === 3) {
@@ -73,14 +72,9 @@ function getSafeAccentColor(input: string, isDark: boolean): string {
   if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
     return isDark ? '#3b82f6' : '#2563eb';
   }
-
-  // Calculate perceived brightness
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-
-  // If the user picks pure/dark black or near-black (#000000 to ~#1a1a1a) in dark mode, it would blend into the background.
-  // Switch it to a vibrant high-visibility electric blue or white/light gray depending on context.
   if (luminance < 0.08) {
-    return isDark ? '#60a5fa' : '#1e293b'; // Electric light blue in dark mode, slate dark in light mode
+    return isDark ? '#60a5fa' : '#1e293b';
   }
   return input;
 }
@@ -152,17 +146,26 @@ export default function DashboardFilters({
           )}
         </div>
 
-        {/* View Switcher + Theme */}
+        {/* VIEW SWITCHER — now its own labeled control, separated from
+            theme. Previously this shared one small icon-only pill with the
+            light/dark toggle, which made it easy to miss entirely: no text
+            saying "Cards" or "Table," and a functional control (changes
+            what you see) sitting visually indistinguishable from a purely
+            cosmetic one (theme preference). Labels show from sm: up;
+            icon-only below that purely to save width next to the search
+            bar on the smallest phones, matching the same
+            hidden/sm:inline pattern already used for "Scheduled Today"
+            below. */}
         <div
-          className={`flex items-center p-1 rounded-2xl border shrink-0 backdrop-blur-md ${
+          className={`flex items-center gap-0.5 p-1 rounded-2xl border shrink-0 backdrop-blur-md ${
             isDark
               ? 'bg-[#0A0C14]/80 border-white/10 shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
               : 'bg-white/90 border-slate-200/90 shadow-xs'
           }`}
         >
-                 {[
-            { id: 'cards', icon: LayoutGrid, feature: null },
-            { id: 'table', icon: List, feature: 'table_view' },
+          {[
+            { id: 'cards', icon: LayoutGrid, label: 'Cards', feature: null },
+            { id: 'table', icon: List, label: 'Table', feature: 'table_view' },
           ].map((v) => {
             const locked = v.feature && !can(planTier, v.feature as any);
             const active = currentView === v.id;
@@ -175,25 +178,34 @@ export default function DashboardFilters({
                     ? { backgroundColor: safeAccent, color: buttonTextColor }
                     : undefined
                 }
-                className={`p-2 rounded-xl transition-all relative cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold transition-all relative cursor-pointer ${
                   active
-                    ? 'font-bold'
+                    ? ''
                     : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                <v.icon className="w-4 h-4" />
+                <v.icon className="w-4 h-4 shrink-0" />
+                <span className="hidden sm:inline">{v.label}</span>
                 {locked && <Lock className="w-2.5 h-2.5 absolute -top-0.5 -right-0.5 text-amber-500" />}
               </button>
             );
           })}
-          <div className={`w-px h-4 mx-1 ${isDark ? 'bg-white/10' : 'bg-slate-200'}`} />
-          <button
-            onClick={() => setIsDark(v => !v)}
-            className={`p-2 rounded-xl transition-all cursor-pointer ${isDark ? 'text-amber-400' : 'text-slate-500 hover:text-slate-900'}`}
-          >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
         </div>
+
+        {/* THEME TOGGLE — now its own separate button, no longer sharing
+            a container with the view switcher. */}
+        <button
+          onClick={() => setIsDark(v => !v)}
+          className={`p-2.5 rounded-2xl border shrink-0 backdrop-blur-md transition-all cursor-pointer ${
+            isDark
+              ? 'bg-[#0A0C14]/80 border-white/10 text-amber-400 shadow-[0_4px_16px_rgba(0,0,0,0.2)]'
+              : 'bg-white/90 border-slate-200/90 text-slate-500 hover:text-slate-900 shadow-xs'
+          }`}
+          aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+        >
+          {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+        </button>
       </div>
 
       {/* ROW 2: QUICK FILTERS */}
@@ -264,7 +276,6 @@ export default function DashboardFilters({
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowAdvancedFilters(false)} />
 
-          {/* Desktop Dropdown */}
           <div className="relative z-[100] hidden sm:block">
             <div
               className={`absolute top-0 left-0 w-[400px] p-5 rounded-2xl border shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-200 ${
@@ -378,7 +389,6 @@ export default function DashboardFilters({
             </div>
           </div>
 
-          {/* Mobile Bottom Sheet Drawer */}
           <div className="sm:hidden fixed inset-0 z-[300] flex flex-col justify-end">
             <div
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"

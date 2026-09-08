@@ -45,6 +45,16 @@ export function findAssigneeConflict(
 ): ExistingBooking | null {
   for (const booking of bookings) {
     if (!booking.assignees.includes(name)) continue;
+    // Defensive, not just decorative: the type says scheduled_time is a
+    // non-nullable string, but TypeScript types don't exist at runtime —
+    // a caller CAN hand this a null despite the declared type, and one
+    // already did (update_project's conflict check, before it filtered
+    // same-day rows by scheduled_time IS NOT NULL). A date-only booking
+    // has no time to conflict against anyway, so skipping it here is
+    // correct behavior, not just crash-avoidance — and it means a future
+    // third or fourth caller can't reintroduce this exact crash by
+    // forgetting to pre-filter.
+    if (!booking.scheduled_time) continue;
     const existingStart = toMinutes(booking.scheduled_time);
     const existingEnd = booking.scheduled_end_time ? toMinutes(booking.scheduled_end_time) : existingStart;
     if (rangesConflict(newStart, newEnd, existingStart, existingEnd, bufferMinutes)) {

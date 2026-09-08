@@ -1,5 +1,5 @@
 'use client';
-import { Menu, Plus, Lock, Loader2, RefreshCw, Eye } from 'lucide-react';
+import { Plus, Lock, Loader2, RefreshCw, Eye } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import { useState, useEffect } from 'react';
 
@@ -45,12 +45,21 @@ function getSafeAccentColor(input: string, isDark: boolean): string {
   return input;
 }
 
+// NOTE: the hamburger/sidebar-toggle button that used to live here was
+// removed. CompanyShell (app/[company]/CompanyShell.tsx) now owns
+// navigation entirely at the layout level — a pinned collapsible rail on
+// desktop, its own mobile drawer with its own hamburger in its own top
+// bar. This header's onSidebarOpen prop pointed at a Sidebar instance
+// inside the individual page that was never actually visible in the DOM;
+// removing it here matches removing that same dead instance from
+// LeadsClient.tsx. Confirmed via CompanyShell.tsx and layout.tsx directly
+// before removing, not assumed.
+
 export default function DashboardHeader({
   company,
   isDark,
   isRefreshing,
   planTier,
-  onSidebarOpen,
   onCreateLead,
   onLockedFeature,
   onRefresh,
@@ -62,7 +71,6 @@ export default function DashboardHeader({
   isDark: boolean;
   isRefreshing: boolean;
   planTier: PlanTier;
-  onSidebarOpen: () => void;
   onCreateLead: () => void;
   onLockedFeature: (key: string) => void;
   onRefresh: () => void;
@@ -115,19 +123,9 @@ export default function DashboardHeader({
         style={{ background: `linear-gradient(180deg, ${safeAccent}, transparent)` }}
       />
 
-      {/* LEFT SIDE: Brand & Navigation */}
+      {/* LEFT SIDE: Brand — hamburger removed, CompanyShell owns nav now */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        <button
-          data-tour="sidebar-toggle"
-          onClick={onSidebarOpen}
-          className={`p-2 rounded-xl transition-all active:scale-90 shrink-0 ${
-            isDark ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-slate-100/80 hover:bg-slate-200/80 text-slate-700'
-          }`}
-        >
-          <Menu className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-        </button>
-
-<div className={`flex items-center gap-3 border-l min-w-0 transition-all duration-300 ${isScrolled ? 'pl-2 sm:pl-3' : 'pl-3 sm:pl-4'} ${isDark ? 'border-white/10' : 'border-slate-300'}`}>
+<div className={`flex items-center gap-3 min-w-0 transition-all duration-300`}>
 
           {/* LOGO: Shrinks smoothly on scroll */}
           {company.logo_url ? (

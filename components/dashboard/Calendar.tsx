@@ -6,9 +6,10 @@ import { toast } from 'sonner';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   CalendarDays, LayoutGrid, ArrowLeft, Filter, User, Clock,
-  Briefcase, List, Sun, X, MapPin, Search
+  Briefcase, List, Sun, X, MapPin, Search, Plus
 } from 'lucide-react';
 import { DEFAULT_STATUSES } from '@/lib/formCategories';
+import AddJobToDayModal from './AddJobToDayModal';
 
 export interface Lead {
   id: string | number;
@@ -28,6 +29,16 @@ type CalendarProps = {
   companySlug: string;
   onSelectLead: (lead: Lead) => void;
   statusOptions: any[];
+  /** Called when a job is picked from the "+ Add a job to this day"
+   *  drawer flow — carries the job and the day it should be scheduled
+   *  onto, so the parent can seed the date and open straight to Schedule. */
+  onScheduleJob?: (job: { project_id: number; lead_id: number; customer_name: string }, day: string) => void;
+  /** Bump this to refetch events without remounting the component — a
+   *  remount (the old approach, via a `key` prop from the parent) wipes
+   *  view/currentDate/filters/search back to defaults on every refresh,
+   *  which is why saving a schedule kept snapping back to the default
+   *  view. This just adds a dependency to the existing fetch effect. */
+  refreshTrigger?: number;
 };
 
 type ViewMode = 'month' | 'week' | 'day' | 'agenda';
@@ -80,20 +91,21 @@ function timeRank(timeStr?: string): number {
   return h * 60 + (m || 0);
 }
 
-export default function Calendar({ companySlug, onSelectLead, statusOptions }: CalendarProps) {
+export default function Calendar({ companySlug, onSelectLead, statusOptions, onScheduleJob, refreshTrigger }: CalendarProps) {
   const [events, setEvents] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<ViewMode>('month');
+  const [view, setView] = useState<ViewMode>('week');
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [drawerDay, setDrawerDay] = useState<string | null>(null);
+  const [showAddJobModal, setShowAddJobModal] = useState(false);
 
   const safeStatusOptions = statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES;
 
   useEffect(() => { 
     fetchScheduledJobs(); 
-  }, [companySlug]);
+  }, [companySlug, refreshTrigger]);
 
   async function fetchScheduledJobs() {
     try {
@@ -287,6 +299,8 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
                 eventsByDay={eventsByDay}
                 onSelect={onSelectLead}
                 getStatus={getStatusConfig}
+                onScheduleJob={onScheduleJob}
+                companySlug={companySlug}
               />
             )}
             {view === 'day' && (
@@ -326,18 +340,28 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               className="relative w-full max-w-sm bg-[#faf9f5] h-full shadow-2xl z-10 flex flex-col border-l border-[#D1C9BD]"
             >
-              <div className="p-4 border-b border-[#D1C9BD] bg-white flex items-center justify-between">
-                <div>
-                  <h3 className="text-base font-black uppercase tracking-tight text-[#0F1F3D]">
+              <div className="p-4 border-b border-[#D1C9BD] bg-white flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-base font-black uppercase tracking-tight text-[#0F1F3D] truncate">
                     {new Date(`${drawerDay}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </h3>
                   <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
                     {activeDrawerEvents.length} Scheduled Job{activeDrawerEvents.length === 1 ? '' : 's'}
                   </p>
                 </div>
-                <button onClick={() => setDrawerDay(null)} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500">
-                  <X size={18} />
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {onScheduleJob && (
+                    <button
+                      onClick={() => setShowAddJobModal(true)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a6645] text-white rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-[#0F1F3D] transition-colors"
+                    >
+                      <Plus size={13} /> Add job
+                    </button>
+                  )}
+                  <button onClick={() => setDrawerDay(null)} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500">
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
@@ -356,6 +380,22 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions }: C
           </div>
         )}
       </AnimatePresence>
+
+      {/* ADD JOB TO DAY — the search picker, opened from the drawer's
+          "+ Add job" button above. */}
+      {drawerDay && onScheduleJob && (
+        <AddJobToDayModal
+          isOpen={showAddJobModal}
+          onClose={() => setShowAddJobModal(false)}
+          companySlug={companySlug}
+          dayLabel={new Date(`${drawerDay}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          onPick={(job) => {
+            setShowAddJobModal(false);
+            setDrawerDay(null);
+            onScheduleJob(job, drawerDay);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -541,7 +581,7 @@ function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus
   );
 }
 
-function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus }: any) {
+function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus, onScheduleJob, companySlug }: any) {
   const start = new Date(currentDate);
   start.setDate(currentDate.getDate() - currentDate.getDay());
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -550,6 +590,11 @@ function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus }: any) {
     return d;
   });
   const todayStr = dayKey(new Date());
+  // Which day's "+ Add job" modal is currently open, if any — Week
+  // already shows full per-day detail inline, so this opens the picker
+  // directly for that column instead of routing through Month's day
+  // drawer, which doesn't exist in this view.
+  const [addJobDay, setAddJobDay] = useState<string | null>(null);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-7 gap-2.5">
@@ -573,9 +618,22 @@ function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus }: any) {
               <span className="text-[11px] font-black uppercase tracking-wider">
                 {d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}
               </span>
-              <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-white/80' : 'text-slate-500'}`}>
-                {dayEvents.length} Job{dayEvents.length === 1 ? '' : 's'}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-white/80' : 'text-slate-500'}`}>
+                  {dayEvents.length} Job{dayEvents.length === 1 ? '' : 's'}
+                </span>
+                {onScheduleJob && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setAddJobDay(dStr); }}
+                    className={`p-0.5 rounded transition-colors ${
+                      isToday ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-[#1a6645] hover:bg-emerald-100'
+                    }`}
+                    aria-label="Add job to this day"
+                  >
+                    <Plus size={12} strokeWidth={3} />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="p-2 space-y-1.5 flex-1">
@@ -610,6 +668,20 @@ function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus }: any) {
           </div>
         );
       })}
+
+      {addJobDay && onScheduleJob && (
+        <AddJobToDayModal
+          isOpen={true}
+          onClose={() => setAddJobDay(null)}
+          companySlug={companySlug}
+          dayLabel={new Date(`${addJobDay}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          onPick={(job: any) => {
+            const day = addJobDay;
+            setAddJobDay(null);
+            onScheduleJob(job, day);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -18,15 +18,16 @@ type Company = {
 
 export default function CalendarClient({ company }: { company: Company }) {
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  // Previously never fetched at all for leads opened from the calendar —
-  // the list endpoint that feeds the calendar grid doesn't include either
-  // of these, so BillingSection silently showed no payment history for
-  // any lead opened this way, even ones that had real payments recorded.
   const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [calendarRefreshKey, setCalendarRefreshKey] = useState(0);
+  // Which top-level tab LeadModal should open on. Stays 'overview' for
+  // every normal path through Calendar; only set to 'schedule' by the
+  // "+ Add a job to this day" flow below, then reset once the modal closes
+  // so the next lead opened the normal way still lands on Overview.
+  const [modalInitialTab, setModalInitialTab] = useState<'overview' | 'schedule'>('overview');
 
   useEffect(() => {
     fetchCurrentUser();
@@ -143,6 +144,7 @@ export default function CalendarClient({ company }: { company: Company }) {
   // already used in LeadsClient.tsx and CompanyDashboardClient.tsx. Without
   // this, selectedLead stayed permanently stuck on the bare list row.
   const openLead = useCallback(async (job: any) => {
+    setModalInitialTab('overview');
     setSelectedLead(job);
     setSelectedLeadPayments([]);
     setSelectedLeadActivity([]);
@@ -156,6 +158,36 @@ export default function CalendarClient({ company }: { company: Company }) {
       }
     } catch (error) {
       console.error('Failed to load lead detail:', error);
+    }
+  }, []);
+
+  // "+ Add a job to this day" — picked from Calendar's day drawer. Fetches
+  // the job's real detail same as openLead above, then seeds
+  // scheduled_date with the day that was clicked (client-side only, not
+  // saved to the DB) so the Schedule tab's Date badge shows up already
+  // filled in when the modal opens. The person still has to hit Save
+  // inside Schedule to actually persist it — this only pre-fills the
+  // starting point, it doesn't silently schedule anything on its own.
+  // Same seed-then-fetch shape LeadsClient.tsx already uses for its
+  // deep-link flow, applied here to a new field instead of a new lead.
+  const scheduleJobOnDay = useCallback(async (job: { lead_id: number; project_id: number; customer_name: string }, day: string) => {
+    setModalInitialTab('schedule');
+    setSelectedLead({ id: job.lead_id, name: job.customer_name, project_id: job.project_id });
+    setSelectedLeadPayments([]);
+    setSelectedLeadActivity([]);
+    try {
+      const res = await fetch(`/api/leads/${job.lead_id}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.lead) {
+        const seeded = data.lead.scheduled_date
+          ? data.lead
+          : { ...data.lead, scheduled_date: day };
+        setSelectedLead(seeded);
+        setSelectedLeadPayments(data.payments || []);
+        setSelectedLeadActivity(data.activity || []);
+      }
+    } catch (error) {
+      console.error('Failed to load job detail:', error);
     }
   }, []);
 
@@ -196,15 +228,16 @@ export default function CalendarClient({ company }: { company: Company }) {
   <Calendar
     companySlug={company.slug}
     onSelectLead={openLead}
+    onScheduleJob={scheduleJobOnDay}
     statusOptions={statusOptions}
-    key={calendarRefreshKey}
+    refreshTrigger={calendarRefreshKey}
   />
 
       {/* LEAD MODAL */}
       {selectedLead && (
       <LeadModal
           lead={selectedLead}
-          onClose={() => setSelectedLead(null)}
+          onClose={() => { setSelectedLead(null); setModalInitialTab('overview'); }}
           onUpdateStatus={updateLeadStatus}
           onAddNote={addNote}
           onDeleteLead={deleteLead}
@@ -217,6 +250,7 @@ export default function CalendarClient({ company }: { company: Company }) {
           companySlug={company.slug}
           company={company}
           teamMembers={teamMembers}
+          initialTab={modalInitialTab}
         />
       )}
     </div>

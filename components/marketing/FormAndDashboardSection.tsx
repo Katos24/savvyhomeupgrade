@@ -524,7 +524,6 @@ export default function FormAndDashboardSection() {
                 isDark={true}
                 isRefreshing={isSubmitting}
                 planTier="pro"
-                onSidebarOpen={() => {}}
                 onCreateLead={() => {}}
                 onLockedFeature={() => {}}
                 onRefresh={() => {}}

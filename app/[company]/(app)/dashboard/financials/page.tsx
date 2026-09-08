@@ -25,6 +25,13 @@ export default async function FinancialsPage({
   if (!companyRows.length) notFound();
   const company = companyRows[0];
 
+  // deposit_type/deposit_value/deposit_paid_at added — without these,
+  // FinancialsClient has no way to know a job even has deposit terms, so
+  // "Partial" was the only status any deposit-in-progress job could ever
+  // show, with no distinction from "deposit's done, owes the remainder."
+  // Same missing-column pattern already found and fixed in
+  // payments/route.ts and generate-invoice-pdf/route.ts earlier — this is
+  // the same gap, just in Financials' own query.
   const projectRows = await sql`
     SELECT
       p.id,
@@ -41,6 +48,9 @@ export default async function FinancialsPage({
       p.scheduled_date,
       p.documents,
       p.quote_data,
+      p.deposit_type,
+      p.deposit_value,
+      p.deposit_paid_at,
       COALESCE(p.category, l.category) as category,
       p.status,
       p.created_at,
@@ -56,14 +66,6 @@ export default async function FinancialsPage({
     ORDER BY p.created_at DESC
   `;
 
-  // Real transactions from the payments ledger — one row per actual
-  // payment event, not one row per job. Same shape as Dashboard's
-  // dashboard-stats/route.ts, which already gets this right: the previous
-  // version of "recent payments" here was derived from projectRows above
-  // (one row per job, using payment_amount — a lifetime running total),
-  // which structurally could never show two separate payments on the same
-  // job as two separate entries. Excludes refunds for the same reason
-  // Dashboard's does — "money that came in," not money going back out.
   const paymentRows = await sql`
     SELECT
       pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,

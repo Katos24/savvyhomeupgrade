@@ -35,6 +35,11 @@ type LeadModalProps = {
   /** From /api/leads/[id], threaded down to BillingSection. */
   payments?: any[];
   activity?: any[];
+  /** Which top-level tab to open on. Defaults to 'overview' — used by
+   *  Calendar's "+ Add a job to this day" flow to land directly on
+   *  Schedule instead of making the person navigate there manually after
+   *  the modal opens. */
+  initialTab?: TopTab;
 };
 
 export default function LeadModal({
@@ -52,11 +57,12 @@ export default function LeadModal({
   teamMembers = [],
   payments,
   activity,
+  initialTab,
 }: LeadModalProps) {
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [activeTab, setActiveTab] = useState<TopTab>('overview');
+  const [activeTab, setActiveTab] = useState<TopTab>(initialTab || 'overview');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [showCompletionSummary, setShowCompletionSummary] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState(lead.status || statusOptions[0]?.value);

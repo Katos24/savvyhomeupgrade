@@ -475,10 +475,11 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         let conflictRow: any = null;
         let conflictName: string | null = null;
 
-        for (const row of sameDay) {
+       for (const row of sameDay) {
           const existingAssignees = [row.assigned_to, ...parseExtra(row.additional_assignees)].filter(Boolean);
           const overlapName = newAssignees.find((n) => existingAssignees.includes(n));
           if (!overlapName) continue;
+          if (!row.scheduled_time) continue;
 
           const existingStart = toMinutes(row.scheduled_time);
           const existingEnd = row.scheduled_end_time ? toMinutes(row.scheduled_end_time) : existingStart;

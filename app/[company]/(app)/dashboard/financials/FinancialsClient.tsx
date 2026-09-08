@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Download, ChevronDown } from 'lucide-react';
 import FinancialsOverview from './FinancialsOverview';
 import InvoicesList from './InvoicesList';
+import { getDepositAmount, isDepositSatisfied } from '@/lib/billing';
 
 type Props = {
   company: any;
@@ -79,10 +80,16 @@ function invoiceState(p: any): InvoiceState {
 
 export type Tab = 'overview' | 'invoices';
 
-export default function FinancialsClient({ company, projects, isBookkeeperView = false, recentPayments: realPayments = [] }: Props) {
+export default function FinancialsClient({
+  company,
+  projects,
+  isBookkeeperView = false,
+  recentPayments: realPayments = [],
+}: Props) {
   const [period, setPeriod] = useState('year');
   const [periodOpen, setPeriodOpen] = useState(false);
   const [tab, setTab] = useState<Tab>('overview');
+  const [activeFilter, setActiveFilter] = useState<InvoiceState | 'all'>('all');
 
   const periodFiltered = useMemo(() => filterByPeriod(projects, period), [projects, period]);
 
@@ -96,15 +103,46 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
         const remindedToday =
           p.reminder_sent_at &&
           new Date(p.reminder_sent_at).toDateString() === new Date().toDateString();
+
+        const owed = Math.max(total - collected, 0);
+
+        // Deposit-vs-balance phase, using the same canonical billing.ts
+        // functions already proven correct across seven other files this
+        // session (getOrCreateCheckoutSession, BillingSection,
+        // generate-invoice-pdf, LeadModalHeader, send_invoice_to_customer,
+        // get_payment_link, save_deposit_terms) — not a new, eighth
+        // reimplementation of the deposit-satisfaction rule. Requires
+        // deposit_type/deposit_value/deposit_paid_at on each project row,
+        // which page.tsx's query now selects (previously missing —
+        // without them there was no way to know a job even had deposit
+        // terms, so every deposit-in-progress job just showed "Partial"
+        // with no distinction from "deposit's done, owes the remainder").
+        const billingInputs = {
+          total,
+          paidAmount: collected,
+          depositType: p.deposit_type,
+          depositValue: p.deposit_value,
+          depositPaidAt: p.deposit_paid_at,
+        };
+        const hasDepositTerms = getDepositAmount(billingInputs) > 0;
+        const depositSatisfied = isDepositSatisfied(billingInputs);
+        // null means "no deposit terms" or "fully paid" — nothing extra to
+        // show. Only jobs genuinely mid-deposit-workflow get a phase.
+        const billingPhase: 'deposit' | 'balance' | null =
+          !hasDepositTerms || owed <= 0.005
+            ? null
+            : depositSatisfied ? 'balance' : 'deposit';
+
         const derived = {
           ...p,
           _total: total,
           _collected: collected,
-          _owed: Math.max(total - collected, 0),
+          _owed: owed,
           _overdue: daysOverdue(p),
           _bucket: bucketFor(p),
           _invoiced: !!p.invoice_sent_at,
           _remindedToday: !!remindedToday,
+          _billingPhase: billingPhase,
         };
         return { ...derived, _state: invoiceState(derived) };
       }),
@@ -133,13 +171,6 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
     [aging]
   );
 
-  // Mapped from the real payments-table rows fetched in page.tsx, into the
-  // exact shape FinancialsOverview already expects (id / customer_name /
-  // payment_date / _collected) — FinancialsOverview itself needed zero
-  // changes, since it was always correctly rendering whatever shape it
-  // was handed. paid_on is a plain DATE column ("2026-09-02"), unlike the
-  // ISO-timestamp gotcha that caused the Dashboard "Invalid Date" bug, so
-  // no special parsing is needed here.
   const recentPayments = useMemo(
     () =>
       realPayments.map((p) => ({
@@ -156,6 +187,12 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
     if (period !== 'all') params.set('time', period);
     return `/api/company/${company.slug}/export-csv?${params.toString()}`;
   })();
+
+  // Callback to bridge Overview clicks directly to filtered Invoices list view
+  const handleSelectFilter = (filterKey: InvoiceState | 'all') => {
+    setActiveFilter(filterKey);
+    setTab('invoices');
+  };
 
   return (
     <div className="text-stone-900">
@@ -210,7 +247,12 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
           ] as const).map(([key, label]) => (
             <button
               key={key}
-              onClick={() => setTab(key)}
+              onClick={() => {
+                if (key === 'invoices' && tab === 'overview') {
+                  setActiveFilter('all');
+                }
+                setTab(key);
+              }}
               className={`relative pb-3 text-sm font-medium transition-colors ${
                 tab === key ? 'text-stone-900' : 'text-stone-500 hover:text-stone-700'
               }`}
@@ -235,10 +277,16 @@ export default function FinancialsClient({ company, projects, isBookkeeperView =
             notInvoicedTotal={notInvoicedTotal}
             notInvoicedCount={notInvoiced.length}
             recentPayments={recentPayments}
+            onSelectFilter={handleSelectFilter}
           />
         </div>
         <div style={{ display: tab === 'invoices' ? 'block' : 'none' }}>
-          <InvoicesList company={company} withMoney={withMoney} isBookkeeperView={isBookkeeperView} />
+          <InvoicesList
+            company={company}
+            withMoney={withMoney}
+            isBookkeeperView={isBookkeeperView}
+            initialFilter={activeFilter}
+          />
         </div>
       </div>
     </div>

@@ -1,21 +1,24 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import Link from 'next/link';
 import { toast } from 'sonner';
-import { Search, ChevronDown, ChevronUp, BellRing, Loader2, X, ExternalLink } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, BellRing, Loader2, X } from 'lucide-react';
 import InvoiceDetailDrawer from './InvoiceDetailDrawer';
 import type { InvoiceState } from './FinancialsClient';
 import BillingOverlay from './BillingOverlay';
 
+export type { InvoiceState };
+
 const fmtExact = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
+
 const fmtDate = (d: string | null) => {
   if (!d) return '—';
   const date = new Date(d);
   if (isNaN(date.getTime())) return '—';
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
+
 const fmtDateLong = (d: string | null) => {
   if (!d) return null;
   const date = new Date(d);
@@ -23,8 +26,6 @@ const fmtDateLong = (d: string | null) => {
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 };
 
-// Same bright-dot + darker-text badge convention used in TableView and
-// DashboardStats elsewhere in the app, for visual consistency.
 const STATE_META: Record<InvoiceState, { label: string; dot: string; text: string; bg: string }> = {
   draft:    { label: 'Draft',    dot: '#a8a29e', text: '#57534e', bg: '#a8a29e18' },
   sent:     { label: 'Sent',     dot: '#3b82f6', text: '#1d4ed8', bg: '#3b82f618' },
@@ -50,20 +51,27 @@ export default function InvoicesList({
   company,
   withMoney,
   isBookkeeperView,
+  initialFilter = 'all',
 }: {
   company: any;
   withMoney: any[];
   isBookkeeperView: boolean;
+  initialFilter?: InvoiceState | 'all';
 }) {
-  const [filter, setFilter] = useState<InvoiceState | 'all'>('all');
+  const [filter, setFilter] = useState<InvoiceState | 'all'>(initialFilter);
   const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
-   const [selected, setSelected] = useState<any | null>(null);
+  const [selected, setSelected] = useState<any | null>(null);
   const [billingLeadId, setBillingLeadId] = useState<number | null>(null);
   const [remindTarget, setRemindTarget] = useState<any | null>(null);
   const [sending, setSending] = useState(false);
   const [remindedIds, setRemindedIds] = useState<Set<number>>(new Set());
+
+  // Sync state if initialFilter prop changes
+  useEffect(() => {
+    setFilter(initialFilter);
+  }, [initialFilter]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: withMoney.length };
@@ -120,21 +128,17 @@ export default function InvoicesList({
 
   const PAGE_SIZE = 25;
   const [page, setPage] = useState(1);
- 
-  // Any change to what's being filtered/sorted lands back on page 1 —
-  // otherwise narrowing a filter while sitting on page 5 could show "No
-  // invoices match" even when matches exist, just not on the page you're
-  // stuck on.
+
   useEffect(() => {
     setPage(1);
   }, [filter, search, sortKey, sortDir]);
- 
+
   const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const pagedRows = useMemo(
     () => rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
     [rows, page]
   );
- 
+
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
       if (sortDir === 'asc') {
@@ -147,9 +151,6 @@ export default function InvoicesList({
       setSortDir('desc');
     }
   };
-
-  const jobHref = (p: any) =>
-    isBookkeeperView ? '#' : `/${company.slug}/dashboard?lead=${p.lead_id || p.id}`;
 
   const sendReminder = async () => {
     const p = remindTarget;
@@ -238,8 +239,8 @@ export default function InvoicesList({
         {rows.length === 0 ? (
           <p className="px-5 py-14 text-center text-[14px] text-stone-400">No invoices match.</p>
         ) : (
-pagedRows.map((p, i) => {
-                const meta = STATE_META[p._state as InvoiceState];
+          pagedRows.map((p, i) => {
+            const meta = STATE_META[p._state as InvoiceState] || STATE_META.draft;
             const alreadyReminded = p._remindedToday || remindedIds.has(p.id);
             const canRemind = !isBookkeeperView && p._owed > 0.005 && p._invoiced;
             return (
@@ -263,6 +264,19 @@ pagedRows.map((p, i) => {
                     <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
                     {meta.label}
                   </span>
+                  {/* Deposit-vs-balance detail, same cell as the status
+                      pill — deliberately not a new grid column, so this
+                      slots into the existing 2-col mobile / 6-col desktop
+                      layout without disturbing either. */}
+                  {p._billingPhase && (
+                    <p
+                      className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
+                        p._billingPhase === 'deposit' ? 'text-amber-600' : 'text-blue-600'
+                      }`}
+                    >
+                      {p._billingPhase === 'deposit' ? 'Deposit due' : 'Balance due'}
+                    </p>
+                  )}
                 </div>
                 <div className="text-[12px] tabular-nums text-stone-500">{fmtDate(p.payment_due_date)}</div>
                 <div className="text-[12px] tabular-nums text-stone-500">{fmtDate(p.invoice_sent_at)}</div>
@@ -291,7 +305,6 @@ pagedRows.map((p, i) => {
         )}
       </div>
 
-     
       {rows.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-[12px] tabular-nums text-stone-400">
@@ -321,9 +334,8 @@ pagedRows.map((p, i) => {
           )}
         </div>
       )}
- 
 
-            {selected && (
+      {selected && (
         <InvoiceDetailDrawer
           project={selected}
           stateMeta={STATE_META[selected._state as InvoiceState]}
@@ -332,14 +344,14 @@ pagedRows.map((p, i) => {
         />
       )}
 
-          {billingLeadId && (
+      {billingLeadId && (
         <BillingOverlay
           leadId={billingLeadId}
           company={company}
           onClose={() => setBillingLeadId(null)}
         />
       )}
-      {/* Reminder modal — unchanged from before */}
+
       {remindTarget && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-stone-900/50 p-4 backdrop-blur-sm sm:items-center"

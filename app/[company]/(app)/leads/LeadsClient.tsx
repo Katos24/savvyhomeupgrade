@@ -3,14 +3,12 @@
 import {
   useState, useEffect, useRef, useMemo, useCallback, useTransition,
 } from 'react';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import LeadModal from '@/components/dashboard/LeadModal';
-import Sidebar from '@/components/dashboard/Sidebar';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
 import { type PlanTier } from '@/lib/permissions';
-import PaymentReminderBanner from '@/components/PaymentReminderBanner';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
 import DashboardTour from '@/components/dashboard/DashboardTour';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
@@ -25,6 +23,17 @@ import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 // NOTE: DashboardStats intentionally not imported here — stats now live on
 // the Dashboard page only. This page is leads-only, full pipeline, card
 // view by default.
+//
+// NOTE on navigation: this page used to render its own Sidebar instance
+// (state, mobile overlay, the whole block) with DashboardHeader's hamburger
+// opening it. That's gone now — CompanyShell (app/[company]/CompanyShell.tsx)
+// wraps every page under this route and already provides the real
+// navigation: a pinned, collapsible rail on desktop, and its own working
+// mobile drawer with its own hamburger in its own top bar. The version that
+// used to live here was invisible/unreachable dead code — CompanyShell's
+// instance is what's actually in the DOM regardless of what this file did.
+// Confirmed via CompanyShell.tsx and app/[company]/layout.tsx directly
+// before removing this, not assumed.
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,7 +115,6 @@ export default function LeadsClient({ company }: { company: Company }) {
     if (typeof window === 'undefined') return 'cards';
     return (localStorage.getItem('leads-view') as ViewMode) || 'cards';
   });
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isDark, setIsDark] = useState<boolean>(() => {
@@ -652,36 +660,9 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
         Skip to main content
       </a>
 
-      {/* Sidebar overlay */}
-      <div
-        className={`fixed inset-0 transition-all duration-300 ${sidebarOpen ? 'visible' : 'invisible pointer-events-none'}`}
-        style={{ zIndex: sidebarOpen ? 10000 : 100 }}
-        aria-hidden={!sidebarOpen}
-      >
-        <div
-          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0'}`}
-          onClick={() => setSidebarOpen(false)}
-        />
-        <aside
-          className={`absolute left-0 top-0 bottom-0 w-72 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-          style={{ zIndex: sidebarOpen ? 10001 : 110 }}
-          aria-label="Navigation sidebar"
-        >
-          <Sidebar
-            companySlug={company.slug}
-            companyName={company.name}
-            companyLogoUrl={company.logo_url}
-            currentUser={currentUser}
-            onLogout={handleLogout}
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            currentView={currentView}
-            onViewChange={setCurrentView}
-            brandColor1={company.email_brand_color_1 || '#2563eb'}
-            brandColor2={company.email_brand_color_2 || '#4f46e5'}
-          />
-        </aside>
-      </div>
+      {/* Sidebar removed from here — CompanyShell now owns navigation
+          entirely (pinned desktop rail + its own mobile drawer/hamburger).
+          The block that used to be here was invisible dead code. */}
 
       {/* Banners */}
       <div className="relative z-10">
@@ -693,12 +674,7 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
           subscriptionCancelAt={company.subscription_cancel_at}
           planTier={company.plan_tier || 'free'}
         />
-        <PaymentReminderBanner
-          slug={company.slug}
-          planTier={planTier}
-          onSelectLead={openLead}
-          allLeads={allLeads}
-        />
+   
         <PaymentToastPoller
           slug={company.slug}
           onSelectLead={(leadId) => {
@@ -716,7 +692,6 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
           isDark={isDark}
           isRefreshing={isRefreshing}
           planTier={planTier}
-          onSidebarOpen={() => setSidebarOpen(true)}
           onCreateLead={() => setIsCreateModalOpen(true)}
           onLockedFeature={setLockedDashboardModal}
           onRefresh={() => fetchLeads(1, false)}
@@ -839,7 +814,7 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
           userName={currentUser?.name} isDark={isDark} planTier={planTier}
           onToggleTheme={() => setIsDark(v => !v)}
           onToggleView={(view) => setCurrentView(view)}
-          onOpenSidebar={() => setSidebarOpen(true)}
+          onOpenSidebar={() => {}}
           onOpenCreateModal={() => setIsCreateModalOpen(true)}
           onComplete={() => setTourActive(false)}
         />

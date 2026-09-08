@@ -9,7 +9,7 @@ import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
 import { AiChatWidget, LockedFeatureModal } from '@/components/dashboard/DashboardModals';
 import { Toaster } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
-import PaymentReminderBanner from '@/components/PaymentReminderBanner';
+import PaymentRemindersWidget from '@/components/dashboard/PaymentRemindersWidget';
 import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 import { type PlanTier } from '@/lib/permissions';
 
@@ -343,12 +343,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           subscriptionCancelAt={company.subscription_cancel_at}
           planTier={company.plan_tier || 'free'}
         />
-        <PaymentReminderBanner
-          slug={company.slug}
-          planTier={planTier}
-          onSelectLead={(lead: any) => openLead(lead.id)}
-          allLeads={[]}
-        />
         <PaymentToastPoller slug={company.slug} onSelectLead={(leadId) => openLead(leadId)} />
       </div>
 
@@ -503,7 +497,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                           key={job.project_id}
                           onClick={() => openLead(job.lead_id)}
                           className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 text-left transition ${
-                            isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5] active:bg-black/5'
+                            isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5]'
                           }`}
                         >
                           <div className="min-w-0 flex-1">
@@ -560,63 +554,81 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               </div>
             </div>
 
-            {/* Recent Payments */}
-            <div className="mt-6 sm:mt-8">
-              <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Recent Payments</h2>
-              <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
-                {stats.recent_payments.length === 0 ? (
-                  <div className="px-4 sm:px-5 py-8 sm:py-10 text-center">
-                    <p className={`text-xs sm:text-sm ${subText}`}>No payments recorded yet.</p>
+            {/* Side-by-Side Grid: Payment Reminders & Recent Payments */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 sm:mt-8">
+              {/* Left Column: Payment Reminders Widget */}
+              <div className="flex flex-col h-full min-w-0">
+                <PaymentRemindersWidget
+                  slug={company.slug}
+                  companyName={company.name}
+                  planTier={planTier}
+                  isDark={isDark}
+                  onSelectLead={(leadId) => openLead(leadId)}
+                />
+              </div>
+
+              {/* Right Column: Recent Payments */}
+              <div className="flex flex-col h-full min-w-0">
+                <div className={`rounded-2xl border ${cardBg} overflow-hidden font-sans flex flex-col h-full`}>
+                  <div className={`flex items-center justify-between px-4 sm:px-5 py-3.5 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                    <h3 className={`text-sm sm:text-base font-semibold ${cardText}`}>Recent Payments</h3>
                   </div>
-                ) : (
-                  <div className={`divide-y ${isDark ? 'divide-white/10' : 'divide-[#e7e2d8]'}`}>
-                    {stats.recent_payments.map((p) => {
-                      const badge = paymentStatusBadge(p.payment_status);
-                      const badgeTint = badge
-                        ? {
-                            emerald: isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-700',
-                            amber: isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700',
-                            rose: isDark ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-50 text-rose-700',
-                          }[badge.tint]
-                        : '';
-                      return (
-                        <button
-                          key={p.id}
-                          onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
-                          className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 sm:py-4 text-left transition ${
-                            isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5] active:bg-black/5'
-                          }`}
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className={`text-sm sm:text-base font-semibold truncate ${cardText}`}>{p.customer_name}</p>
-                            <p className={`text-xs ${subText}`}>
-                              {p.kind === 'deposit' ? 'Deposit' : p.kind === 'balance' ? 'Balance' : 'Payment'}
-                              {' · '}
-                              {fmtShortDate(p.paid_on)}
-                            </p>
-                          </div>
-                          <div className="flex flex-col items-end gap-1 shrink-0">
-                            <p className={`text-xs sm:text-sm font-semibold tabular-nums ${cardText}`}>
-                              {fmtMoney(parseFloat(String(p.amount)))}
-                            </p>
-                            {badge && (
-                              <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeTint}`}>
-                                {badge.label}
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
+
+                  <div className={`divide-y overflow-y-auto max-h-[380px] flex-1 ${isDark ? 'divide-white/10' : 'divide-[#e7e2d8]'}`}>
+                    {stats.recent_payments.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <p className={`text-xs sm:text-sm ${subText}`}>No payments recorded yet.</p>
+                      </div>
+                    ) : (
+                      stats.recent_payments.map((p) => {
+                        const badge = paymentStatusBadge(p.payment_status);
+                        const badgeTint = badge
+                          ? {
+                              emerald: isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-700',
+                              amber: isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700',
+                              rose: isDark ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-50 text-rose-700',
+                            }[badge.tint]
+                          : '';
+                        return (
+                          <button
+                            key={p.id}
+                            onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
+                            className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 text-left transition ${
+                              isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5]'
+                            }`}
+                          >
+                            <div className="min-w-0 flex-1">
+                              <p className={`text-sm font-semibold truncate ${cardText}`}>{p.customer_name}</p>
+                              <p className={`text-xs ${subText}`}>
+                                {p.kind === 'deposit' ? 'Deposit' : p.kind === 'balance' ? 'Balance' : 'Payment'}
+                                {' · '}
+                                {fmtShortDate(p.paid_on)}
+                              </p>
+                            </div>
+                            <div className="flex flex-col items-end gap-1 shrink-0">
+                              <p className={`text-xs sm:text-sm font-semibold tabular-nums ${cardText}`}>
+                                {fmtMoney(parseFloat(String(p.amount)))}
+                              </p>
+                              {badge && (
+                                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeTint}`}>
+                                  {badge.label}
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
                   </div>
-                )}
-                <div className={`px-4 sm:px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
-                  <button
-                    onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
-                    className={`text-xs sm:text-sm font-semibold inline-flex items-center gap-1 py-1 ${cardText}`}
-                  >
-                    View all payments <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
+
+                  <div className={`px-4 sm:px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                    <button
+                      onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
+                      className={`text-xs sm:text-sm font-semibold inline-flex items-center gap-1 py-1 ${cardText}`}
+                    >
+                      View all payments <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
