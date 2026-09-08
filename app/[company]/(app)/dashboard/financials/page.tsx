@@ -66,6 +66,13 @@ export default async function FinancialsPage({
     ORDER BY p.created_at DESC
   `;
 
+  // Sorted by created_at (when actually entered), not paid_on (the
+  // business date, freely backdated by whoever records a manual payment).
+  // This is an activity feed — "recent" should mean "just happened,"
+  // not "happened on a recent calendar date." A payment entered today
+  // but backdated to last week previously had to out-compete every
+  // other payment with a later paid_on for one of the top 6 slots, so it
+  // could silently vanish from "recent" the moment it was created.
   const paymentRows = await sql`
     SELECT
       pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,
@@ -75,7 +82,7 @@ export default async function FinancialsPage({
     JOIN leads l ON pr.lead_id = l.id
     WHERE pay.company_id = ${company.id}
       AND pay.kind <> 'refund'
-    ORDER BY pay.paid_on DESC, pay.created_at DESC
+    ORDER BY pay.created_at DESC
     LIMIT 6
   `;
 

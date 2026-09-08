@@ -789,7 +789,11 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
 
       <CreateLeadModal
         isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => fetchLeads(1, true)} companySlug={company.slug}
+        onSuccess={() => {
+          lastPollCount.current = null;
+          fetchLeads(1, true);
+        }}
+        companySlug={company.slug}
         companyId={company.id} categories={company.form_categories || []}
         company={company}
       />

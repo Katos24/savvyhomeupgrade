@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useTransition } from 'react';
+import { useState, useEffect, useCallback, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, Plus, ArrowRight, Sun, Moon, Menu } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
@@ -12,6 +12,7 @@ import TrialBanner from '@/components/TrialBanner';
 import PaymentRemindersWidget from '@/components/dashboard/PaymentRemindersWidget';
 import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 import { type PlanTier } from '@/lib/permissions';
+import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
 
 type Company = {
   id: number;
@@ -86,14 +87,6 @@ const fmtShortDate = (d: string | null | undefined) => {
   return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
-const paymentStatusBadge = (status: string | null) => {
-  if (status === 'paid') return { label: 'Paid in Full', tint: 'emerald' as const };
-  if (status === 'partially_paid') return { label: 'Partial', tint: 'amber' as const };
-  if (status === 'refunded') return { label: 'Refunded', tint: 'rose' as const };
-  if (status === 'partially_refunded') return { label: 'Partially Refunded', tint: 'rose' as const };
-  return null;
-};
-
 export default function CompanyDashboardClient({ company }: { company: Company }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -111,23 +104,50 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    return localStorage.getItem('dashboard-theme') !== 'light';
-  });
-
+  // FIX 1 of 2 — hydration mismatch.
+  // Server always renders with no `window`, so it always used the `true`
+  // fallback. The client's FIRST render (during hydration, not a later
+  // re-render) used to read the REAL localStorage value immediately — if
+  // that was 'light', the client's first paint disagreed with what the
+  // server had already sent down, which is exactly what triggers "tree
+  // hydrated but some attributes... didn't match." Now both server and
+  // client render the same `true` default; the real value is applied in
+  // an effect right after mount instead. skipFirstWrite stops the
+  // write-back effect below from firing on that same initial pass and
+  // immediately overwriting the just-corrected value with the stale
+  // default before it ever reaches the screen.
+  const [isDark, setIsDark] = useState<boolean>(true);
+  const skipFirstWrite = useRef(true);
   useEffect(() => {
+    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+  }, []);
+  useEffect(() => {
+    if (skipFirstWrite.current) {
+      skipFirstWrite.current = false;
+      return;
+    }
     localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
 
+  // FIX 2 of 2 — the "stats.leads.new_this_week" crash.
+  // `if (!data.success) throw` only checks the success flag, not that the
+  // response actually has the shape the render depends on. If anything
+  // ever returns success:true without a `leads` key (a partial write, a
+  // caching edge case, a bug in that route), `stats` becomes a truthy but
+  // incomplete object — it passes `{stats && ...}` further down, then
+  // crashes the instant the render tries to read `stats.leads.new_this_week`.
+  // This validates the actual shape before trusting it, turning a future
+  // malformed response into a visible "Could not load dashboard" message
+  // with a Retry button instead of a hard crash.
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`/api/company/${company.slug}/dashboard-stats`, { cache: 'no-store' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Failed to load');
+      if (!data.leads) throw new Error('Dashboard data is incomplete');
       setStats(data);
       setLoadError('');
     } catch (e) {
@@ -580,15 +600,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         <p className={`text-xs sm:text-sm ${subText}`}>No payments recorded yet.</p>
                       </div>
                     ) : (
-                      stats.recent_payments.map((p) => {
-                        const badge = paymentStatusBadge(p.payment_status);
-                        const badgeTint = badge
-                          ? {
-                              emerald: isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-700',
-                              amber: isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700',
-                              rose: isDark ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-50 text-rose-700',
-                            }[badge.tint]
-                          : '';
+                     stats.recent_payments.map((p) => {
+                        const statusInfo = p.payment_status && p.payment_status !== 'paid'
+                          ? getPaymentStatusDisplay(p.payment_status)
+                          : null;
                         return (
                           <button
                             key={p.id}
@@ -609,9 +624,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                               <p className={`text-xs sm:text-sm font-semibold tabular-nums ${cardText}`}>
                                 {fmtMoney(parseFloat(String(p.amount)))}
                               </p>
-                              {badge && (
-                                <span className={`text-[9px] sm:text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded ${badgeTint}`}>
-                                  {badge.label}
+                             {statusInfo && (
+                                <span
+                                  className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                                  style={{ color: statusInfo.color, backgroundColor: statusInfo.bg }}
+                                >
+                                  {statusInfo.label}
                                 </span>
                               )}
                             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Menu } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
@@ -23,16 +23,20 @@ export default function CompanyShell({
   // whatever the current page is showing, so its own mobile top bar
   // (rendered outside any individual page's control) doesn't look like a
   // leftover light-mode bar stacked on top of a dark-themed page.
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    return localStorage.getItem('dashboard-theme') !== 'light';
-  });
+  const [isDark, setIsDark] = useState<boolean>(true);
   useEffect(() => {
+    // Corrects from localStorage after mount, not inside the useState
+    // initializer above. Reading localStorage there ran on both server
+    // (where window doesn't exist, so it fell back to the true default)
+    // and client (where it read the REAL stored value immediately) — if
+    // that real value was 'light', the client's very first render
+    // disagreed with what the server had already sent down, which is
+    // exactly what a hydration mismatch is. Always matching the server's
+    // default first, then correcting once mounted, avoids that at the
+    // cost of a brief flash to the wrong theme on first load.
     const onStorage = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+    onStorage();
     window.addEventListener('storage', onStorage);
-    // Pages toggle theme via their own state, not a cross-tab storage
-    // event, so also re-check on focus/navigation — cheap, and keeps this
-    // bar in sync without needing a shared context just for one value.
     window.addEventListener('focus', onStorage);
     return () => {
       window.removeEventListener('storage', onStorage);
@@ -50,11 +54,30 @@ export default function CompanyShell({
   }, [isHomeSection]);
   // Desktop-only, persisted — mobile drawer never collapses, it's an
   // overlay that closes entirely instead.
-  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return false;
-    return localStorage.getItem('sidebar-collapsed') === 'true';
-  });
+  //
+  // Same hydration-mismatch fix as isDark above: always start with the
+  // server's default (false), correct from localStorage after mount.
+  // skipNextWrite guards against the write-back effect below firing on
+  // that same initial pass and immediately overwriting the just-read
+  // real value with the stale false default — without it, the corrected
+  // value would be set, then clobbered back to false a tick later.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(false);
+  const skipNextWrite = useRef(true);
   useEffect(() => {
+    // Reproduces exactly what the original synchronous-read version
+    // produced on first mount: isHomeSection wins if true, otherwise the
+    // stored preference. Intentionally empty deps — this is the one-time
+    // hydration correction only; the isHomeSection effect declared above
+    // already handles subsequent navigation into/out of Home on its own,
+    // this doesn't need to duplicate that.
+    const stored = localStorage.getItem('sidebar-collapsed') === 'true';
+    setSidebarCollapsed(isHomeSection ? true : stored);
+  }, []);
+  useEffect(() => {
+    if (skipNextWrite.current) {
+      skipNextWrite.current = false;
+      return;
+    }
     localStorage.setItem('sidebar-collapsed', String(sidebarCollapsed));
   }, [sidebarCollapsed]);
 

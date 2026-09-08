@@ -64,11 +64,6 @@ export async function GET(request: Request, { params }: Props) {
     `;
 
     // ── Estimates: open (sent, no accept/decline yet) vs. accepted ──
-    // Assumption: quote_sent_at / quote_accepted_at / quote_declined_at
-    // track the estimate lifecycle — these fields exist and are selected
-    // elsewhere (the leads route), but I haven't seen the code that sets
-    // quote_declined_at, so verify a declined quote actually populates it
-    // rather than just leaving quote_accepted_at null forever.
     const estimatesPromise = sql`
       SELECT
         COUNT(*) FILTER (WHERE p.quote_sent_at IS NOT NULL AND p.quote_accepted_at IS NULL AND p.quote_declined_at IS NULL) as open_estimates,
@@ -80,9 +75,6 @@ export async function GET(request: Request, { params }: Props) {
     `;
 
     // ── Jobs: active count + contract value of active jobs ──
-    // Same 'completed'/'cancelled'/'lost' convention already used in
-    // DashboardStats.tsx and the leads route — a stable status VALUE
-    // regardless of what label a company customizes it to display as.
     const jobsPromise = sql`
       SELECT
         COUNT(*) FILTER (WHERE p.status NOT IN ('completed','cancelled','lost')) as active_jobs,
@@ -123,11 +115,6 @@ export async function GET(request: Request, { params }: Props) {
     `;
 
     // ── Revenue this month: from the payments ledger, not projects.payment_amount ──
-    // projects.payment_amount is a running lifetime total per project — summing
-    // it across projects would double-count payments from prior months. The
-    // payments table (used by the Stripe webhook/BillingSection work) has one
-    // row per transaction with its own paid_on date, including negative-amount
-    // refund rows, so this nets out correctly.
     const revenuePromise = sql`
       SELECT COALESCE(SUM(amount), 0) as revenue_this_month
       FROM payments
@@ -155,6 +142,13 @@ export async function GET(request: Request, { params }: Props) {
     // going back out) — a refund showing up in a "recent payments" list
     // would read as new revenue when it's the opposite.
     //
+    // Sorted by created_at (when actually entered), not paid_on (the
+    // business date, freely backdated on manual entries). This is an
+    // activity feed — "recent" should mean "just happened," not "happened
+    // on a recent calendar date." Matches the same fix already applied in
+    // Financials' equivalent query, so both surfaces agree on what counts
+    // as "recent" for the same underlying data.
+    //
     // pr.payment_status reflects the project's CURRENT state (as of now),
     // not necessarily "was this the exact payment that completed it" — for
     // an older row where a later payment finished the job, this still
@@ -171,7 +165,7 @@ export async function GET(request: Request, { params }: Props) {
       JOIN leads l ON pr.lead_id = l.id
       WHERE pay.company_id = ${companyId}
         AND pay.kind <> 'refund'
-      ORDER BY pay.paid_on DESC, pay.created_at DESC
+      ORDER BY pay.created_at DESC
       LIMIT 6
     `;
 

@@ -575,7 +575,12 @@ export default function BillingSection({
         prefill.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       );
     }
-    if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
+    // Always today, not conditional on paymentDate being empty — that
+    // state gets seeded from lead.payment_date (the project's LAST
+    // payment date) on mount, so once any payment exists, the guard
+    // below never fired and every subsequent "Record Payment" silently
+    // reused a stale old date instead of defaulting to right now.
+    setPaymentDate(new Date().toISOString().split('T')[0]);
     setShowRecordPayment(true);
   };
 
