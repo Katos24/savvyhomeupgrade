@@ -32,7 +32,6 @@ const STATE_META: Record<InvoiceState, { label: string; dot: string; text: strin
   overdue:  { label: 'Overdue',  dot: '#ef4444', text: '#b91c1c', bg: '#ef444418' },
   partial:  { label: 'Partial',  dot: '#eab308', text: '#a16207', bg: '#eab30818' },
   paid:     { label: 'Paid',     dot: '#22c55e', text: '#15803d', bg: '#22c55e18' },
-  refunded: { label: 'Refunded', dot: '#f97316', text: '#c2410c', bg: '#f9731618' },
 };
 
 const FILTERS: { key: InvoiceState | 'all'; label: string }[] = [
@@ -42,7 +41,6 @@ const FILTERS: { key: InvoiceState | 'all'; label: string }[] = [
   { key: 'overdue', label: 'Overdue' },
   { key: 'partial', label: 'Partial' },
   { key: 'paid', label: 'Paid' },
-  { key: 'refunded', label: 'Refunded' },
 ];
 
 type SortKey = 'customer' | 'amount' | 'due' | 'sent';
@@ -51,15 +49,19 @@ export default function InvoicesList({
   company,
   withMoney,
   isBookkeeperView,
-  initialFilter = 'all',
+  filter,
+  onFilterChange,
+  search,
+  onSearchChange,
 }: {
   company: any;
   withMoney: any[];
   isBookkeeperView: boolean;
-  initialFilter?: InvoiceState | 'all';
+  filter: InvoiceState | 'all';
+  onFilterChange: (value: InvoiceState | 'all') => void;
+  search: string;
+  onSearchChange: (value: string) => void;
 }) {
-  const [filter, setFilter] = useState<InvoiceState | 'all'>(initialFilter);
-  const [search, setSearch] = useState('');
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selected, setSelected] = useState<any | null>(null);
@@ -67,11 +69,6 @@ export default function InvoicesList({
   const [remindTarget, setRemindTarget] = useState<any | null>(null);
   const [sending, setSending] = useState(false);
   const [remindedIds, setRemindedIds] = useState<Set<number>>(new Set());
-
-  // Sync state if initialFilter prop changes
-  useEffect(() => {
-    setFilter(initialFilter);
-  }, [initialFilter]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: withMoney.length };
@@ -203,7 +200,7 @@ export default function InvoicesList({
         {FILTERS.map((f) => (
           <button
             key={f.key}
-            onClick={() => setFilter(f.key)}
+            onClick={() => onFilterChange(f.key)}
             className={`rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
               filter === f.key ? 'bg-stone-900 text-white' : 'border border-stone-300 bg-white text-stone-600 hover:bg-stone-50'
             }`}
@@ -219,7 +216,7 @@ export default function InvoicesList({
           <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
           <input
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Client or invoice number..."
             className="w-full rounded-lg border border-stone-300 bg-white py-2 pl-9 pr-3 text-[13px] outline-none transition-colors placeholder:text-stone-400 focus:border-teal-700"
           />

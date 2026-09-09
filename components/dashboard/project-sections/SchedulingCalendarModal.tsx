@@ -424,6 +424,7 @@ export default function SchedulingCalendarModal({
             const checked = localAssignees.includes(m.name);
             const avail = assigneeAvailability[m.name];
             const showStatus = !!avail;
+            const isBusy = showStatus && !avail.available;
 
             return (
               <button
@@ -431,15 +432,25 @@ export default function SchedulingCalendarModal({
                 type="button"
                 onClick={() => setLocalAssignees((prev) => (checked ? prev.filter((n) => n !== m.name) : [...prev, m.name]))}
                 className={`w-full flex items-center gap-3 p-3 rounded-xl border text-left transition touch-manipulation min-h-[52px] ${
-                  checked ? 'border-blue-300 bg-blue-50/60' : 'border-slate-200 hover:bg-slate-50'
+                  checked
+                    ? isBusy
+                      ? 'border-amber-300 bg-amber-50/70'
+                      : 'border-blue-300 bg-blue-50/60'
+                    : isBusy
+                    ? 'border-slate-100 bg-slate-50/60 opacity-60 hover:opacity-90'
+                    : 'border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${checked ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+                <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
+                  checked
+                    ? isBusy ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'
+                    : isBusy ? 'bg-slate-200 text-slate-400' : 'bg-slate-100 text-slate-600'
+                }`}>
                   {m.name?.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-900 truncate">{m.name}</p>
-                  {showStatus && !avail.available && avail.conflict && (
+                  <p className={`text-sm font-semibold truncate ${isBusy && !checked ? 'text-slate-400' : 'text-slate-900'}`}>{m.name}</p>
+                  {isBusy && avail.conflict && (
                     <p className="text-[10px] text-amber-700 truncate mt-0.5">
                       Busy · {avail.conflict.customer_name || 'another job'}
                       {avail.conflict.category ? ` (${formatCategoryLabel(avail.conflict.category)})` : ''}
@@ -447,11 +458,11 @@ export default function SchedulingCalendarModal({
                   )}
                 </div>
                 {showStatus && (
-                  <span className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${avail.available ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                  <span className={`shrink-0 text-[10px] font-bold uppercase tracking-wide px-2 py-1 rounded-full ${avail.available ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-100 text-amber-800'}`}>
                     {avail.available ? 'Available' : 'Busy'}
                   </span>
                 )}
-                {checked && <CheckCircle2 size={15} className="text-blue-600 shrink-0" />}
+                {checked && <CheckCircle2 size={15} className={`shrink-0 ${isBusy ? 'text-amber-600' : 'text-blue-600'}`} />}
               </button>
             );
           })}

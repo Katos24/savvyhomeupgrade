@@ -1,97 +1,50 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Plus, X, CheckSquare, Trash2, Save, AlertTriangle, Layers, DollarSign,
-  AlertCircle, Lock, Check, Percent, HandCoins, Loader2, HelpCircle, Edit2, ChevronDown,
-} from 'lucide-react';
+import { Plus, Layers, AlertCircle, Check, Percent, HandCoins, Loader2, Sun, Moon, CheckSquare, DollarSign, HelpCircle } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
+import {
+  type Category, type QuoteTemplate, type CustomQuestion, type DepositType,
+  fmt, depositLabel, spring, noSpinners, clean, themeTokens,
+  CategoriesLockedSection, QuoteSheetPreviewModal, DeleteServiceConfirmModal,
+} from './CategoriesTaskEditorModal';
+import CategoriesServiceCard from './CategoriesServiceCard';
+import CategoriesTaskEditorModal from './CategoriesTaskEditorModal';
+import CategoriesPricingModal from './CategoriesPricingModal';
+import CategoriesQuestionsModal from './CategoriesQuestionsModal';
 
-// ─── TYPES ───────────────────────────────────────────────────────────────────
-
-type TaskTemplate = { id: string; label: string; order: number };
-type LineItem = { id: string; description: string; quantity: number; unitPrice: number; amount: number };
-type DepositType = 'percent' | 'fixed';
-type QuoteTemplate = {
-  id: string;
-  category: string;
-  items: LineItem[];
-  total: number;
-  tax_rate?: number;
-  deposit_type?: DepositType | null;
-  deposit_value?: number | null;
-};
-type Category = { value: string; label: string; task_templates?: TaskTemplate[] };
-
-// A question now belongs to exactly one service (set from that service's
-// card), instead of the old flat, unscoped list. `category` holds the
-// service's `value`. Legacy questions saved before this existed get bucketed
-// onto the first service at load time rather than silently disappearing.
-type CustomQuestion = {
-  id: string;
-  label: string;
-  type: 'text' | 'select' | 'checkbox';
-  required: boolean;
-  options?: string[];
-  category: string;
-};
-
-// ─── HELPERS ─────────────────────────────────────────────────────────────────
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(isNaN(n) ? 0 : n);
-
-const clean = (v: any): number => {
-  const n = parseFloat(String(v).replace(/[^0-9.]/g, ''));
-  return isNaN(n) ? 0 : n;
-};
-
-// Deposit is calculated on the grand total, tax included — that's what the
-// customer is actually being asked to put down. Capped at the total so a
-// fixed $500 deposit on a $300 job can't exceed the job.
-const depositFor = (total: number, type: DepositType | null | undefined, value: number | null | undefined): number => {
-  const v = Number(value) || 0;
-  if (!type || v <= 0 || total <= 0) return 0;
-  const raw = type === 'percent' ? (total * v) / 100 : v;
-  return Math.min(Math.round(raw * 100) / 100, total);
-};
-
-const depositLabel = (type: DepositType | null | undefined, value: number | null | undefined) => {
-  const v = Number(value) || 0;
-  if (!type || v <= 0) return 'No deposit';
-  return type === 'percent' ? `${v}% deposit` : `${fmt(v)} deposit`;
-};
-
-const spring = { type: 'spring' as const, damping: 28, stiffness: 320 };
-const noSpinners = '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
-
-// ─── LOCKED STATE ────────────────────────────────────────────────────────────
-
-function LockedCategoriesSection({ companySlug }: { companySlug: string }) {
-  return (
-    <div className="w-full font-sans text-slate-900 antialiased">
-      <div className="mx-auto max-w-4xl">
-        <div className="rounded-xl border border-slate-200/80 bg-white py-16 text-center shadow-xs">
-          <Lock className="mx-auto mb-3 h-6 w-6 text-slate-300" />
-          <p className="text-sm font-bold text-slate-800">Services &amp; pricing is on the Basic plan</p>
-          <a
-            href={`/${companySlug}/home?section=billing`}
-            className="mt-4 inline-block rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800"
-          >
-            Upgrade to Basic
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ─── COMPONENT ───────────────────────────────────────────────────────────────
+type ActiveModal =
+  | { type: 'tasks'; categoryIndex: number }
+  | { type: 'pricing'; categoryValue: string }
+  | { type: 'questions'; categoryValue: string }
+  | null;
 
 export default function CategoriesTab({ company, currentUser }: { company: any; currentUser?: any }) {
   const defaultCategories = CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
+
+  // Same key Dashboard uses ('dashboard-theme') so the theme preference
+  // is shared and consistent across the app, not a separate setting just
+  // for this page. Same hydration-safe pattern used there too: server
+  // always renders the `true` default, corrected from localStorage after
+  // mount, with a skip-guard so the write-back effect doesn't immediately
+  // clobber the corrected value with the stale default.
+  const [isDark, setIsDark] = useState<boolean>(true);
+  const skipFirstThemeWrite = useRef(true);
+  useEffect(() => {
+    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+  }, []);
+  useEffect(() => {
+    if (skipFirstThemeWrite.current) {
+      skipFirstThemeWrite.current = false;
+      return;
+    }
+    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
+  const t = themeTokens(isDark);
+  const accentColor = company.email_brand_color_1 || '#2563eb';
 
   const [categories, setCategories] = useState<Category[]>(
     company.form_categories?.length > 0 ? company.form_categories : defaultCategories
@@ -107,53 +60,19 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [newCatError, setNewCatError] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; label: string } | null>(null);
   const [expandedService, setExpandedService] = useState<string | null>(null);
+  const [showQuotePreview, setShowQuotePreview] = useState(false);
 
-  const [taskEditorCatIndex, setTaskEditorCatIndex] = useState<number | null>(null);
-  const [editingTasks, setEditingTasks] = useState<TaskTemplate[]>([]);
-  const [newTaskLabel, setNewTaskLabel] = useState('');
-  const [taskInputError, setTaskInputError] = useState(false);
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
   const [quoteTemplates, setQuoteTemplates] = useState<QuoteTemplate[]>([]);
   const [quotesLoading, setQuotesLoading] = useState(true);
-  const [quoteEditorOpen, setQuoteEditorOpen] = useState(false);
-  const [quoteEditorCatValue, setQuoteEditorCatValue] = useState<string>('');
-  const [editingLineItems, setEditingLineItems] = useState<LineItem[]>([]);
-  const [editingQuoteId, setEditingQuoteId] = useState<string | null>(null);
-  const [newDesc, setNewDesc] = useState('');
-  const [newPrice, setNewPrice] = useState('');
-  const [newQty, setNewQty] = useState('1');
-  const [addingItem, setAddingItem] = useState(false);
-  const [lineItemError, setLineItemError] = useState('');
-  const [quoteSaving, setQuoteSaving] = useState(false);
-  const [quoteError, setQuoteError] = useState('');
-  const [showQuotePreview, setShowQuotePreview] = useState(false);
 
-  // ── Custom Questions, scoped per service ──
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(() => {
     const raw = company.custom_questions || [];
     const fallbackCategory = (company.form_categories?.length > 0 ? company.form_categories : defaultCategories)[0]?.value || 'general';
     return raw.map((q: any) => ({ ...q, category: q.category || fallbackCategory }));
   });
-  const [questionEditorCatValue, setQuestionEditorCatValue] = useState<string>('');
-  const [questionEditorOpen, setQuestionEditorOpen] = useState(false);
-  const [questionSaving, setQuestionSaving] = useState(false);
-  const [questionSaveError, setQuestionSaveError] = useState('');
-  const [newQLabel, setNewQLabel] = useState('');
-  const [newQType, setNewQType] = useState<'text' | 'select' | 'checkbox'>('text');
-  const [newQOptions, setNewQOptions] = useState<string[]>([]);
-  const [newQOptionDraft, setNewQOptionDraft] = useState('');
-  const [editingQId, setEditingQId] = useState<string | null>(null);
-  const [questionLabelError, setQuestionLabelError] = useState('');
 
-  // Tax rate and deposit terms used to be independently editable per pricing
-  // template here. Per your note that this added clutter, quote templates
-  // now simply always use the company-wide tax/deposit settings (below) at
-  // save time — there's nothing to override per template anymore. "Apply to
-  // all templates" (further down) still exists, since it's still the only
-  // way to push a changed default onto templates that haven't been re-saved
-  // since.
-
-  // Company-wide defaults.
   const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
   const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState(String(company.default_tax_rate ?? 0));
@@ -167,9 +86,30 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   const [depositSaving, setDepositSaving] = useState(false);
   const [depositError, setDepositError] = useState('');
 
-  // Which default is being offered for backfill onto existing templates.
   const [applyTarget, setApplyTarget] = useState<'tax' | 'deposit' | null>(null);
   const [applyingToAll, setApplyingToAll] = useState(false);
+
+  useEffect(() => {
+    fetch(`/api/company/${company.slug}/quote-templates`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.success) setQuoteTemplates(d.templates || []);
+      })
+      .catch(() => {})
+      .finally(() => setQuotesLoading(false));
+  }, [company.slug]);
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [isDirty]);
+
+  const markDirty = useCallback(() => setIsDirty(true), []);
 
   const saveTaxRate = async () => {
     const parsed = parseFloat(taxRateDraft);
@@ -188,7 +128,9 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         if (quoteTemplates.length > 0) setApplyTarget('tax');
       }
     } catch {}
-    finally { setTaxRateSaving(false); }
+    finally {
+      setTaxRateSaving(false);
+    }
   };
 
   const saveDepositDefault = async (clearIt = false) => {
@@ -196,8 +138,14 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     const nextType: DepositType | null = clearIt ? null : depositTypeDraft;
 
     if (!clearIt) {
-      if (isNaN(parsed) || parsed <= 0) { setDepositError('Enter an amount above zero.'); return; }
-      if (depositTypeDraft === 'percent' && parsed > 100) { setDepositError('A percent deposit can\'t exceed 100.'); return; }
+      if (isNaN(parsed) || parsed <= 0) {
+        setDepositError('Enter an amount above zero.');
+        return;
+      }
+      if (depositTypeDraft === 'percent' && parsed > 100) {
+        setDepositError("A percent deposit can't exceed 100.");
+        return;
+      }
     }
 
     setDepositSaving(true);
@@ -227,21 +175,14 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     }
   };
 
-  // Pushes one company default onto every saved template. Deliberately touches
-  // a single field so applying a deposit can't quietly reset tax rates.
   const applyDefaultToAllTemplates = async (target: 'tax' | 'deposit') => {
     setApplyingToAll(true);
     setSaveError('');
-
     try {
-      // Normalize items the way openQuoteEditor does. Stored items don't
-      // reliably carry `amount`, so summing it directly yields NaN totals.
-      const updatedTemplates = quoteTemplates.map((t) => {
-        const normalizedItems = t.items.map((item: any, i: number) => {
+      const updatedTemplates = quoteTemplates.map((tpl) => {
+        const normalizedItems = tpl.items.map((item: any, i: number) => {
           const qty = clean(item.quantity ?? item.qty ?? 1) || 1;
-          const price = clean(
-            item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.unit_cost ?? 0
-          );
+          const price = clean(item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.unit_cost ?? 0);
           return {
             id: item.id || `item_${Date.now() + i}`,
             description: String(item.description || item.label || ''),
@@ -250,32 +191,19 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
             amount: qty * price,
           };
         });
-
         const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
-        const nextTaxRate = target === 'tax' ? taxRate : (t.tax_rate ?? 0);
-        // Applying a deposit shouldn't rewrite pricing. Only recompute the
-        // total when the tax rate is what changed.
-        const nextTotal =
-          target === 'tax' ? subtotal + subtotal * (nextTaxRate / 100) : t.total;
-
+        const nextTaxRate = target === 'tax' ? taxRate : tpl.tax_rate ?? 0;
+        const nextTotal = target === 'tax' ? subtotal + subtotal * (nextTaxRate / 100) : tpl.total;
         return {
-          ...t,
+          ...tpl,
           items: normalizedItems,
           tax_rate: nextTaxRate,
-          // Both columns go null together — deposit_value of 0 alongside a
-          // null type violates the paired CHECK constraint and throws the
-          // whole batch.
-          deposit_type: target === 'deposit' ? depositType : (t.deposit_type ?? null),
-          deposit_value:
-            target === 'deposit'
-              ? (depositType && depositValue > 0 ? depositValue : null)
-              : (t.deposit_value ?? null),
+          deposit_type: target === 'deposit' ? depositType : tpl.deposit_type ?? null,
+          deposit_value: target === 'deposit' ? (depositType && depositValue > 0 ? depositValue : null) : tpl.deposit_value ?? null,
           total: nextTotal,
         };
       });
 
-      // One request, one statement server-side. The old version fired N
-      // parallel updates that overwrote each other.
       const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -287,13 +215,9 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         setSaveError(data.error || 'Could not apply the change. Try again.');
         return;
       }
-
       if (data.updated !== data.requested) {
-        setSaveError(
-          `Only ${data.updated} of ${data.requested} templates updated. Refresh and try again.`
-        );
+        setSaveError(`Only ${data.updated} of ${data.requested} templates updated. Refresh and try again.`);
       }
-
       setQuoteTemplates(data.templates || updatedTemplates);
       setApplyTarget(null);
       setSaveSuccess(true);
@@ -306,41 +230,32 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     }
   };
 
-  const markDirty = useCallback(() => setIsDirty(true), []);
-
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (!isDirty) return;
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
-
-  useEffect(() => {
-    fetch(`/api/company/${company.slug}/quote-templates`)
-      .then(r => r.json())
-      .then(d => { if (d.success) setQuoteTemplates(d.templates || []); })
-      .catch(() => {})
-      .finally(() => setQuotesLoading(false));
-  }, [company.slug]);
-
   const handleAddCategory = () => {
-    if (!newCatLabel.trim()) { setNewCatError('Enter a service name.'); return; }
+    if (!newCatLabel.trim()) {
+      setNewCatError('Enter a service name.');
+      return;
+    }
     const value = newCatLabel.toLowerCase().replace(/[^a-z0-9]+/g, '_');
-    setCategories(prev => [...prev, { value, label: newCatLabel.trim(), task_templates: [] }]);
-    setNewCatLabel(''); setNewCatError(''); setShowAddForm(false); setUseDefaults(false); markDirty();
+    setCategories((prev) => [...prev, { value, label: newCatLabel.trim(), task_templates: [] }]);
+    setNewCatLabel('');
+    setNewCatError('');
+    setShowAddForm(false);
+    setUseDefaults(false);
+    markDirty();
   };
 
   const confirmDeleteCategory = () => {
     if (!deleteConfirm) return;
-    setCategories(prev => prev.filter((_, i) => i !== deleteConfirm.index));
-    setUseDefaults(false); setDeleteConfirm(null); markDirty();
+    setCategories((prev) => prev.filter((_, i) => i !== deleteConfirm.index));
+    setUseDefaults(false);
+    setDeleteConfirm(null);
+    markDirty();
   };
 
   const handleSave = async () => {
-    setSaving(true); setSaveError(''); setSaveSuccess(false);
+    setSaving(true);
+    setSaveError('');
+    setSaveSuccess(false);
     try {
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
@@ -348,1273 +263,398 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
         body: JSON.stringify({ action: 'update-categories', data: { form_categories: useDefaults ? null : categories } }),
       });
       const data = await res.json();
-      if (data.success) { setSaveSuccess(true); setIsDirty(false); setTimeout(() => setSaveSuccess(false), 3000); }
-      else setSaveError(data.error || 'Failed to save.');
-    } catch { setSaveError('Network error.'); }
-    finally { setSaving(false); }
-  };
-
-  const openTaskEditor = (index: number) => {
-    setTaskEditorCatIndex(index);
-    setEditingTasks(categories[index].task_templates || []);
-    setNewTaskLabel(''); setTaskInputError(false);
-  };
-
-  const addTask = () => {
-    if (!newTaskLabel.trim()) { setTaskInputError(true); return; }
-    setEditingTasks(prev => [...prev, { id: `task_${Date.now()}`, label: newTaskLabel.trim(), order: prev.length + 1 }]);
-    setNewTaskLabel(''); setTaskInputError(false);
-  };
-
-  const saveTaskTemplates = async () => {
-    if (newTaskLabel.trim()) { setTaskInputError(true); return; }
-    if (taskEditorCatIndex === null) return;
-    const updatedCategories = [...categories];
-    updatedCategories[taskEditorCatIndex] = { ...updatedCategories[taskEditorCatIndex], task_templates: editingTasks };
-    setCategories(updatedCategories);
-    setUseDefaults(false);
-    try {
-      await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-categories', data: { form_categories: updatedCategories } }),
-      });
-    } catch {}
-    setTaskEditorCatIndex(null);
-    setIsDirty(false);
-  };
-
-  const openQuoteEditor = (catValue: string) => {
-    const existing = quoteTemplates.find(t => t.category === catValue);
-    const mapped: LineItem[] = existing
-      ? existing.items.map((item: any, i: number) => {
-          const qty = clean(item.quantity ?? item.qty ?? 1) || 1;
-          const price = clean(item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.unit_cost ?? 0);
-          return { id: `item_${Date.now() + i}`, description: String(item.description || item.label || ''), quantity: qty, unitPrice: price, amount: qty * price };
-        })
-      : [];
-    setEditingLineItems(mapped);
-    setEditingQuoteId(existing?.id || null);
-    setNewDesc(''); setNewPrice(''); setNewQty('1');
-    setAddingItem(false); setLineItemError(''); setQuoteError('');
-    setQuoteEditorCatValue(catValue);
-    setQuoteEditorOpen(true);
-  };
-
-  const addLineItem = () => {
-    if (!newDesc.trim()) { setLineItemError('Enter a description.'); return; }
-    const price = clean(newPrice);
-    if (!newPrice || price === 0) { setLineItemError('Enter a valid price.'); return; }
-    const qty = clean(newQty) || 1;
-    setEditingLineItems(prev => [...prev, { id: `item_${Date.now()}`, description: newDesc.trim(), quantity: qty, unitPrice: price, amount: qty * price }]);
-    setNewDesc(''); setNewPrice(''); setNewQty('1'); setLineItemError(''); setAddingItem(false);
-  };
-
-  const updateLineItem = (id: string, field: 'description' | 'quantity' | 'unitPrice', value: string) => {
-    setEditingLineItems(prev => prev.map(item => {
-      if (item.id !== id) return item;
-      if (field === 'description') return { ...item, description: value };
-      const num = clean(value);
-      const qty = field === 'quantity' ? (num || 1) : item.quantity;
-      const price = field === 'unitPrice' ? num : item.unitPrice;
-      return { ...item, [field]: num, amount: qty * price };
-    }));
-  };
-
-  const saveQuoteTemplate = async () => {
-    if (newDesc.trim() || newPrice) { setLineItemError('Click + to add this item first.'); return; }
-    if (editingLineItems.length === 0) { setQuoteError('Add at least one line item.'); return; }
-    setQuoteSaving(true); setQuoteError('');
-    const subtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
-    // Always the company's current tax/deposit — no per-template override.
-    const total = subtotal + subtotal * (taxRate / 100);
-    const templateData = {
-      id: editingQuoteId || `custom_${Date.now()}`,
-      category: quoteEditorCatValue,
-      items: editingLineItems,
-      total,
-      tax_rate: taxRate,
-      deposit_type: depositValue > 0 ? depositType : null,
-      deposit_value: depositValue > 0 ? depositValue : null,
-    };
-    try {
-      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: editingQuoteId ? 'update' : 'create', template: templateData }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setQuoteTemplates(result.templates || []);
-        setQuoteEditorOpen(false);
-      } else setQuoteError(result.error || 'Failed to save.');
-    } catch { setQuoteError('Network error.'); }
-    finally { setQuoteSaving(false); }
-  };
-
-  const deleteQuoteTemplate = async () => {
-    if (!editingQuoteId || !confirm('Remove this pricing template?')) return;
-    try {
-      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', templateId: editingQuoteId }),
-      });
-      const result = await res.json();
-      if (result.success) { setQuoteTemplates(result.templates || []); setQuoteEditorOpen(false); }
-    } catch {}
-  };
-
-  // ── Custom Questions, per-service ──
-  const openQuestionEditor = (catValue: string) => {
-    setQuestionEditorCatValue(catValue);
-    setQuestionEditorOpen(true);
-    resetQuestionForm();
-  };
-
-  const resetQuestionForm = () => {
-    setNewQLabel(''); setNewQType('text'); setNewQOptions([]); setNewQOptionDraft('');
-    setEditingQId(null); setQuestionLabelError('');
-  };
-
-  const startEditQuestion = (q: CustomQuestion) => {
-    setEditingQId(q.id);
-    setNewQLabel(q.label);
-    setNewQType(q.type);
-    setNewQOptions(q.options || []);
-    setNewQOptionDraft('');
-    setQuestionLabelError('');
-  };
-
-  const addOrUpdateQuestionInList = () => {
-    if (!newQLabel.trim()) { setQuestionLabelError('Enter a question.'); return; }
-    if (editingQId) {
-      setCustomQuestions(prev => prev.map(q => q.id === editingQId
-        ? { ...q, label: newQLabel.trim(), type: newQType, options: newQType === 'select' ? newQOptions : [] }
-        : q
-      ));
-    } else {
-      setCustomQuestions(prev => [...prev, {
-        id: `q_${Date.now()}`,
-        label: newQLabel.trim(),
-        type: newQType,
-        required: false,
-        options: newQType === 'select' ? newQOptions : [],
-        category: questionEditorCatValue,
-      }]);
-    }
-    resetQuestionForm();
-  };
-
-  const removeQuestion = (id: string) => {
-    setCustomQuestions(prev => prev.filter(q => q.id !== id));
-  };
-
-  const saveQuestionsForService = async () => {
-    setQuestionSaving(true); setQuestionSaveError('');
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-form', data: { questions: customQuestions } }),
-      });
-      const data = await res.json();
       if (data.success) {
-        setQuestionEditorOpen(false);
+        setSaveSuccess(true);
+        setIsDirty(false);
+        setTimeout(() => setSaveSuccess(false), 3000);
       } else {
-        setQuestionSaveError(data.error || 'Failed to save questions.');
+        setSaveError(data.error || 'Failed to save.');
       }
     } catch {
-      setQuestionSaveError('Network error. Try again.');
+      setSaveError('Network error.');
     } finally {
-      setQuestionSaving(false);
+      setSaving(false);
     }
   };
 
-  const activeQuoteEditorCat = categories.find(c => c.value === quoteEditorCatValue);
-  const activeQuestionEditorCat = categories.find(c => c.value === questionEditorCatValue);
-  const questionsForActiveService = customQuestions.filter(q => q.category === questionEditorCatValue);
-
-  const quoteEditorSubtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
-  const quoteEditorTaxAmount = quoteEditorSubtotal * (taxRate / 100);
-  const quoteEditorTotal = quoteEditorSubtotal + quoteEditorTaxAmount;
-  const quoteEditorDeposit = depositFor(quoteEditorTotal, depositType, depositValue);
-  const quoteEditorBalance = quoteEditorTotal - quoteEditorDeposit;
-
-  // Plan gate lives after every hook above, so hook order never changes
-  // between renders regardless of plan_tier.
   if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
-    return <LockedCategoriesSection companySlug={company.slug} />;
+    return <CategoriesLockedSection companySlug={company.slug} isDark={isDark} />;
   }
+
+  const activeModalCategory =
+    activeModal?.type === 'tasks'
+      ? categories[activeModal.categoryIndex]
+      : activeModal
+      ? categories.find((c) => c.value === activeModal.categoryValue)
+      : undefined;
+
+  const totalTasks = categories.reduce((s, c) => s + (c.task_templates?.length || 0), 0);
+  const withPricing = categories.filter((c) => quoteTemplates.some((qt) => qt.category === c.value)).length;
+  const totalQuestions = customQuestions.length;
 
   return (
     <>
-    <div className="w-full font-sans text-slate-900 antialiased space-y-6 sm:space-y-8 pb-24">
-
-        {/* ── TITLE ── no header button: Save lives only in the floating
-            bar below, matching the Booking Form Editor pattern. */}
-        <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Services</h1>
-            <p className="mt-0.5 text-xs font-medium text-slate-500">
-              Manage the services customers can request on your booking form, their pricing, and any extra questions.
-            </p>
-          </div>
-        </div>
-
-        {/* ── HEADLINE CARD ── */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
-          <h2 className="text-sm sm:text-base font-bold leading-snug text-slate-900">
-            These are the services customers pick from on your booking form
-          </h2>
-          <ul className="mt-3 space-y-1.5 text-xs sm:text-sm font-medium leading-relaxed text-slate-600 list-disc pl-4">
-            <li>Every service below shows up as a choice on your public booking form.</li>
-            <li>Pricing templates are just a starting point — everything's editable per job.</li>
-            <li>Task checklists auto-load when a job in that service is created.</li>
-            <li>Custom questions only show customers who picked that specific service.</li>
-          </ul>
-          <button
-            onClick={() => setShowQuotePreview(true)}
-            className="mt-3 text-xs font-semibold text-slate-500 underline hover:text-slate-800 transition"
-          >
-            See where this shows up
-          </button>
-        </div>
-
-        {/* ── APPLY A CHANGED DEFAULT TO EXISTING TEMPLATES ── */}
-        {applyTarget && (
-          <div className="flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between shadow-xs">
-            <p className="text-xs sm:text-sm font-semibold text-emerald-800">
-              Apply {applyTarget === 'tax' ? `${taxRate}% tax` : depositLabel(depositType, depositValue).toLowerCase()} to your{' '}
-              {quoteTemplates.length} existing pricing template{quoteTemplates.length !== 1 ? 's' : ''} too?
-            </p>
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                onClick={() => applyDefaultToAllTemplates(applyTarget)}
-                disabled={applyingToAll}
-                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-emerald-700 disabled:opacity-60 transition"
-              >
-                {applyingToAll ? 'Applying...' : 'Apply to all'}
-              </button>
-              <button
-                onClick={() => setApplyTarget(null)}
-                className="text-xs font-semibold text-emerald-700 hover:underline"
-              >
-                No, just new ones
-              </button>
+      <div className={`min-h-screen ${t.bg} transition-colors`}>
+        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10 space-y-6 sm:space-y-8 pb-24">
+          {/* Header — matches Dashboard's font-light large title + toggle */}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className={`text-xs sm:text-sm font-medium ${t.subText}`}>Booking form setup</p>
+              <h1 className={`text-2xl sm:text-4xl font-light leading-tight ${t.heading}`}>Services</h1>
+              <p className={`mt-1 text-xs sm:text-sm ${t.subText}`}>
+                What customers can request, how it's priced, and what you ask them.
+              </p>
             </div>
+            <button
+              onClick={() => setIsDark((v) => !v)}
+              className={`shrink-0 rounded-xl border p-2.5 transition-colors ${
+                isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
+              }`}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
           </div>
-        )}
 
-        {/* ── STATUS ── */}
-        {saveSuccess && (
-          <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs sm:text-sm font-semibold text-emerald-800 shadow-xs">
-            <Check className="h-4 w-4 shrink-0" /> Saved successfully.
-          </div>
-        )}
-        {saveError && (
-          <div className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-xs font-medium text-rose-700 flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 shrink-0" /> {saveError}
-          </div>
-        )}
-
-        {/* ── ADD SERVICE + COMPANY DEFAULTS ── */}
-        <div className="bg-white rounded-xl border border-slate-200/80 p-5 sm:p-6 shadow-xs space-y-2">
-          <AnimatePresence mode="wait">
-            {showAddForm ? (
-              <motion.div
-                key="form"
-                initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={spring}
-                className="flex flex-col gap-2 sm:flex-row"
-              >
-                <input
-                  autoFocus
-                  value={newCatLabel}
-                  onChange={e => { setNewCatLabel(e.target.value); setNewCatError(''); }}
-                  onKeyDown={e => e.key === 'Enter' && handleAddCategory()}
-                  placeholder="e.g. Plumbing, HVAC, Roofing..."
-                  className={`flex-1 rounded-md border px-4 py-2.5 text-sm font-semibold outline-none transition ${
-                    newCatError ? 'border-rose-400 bg-rose-50' : 'border-slate-300 bg-white focus:border-slate-900 focus:ring-1 focus:ring-slate-900'
-                  }`}
-                />
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleAddCategory}
-                    className="flex-1 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-slate-800 sm:flex-none"
-                  >
-                    Add
-                  </button>
-                  <button
-                    onClick={() => { setShowAddForm(false); setNewCatLabel(''); setNewCatError(''); }}
-                    className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 sm:flex-none"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </motion.div>
-            ) : (
-              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-                <motion.button
-                  key="trigger"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                  onClick={() => setShowAddForm(true)}
-                  className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 sm:w-auto sm:py-2"
-                >
-                  <Plus className="h-3.5 w-3.5" /> Add service
-                </motion.button>
-
-                {editingTaxRate ? (
-                  <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 sm:w-auto">
-                    <div className="flex items-center gap-1">
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        max="100"
-                        value={taxRateDraft}
-                        onChange={(e) => setTaxRateDraft(e.target.value)}
-                        autoFocus
-                        className="w-16 border-none bg-transparent text-sm font-semibold text-slate-900 outline-none"
-                      />
-                      <span className="text-xs font-semibold text-slate-500">%</span>
-                    </div>
-                    <div className="ml-auto flex items-center gap-3 sm:ml-0">
-                      <button
-                        onClick={saveTaxRate}
-                        disabled={taxRateSaving}
-                        className="rounded-md bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-800 transition"
-                      >
-                        {taxRateSaving ? '...' : 'Save'}
-                      </button>
-                      <button
-                        onClick={() => { setEditingTaxRate(false); setTaxRateDraft(String(taxRate)); }}
-                        className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingTaxRate(true)}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition sm:w-auto sm:justify-start sm:py-2"
-                  >
-                    <Percent className="h-3.5 w-3.5 text-slate-500" />
-                    Tax rate: {taxRate}%
-                  </button>
-                )}
-
-                {editingDepositDefault ? (
-                  <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 sm:w-auto">
-                    <div className="flex items-center gap-2">
-                      <div className="flex overflow-hidden rounded-md border border-slate-300">
-                        {(['percent', 'fixed'] as DepositType[]).map((t) => (
-                          <button
-                            key={t}
-                            onClick={() => setDepositTypeDraft(t)}
-                            className={`px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
-                              depositTypeDraft === t ? 'bg-slate-900 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
-                            }`}
-                          >
-                            {t === 'percent' ? '%' : '$'}
-                          </button>
-                        ))}
-                      </div>
-                      <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        max={depositTypeDraft === 'percent' ? 100 : undefined}
-                        value={depositValueDraft}
-                        onChange={(e) => { setDepositValueDraft(e.target.value); setDepositError(''); }}
-                        placeholder={depositTypeDraft === 'percent' ? '50' : '500'}
-                        autoFocus
-                        className={`w-16 border-none bg-transparent text-sm font-semibold text-slate-900 outline-none ${noSpinners}`}
-                      />
-                    </div>
-                    <div className="ml-auto flex items-center gap-3 sm:ml-0">
-                      <button
-                        onClick={() => saveDepositDefault(false)}
-                        disabled={depositSaving}
-                        className="rounded-md bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-slate-800 disabled:opacity-60 transition"
-                      >
-                        {depositSaving ? '...' : 'Save'}
-                      </button>
-                      {depositType && (
-                        <button
-                          onClick={() => saveDepositDefault(true)}
-                          disabled={depositSaving}
-                          className="text-[11px] font-semibold text-rose-500 hover:text-rose-700 transition"
-                        >
-                          Clear
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setEditingDepositDefault(false);
-                          setDepositTypeDraft(depositType ?? 'percent');
-                          setDepositValueDraft(String(depositValue || ''));
-                          setDepositError('');
-                        }}
-                        className="text-[11px] font-semibold text-slate-400 hover:text-slate-600 transition"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setEditingDepositDefault(true)}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition sm:w-auto sm:justify-start sm:py-2"
-                  >
-                    <HandCoins className="h-3.5 w-3.5 text-slate-500" />
-                    {depositType ? `Deposit: ${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}` : 'Deposit: none'}
-                  </button>
-                )}
+          {/* Stat row — same card language as Dashboard's stat grid */}
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
+            {[
+              { label: 'Services', value: categories.length, icon: Layers },
+              { label: 'With pricing', value: `${withPricing}/${categories.length}`, icon: DollarSign },
+              { label: 'Total tasks', value: totalTasks, icon: CheckSquare },
+            ].map((s) => (
+              <div key={s.label} className={`rounded-2xl p-4 sm:p-5 ${t.cardBg}`}>
+                <s.icon className={`h-4 w-4 mb-2 ${t.subText}`} />
+                <p className={`text-xl sm:text-2xl font-semibold tabular-nums ${t.cardText}`}>{s.value}</p>
+                <p className={`text-xs ${t.subText}`}>{s.label}</p>
               </div>
-            )}
-          </AnimatePresence>
-          {newCatError && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-rose-600">
-              <AlertCircle className="h-3 w-3" /> {newCatError}
-            </p>
-          )}
-          {depositError && (
-            <p className="flex items-center gap-1 text-xs font-semibold text-rose-600">
-              <AlertCircle className="h-3 w-3" /> {depositError}
-            </p>
-          )}
-        </div>
+            ))}
+          </div>
 
-        {/* ── SERVICE LIST ── */}
-        <div>
-          <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-            <Layers className="h-4 w-4 text-slate-700" /> Manage each service's tasks, pricing, and questions
-          </h2>
-          <div className="space-y-3">
-            {categories.map((cat, index) => {
-              const taskCount = cat.task_templates?.length || 0;
-              const quoteTemplate = quoteTemplates.find(t => t.category === cat.value);
-              const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate.deposit_value ?? 0) > 0;
-              const questionCount = customQuestions.filter(q => q.category === cat.value).length;
-              return (
+          {applyTarget && (
+            <div className={`flex flex-col gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between`}>
+              <p className="text-sm font-medium text-emerald-500">
+                Apply {applyTarget === 'tax' ? `${taxRate}% tax` : depositLabel(depositType, depositValue).toLowerCase()} to your{' '}
+                {quoteTemplates.length} existing pricing template{quoteTemplates.length !== 1 ? 's' : ''} too?
+              </p>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={() => applyDefaultToAllTemplates(applyTarget)}
+                  disabled={applyingToAll}
+                  className="rounded-xl bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-60"
+                >
+                  {applyingToAll ? 'Applying...' : 'Apply to all'}
+                </button>
+                <button onClick={() => setApplyTarget(null)} className="text-xs font-semibold text-emerald-500 hover:underline">
+                  No, just new ones
+                </button>
+              </div>
+            </div>
+          )}
+
+          {saveSuccess && (
+            <div className="flex items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm font-medium text-emerald-500">
+              <Check className="h-4 w-4 shrink-0" /> Saved successfully.
+            </div>
+          )}
+          {saveError && (
+            <div className="flex items-center gap-2 rounded-2xl border border-rose-500/30 bg-rose-500/5 p-4 text-sm font-medium text-rose-500">
+              <AlertCircle className="h-4 w-4 shrink-0" /> {saveError}
+            </div>
+          )}
+
+          {/* Add service + company defaults */}
+          <div className={`rounded-2xl p-5 sm:p-6 space-y-2 ${t.cardBg}`}>
+            <AnimatePresence mode="wait">
+              {showAddForm ? (
                 <motion.div
-                  key={cat.value}
-                  initial={{ opacity: 0, y: 8 }}
+                  key="form"
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="group bg-white rounded-xl border border-slate-200/80 p-4 sm:p-5 shadow-xs transition-shadow hover:shadow-sm"
+                  exit={{ opacity: 0 }}
+                  transition={spring}
+                  className="flex flex-col gap-2 sm:flex-row"
                 >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                  {/* LEFT: identity + badges */}
-                  <div
-                    className="flex items-start gap-3 flex-1 min-w-0 cursor-pointer"
-                    onClick={() => setExpandedService(expandedService === cat.value ? null : cat.value)}
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                      <Layers className="h-5 w-5 text-slate-600" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-bold text-slate-900 truncate">{cat.label}</h3>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeleteConfirm({ index, label: cat.label }); }}
-                          className="shrink-0 rounded-lg p-1 text-slate-300 opacity-0 transition group-hover:opacity-100 hover:bg-rose-50 hover:text-rose-600"
-                          aria-label={`Delete ${cat.label}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                          taskCount > 0 ? 'border-slate-300 bg-slate-100 text-slate-700' : 'border-slate-200 bg-slate-50 text-slate-400'
-                        }`}>
-                          <CheckSquare className="h-3 w-3" />
-                          {taskCount > 0 ? `${taskCount} Task${taskCount !== 1 ? 's' : ''}` : 'No Tasks'}
-                        </span>
-                        <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                          quoteTemplate ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-400'
-                        }`}>
-                          <DollarSign className="h-3 w-3" />
-                          {quoteTemplate ? `${quoteTemplate.items.length} Item${quoteTemplate.items.length !== 1 ? 's' : ''}` : 'No Pricing'}
-                        </span>
-                        {hasDeposit && (
-                          <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
-                            <HandCoins className="h-3 w-3" />
-                            {quoteTemplate!.deposit_type === 'percent'
-                              ? `${quoteTemplate!.deposit_value}% Down`
-                              : `${fmt(quoteTemplate!.deposit_value ?? 0)} Down`}
-                          </span>
-                        )}
-                        <span className={`inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                          questionCount > 0 ? 'border-blue-200 bg-blue-50 text-blue-700' : 'border-slate-200 bg-slate-50 text-slate-400'
-                        }`}>
-                          <HelpCircle className="h-3 w-3" />
-                          {questionCount > 0 ? `${questionCount} Question${questionCount !== 1 ? 's' : ''}` : 'No Questions'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CHEVRON: toggle at-a-glance summary */}
-                  <button
-                    onClick={() => setExpandedService(expandedService === cat.value ? null : cat.value)}
-                    className="hidden sm:flex shrink-0 items-center justify-center rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
-                    aria-label={expandedService === cat.value ? 'Collapse summary' : 'Expand summary'}
-                  >
-                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedService === cat.value ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {/* RIGHT: actions */}
-                  <div className="flex items-center gap-2 shrink-0 w-full sm:w-auto">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openTaskEditor(index); }}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-xs transition hover:border-slate-900 hover:bg-slate-900 hover:text-white"
-                    >
-                      <CheckSquare className="h-3.5 w-3.5" /> Tasks
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openQuoteEditor(cat.value); }}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-xs transition hover:border-emerald-600 hover:bg-emerald-600 hover:text-white"
-                    >
-                      <DollarSign className="h-3.5 w-3.5" /> Pricing
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); openQuestionEditor(cat.value); }}
-                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-600 shadow-xs transition hover:border-blue-600 hover:bg-blue-600 hover:text-white"
-                    >
-                      <HelpCircle className="h-3.5 w-3.5" /> Questions
-                    </button>
-                  </div>
-                </div>
-
-                {/* AT-A-GLANCE SUMMARY (accordion) */}
-                <AnimatePresence>
-                  {expandedService === cat.value && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="overflow-hidden"
-                    >
-                      <div className="mt-4 pt-4 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        {/* Tasks summary */}
-                        <div className="min-w-0">
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Tasks</p>
-                          {(cat.task_templates || []).length === 0 ? (
-                            <p className="text-[11px] italic text-slate-400">No tasks yet</p>
-                          ) : (
-                            <ul className="max-h-28 space-y-1 overflow-y-auto pr-1">
-                              {(cat.task_templates || []).map((t) => (
-                                <li key={t.id} className="truncate text-[11px] text-slate-600">
-                                  &bull; {t.label}
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </div>
-
-                        {/* Pricing summary */}
-                        <div className="min-w-0">
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Pricing</p>
-                          {!quoteTemplate ? (
-                            <p className="text-[11px] italic text-slate-400">No pricing yet</p>
-                          ) : (
-                            <>
-                              <ul className="max-h-20 space-y-1 overflow-y-auto pr-1">
-                                {quoteTemplate.items.map((item) => (
-                                  <li key={item.id} className="flex items-baseline gap-2 text-[11px] text-slate-600">
-                                    <span className="truncate max-w-[65%]">{item.description || 'Untitled item'}</span>
-                                    <span className="text-slate-500">{fmt(item.unitPrice)}</span>
-                                  </li>
-                                ))}
-                              </ul>
-                              <p className="mt-1.5 text-[11px] font-semibold text-slate-700">
-                                Total: {fmt(quoteTemplate.total)}
-                              </p>
-                              {hasDeposit && (
-                                <p className="text-[10px] font-medium text-amber-700">
-                                  {depositLabel(quoteTemplate.deposit_type, quoteTemplate.deposit_value)}
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
-
-                        {/* Questions summary */}
-                        <div className="min-w-0">
-                          <p className="mb-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">Questions</p>
-                          {customQuestions.filter((q) => q.category === cat.value).length === 0 ? (
-                            <p className="text-[11px] italic text-slate-400">No questions yet</p>
-                          ) : (
-                            <ul className="max-h-28 space-y-1 overflow-y-auto pr-1">
-                              {customQuestions
-                                .filter((q) => q.category === cat.value)
-                                .map((q) => (
-                                  <li key={q.id} className="truncate text-[11px] text-slate-600">
-                                    &bull; {q.label}
-                                  </li>
-                                ))}
-                            </ul>
-                          )}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                </motion.div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── STICKY UNSAVED-CHANGES PROMPT ── */}
-        <AnimatePresence>
-          {isDirty && (
-            <motion.div
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              className="sticky bottom-4 z-40 mx-auto max-w-xl rounded-xl border border-slate-200 bg-white p-4 shadow-xl backdrop-blur-md"
-            >
-              <div className="flex items-center justify-between gap-4">
-                <p className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                  <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
-                  You have unsaved changes.
-                </p>
-                <button
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition"
-                >
-                  {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {saving ? 'Saving...' : 'Save changes'}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-    </div>
-
-        {/* ── TASK EDITOR MODAL ── */}
-        {taskEditorCatIndex !== null && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
-            onClick={() => { setTaskEditorCatIndex(null); setTaskInputError(false); }}
-          >
-            <div
-              className="flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <span className="text-sm font-bold text-slate-900">
-                  {categories[taskEditorCatIndex]?.label} tasks
-                </span>
-                <button
-                  onClick={() => { setTaskEditorCatIndex(null); setTaskInputError(false); }}
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="flex-1 space-y-4 overflow-y-auto p-5">
-                <div className={`flex gap-2 rounded-lg border p-1 transition-colors ${
-                  taskInputError ? 'border-rose-400 bg-rose-50' : 'border-slate-300 bg-slate-50'
-                }`}>
                   <input
-                    value={newTaskLabel}
-                    onChange={e => { setNewTaskLabel(e.target.value); setTaskInputError(false); }}
-                    onKeyDown={e => e.key === 'Enter' && addTask()}
-                    placeholder="Type a task step..."
-                    className="flex-1 bg-transparent px-3 py-2 text-sm font-semibold text-slate-900 outline-none"
+                    autoFocus
+                    value={newCatLabel}
+                    onChange={(e) => {
+                      setNewCatLabel(e.target.value);
+                      setNewCatError('');
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                    placeholder="e.g. Plumbing, HVAC, Roofing..."
+                    className={`flex-1 rounded-xl border px-4 py-2.5 text-sm font-medium outline-none transition ${t.cardText} ${
+                      newCatError ? 'border-rose-500/50 bg-rose-500/5' : t.border
+                    }`}
                   />
-                  <button
-                    onClick={addTask}
-                    className="rounded-md bg-slate-900 p-2.5 text-white transition hover:bg-slate-800"
-                    aria-label="Add task"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-
-                {taskInputError && (
-                  <p className="flex items-center gap-1 text-xs font-semibold text-rose-700">
-                    <AlertCircle className="h-3 w-3" /> Click the + button to add your task before saving.
-                  </p>
-                )}
-
-                <div className="space-y-2">
-                  {editingTasks.map((task) => (
-                    <div key={task.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5">
-                      <div className="h-4 w-4 shrink-0 rounded border-2 border-slate-300" />
-                      <span className="flex-1 text-sm font-semibold text-slate-800">{task.label}</span>
-                      <button
-                        onClick={() => setEditingTasks(editingTasks.filter(t => t.id !== task.id))}
-                        className="text-slate-400 hover:text-rose-600 transition"
-                        aria-label={`Remove ${task.label}`}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 border-t border-slate-200 p-4">
-                <button
-                  onClick={() => setTaskEditorCatIndex(null)}
-                  className="rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveTaskTemplates}
-                  className="rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-slate-800"
-                >
-                  Save checklist
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── PRICING TEMPLATE MODAL ── */}
-        {quoteEditorOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
-            onClick={() => setQuoteEditorOpen(false)}
-          >
-            <div
-              className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="sticky top-0 z-10 flex shrink-0 items-center justify-between border-b border-slate-100 bg-slate-50 px-6 py-5">
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Pricing Template</p>
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
-                    {activeQuoteEditorCat?.label}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setQuoteEditorOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-200 hover:text-slate-800 transition"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Table headers, desktop only */}
-              <div className="hidden shrink-0 grid-cols-[1fr_120px_80px_100px_40px] gap-0 border-b border-slate-200 bg-slate-50 px-6 py-3 sm:grid">
-                {['Item Description', 'Unit Price', 'Qty', 'Total', ''].map((h, i) => (
-                  <span
-                    key={i}
-                    className={`text-[10px] font-bold uppercase tracking-wide text-slate-500 ${i > 0 && i < 4 ? 'text-right' : ''}`}
-                  >
-                    {h}
-                  </span>
-                ))}
-              </div>
-
-              <div className="divide-y divide-slate-100">
-                {editingLineItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="relative flex flex-col gap-3 p-5 hover:bg-slate-50/60 transition-colors sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:gap-0 sm:p-0"
-                  >
-                    <div className="sm:px-6">
-                      <span className="mb-1 block text-[10px] font-bold uppercase text-slate-400 sm:hidden">
-                        Description
-                      </span>
-                      <input
-                        value={item.description}
-                        onChange={e => updateLineItem(item.id, 'description', e.target.value)}
-                        className="w-full rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-slate-400 focus:bg-white sm:border-none sm:bg-transparent sm:py-4"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 sm:contents">
-                      <div className="flex flex-col sm:border-l sm:border-slate-100 sm:px-4">
-                        <span className="mb-1 block text-center text-[10px] font-bold uppercase text-slate-400 sm:hidden">Price</span>
-                        <div className="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 sm:justify-end sm:border-none sm:bg-transparent">
-                          <span className="text-xs text-slate-400">$</span>
-                          <input
-                            type="number"
-                            value={item.unitPrice || ''}
-                            onChange={e => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                            className={`w-full border-none bg-transparent py-2 text-sm font-semibold text-slate-900 outline-none focus:ring-0 sm:text-right ${noSpinners}`}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col sm:border-l sm:border-slate-100 sm:px-4">
-                        <span className="mb-1 block text-center text-[10px] font-bold uppercase text-slate-400 sm:hidden">Qty</span>
-                        <input
-                          type="number"
-                          value={item.quantity || ''}
-                          onChange={e => updateLineItem(item.id, 'quantity', e.target.value)}
-                          className={`w-full rounded-md border border-slate-200 bg-slate-50 py-2 text-center text-sm font-semibold text-slate-900 outline-none focus:ring-0 sm:border-none sm:bg-transparent sm:text-right ${noSpinners}`}
-                        />
-                      </div>
-
-                      <div className="flex flex-col sm:border-l sm:border-slate-100 sm:px-4">
-                        <span className="mb-1 block text-center text-[10px] font-bold uppercase text-slate-400 sm:hidden">Total</span>
-                        <div className="flex h-full items-center justify-center text-center text-sm font-bold text-emerald-600 sm:justify-end sm:py-4 sm:text-right">
-                          {fmt(item.amount)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="absolute right-4 top-4 sm:static sm:flex sm:items-center sm:justify-center">
-                      <button
-                        onClick={() => setEditingLineItems(prev => prev.filter(x => x.id !== item.id))}
-                        className="rounded-lg p-2 text-slate-300 hover:text-rose-600 hover:bg-rose-50 transition sm:bg-transparent"
-                        aria-label="Remove item"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Add new item */}
-                <div className={`border-t border-dashed border-slate-200 p-5 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:p-0 ${
-                  lineItemError ? 'bg-rose-50/50' : 'bg-emerald-50/40'
-                }`}>
-                  <div className="mb-3 sm:mb-0 sm:px-6">
-                    <input
-                      value={newDesc}
-                      onChange={e => { setNewDesc(e.target.value); setLineItemError(''); }}
-                      onKeyDown={e => e.key === 'Enter' && addLineItem()}
-                      placeholder="Item name (e.g. Labor)"
-                      className="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400 focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 sm:border-none sm:bg-transparent sm:py-4"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-[1fr_80px_60px] gap-2 sm:contents">
-                    <div className="flex items-center rounded-lg border border-slate-200 bg-white px-3 sm:border-none sm:bg-transparent sm:px-4">
-                      <span className="mr-1 text-xs text-emerald-600">$</span>
-                      <input
-                        type="number"
-                        value={newPrice}
-                        onChange={e => { setNewPrice(e.target.value); setLineItemError(''); }}
-                        placeholder="0.00"
-                        className={`w-full border-none bg-transparent py-3 text-sm font-semibold text-slate-900 outline-none focus:ring-0 sm:text-right ${noSpinners}`}
-                      />
-                    </div>
-                    <div className="sm:border-l sm:border-slate-200 sm:px-4">
-                      <input
-                        type="number"
-                        value={newQty}
-                        onChange={e => setNewQty(e.target.value)}
-                        className={`w-full rounded-lg border border-slate-200 bg-white py-3 text-center text-sm font-semibold text-slate-900 outline-none focus:ring-0 sm:border-none sm:bg-transparent sm:text-right ${noSpinners}`}
-                      />
-                    </div>
-                    <div className="flex items-center justify-center sm:border-l sm:border-slate-200">
-                      <button
-                        onClick={addLineItem}
-                        className="flex h-full w-full items-center justify-center rounded-lg bg-emerald-600 text-white shadow-xs transition active:scale-95 sm:h-10 sm:w-10"
-                        aria-label="Add item"
-                      >
-                        <Plus className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Footer */}
-              <div className="p-6 space-y-4">
-                {lineItemError && (
-                  <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">
-                    <AlertCircle className="h-4 w-4 shrink-0" /> {lineItemError}
-                  </div>
-                )}
-                {quoteError && (
-                  <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">
-                    <AlertCircle className="h-4 w-4 shrink-0" /> {quoteError}
-                  </div>
-                )}
-
-                {/* ── SUBTOTAL & TOTAL DISPLAY ── */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                    <span>Subtotal</span>
-                    <span>{fmt(quoteEditorSubtotal)}</span>
-                  </div>
-                  {taxRate > 0 && (
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-500">
-                      <span>Tax ({taxRate}%)</span>
-                      <span>{fmt(quoteEditorTaxAmount)}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between border-t border-slate-100 pt-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Total estimate</span>
-                    <span className="text-xl font-bold text-emerald-600">{fmt(quoteEditorTotal)}</span>
-                  </div>
-                </div>
-
-                {/* Tax and deposit are company-wide settings, edited from
-                    the buttons at the top of the Services page — this modal
-                    just shows what will apply, nothing to configure here. */}
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border border-slate-200 bg-slate-50/60 px-4 py-3 text-xs font-medium text-slate-600">
-                  <span className="flex items-center gap-1.5">
-                    <Percent className="h-3.5 w-3.5 text-emerald-600" />
-                    Tax: <span className="font-semibold text-slate-800">{taxRate}%</span>
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <HandCoins className="h-3.5 w-3.5 text-amber-600" />
-                    Deposit: <span className="font-semibold text-slate-800">{depositLabel(depositType, depositValue)}</span>
-                  </span>
-                  {quoteEditorDeposit > 0 && (
-                    <span className="text-[11px] text-slate-500 sm:ml-auto">
-                      Due at signing: <span className="font-semibold text-amber-700">{fmt(quoteEditorDeposit)}</span>
-                      {' '}· Balance: <span className="font-semibold text-slate-700">{fmt(quoteEditorBalance)}</span>
-                    </span>
-                  )}
-                </div>
-
-                {depositType === 'fixed' && depositValue > quoteEditorTotal && quoteEditorTotal > 0 && (
-                  <p className="flex items-center gap-1.5 text-[11px] font-semibold text-amber-700">
-                    <AlertCircle className="h-3 w-3 shrink-0" />
-                    Deposit is more than the estimate. It will be capped at the total.
-                  </p>
-                )}
-
-                {/* Modal Action Buttons */}
-                <div className="grid grid-cols-2 gap-3 pt-2">
-                  {editingQuoteId ? (
+                  <div className="flex gap-2">
                     <button
-                      onClick={deleteQuoteTemplate}
-                      className="rounded-lg border border-slate-200 bg-white py-3 text-[11px] font-bold uppercase tracking-wide text-rose-600 transition hover:bg-rose-50"
+                      onClick={handleAddCategory}
+                      className="flex-1 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 sm:flex-none"
                     >
-                      Delete Template
+                      Add
                     </button>
-                  ) : (
                     <button
-                      onClick={() => setQuoteEditorOpen(false)}
-                      className="rounded-lg border border-slate-200 bg-white py-3 text-[11px] font-bold uppercase tracking-wide text-slate-500 transition hover:bg-slate-50"
+                      onClick={() => {
+                        setShowAddForm(false);
+                        setNewCatLabel('');
+                        setNewCatError('');
+                      }}
+                      className={`flex-1 rounded-xl border ${t.border} px-4 py-2.5 text-sm font-semibold ${t.cardText} transition hover:bg-white/5 sm:flex-none`}
                     >
                       Cancel
                     </button>
-                  )}
-                  <button
-                    onClick={saveQuoteTemplate}
-                    disabled={quoteSaving}
-                    className="rounded-lg bg-emerald-600 py-3 text-[11px] font-bold uppercase tracking-wide text-white shadow-xs transition active:scale-[0.98] disabled:opacity-60 hover:bg-emerald-700"
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+                  <motion.button
+                    key="trigger"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    onClick={() => setShowAddForm(true)}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700 sm:w-auto"
                   >
-                    {quoteSaving ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+                    <Plus className="h-3.5 w-3.5" /> Add service
+                  </motion.button>
 
-        {/* ── CUSTOM QUESTIONS MODAL (per service) ── */}
-        {questionEditorOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
-            onClick={() => setQuestionEditorOpen(false)}
-          >
-            <div
-              className="flex max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <div>
-                  <p className="text-sm font-bold text-slate-900">Custom Questions</p>
-                  <p className="text-[11px] font-medium text-slate-500">
-                    {activeQuestionEditorCat?.label} · only shown to customers requesting this service
-                  </p>
-                </div>
-                <button
-                  onClick={() => setQuestionEditorOpen(false)}
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="flex-1 space-y-4 overflow-y-auto p-5">
-                {/* Make the booking-form connection obvious up front,
-                    not just a small subtitle line in the header above. */}
-                <div className="flex items-start gap-2.5 rounded-lg border border-blue-100 bg-blue-50/60 px-3.5 py-2.5 text-[11px] font-medium leading-relaxed text-blue-800">
-                  <HelpCircle className="h-3.5 w-3.5 shrink-0 text-blue-500 mt-0.5" />
-                  <span>
-                    These only appear on the booking form when a customer selects{' '}
-                    <span className="font-bold">{activeQuestionEditorCat?.label}</span> as their service.
-                  </span>
-                </div>
-
-                {/* Inline add/edit form */}
-                <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50/60 p-4">
-                  <div>
-                    <label className="mb-1.5 block text-xs font-bold text-slate-800">
-                      {editingQId ? 'Edit question' : 'New question'}
-                    </label>
-                    <input
-                      type="text"
-                      value={newQLabel}
-                      onChange={(e) => { setNewQLabel(e.target.value); setQuestionLabelError(''); }}
-                      onKeyDown={(e) => e.key === 'Enter' && newQType !== 'select' && addOrUpdateQuestionInList()}
-                      placeholder='e.g., "How old is your roof?"'
-                      className={`w-full rounded-md border bg-white px-3.5 py-2 text-xs font-medium text-slate-900 outline-none transition ${
-                        questionLabelError ? 'border-rose-400' : 'border-slate-200 focus:border-slate-900'
-                      }`}
-                    />
-                    {questionLabelError && (
-                      <p className="mt-1 text-[11px] font-semibold text-rose-600">{questionLabelError}</p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { val: 'text', label: 'Text Input' },
-                      { val: 'select', label: 'Dropdown' },
-                      { val: 'checkbox', label: 'Yes/No' },
-                    ].map((t) => (
-                      <button
-                        key={t.val}
-                        type="button"
-                        onClick={() => setNewQType(t.val as any)}
-                        className={`rounded-lg border py-2.5 text-xs font-semibold transition ${
-                          newQType === t.val
-                            ? 'border-slate-900 bg-slate-900 text-white'
-                            : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {newQType === 'select' && (
-                    <div className="space-y-2 border-t border-slate-200 pt-3">
-                      <label className="block text-xs font-bold text-slate-800">Dropdown Options</label>
-                      <div className="max-h-24 space-y-1.5 overflow-y-auto pr-1">
-                        <AnimatePresence>
-                          {newQOptions.map((opt, i) => (
-                            <motion.div
-                              key={i}
-                              initial={{ opacity: 0, y: -4 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: 4 }}
-                              className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-1.5"
-                            >
-                              <span className="text-xs font-medium text-slate-800">{opt}</span>
-                              <button
-                                onClick={() => setNewQOptions(prev => prev.filter((_, idx) => idx !== i))}
-                                className="text-slate-400 hover:text-rose-600 transition"
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </motion.div>
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                      <div className="flex gap-2">
+                  {editingTaxRate ? (
+                    <div className={`flex w-full flex-wrap items-center gap-2 rounded-xl border ${t.border} px-3 py-2 sm:w-auto`}>
+                      <div className="flex items-center gap-1">
                         <input
-                          type="text"
-                          value={newQOptionDraft}
-                          onChange={(e) => setNewQOptionDraft(e.target.value)}
-                          placeholder="Add option..."
-                          className="flex-1 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium outline-none focus:border-slate-900"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && newQOptionDraft) {
-                              e.preventDefault();
-                              setNewQOptions(prev => [...prev, newQOptionDraft]);
-                              setNewQOptionDraft('');
-                            }
-                          }}
+                          type="number"
+                          step="0.001"
+                          min="0"
+                          max="100"
+                          value={taxRateDraft}
+                          onChange={(e) => setTaxRateDraft(e.target.value)}
+                          autoFocus
+                          className={`w-16 border-none bg-transparent text-sm font-semibold outline-none ${t.cardText}`}
                         />
+                        <span className={`text-xs font-semibold ${t.subText}`}>%</span>
+                      </div>
+                      <div className="ml-auto flex items-center gap-3 sm:ml-0">
                         <button
-                          type="button"
-                          onClick={() => {
-                            if (newQOptionDraft) {
-                              setNewQOptions(prev => [...prev, newQOptionDraft]);
-                              setNewQOptionDraft('');
-                            }
-                          }}
-                          aria-label="Add option"
-                          className="shrink-0 rounded-md border border-slate-300 bg-white p-2.5 text-slate-600 hover:bg-slate-50 transition"
+                          onClick={saveTaxRate}
+                          disabled={taxRateSaving}
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-blue-700"
                         >
-                          <Plus className="h-4 w-4" />
+                          {taxRateSaving ? '...' : 'Save'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingTaxRate(false);
+                            setTaxRateDraft(String(taxRate));
+                          }}
+                          className={`text-[11px] font-semibold ${t.subText} hover:text-current`}
+                        >
+                          Cancel
                         </button>
                       </div>
                     </div>
+                  ) : (
+                    <button
+                      onClick={() => setEditingTaxRate(true)}
+                      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border ${t.border} px-4 py-2.5 text-xs font-semibold ${t.cardText} transition hover:bg-white/5 sm:w-auto sm:justify-start`}
+                    >
+                      <Percent className={`h-3.5 w-3.5 ${t.subText}`} />
+                      Tax rate: {taxRate}%
+                    </button>
                   )}
 
-                  <div className="flex justify-end gap-2 pt-1">
-                    {editingQId && (
-                      <button
-                        onClick={resetQuestionForm}
-                        className="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition"
-                      >
-                        Cancel edit
-                      </button>
-                    )}
-                    <button
-                      onClick={addOrUpdateQuestionInList}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-blue-600 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 transition"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> {editingQId ? 'Update question' : 'Add question'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* List of this service's questions */}
-                {questionsForActiveService.length > 0 && (
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                    Added questions — click Save questions below when you're done
-                  </p>
-                )}
-                <div className="space-y-2">
-                  {questionsForActiveService.length === 0 ? (
-                    <p className="py-4 text-center text-xs font-medium text-slate-400">
-                      No custom questions for this service yet.
-                    </p>
-                  ) : (
-                    questionsForActiveService.map((q) => (
-                      <div key={q.id} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5">
-                        <HelpCircle className="h-4 w-4 shrink-0 text-slate-400" />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-xs font-bold text-slate-900">{q.label}</p>
-                          <p className="mt-0.5 text-[11px] font-medium text-slate-500">
-                            {q.type === 'text' && 'Text Response'}
-                            {q.type === 'checkbox' && 'Yes / No Choice'}
-                            {q.type === 'select' && `Dropdown (${q.options?.length || 0} options)`}
-                          </p>
+                  {editingDepositDefault ? (
+                    <div className={`flex w-full flex-wrap items-center gap-2 rounded-xl border ${t.border} px-3 py-2 sm:w-auto`}>
+                      <div className="flex items-center gap-2">
+                        <div className={`flex overflow-hidden rounded-lg border ${t.border}`}>
+                          {(['percent', 'fixed'] as DepositType[]).map((dt) => (
+                            <button
+                              key={dt}
+                              onClick={() => setDepositTypeDraft(dt)}
+                              className={`px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                                depositTypeDraft === dt ? 'bg-blue-600 text-white' : `${t.cardText} hover:bg-white/5`
+                              }`}
+                            >
+                              {dt === 'percent' ? '%' : '$'}
+                            </button>
+                          ))}
                         </div>
+                        <input
+                          type="number"
+                          step="0.001"
+                          min="0"
+                          max={depositTypeDraft === 'percent' ? 100 : undefined}
+                          value={depositValueDraft}
+                          onChange={(e) => {
+                            setDepositValueDraft(e.target.value);
+                            setDepositError('');
+                          }}
+                          placeholder={depositTypeDraft === 'percent' ? '50' : '500'}
+                          autoFocus
+                          className={`w-16 border-none bg-transparent text-sm font-semibold outline-none ${noSpinners} ${t.cardText}`}
+                        />
+                      </div>
+                      <div className="ml-auto flex items-center gap-3 sm:ml-0">
                         <button
-                          onClick={() => startEditQuestion(q)}
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-xs transition hover:bg-slate-50"
+                          onClick={() => saveDepositDefault(false)}
+                          disabled={depositSaving}
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
                         >
-                          <Edit2 className="h-3.5 w-3.5" />
+                          {depositSaving ? '...' : 'Save'}
                         </button>
+                        {depositType && (
+                          <button
+                            onClick={() => saveDepositDefault(true)}
+                            disabled={depositSaving}
+                            className="text-[11px] font-semibold text-rose-500 hover:text-rose-400"
+                          >
+                            Clear
+                          </button>
+                        )}
                         <button
-                          onClick={() => removeQuestion(q.id)}
-                          className="rounded-lg border border-slate-200 bg-white p-1.5 text-rose-600 shadow-xs transition hover:bg-rose-50"
+                          onClick={() => {
+                            setEditingDepositDefault(false);
+                            setDepositTypeDraft(depositType ?? 'percent');
+                            setDepositValueDraft(String(depositValue || ''));
+                            setDepositError('');
+                          }}
+                          className={`text-[11px] font-semibold ${t.subText} hover:text-current`}
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          Cancel
                         </button>
                       </div>
-                    ))
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setEditingDepositDefault(true)}
+                      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border ${t.border} px-4 py-2.5 text-xs font-semibold ${t.cardText} transition hover:bg-white/5 sm:w-auto sm:justify-start`}
+                    >
+                      <HandCoins className={`h-3.5 w-3.5 ${t.subText}`} />
+                      {depositType ? `Deposit: ${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}` : 'Deposit: none'}
+                    </button>
                   )}
                 </div>
-
-                {questionSaveError && (
-                  <div className="flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">
-                    <AlertCircle className="h-4 w-4 shrink-0" /> {questionSaveError}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 border-t border-slate-200 p-4">
-                <button
-                  onClick={() => setQuestionEditorOpen(false)}
-                  className="rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={saveQuestionsForService}
-                  disabled={questionSaving}
-                  className="rounded-lg bg-slate-900 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-60"
-                >
-                  {questionSaving ? 'Saving...' : 'Save questions'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── QUOTE SHEET PREVIEW ── */}
-        {showQuotePreview && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
-            onClick={() => setShowQuotePreview(false)}
-          >
-            <div
-              className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-                <span className="text-sm font-bold text-slate-900">Your pricing template, on the job</span>
-                <button
-                  onClick={() => setShowQuotePreview(false)}
-                  className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition"
-                  aria-label="Close"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-              <div className="overflow-y-auto p-5">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/images/quote-sheet-preview.webp"
-                  alt="Quote sheet with pricing template line items loaded"
-                  className="w-full rounded-lg border border-slate-200"
-                />
-                <p className="mt-3 text-xs sm:text-sm font-medium leading-relaxed text-slate-600">
-                  This is the Quote tab on a job — your estimate builder, not
-                  the invoice. Set a pricing template for a service and
-                  these line items — description, unit price, and quantity —
-                  load in automatically here. Everything stays editable, and
-                  sending the invoice is a separate step once the quote is
-                  approved.
-                </p>
-                <p className="mt-2 text-xs sm:text-sm font-medium leading-relaxed text-slate-600">
-                  A deposit on the template carries over as the amount due on
-                  signing, with the rest as the balance. You can change it per
-                  job before the quote goes out.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── DELETE CONFIRM ── */}
-        {deleteConfirm && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs"
-            onClick={() => setDeleteConfirm(null)}
-          >
-            <div
-              className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-6 text-center shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg border border-rose-200 bg-rose-50">
-                <AlertTriangle className="h-6 w-6 text-rose-600" />
-              </div>
-              <h3 className="mb-2 text-base font-bold text-slate-900">Remove service?</h3>
-              <p className="mb-2 text-sm font-medium text-slate-600">
-                This will remove <span className="font-bold text-slate-900">&quot;{deleteConfirm.label}&quot;</span>.
+              )}
+            </AnimatePresence>
+            {newCatError && (
+              <p className="flex items-center gap-1 text-xs font-medium text-rose-500">
+                <AlertCircle className="h-3 w-3" /> {newCatError}
               </p>
-              <p className="mb-6 text-xs font-semibold text-amber-700">
-                Task checklists will also be removed. Pricing templates and custom questions are stored separately and won't be deleted, but won't be reachable from this list anymore.
+            )}
+            {depositError && (
+              <p className="flex items-center gap-1 text-xs font-medium text-rose-500">
+                <AlertCircle className="h-3 w-3" /> {depositError}
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => setDeleteConfirm(null)}
-                  className="rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  Keep it
-                </button>
-                <button
-                  onClick={confirmDeleteCategory}
-                  className="rounded-lg bg-rose-600 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-rose-700"
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
+            )}
           </div>
-        )}
+
+          <button
+            onClick={() => setShowQuotePreview(true)}
+            className={`text-xs font-medium underline ${t.subText} hover:text-current`}
+          >
+            See where this shows up on a job
+          </button>
+
+          {/* Service list */}
+          <div className="space-y-3">
+            {categories.map((cat, index) => (
+              <CategoriesServiceCard
+                key={cat.value}
+                category={cat}
+                index={index}
+                quoteTemplate={quoteTemplates.find((qt) => qt.category === cat.value)}
+                questions={customQuestions.filter((q) => q.category === cat.value)}
+                expanded={expandedService === cat.value}
+                isDark={isDark}
+                accentColor={accentColor}
+                onToggleExpand={() => setExpandedService(expandedService === cat.value ? null : cat.value)}
+                onDelete={() => setDeleteConfirm({ index, label: cat.label })}
+                onOpenTasks={() => setActiveModal({ type: 'tasks', categoryIndex: index })}
+                onOpenPricing={() => setActiveModal({ type: 'pricing', categoryValue: cat.value })}
+                onOpenQuestions={() => setActiveModal({ type: 'questions', categoryValue: cat.value })}
+              />
+            ))}
+          </div>
+
+          <AnimatePresence>
+            {isDirty && (
+              <motion.div
+                initial={{ y: 80, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 80, opacity: 0 }}
+                className={`sticky bottom-4 z-40 mx-auto max-w-xl rounded-2xl border p-4 shadow-xl backdrop-blur-md ${t.overlayCard}`}
+              >
+                <div className="flex items-center justify-between gap-4">
+                  <p className={`flex items-center gap-2 text-sm font-semibold ${t.cardText}`}>
+                    <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
+                    You have unsaved changes.
+                  </p>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {saving ? 'Saving...' : 'Save changes'}
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {activeModal?.type === 'tasks' && activeModalCategory && (
+        <CategoriesTaskEditorModal
+          companySlug={company.slug}
+          category={activeModalCategory}
+          categoryIndex={activeModal.categoryIndex}
+          allCategories={categories}
+          isDark={isDark}
+          onClose={() => setActiveModal(null)}
+          onSaved={(updated) => {
+            setCategories(updated);
+            setUseDefaults(false);
+          }}
+        />
+      )}
+
+      {activeModal?.type === 'pricing' && activeModalCategory && (
+        <CategoriesPricingModal
+          companySlug={company.slug}
+          category={activeModalCategory}
+          existingTemplate={quoteTemplates.find((qt) => qt.category === activeModal.categoryValue)}
+          taxRate={taxRate}
+          depositType={depositType}
+          depositValue={depositValue}
+          isDark={isDark}
+          onClose={() => setActiveModal(null)}
+          onSaved={setQuoteTemplates}
+        />
+      )}
+
+      {activeModal?.type === 'questions' && activeModalCategory && (
+        <CategoriesQuestionsModal
+          companySlug={company.slug}
+          category={activeModalCategory}
+          allQuestions={customQuestions}
+          isDark={isDark}
+          onClose={() => setActiveModal(null)}
+          onSaved={setCustomQuestions}
+        />
+      )}
+
+      {showQuotePreview && <QuoteSheetPreviewModal onClose={() => setShowQuotePreview(false)} isDark={isDark} />}
+
+      {deleteConfirm && (
+        <DeleteServiceConfirmModal
+          label={deleteConfirm.label}
+          isDark={isDark}
+          onCancel={() => setDeleteConfirm(null)}
+          onConfirm={confirmDeleteCategory}
+        />
+      )}
     </>
   );
 }

@@ -146,7 +146,12 @@ export default function SchedulingSection({
     setSelectedAssignees(assignees);
 
     setInitialState({
-      date: sDate,
+      // If this date was seeded client-side by Calendar's "+ Add job"
+      // flow (not actually saved to the DB), the baseline must NOT match
+      // the displayed value — otherwise isDirty evaluates false
+      // immediately and Save stays disabled even though nothing has
+      // actually been persisted yet.
+      date: lead?._unsavedScheduleDateSeed ? '' : sDate,
       time: sTime,
       endTime: lead?.scheduled_end_time || '',
       location: lead?.event_location || '',

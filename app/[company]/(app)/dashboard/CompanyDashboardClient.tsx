@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Plus, ArrowRight, Sun, Moon, Menu } from 'lucide-react';
+import Link from 'next/link';
+import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import LeadModal from '@/components/dashboard/LeadModal';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
@@ -104,23 +105,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
-  // FIX 1 of 2 — hydration mismatch.
-  // Server always renders with no `window`, so it always used the `true`
-  // fallback. The client's FIRST render (during hydration, not a later
-  // re-render) used to read the REAL localStorage value immediately — if
-  // that was 'light', the client's first paint disagreed with what the
-  // server had already sent down, which is exactly what triggers "tree
-  // hydrated but some attributes... didn't match." Now both server and
-  // client render the same `true` default; the real value is applied in
-  // an effect right after mount instead. skipFirstWrite stops the
-  // write-back effect below from firing on that same initial pass and
-  // immediately overwriting the just-corrected value with the stale
-  // default before it ever reaches the screen.
   const [isDark, setIsDark] = useState<boolean>(true);
   const skipFirstWrite = useRef(true);
+
   useEffect(() => {
     setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
   }, []);
+
   useEffect(() => {
     if (skipFirstWrite.current) {
       skipFirstWrite.current = false;
@@ -131,16 +122,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
 
-  // FIX 2 of 2 — the "stats.leads.new_this_week" crash.
-  // `if (!data.success) throw` only checks the success flag, not that the
-  // response actually has the shape the render depends on. If anything
-  // ever returns success:true without a `leads` key (a partial write, a
-  // caching edge case, a bug in that route), `stats` becomes a truthy but
-  // incomplete object — it passes `{stats && ...}` further down, then
-  // crashes the instant the render tries to read `stats.leads.new_this_week`.
-  // This validates the actual shape before trusting it, turning a future
-  // malformed response into a visible "Could not load dashboard" message
-  // with a Retry button instead of a hard crash.
   const fetchStats = useCallback(async () => {
     try {
       const res = await fetch(`/api/company/${company.slug}/dashboard-stats`, { cache: 'no-store' });
@@ -401,6 +382,18 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Quick Access Outbox Button */}
+              <button
+                onClick={() => router.push(`/${company.slug}/outbox`)}
+                className={`p-2 sm:p-2.5 rounded-xl border transition-colors ${
+                  isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-[#e7e2d8] bg-white text-[#57534e] hover:bg-slate-50'
+                }`}
+                aria-label="View Email Outbox"
+                title="View Email Outbox"
+              >
+                <Mail className="w-4 h-4" />
+              </button>
+
               <button
                 onClick={() => setIsDark((v) => !v)}
                 className={`p-2 sm:p-2.5 rounded-xl border transition-colors ${
@@ -411,6 +404,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               >
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
+
               <button
                 onClick={() => setSidebarOpen(true)}
                 className={`lg:hidden p-2 sm:p-2.5 rounded-xl border transition-colors ${
@@ -542,7 +536,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 </div>
               </div>
 
-              {/* Business Performance */}
+              {/* Business Performance & System Utilities */}
               <div className="min-w-0">
                 <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Business Performance</h2>
                 <div className="space-y-3 sm:space-y-4">
@@ -569,6 +563,21 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
                       {fmtMoney(stats.ready_to_invoice.value)}
                     </p>
+                  </button>
+
+                  {/* Outbox Status Card */}
+                  <button
+                    onClick={() => router.push(`/${company.slug}/outbox`)}
+                    className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Mail className={`w-4 h-4 ${subText}`} />
+                        <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Email Outbox</p>
+                      </div>
+                      <ArrowRight className={`w-4 h-4 ${subText}`} />
+                    </div>
+                    <p className={`text-xs ${subText} mt-1`}>Review sent schedules, invoices, and dispatch logs</p>
                   </button>
                 </div>
               </div>
@@ -600,7 +609,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         <p className={`text-xs sm:text-sm ${subText}`}>No payments recorded yet.</p>
                       </div>
                     ) : (
-                     stats.recent_payments.map((p) => {
+                      stats.recent_payments.map((p) => {
                         const statusInfo = p.payment_status && p.payment_status !== 'paid'
                           ? getPaymentStatusDisplay(p.payment_status)
                           : null;
@@ -624,7 +633,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                               <p className={`text-xs sm:text-sm font-semibold tabular-nums ${cardText}`}>
                                 {fmtMoney(parseFloat(String(p.amount)))}
                               </p>
-                             {statusInfo && (
+                              {statusInfo && (
                                 <span
                                   className="text-[9px] sm:text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
                                   style={{ color: statusInfo.color, backgroundColor: statusInfo.bg }}

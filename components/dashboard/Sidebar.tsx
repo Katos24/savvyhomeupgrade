@@ -66,7 +66,6 @@ export default function Sidebar({
 
     { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false, color: '#fbbf24' },
     { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
-    { href: `/${companySlug}/outbox`,               icon: Mail,       label: 'Outbox',     exactMatch: false, color: '#fb923c' },
   ];
 
   useEffect(() => {

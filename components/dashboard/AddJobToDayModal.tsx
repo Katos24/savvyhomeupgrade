@@ -100,7 +100,6 @@ export default function AddJobToDayModal({ isOpen, onClose, onPick, companySlug,
             <div className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-100 rounded-xl">
               <Search size={14} className="text-slate-400 shrink-0" />
               <input
-                autoFocus
                 type="text"
                 placeholder="Search jobs by customer name..."
                 value={search}

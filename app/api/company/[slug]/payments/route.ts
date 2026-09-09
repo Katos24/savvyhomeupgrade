@@ -256,6 +256,31 @@ export async function POST(
       const collected = payments.reduce((s, p) => s + p.amount, 0);
       const total = Number(refreshed?.quote_total) || 0;
 
+      // The sync trigger recalculates payment_amount correctly from this
+      // insert, but its payment_status logic can only ever PRESERVE
+      // 'refunded'/'partially_refunded' if that was already the value —
+      // it has no branch that originates that status from scratch. Left
+      // alone, a manual reversal silently kept whatever status was
+      // already there (e.g. still 'paid'), which is exactly the bug that
+      // let a fully-refunded job keep showing "Paid in Full." This is the
+      // one explicit write that actually sets it.
+      //
+      // refunded_amount is a SEPARATE stored column, read directly by
+      // BillingSummaryPanel's refund banner — nothing on this manual
+      // path ever wrote to it, so that banner always showed $0.00
+      // refunded regardless of how much was actually reversed. Accumulate
+      // it here (not overwrite) so multiple reversals over time add up
+      // correctly instead of each one clobbering the last.
+      const newStatus = collected <= 0 ? 'refunded' : 'partially_refunded';
+      await sql`
+        UPDATE projects SET
+          payment_status = ${newStatus},
+          refunded_amount = COALESCE(refunded_amount, 0) + ${requestedAmount},
+          refunded_at = NOW(),
+          updated_at = NOW()
+        WHERE id = ${original.project_id} AND company_id = ${auth.company.id}
+      `;
+
       return NextResponse.json({
         success: true,
         message: 'Payment reversed',
@@ -264,7 +289,7 @@ export async function POST(
           total,
           collected,
           remaining: Math.max(total - collected, 0),
-          status: refreshed?.payment_status,
+          status: newStatus,
         },
       });
     }

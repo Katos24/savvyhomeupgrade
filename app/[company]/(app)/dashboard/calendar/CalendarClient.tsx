@@ -170,6 +170,18 @@ export default function CalendarClient({ company }: { company: Company }) {
   // starting point, it doesn't silently schedule anything on its own.
   // Same seed-then-fetch shape LeadsClient.tsx already uses for its
   // deep-link flow, applied here to a new field instead of a new lead.
+  //
+  // _unsavedScheduleDateSeed: FIX — without this marker, SchedulingSection
+  // initializes both its "current value" AND its "what counts as unsaved"
+  // baseline from this same lead.scheduled_date field in one effect, so a
+  // seeded-but-never-saved date made isDirty evaluate false immediately —
+  // Save stayed disabled and the date never actually persisted, exactly
+  // the reported bug (date shows, Save greyed out, nothing saves unless
+  // time/assignee also touched). This marker lets SchedulingSection tell
+  // a seeded value apart from a genuinely saved one and set its baseline
+  // correctly, without needing a new prop threaded through LeadModal and
+  // ProjectSection — it just rides along on the same object already
+  // flowing through that existing chain.
   const scheduleJobOnDay = useCallback(async (job: { lead_id: number; project_id: number; customer_name: string }, day: string) => {
     setModalInitialTab('schedule');
     setSelectedLead({ id: job.lead_id, name: job.customer_name, project_id: job.project_id });
@@ -181,7 +193,7 @@ export default function CalendarClient({ company }: { company: Company }) {
       if (data.success && data.lead) {
         const seeded = data.lead.scheduled_date
           ? data.lead
-          : { ...data.lead, scheduled_date: day };
+          : { ...data.lead, scheduled_date: day, _unsavedScheduleDateSeed: true };
         setSelectedLead(seeded);
         setSelectedLeadPayments(data.payments || []);
         setSelectedLeadActivity(data.activity || []);
