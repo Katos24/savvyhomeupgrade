@@ -7,11 +7,10 @@ import {
   Loader2,
   CheckCircle2,
   Mail,
-  Zap,
   Link as LinkIcon,
-  HelpCircle,
   Sparkles,
   ExternalLink,
+  Star,
 } from 'lucide-react';
 import StandaloneUpgradeOverlay from '@/components/StandaloneUpgradeOverlay';
 
@@ -19,7 +18,7 @@ function FeatureItem({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-3 text-slate-700">
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-      <span className="text-xs font-medium leading-relaxed sm:text-sm">{children}</span>
+      <span className="text-xs sm:text-sm font-medium leading-relaxed">{children}</span>
     </div>
   );
 }
@@ -75,20 +74,20 @@ export default function GoogleReviewsTab({
   };
 
   const content = (
-    <div className="mx-auto max-w-5xl space-y-6 pb-12">
+    <div className="mx-auto max-w-5xl space-y-6 pb-12 antialiased">
       {/* 1. HERO BANNER */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs sm:p-8 lg:p-10">
+      <div className="relative overflow-hidden rounded-2xl border border-stone-200/80 bg-white p-6 shadow-xs sm:p-8 lg:p-10">
         <div className="grid items-center gap-8 md:grid-cols-12">
-          <div className="space-y-5 md:col-span-7">
+          <div className="space-y-4 md:col-span-7">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50/80 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-blue-700">
               <Sparkles className="h-3.5 w-3.5 text-blue-600" /> Google Reviews
             </div>
 
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
               Automate customer feedback & grow your local reputation
             </h1>
 
-            <div className="space-y-3 pt-1">
+            <div className="space-y-2.5 pt-1">
               <FeatureItem>
                 Automatically send review requests the moment a job is marked as{' '}
                 <strong className="text-slate-900">Completed</strong>.
@@ -104,7 +103,7 @@ export default function GoogleReviewsTab({
 
           {/* Phone Showcase Image */}
           <div className="flex justify-center md:col-span-5">
-            <div className="relative w-full max-w-[280px] overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 shadow-md transition-transform duration-300 hover:scale-[1.02]">
+            <div className="relative w-full max-w-[280px] overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 shadow-md transition-all duration-300 hover:shadow-lg hover:scale-[1.01]">
               <img
                 src="/images/GoogleReview.png"
                 alt="Automated Google Review Requests mockup on phone"
@@ -116,7 +115,7 @@ export default function GoogleReviewsTab({
       </div>
 
       {/* 2. SETUP FORM SECTION */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+      <div className="rounded-2xl border border-stone-200/80 bg-white p-6 shadow-xs">
         <div className="mb-4">
           <label
             htmlFor="google-review-url"
@@ -130,7 +129,7 @@ export default function GoogleReviewsTab({
               href="https://support.google.com/business/answer/7035772"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-0.5 font-semibold text-blue-600 hover:underline"
+              className="inline-flex items-center gap-0.5 font-semibold text-blue-600 hover:text-blue-700 hover:underline"
             >
               Google&apos;s guide <ExternalLink className="h-3 w-3" />
             </a>{' '}
@@ -158,7 +157,7 @@ export default function GoogleReviewsTab({
               type="checkbox"
               checked={enabled}
               onChange={(e) => setEnabled(e.target.checked)}
-              className="h-4 w-4 rounded-md border-slate-300 text-blue-600 focus:ring-blue-500"
+              className="h-4 w-4 rounded-md border-slate-300 text-slate-900 focus:ring-slate-900"
             />
             <span className="text-xs font-bold text-slate-900 whitespace-nowrap">
               Auto-send on complete
@@ -189,19 +188,19 @@ export default function GoogleReviewsTab({
       {/* 3. DETAILS & WORKFLOW GRID */}
       <div className="grid gap-6 md:grid-cols-2">
         {/* Email Preview */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between rounded-2xl border border-stone-200/80 bg-white p-6 shadow-xs">
           <div>
             <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-800">
               <Mail className="h-4 w-4 text-blue-600" /> Email Preview
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-xs leading-relaxed text-slate-700">
+            <div className="rounded-xl border border-stone-200 bg-stone-50/60 p-4 text-xs leading-relaxed text-slate-700">
               <p className="mb-2 font-medium">Hi [Customer Name],</p>
               <p className="mb-4 text-slate-600 italic">
                 &quot;Thanks for choosing us! Could you spare a quick moment to leave us a
                 Google review? It helps us out immensely.&quot;
               </p>
-              <div className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs">
+              <div className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-xs font-bold text-slate-800 shadow-xs">
                 <img
                   src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"
                   className="h-3.5 w-3.5"
@@ -218,7 +217,7 @@ export default function GoogleReviewsTab({
         </div>
 
         {/* Workflow Trigger Showcase */}
-        <div className="flex flex-col justify-between rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xs">
+        <div className="flex flex-col justify-between rounded-2xl border border-stone-200/80 bg-white p-6 shadow-xs">
           <div>
             <div className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-800">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" /> Automatic Trigger
@@ -229,7 +228,7 @@ export default function GoogleReviewsTab({
             </p>
           </div>
 
-          <div className="h-[180px] overflow-hidden rounded-xl border border-slate-200 shadow-xs">
+          <div className="h-[180px] overflow-hidden rounded-xl border border-stone-200 shadow-xs bg-stone-50">
             <img
               src="/images/mark-job-complete.webp"
               alt="Mark job as complete interface"

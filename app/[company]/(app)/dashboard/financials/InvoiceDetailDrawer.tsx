@@ -1,110 +1,195 @@
 'use client';
 
-import { X, CreditCard } from 'lucide-react';
+import { useEffect } from 'react';
+import { X, CreditCard, Calendar, Mail, Receipt, ArrowRight } from 'lucide-react';
 import { safeJSONParse } from '@/lib/utils';
 
-const fmtExact = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
-const fmtDateLong = (d: string | null) => {
+// Accepts undefined or null safely
+const fmtExact = (n?: number | null) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n ?? 0);
+
+// Accepts undefined or null safely
+const fmtDateLong = (d?: string | null) => {
   if (!d) return '—';
   const date = new Date(d);
   if (isNaN(date.getTime())) return '—';
-  return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 type StateMeta = { label: string; dot: string; text: string; bg: string };
+
+interface LineItem {
+  description?: string;
+  quantity?: number;
+  rate?: number;
+  amount?: number;
+}
+
+interface InvoiceDetailDrawerProps {
+  project: {
+    invoice_number?: string;
+    customer_name?: string;
+    customer_email?: string;
+    _total?: number;
+    _collected?: number;
+    _owed?: number;
+    payment_method?: string;
+    invoice_sent_at?: string | null;
+    payment_due_date?: string | null;
+    quote_data?: string;
+  };
+  stateMeta: StateMeta;
+  onOpenBilling: () => void;
+  onClose: () => void;
+}
 
 export default function InvoiceDetailDrawer({
   project,
   stateMeta,
   onOpenBilling,
   onClose,
-}: {
-  project: any;
-  stateMeta: StateMeta;
-  onOpenBilling: () => void;
-  onClose: () => void;
-}) {
-  const lineItems = safeJSONParse(project.quote_data) || [];
+}: InvoiceDetailDrawerProps) {
+  const lineItems: LineItem[] = safeJSONParse(project.quote_data) || [];
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-stone-900/40 backdrop-blur-sm" onClick={onClose}>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="drawer-title"
+      className="fixed inset-0 z-50 flex justify-end bg-stone-900/40 backdrop-blur-sm transition-opacity duration-200"
+      onClick={onClose}
+    >
       <div
-        className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl"
+        className="relative flex h-full w-full max-w-md flex-col bg-stone-50 shadow-2xl transition-transform duration-300 animate-in slide-in-from-right sm:border-l sm:border-stone-200"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
-          <div>
-            <p className="text-[12px] text-stone-500">{project.invoice_number || 'No invoice #'}</p>
-            <h3 className="text-base font-semibold text-stone-900">{project.customer_name || 'Unnamed'}</h3>
+        <div className="flex items-center justify-between border-b border-stone-200 bg-white px-6 py-4">
+          <div className="min-w-0 pr-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold tracking-wider text-stone-500 uppercase">
+                {project.invoice_number || 'Draft Invoice'}
+              </span>
+              <span
+                className="inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium"
+                style={{ backgroundColor: stateMeta.bg, color: stateMeta.text }}
+              >
+                <span
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: stateMeta.dot }}
+                />
+                {stateMeta.label}
+              </span>
+            </div>
+            <h3 id="drawer-title" className="mt-0.5 truncate text-lg font-semibold text-stone-900">
+              {project.customer_name || 'Unnamed Client'}
+            </h3>
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600"
-            aria-label="Close"
+            className="rounded-full p-2 text-stone-400 transition-colors hover:bg-stone-100 hover:text-stone-600 focus:outline-none focus:ring-2 focus:ring-stone-400"
+            aria-label="Close drawer"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          <span
-            className="mb-4 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
-            style={{ backgroundColor: stateMeta.bg, color: stateMeta.text }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stateMeta.dot }} />
-            {stateMeta.label}
-          </span>
+        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+          <div className="rounded-2xl border border-stone-200/80 bg-white p-5 shadow-sm space-y-4">
+            <div className="flex items-baseline justify-between border-b border-stone-100 pb-3">
+              <span className="text-xs font-medium text-stone-500 uppercase tracking-wider">
+                Amount Owed
+              </span>
+              <span className="text-2xl font-bold tabular-nums text-stone-900">
+                {fmtExact(project._owed)}
+              </span>
+            </div>
 
-          <div className="mb-5 space-y-2 rounded-xl border border-stone-200 bg-stone-50 p-4">
-            <div className="flex items-baseline justify-between">
-              <span className="text-[12px] text-stone-500">Total</span>
-              <span className="text-[13px] font-medium tabular-nums text-stone-900">{fmtExact(project._total)}</span>
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div>
+                <span className="text-stone-400 block">Total Invoice</span>
+                <span className="text-sm font-semibold text-stone-700 tabular-nums">
+                  {fmtExact(project._total)}
+                </span>
+              </div>
+              <div>
+                <span className="text-stone-400 block">Total Collected</span>
+                <span className="text-sm font-semibold text-emerald-700 tabular-nums">
+                  {fmtExact(project._collected)}
+                </span>
+              </div>
             </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-[12px] text-stone-500">Collected</span>
-              <span className="text-[13px] font-medium tabular-nums text-teal-800">{fmtExact(project._collected)}</span>
-            </div>
-            <div className="flex items-baseline justify-between border-t border-stone-200 pt-2">
-              <span className="text-[12px] text-stone-500">Owed</span>
-              <span className="text-[15px] font-semibold tabular-nums text-stone-900">{fmtExact(project._owed)}</span>
-            </div>
+
             {project.payment_method && (
-              <div className="flex items-baseline justify-between">
-                <span className="text-[12px] text-stone-500">Method</span>
-                <span className="text-[13px] text-stone-700 capitalize">{project.payment_method.replace('_', ' ')}</span>
+              <div className="pt-2 border-t border-stone-100 flex items-center justify-between text-xs">
+                <span className="text-stone-500">Payment Method</span>
+                <span className="font-medium text-stone-800 capitalize bg-stone-100 px-2 py-0.5 rounded">
+                  {project.payment_method.replace('_', ' ')}
+                </span>
               </div>
             )}
           </div>
 
-          <div className="mb-5 space-y-2 text-[13px] text-stone-600">
-            <div className="flex items-baseline justify-between">
-              <span className="text-stone-500">Sent</span>
-              <span>{fmtDateLong(project.invoice_sent_at)}</span>
+          <div className="rounded-xl border border-stone-200/80 bg-white p-4 shadow-sm space-y-3">
+            <div className="flex items-center justify-between text-xs text-stone-600">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-stone-400 shrink-0" />
+                <span className="text-stone-500">Sent Date</span>
+              </div>
+              <span className="font-medium text-stone-800">{fmtDateLong(project.invoice_sent_at)}</span>
             </div>
-            <div className="flex items-baseline justify-between">
-              <span className="text-stone-500">Due</span>
-              <span>{fmtDateLong(project.payment_due_date)}</span>
+
+            <div className="flex items-center justify-between text-xs text-stone-600">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-stone-400 shrink-0" />
+                <span className="text-stone-500">Due Date</span>
+              </div>
+              <span className="font-medium text-stone-800">{fmtDateLong(project.payment_due_date)}</span>
             </div>
+
             {project.customer_email && (
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-stone-500">Email</span>
-                <span className="min-w-0 truncate text-right">{project.customer_email}</span>
+              <div className="flex items-center justify-between text-xs text-stone-600 pt-2 border-t border-stone-100">
+                <div className="flex items-center gap-2 shrink-0">
+                  <Mail className="h-4 w-4 text-stone-400 shrink-0" />
+                  <span className="text-stone-500">Email</span>
+                </div>
+                <span className="truncate pl-3 font-medium text-stone-800" title={project.customer_email}>
+                  {project.customer_email}
+                </span>
               </div>
             )}
           </div>
 
           {lineItems.length > 0 && (
-            <div className="mb-5">
-              <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-stone-500">Line items</p>
-              <div className="divide-y divide-stone-100 rounded-xl border border-stone-200">
-                {lineItems.map((item: any, i: number) => (
-                  <div key={i} className="flex items-start justify-between gap-3 px-3 py-2.5">
-                    <div className="min-w-0">
-                      <p className="truncate text-[13px] text-stone-800">{item.description || '—'}</p>
-                      <p className="text-[12px] text-stone-400">Qty {item.quantity || 1}</p>
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-stone-500">
+                Line Items ({lineItems.length})
+              </h4>
+              <div className="overflow-hidden rounded-xl border border-stone-200/80 bg-white shadow-sm divide-y divide-stone-100">
+                {lineItems.map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-3 p-3.5 transition-colors hover:bg-stone-50/50"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-medium text-stone-900">
+                        {item.description || 'Item Description'}
+                      </p>
+                      <p className="text-[11px] text-stone-400 mt-0.5">
+                        Qty: {item.quantity || 1}
+                        {item.rate ? ` × ${fmtExact(item.rate)}` : ''}
+                      </p>
                     </div>
-                    <span className="shrink-0 text-[13px] tabular-nums text-stone-900">{fmtExact(item.amount || 0)}</span>
+                    <span className="shrink-0 text-xs font-semibold tabular-nums text-stone-900">
+                      {fmtExact(item.amount)}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -112,13 +197,14 @@ export default function InvoiceDetailDrawer({
           )}
         </div>
 
-              <div className="border-t border-stone-200 px-5 py-4">
+        <div className="border-t border-stone-200 bg-white px-6 py-4">
           <button
             onClick={onOpenBilling}
-            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-teal-700 py-2.5 text-[13px] font-medium text-white transition-colors hover:bg-teal-800"
+            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-teal-700 py-3 text-xs font-semibold text-white shadow-sm transition-all hover:bg-teal-800 active:scale-[0.99] focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-1"
           >
-            <CreditCard className="h-3.5 w-3.5" />
-            Open Full Billing
+            <CreditCard className="h-4 w-4" />
+            <span>Open Full Billing</span>
+            <ArrowRight className="h-3.5 w-3.5 text-teal-200 transition-transform group-hover:translate-x-0.5" />
           </button>
         </div>
       </div>

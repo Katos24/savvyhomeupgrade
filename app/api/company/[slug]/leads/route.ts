@@ -187,7 +187,11 @@ export async function GET(request: Request, { params }: Props) {
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (${payment} = '' OR p.payment_status = ${payment})
+          AND (
+            ${payment} = ''
+            OR (${payment} = 'awaiting' AND p.invoice_sent_at IS NOT NULL AND p.payment_status IS DISTINCT FROM 'paid')
+            OR (${payment} != 'awaiting' AND p.payment_status = ${payment})
+          )
           AND (
             ${assignee} = '' OR
             (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
@@ -261,7 +265,11 @@ export async function GET(request: Request, { params }: Props) {
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (${payment} = '' OR p.payment_status = ${payment})
+          AND (
+  ${payment} = ''
+  OR (${payment} = 'awaiting' AND p.invoice_sent_at IS NOT NULL AND p.payment_status IS DISTINCT FROM 'paid')
+  OR (${payment} != 'awaiting' AND p.payment_status = ${payment})
+)
           AND (
             ${assignee} = '' OR
             (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR

@@ -480,7 +480,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
               {/* Invoices Card */}
               <button
-                onClick={() => router.push(`/${company.slug}/leads?payment=awaiting`)}
+                onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
                 className={`text-left rounded-2xl p-4 sm:p-6 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
               >
                 <p className={`text-base sm:text-lg font-medium ${cardText} mb-3`}>Invoices</p>

@@ -1,9 +1,21 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { ArrowLeft, Search, Mail, Calendar, DollarSign, AlertTriangle, ChevronDown, Bell, X, FileText } from 'lucide-react'
-
-
+import {
+  ArrowLeft,
+  Search,
+  Mail,
+  Calendar,
+  DollarSign,
+  AlertTriangle,
+  ChevronDown,
+  Bell,
+  X,
+  FileText,
+  ExternalLink,
+  CheckCircle2,
+  AlertCircle
+} from 'lucide-react'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface QuoteLineItem {
@@ -59,7 +71,7 @@ interface FlatEmail {
   subject?: string | null
   html_body?: string | null
   outbox_id?: number
-    amount_due?: number | null
+  amount_due?: number | null
   days_overdue?: number | null
   due_date?: string | null
   lead_id?: number | null
@@ -152,22 +164,57 @@ function fmtMoney(n: number | undefined | null): string {
 function getTypeConfig(type: string, kind?: string | null) {
   if (type === 'invoice') {
     if (kind === 'deposit') {
-      return { label: 'Deposit Request', icon: <DollarSign className="w-5 h-5" />, color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)' }
+      return { 
+        label: 'Deposit Request', 
+        icon: <DollarSign className="w-4 h-4" />, 
+        badgeBg: 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-500/30',
+        iconBg: 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+      }
     }
     if (kind === 'balance') {
-      return { label: 'Balance Request', icon: <DollarSign className="w-5 h-5" />, color: '#06b6d4', bg: 'rgba(6,182,212,0.08)', border: 'rgba(6,182,212,0.2)' }
+      return { 
+        label: 'Balance Request', 
+        icon: <DollarSign className="w-4 h-4" />, 
+        badgeBg: 'bg-cyan-500/10 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-400 border-cyan-500/30',
+        iconBg: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-400'
+      }
     }
-    return { label: 'Invoice', icon: <FileText className="w-5 h-5" />, color: '#22c55e', bg: 'rgba(34,197,94,0.08)', border: 'rgba(34,197,94,0.2)' }
+    return { 
+      label: 'Invoice', 
+      icon: <FileText className="w-4 h-4" />, 
+      badgeBg: 'bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
+      iconBg: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+    }
   }
   switch (type) {
     case 'quote':
-      return { label: 'Quote', icon: <DollarSign className="w-5 h-5" />, color: '#f97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)' }
+      return { 
+        label: 'Quote', 
+        icon: <DollarSign className="w-4 h-4" />, 
+        badgeBg: 'bg-orange-500/10 dark:bg-orange-500/20 text-orange-700 dark:text-orange-400 border-orange-500/30',
+        iconBg: 'bg-orange-100 text-orange-700 dark:bg-orange-950/60 dark:text-orange-400'
+      }
     case 'schedule':
-      return { label: 'Schedule', icon: <Calendar className="w-5 h-5" />, color: '#60a5fa', bg: 'rgba(96,165,250,0.08)', border: 'rgba(96,165,250,0.2)' }
+      return { 
+        label: 'Schedule', 
+        icon: <Calendar className="w-4 h-4" />, 
+        badgeBg: 'bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
+        iconBg: 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'
+      }
     case 'payment_reminder':
-      return { label: 'Payment Reminder', icon: <Bell className="w-5 h-5" />, color: '#fb923c', bg: 'rgba(251,146,60,0.08)', border: 'rgba(251,146,60,0.2)' }
+      return { 
+        label: 'Payment Reminder', 
+        icon: <Bell className="w-4 h-4" />, 
+        badgeBg: 'bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400 border-purple-500/30',
+        iconBg: 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-400'
+      }
     default:
-      return { label: type, icon: <Mail className="w-5 h-5" />, color: '#94a3b8', bg: 'rgba(148,163,184,0.08)', border: 'rgba(148,163,184,0.2)' }
+      return { 
+        label: type, 
+        icon: <Mail className="w-4 h-4" />, 
+        badgeBg: 'bg-slate-500/10 dark:bg-slate-500/20 text-slate-700 dark:text-slate-300 border-slate-500/30',
+        iconBg: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+      }
   }
 }
 
@@ -185,7 +232,7 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
       lead_id: e.lead_id || null,
       sent_by_email: e.sent_by_email,
       isDup: false,
-            quote_data: metadata.quote_data || [],
+      quote_data: metadata.quote_data || [],
       quote_total: metadata.quote_total ? parseFloat(metadata.quote_total) : undefined,
       scheduled_date: metadata.scheduled_date || null,
       scheduled_time: metadata.scheduled_time || null,
@@ -264,19 +311,35 @@ function buildEmailList(projects: Project[], outboxEmails: OutboxEmail[] = []): 
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function OutboxClient({ company, projects, outboxEmails = [], totalEmails, totalStats, typeCountMap = {} }: Props) {
-    const [isDark, setIsDark] = useState<boolean>(() => {
-      if (typeof window === 'undefined') return true
-      return localStorage.getItem('outbox-theme') !== 'light'
-    })
-    useEffect(() => { localStorage.setItem('outbox-theme', isDark ? 'dark' : 'light') }, [isDark])
+  // Initialize dark mode state safely
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true
+    const saved = localStorage.getItem('outbox-theme')
+    if (saved !== null) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+
+  // Sync dark class directly onto root <html> tag for Tailwind dark variant support
+  useEffect(() => {
+    const root = document.documentElement
+    if (isDark) {
+      root.classList.add('dark')
+      localStorage.setItem('outbox-theme', 'dark')
+    } else {
+      root.classList.remove('dark')
+      localStorage.setItem('outbox-theme', 'light')
+    }
+  }, [isDark])
+
   const [tab, setTab] = useState<'all' | 'quote' | 'schedule' | 'payment_reminder' | 'invoice'>('all')
   const [outboxPage, setOutboxPage] = useState(1)
   const [allOutboxEmails, setAllOutboxEmails] = useState<OutboxEmail[]>(outboxEmails)
   const [loadingMore, setLoadingMore] = useState(false)
-const [mounted, setMounted] = useState(false)
-useEffect(() => setMounted(true), [])
-useEffect(() => {
-    // When tab changes reset to first page and reload with type filter
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => setMounted(true), [])
+
+  useEffect(() => {
     const fetchFiltered = async () => {
       setLoadingMore(true)
       try {
@@ -293,21 +356,20 @@ useEffect(() => {
         setLoadingMore(false)
       }
     }
-    // Only refetch if not the initial load
     if (mounted) fetchFiltered()
   }, [tab])
-const [search, setSearch] = useState('')
+
+  const [search, setSearch] = useState('')
   const [dateRange, setDateRange] = useState('')
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null)
   const [dupAlertDismissed, setDupAlertDismissed] = useState(false)
   const [previewHtml, setPreviewHtml] = useState<string | null>(null)
 
-  // Only show load more if filters are clear and there are more server-side emails
-const hasActiveFilters = !!(search || dateRange)
-const tabTotal = tab === 'all' ? (totalEmails ?? 0) : (typeCountMap[tab] ?? 0)
-const hasMore = allOutboxEmails.length < tabTotal
+  const hasActiveFilters = !!(search || dateRange)
+  const tabTotal = tab === 'all' ? (totalEmails ?? 0) : (typeCountMap[tab] ?? 0)
+  const hasMore = allOutboxEmails.length < tabTotal
 
-   const loadMore = async () => {
+  const loadMore = async () => {
     setLoadingMore(true)
     try {
       const nextPage = outboxPage + 1
@@ -324,12 +386,8 @@ const hasMore = allOutboxEmails.length < tabTotal
       setLoadingMore(false)
     }
   }
-  const allEmails = useMemo(() => buildEmailList(projects, allOutboxEmails), [projects, allOutboxEmails])
 
-  const senders = useMemo(() =>
-    [...new Set(allEmails.map(e => e.sent_by_email))].sort(),
-    [allEmails]
-  )
+  const allEmails = useMemo(() => buildEmailList(projects, allOutboxEmails), [projects, allOutboxEmails])
 
   const filtered = useMemo(() => {
     const now = new Date()
@@ -372,450 +430,517 @@ const hasMore = allOutboxEmails.length < tabTotal
     { key: 'all',              label: 'All',       count: totalEmails ?? allEmails.length },
     { key: 'quote',            label: 'Quotes',    count: typeCountMap['quote'] ?? allEmails.filter(e => e.type === 'quote').length },
     { key: 'schedule',         label: 'Schedules', count: typeCountMap['schedule'] ?? allEmails.filter(e => e.type === 'schedule').length },
-  { key: 'payment_reminder', label: 'Reminders', count: typeCountMap['payment_reminder'] ?? reminderCount },
+    { key: 'payment_reminder', label: 'Reminders', count: typeCountMap['payment_reminder'] ?? reminderCount },
     { key: 'invoice',          label: 'Invoices',  count: typeCountMap['invoice'] ?? allEmails.filter(e => e.type === 'invoice').length },
   ] as const
 
   const toggleRow = (idx: number) => setExpandedIdx(prev => prev === idx ? null : idx)
 
   const clearFilters = () => {
-  setSearch('')
-  setDateRange('')
-  setTab('all')
-}
-
-  const bg = isDark ? '#06080F' : '#f8fafc'
-  const textPrimary = isDark ? '#e8eaf0' : '#0f172a'
-  const cardBg = isDark ? '#0B0F1A' : '#ffffff'
-  const cardBgExpanded = isDark ? '#161921' : '#f1f5f9'
-  const subtleBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.08)'
-  const subtleBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.03)'
-  const inputBg = isDark ? 'rgba(255,255,255,0.05)' : '#ffffff'
-  const grayText = isDark ? 'text-gray-500' : 'text-slate-500'
-  const grayTextDark = isDark ? 'text-gray-400' : 'text-slate-600'
+    setSearch('')
+    setDateRange('')
+    setTab('all')
+  }
 
   return (
-    <div className={`min-h-screen selection:bg-blue-500/30 ${isDark ? 'text-[#e8eaf0]' : 'text-slate-900'}`} style={{ background: bg, colorScheme: isDark ? 'dark' : 'light' }}>
-
-      {/* Top bar */}
-      <div className="sticky top-0 z-50 px-4 sm:px-6 flex items-center h-14 justify-between" style={{ borderBottom: `1px solid ${subtleBorder}`, background: isDark ? 'rgba(6,8,15,0.9)' : 'rgba(248,250,252,0.9)', backdropFilter: 'blur(12px)' }}>
-        <div className="flex items-center gap-3">
-          <a href={`/${company.slug}/dashboard`} className="p-2 hover:bg-white/5 rounded-xl transition-colors group">
-            <ArrowLeft className={`w-4 h-4 ${grayText} group-hover:${isDark ? 'text-white' : 'text-slate-900'}`} />
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-40 h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <a 
+            href={`/${company.slug}/dashboard`} 
+            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            title="Back to dashboard"
+          >
+            <ArrowLeft className="w-5 h-5" />
           </a>
-          <div className="h-4 w-[1px]" style={{ background: subtleBorder }} />
-          <h1 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Outbox</h1>
+          <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800" />
+          <div>
+            <h1 className="text-base font-semibold text-slate-900 dark:text-white">Outbox</h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{company.name}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setIsDark(v => !v)}
-            className="px-3 py-1.5 rounded-full text-xs font-medium transition-all"
-            style={{ background: subtleBg, border: `1px solid ${subtleBorder}`, color: isDark ? '#94a3b8' : '#475569' }}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
           >
-            {isDark ? 'Dark' : 'Light'}
+            {isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}
           </button>
-          <div className="flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-            <span className="text-[11px] font-medium text-emerald-400 hidden sm:inline">Connected</span>
+          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hidden sm:inline">Connected</span>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="px-4 sm:px-6 py-8 sm:py-10 max-w-7xl mx-auto">
+      {/* Main Workspace */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">
 
-        {/* Header */}
-        <div className="mb-8 sm:mb-10 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        {/* Header & Main Stats */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
-            <p className="text-blue-500 text-xs font-medium mb-2">Email history</p>
-            <h2 className={`text-2xl sm:text-3xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Sent emails</h2>
-            <p className={`${grayText} text-sm mt-1`}>All customer-facing emails across every project</p>
+            <span className="text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider">Communication Logs</span>
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mt-1">Outbox Delivery History</h2>
+            <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-xl">
+              Track, verify, and review every customer email dispatched across all company projects.
+            </p>
           </div>
-          <div className="flex flex-col sm:items-end">
-            <p className={`${grayText} text-xs font-medium mb-1`}>Total sent</p>
-            <div className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{totalStats?.sent ?? allEmails.length}</div>
-          </div>
-        </div>
 
-        {/* Stats — single condensed strip instead of 4 separate cards */}
-        <div className="flex items-stretch rounded-2xl mb-8 sm:mb-10 overflow-hidden"
-          style={{ background: isDark ? 'rgba(17,19,24,0.8)' : '#ffffff', border: `1px solid ${subtleBorder}` }}>
-          {[
-            { label: 'Sent',      value: totalStats?.sent ?? allEmails.length,           color: isDark ? 'text-white' : 'text-slate-900' },
-            { label: 'Revenue',   value: fmtMoney(totalStats?.revenue ?? totalQuoteVal), color: 'text-orange-500' },
-            { label: 'Reminders', value: totalStats?.reminders ?? reminderCount,         color: 'text-blue-500' },
-            { label: 'Failed',    value: totalStats?.failed ?? failedCount,              color: (totalStats?.failed ?? failedCount) > 0 ? 'text-red-500' : 'text-emerald-500' },
-          ].map((s, i) => (
-            <div key={i} className="flex-1 px-4 sm:px-6 py-4" style={{ borderLeft: i > 0 ? `1px solid ${subtleBorder}` : 'none' }}>
-              <p className={`text-[11px] ${grayText} mb-1`}>{s.label}</p>
-              <p className={`text-xl sm:text-2xl font-semibold ${s.color}`}>{s.value}</p>
+          {/* Total Metric Card */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-sm min-w-[180px]">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Total System Emails</span>
+            <div className="text-3xl font-bold text-slate-900 dark:text-white mt-1">
+              {totalStats?.sent ?? allEmails.length}
             </div>
-          ))}
+          </div>
         </div>
 
-        {/* Duplicate alert */}
+        {/* Stats Summary Bar */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Sent</span>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">{totalStats?.sent ?? allEmails.length}</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Quoted Value</span>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400 mt-2">{fmtMoney(totalStats?.revenue ?? totalQuoteVal)}</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Reminders Sent</span>
+            <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-2">{totalStats?.reminders ?? reminderCount}</p>
+          </div>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Delivery Errors</span>
+            <p className={`text-2xl font-bold mt-2 ${(totalStats?.failed ?? failedCount) > 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+              {totalStats?.failed ?? failedCount}
+            </p>
+          </div>
+        </div>
+
+        {/* Duplicate Alert Banner */}
         {dupCount > 0 && !dupAlertDismissed && (
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-6"
-            style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', color: '#b45309' }}>
-            <AlertTriangle className="w-4 h-4 shrink-0" />
-            <span className="flex-1 text-sm font-medium"><strong>{dupCount} emails</strong> may be accidental duplicate sends.</span>
-            <button onClick={() => setDupAlertDismissed(true)} className="text-amber-600 hover:text-amber-500 shrink-0">
+          <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="text-sm font-medium">
+                <strong>{dupCount} potential duplicate emails</strong> detected (multiple sends within short intervals).
+              </span>
+            </div>
+            <button 
+              onClick={() => setDupAlertDismissed(true)} 
+              className="p-1 rounded-lg hover:bg-amber-500/20 transition-colors text-amber-700 dark:text-amber-300"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
         )}
 
-        {/* Toolbar */}
-        <div className="flex flex-col gap-3 mb-6">
-          {/* Tabs — full width scrollable */}
-          <div className="flex p-1 rounded-xl overflow-x-auto"
-            style={{ scrollbarWidth: 'none', background: subtleBg, border: `1px solid ${subtleBorder}` }}>
-            {tabs.map(t => (
-              <button key={t.key} onClick={() => { setTab(t.key); setExpandedIdx(null); }}
-                className={`px-4 sm:px-5 py-2.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-1 sm:flex-none ${
-                  tab === t.key ? 'bg-blue-600 text-white' : `${grayTextDark} hover:${isDark ? 'text-gray-200' : 'text-slate-800'}`
-                }`}>
-                {t.label}
-                <span className="ml-1.5 opacity-50 text-xs">{t.count}</span>
-              </button>
-            ))}
+        {/* Controls: Navigation Tabs & Search/Filters */}
+        <div className="space-y-4">
+          
+          {/* Category Tabs */}
+          <div className="flex items-center gap-2 p-1.5 rounded-xl bg-slate-200/70 dark:bg-slate-900 border border-slate-300/50 dark:border-slate-800 overflow-x-auto">
+            {tabs.map(t => {
+              const isActive = tab === t.key
+              return (
+                <button
+                  key={t.key}
+                  onClick={() => { setTab(t.key); setExpandedIdx(null); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    isActive 
+                      ? 'bg-white dark:bg-blue-600 text-slate-900 dark:text-white shadow-sm' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    isActive 
+                      ? 'bg-slate-100 dark:bg-blue-700 text-slate-800 dark:text-white' 
+                      : 'bg-slate-300/50 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                  }`}>
+                    {t.count}
+                  </span>
+                </button>
+              )
+            })}
           </div>
 
-          {/* Filters row */}
+          {/* Filter Controls Row */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             <div className="relative flex-1">
-              <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-gray-600' : 'text-slate-400'}`} />
-              <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search by name or email..."
-                className={`w-full rounded-xl pl-11 pr-4 py-3 text-sm outline-none transition-all ${isDark ? 'text-white placeholder-gray-600' : 'text-slate-900 placeholder-slate-400'}`}
-                style={{ background: inputBg, border: `1px solid ${subtleBorder}` }} />
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search by customer name or email address..."
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-sm"
+              />
             </div>
-           
-            <select value={dateRange} onChange={e => setDateRange(e.target.value)}
-  className={`rounded-xl px-3 py-3 text-sm outline-none cursor-pointer ${grayTextDark}`}
-  style={{ background: inputBg, border: `1px solid ${subtleBorder}` }}>
-  <option key="all" value="">All time</option>
-  <option key="today" value="today">Today</option>
-  <option key="week" value="week">This week</option>
-  <option key="month" value="month">This month</option>
-</select>
+
+            <select
+              value={dateRange}
+              onChange={e => setDateRange(e.target.value)}
+              className="px-4 py-2.5 rounded-xl text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm"
+            >
+              <option value="">All Time</option>
+              <option value="today">Today</option>
+              <option value="week">Past 7 Days</option>
+              <option value="month">Past 30 Days</option>
+            </select>
+
             {hasActiveFilters && (
-              <button onClick={clearFilters}
-                className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-xl text-sm font-medium text-red-500 transition-all"
-                style={{ background: isDark ? 'rgba(239,68,68,0.08)' : 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                <X className="w-3.5 h-3.5" /> Clear
+              <button
+                onClick={clearFilters}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 transition-all cursor-pointer"
+              >
+                <X className="w-4 h-4" /> Reset Filters
               </button>
             )}
           </div>
         </div>
 
-        {/* Count */}
-        <div className={`text-sm ${grayText} mb-4`}>
-          Showing <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{filtered.length}</span> of <span className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{allEmails.length}</span> emails
-          {hasActiveFilters && <span className="text-blue-500 ml-2">· filtered</span>}
+        {/* Results Count Banner */}
+        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400 px-1">
+          <span>
+            Showing <strong className="text-slate-900 dark:text-white">{filtered.length}</strong> of {allEmails.length} messages
+          </span>
+          {hasActiveFilters && <span className="text-blue-600 dark:text-blue-400 font-semibold">• Filters Active</span>}
         </div>
 
-        {/* Email feed */}
-        <div className="space-y-5">
+        {/* Email Feed */}
+        <div className="space-y-6">
           {filtered.length === 0 ? (
-            <div className="py-20 sm:py-28 text-center rounded-2xl"
-              style={{ border: `1px dashed ${subtleBorder}` }}>
-              <Mail className={`w-10 h-10 ${isDark ? 'text-gray-700' : 'text-slate-300'} mx-auto mb-4`} />
-              <p className={`${grayText} text-sm mb-2`}>No matching emails</p>
+            <div className="py-20 text-center rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+              <Mail className="w-10 h-10 text-slate-400 dark:text-slate-600 mx-auto mb-3" />
+              <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">No emails match your filter</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Try adjusting your search criteria or switching tabs.</p>
               {hasActiveFilters && (
-                <button onClick={clearFilters} className="text-blue-500 text-sm font-medium hover:text-blue-400 underline mt-2">
-                  Clear filters
+                <button onClick={clearFilters} className="mt-4 text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+                  Clear current filters
                 </button>
               )}
             </div>
           ) : (
             grouped.map(group => (
-              <div key={group.label} className="space-y-2">
-                <div className="flex items-center gap-3 px-2 py-1">
-                  <span className={`text-xs font-medium ${grayText} shrink-0`}>{group.label}</span>
-                  <div className="h-[1px] flex-1" style={{ background: subtleBorder }} />
-                  <span className={`text-xs ${grayText} shrink-0`}>{group.emails.length}</span>
+              <div key={group.label} className="space-y-3">
+                
+                {/* Group Section Header */}
+                <div className="flex items-center gap-3 pt-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{group.label}</span>
+                  <div className="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800" />
+                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">{group.emails.length}</span>
                 </div>
 
+                {/* List of Email Cards */}
+                <div className="space-y-2.5">
+                  {group.emails.map(email => {
+                    const isExpanded = expandedIdx === email.globalIdx
+                    const cfg = getTypeConfig(email.type, email.invoice_kind)
+                    const isQ = email.type === 'quote'
+                    const isSched = email.type === 'schedule'
+                    const isReminder = email.type === 'payment_reminder'
+                    const isInvoice = email.type === 'invoice'
 
-                {group.emails.map(email => {
-                  const isExpanded = expandedIdx === email.globalIdx
-                  const cfg = getTypeConfig(email.type, email.invoice_kind)
-                                                     const isQ = email.type === 'quote'
-                  const isSched = email.type === 'schedule'
-                  const isReminder = email.type === 'payment_reminder'
-                  const isInvoice = email.type === 'invoice'
+                    return (
+                      <div
+                        key={`${email.project_id}-${email.type}-${email.sent_at}-${email.globalIdx}`}
+                        className={`rounded-xl border transition-all duration-150 overflow-hidden ${
+                          isExpanded 
+                            ? 'bg-white dark:bg-slate-900 border-blue-500 dark:border-blue-500 shadow-md ring-1 ring-blue-500/20' 
+                            : 'bg-white dark:bg-slate-900/90 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'
+                        }`}
+                      >
+                        {/* Row Summary Bar */}
+                        <div
+                          onClick={() => toggleRow(email.globalIdx)}
+                          className="p-4 flex items-center justify-between gap-4 cursor-pointer select-none"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            
+                            {/* Type Icon */}
+                            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 font-medium ${cfg.iconBg}`}>
+                              {cfg.icon}
+                            </div>
 
-                  return (
-                    <div key={`${email.project_id}-${email.type}-${email.sent_at}-${email.globalIdx}`}
-                      className="relative overflow-hidden rounded-xl transition-all"
-                      style={{
-                        background: isExpanded ? cardBgExpanded : cardBg,
-                        border: `1px solid ${isExpanded ? 'rgba(37,99,235,0.3)' : subtleBorder}`,
-                      }}>
+                            {/* Customer & Type Badges */}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-md border ${cfg.badgeBg}`}>
+                                  {cfg.label}
+                                </span>
 
-                      {/* Left accent */}
-                      <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl"
-                        style={{ background: email.status === 'failed' ? '#ef4444' : isExpanded ? '#2563eb' : 'rgba(37,99,235,0.2)' }} />
+                                {email.status === 'failed' && (
+                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20 flex items-center gap-1">
+                                    <AlertCircle className="w-3 h-3" /> Failed
+                                  </span>
+                                )}
 
-                      {/* Row */}
-                      <div onClick={() => toggleRow(email.globalIdx)}
-                        className="flex items-center gap-3 sm:gap-5 pl-4 sm:pl-5 pr-3 sm:pr-5 py-4 cursor-pointer">
+                                {email.isDup && email.status !== 'failed' && (
+                                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+                                    Duplicate
+                                  </span>
+                                )}
+                              </div>
 
-                        {/* Icon */}
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all"
-                          style={{ background: cfg.bg, border: `1px solid ${cfg.border}`, color: cfg.color }}>
-                          {cfg.icon}
-                        </div>
+                              <div className="flex items-baseline gap-2">
+                                <h4 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                  {email.customer_name || 'Unnamed Client'}
+                                </h4>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 truncate hidden md:inline">
+                                  • {email.customer_email}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
 
-                        {/* Name + type */}
-                        <div className="min-w-0 shrink-0" style={{ width: '30%', maxWidth: 180 }}>
-                          <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-                            <p className="text-[11px] font-medium shrink-0" style={{ color: cfg.color }}>{cfg.label}</p>
-                            {email.status === 'failed' && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
-                                style={{ background: 'rgba(239,68,68,0.1)', color: '#f87171', border: '1px solid rgba(239,68,68,0.2)' }}>Failed</span>
+                          {/* Middle Key Metrics */}
+                          <div className="hidden lg:flex items-center gap-6 shrink-0 px-4">
+                            {isQ && (email.quote_total ?? 0) > 0 && (
+                              <div className="text-right">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Quote Total</span>
+                                <span className="text-sm font-extrabold text-orange-600 dark:text-orange-400">{fmtMoney(email.quote_total)}</span>
+                              </div>
                             )}
-                            {email.isDup && email.status !== 'failed' && (
-                              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full shrink-0"
-                                style={{ background: 'rgba(251,191,36,0.1)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.2)' }}>Dup</span>
+                            {isSched && email.scheduled_date && (
+                              <div className="text-right">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Scheduled</span>
+                                <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">{fmtDate(email.scheduled_date)}</span>
+                              </div>
+                            )}
+                            {isReminder && (email.amount_due ?? 0) > 0 && (
+                              <div className="text-right">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Amount Due</span>
+                                <span className="text-sm font-extrabold text-purple-600 dark:text-purple-400">{fmtMoney(email.amount_due)}</span>
+                              </div>
+                            )}
+                            {isInvoice && (email.invoice_amount ?? 0) > 0 && (
+                              <div className="text-right">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Invoice Amount</span>
+                                <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">{fmtMoney(email.invoice_amount)}</span>
+                              </div>
                             )}
                           </div>
-                          <h4 className={`font-medium text-sm truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{email.customer_name}</h4>
-                        </div>
 
-                        {/* Middle details — hidden on small mobile */}
-                        <div className="hidden sm:flex flex-1 items-center gap-6 min-w-0">
-                          <div className="flex flex-col min-w-0">
-                            <span className={`text-[11px] ${grayText} mb-0.5`}>To</span>
-                            <span className={`text-sm ${grayTextDark} truncate`}>{email.customer_email}</span>
-                          </div>
-                          {isQ && (email.quote_total ?? 0) > 0 && (
-                            <div className="flex flex-col shrink-0">
-                              <span className="text-[11px] mb-0.5" style={{ color: cfg.color }}>Amount</span>
-                              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtMoney(email.quote_total)}</span>
+                          {/* Timestamp & Accordion Chevron */}
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                {mounted ? timeAgo(email.sent_at) : fmtDate(email.sent_at)}
+                              </p>
+                              <p className="text-[11px] text-slate-400 dark:text-slate-500">{fmtTime(email.sent_at)}</p>
                             </div>
-                          )}
-                          {isSched && email.scheduled_date && (
-                            <div className="flex flex-col shrink-0">
-                              <span className="text-[11px] text-blue-500 mb-0.5">Date</span>
-                              <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtDate(email.scheduled_date)}</span>
+                            <div className={`p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}>
+                              <ChevronDown className="w-4 h-4" />
                             </div>
-                          )}
-                                                  {isReminder && (email.amount_due ?? 0) > 0 && (
-                            <div className="flex flex-col shrink-0">
-                              <span className="text-[11px] mb-0.5" style={{ color: cfg.color }}>Due</span>
-                              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtMoney(email.amount_due)}</span>
-                            </div>
-                          )}
-                          {isInvoice && (email.invoice_amount ?? 0) > 0 && (
-                            <div className="flex flex-col shrink-0">
-                              <span className="text-[11px] mb-0.5" style={{ color: cfg.color }}>
-                                {email.invoice_kind === 'deposit' ? 'Deposit' : email.invoice_kind === 'balance' ? 'Balance' : 'Amount'}
-                              </span>
-                              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtMoney(email.invoice_amount)}</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Time + chevron */}
-                        <div className="flex items-center gap-3 shrink-0 ml-auto">
-                         <div className="text-right hidden xs:block">
-  <p className={`text-[11px] ${grayText}`}>{mounted ? timeAgo(email.sent_at) : fmtDate(email.sent_at)}</p>
-  <p className={`text-[10px] ${isDark ? 'text-gray-600' : 'text-slate-400'}`}>{fmtTime(email.sent_at)}</p>
-</div>
-<p className={`text-[11px] ${grayText} xs:hidden`}>{mounted ? timeAgo(email.sent_at) : fmtDate(email.sent_at)}</p>
-                          <div className="w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 shrink-0"
-                            style={{
-                              border: `1px solid ${subtleBorder}`,
-                              background: isExpanded ? (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(15,23,42,0.06)') : 'transparent',
-                              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-                            }}>
-                            <ChevronDown size={14} className={grayText} />
                           </div>
                         </div>
-                      </div>
 
-                      {/* Expanded */}
-                      {isExpanded && (
-                        <div style={{ borderTop: `1px solid ${subtleBorder}`, background: isDark ? 'rgba(6,8,15,0.5)' : 'rgba(248,250,252,0.6)' }}>
-                          <div className="p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-10">
-
-                            {/* Content */}
-                            <div className="lg:col-span-2">
-                                                            <h5 className={`text-xs font-medium ${grayText} mb-4`}>
-                                {isQ ? 'Quote breakdown' : isSched ? 'Schedule details' : isReminder ? 'Reminder details' : isInvoice ? 'Invoice details' : 'Details'}
+                        {/* Expanded Details Body */}
+                        {isExpanded && (
+                          <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-950/60 p-5 sm:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            
+                            {/* Left Columns: Main Item Content */}
+                            <div className="lg:col-span-2 space-y-4">
+                              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                {isQ ? 'Quote Items' : isSched ? 'Schedule Specification' : isReminder ? 'Payment Due Info' : isInvoice ? 'Invoice Details' : 'Message Context'}
                               </h5>
-                              <div className="rounded-xl p-4 sm:p-5" style={{ background: subtleBg, border: `1px solid ${subtleBorder}` }}>
+
+                              <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
                                 {isQ && (
                                   <>
                                     <div className="space-y-3">
                                       {(email.quote_data || []).length === 0 ? (
-                                        <p className={`text-sm ${grayText}`}>No line items available.</p>
-                                      ) : (email.quote_data || []).map((item, idx) => (
-                                        <div key={idx} className="flex justify-between items-start gap-4 pb-3 last:pb-0"
-                                          style={{ borderBottom: idx < (email.quote_data?.length ?? 0) - 1 ? `1px solid ${subtleBorder}` : 'none' }}>
-                                          <div className="min-w-0">
-                                            <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.description || '—'}</p>
-                                            <p className={`text-[11px] ${grayText} mt-0.5`}>
-                                              Qty: {item.quantity || 1} · {fmtMoney(item.unitPrice ?? (item.amount / (item.quantity || 1)))} each
-                                            </p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">No line items available.</p>
+                                      ) : (
+                                        (email.quote_data || []).map((item, idx) => (
+                                          <div key={idx} className="flex justify-between items-start gap-4 pb-3 border-b border-slate-100 dark:border-slate-800 last:border-0 last:pb-0">
+                                            <div>
+                                              <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.description || 'Custom Item'}</p>
+                                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                                Qty: {item.quantity || 1} • {fmtMoney(item.unitPrice ?? (item.amount / (item.quantity || 1)))} each
+                                              </p>
+                                            </div>
+                                            <span className="text-sm font-bold text-slate-900 dark:text-white">{fmtMoney(item.amount)}</span>
                                           </div>
-                                          <span className={`text-sm shrink-0 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtMoney(item.amount)}</span>
-                                        </div>
-                                      ))}
+                                        ))
+                                      )}
                                     </div>
-                                    <div className="flex justify-between items-center pt-4 mt-3"
-                                      style={{ borderTop: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.1)'}` }}>
-                                      <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Total</span>
-                                      <span className="text-lg font-semibold text-orange-500">{fmtMoney(email.quote_total)}</span>
+                                    <div className="flex justify-between items-center pt-3 border-t border-slate-200 dark:border-slate-800">
+                                      <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Total Quoted</span>
+                                      <span className="text-lg font-extrabold text-orange-600 dark:text-orange-400">{fmtMoney(email.quote_total)}</span>
                                     </div>
                                   </>
                                 )}
+
                                 {isSched && (
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
-                                    {[
-                                      { label: 'Date',     value: fmtDate(email.scheduled_date) || 'Not set',                              color: '#3b82f6' },
-                                      { label: 'Time',     value: email.scheduled_time ? fmtScheduleTime(email.scheduled_time) : 'Not set', color: '#3b82f6' },
-                                      { label: 'Customer', value: email.customer_name,                                                      color: isDark ? '#e8eaf0' : '#0f172a' },
-                                    ].map(f => (
-                                      <div key={f.label}>
-                                        <p className={`text-[11px] ${grayText} mb-1`}>{f.label}</p>
-                                        <p className="text-sm font-medium" style={{ color: f.color }}>{f.value}</p>
-                                      </div>
-                                    ))}
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">Date</span>
+                                      <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{fmtDate(email.scheduled_date)}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">Time</span>
+                                      <span className="text-sm font-bold text-slate-900 dark:text-white">{email.scheduled_time ? fmtScheduleTime(email.scheduled_time) : 'Not specified'}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">Assigned To</span>
+                                      <span className="text-sm font-bold text-slate-900 dark:text-white">{email.assigned_to || 'Unassigned'}</span>
+                                    </div>
                                   </div>
                                 )}
-                                                               {isReminder && (
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
-                                    {[
-                                      { label: 'Amount due', value: fmtMoney(email.amount_due), color: '#fb923c' },
-                                      { label: 'Due date',   value: fmtDate(email.due_date),    color: isDark ? '#e8eaf0' : '#0f172a' },
-                                      { label: 'Customer',   value: email.customer_name,         color: isDark ? '#e8eaf0' : '#0f172a' },
-                                    ].map(f => (
-                                      <div key={f.label}>
-                                        <p className={`text-[11px] ${grayText} mb-1`}>{f.label}</p>
-                                        <p className="text-sm font-medium" style={{ color: f.color }}>{f.value}</p>
-                                      </div>
-                                    ))}
+
+                                {isReminder && (
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">Amount Due</span>
+                                      <span className="text-sm font-extrabold text-purple-600 dark:text-purple-400">{fmtMoney(email.amount_due)}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">Due Date</span>
+                                      <span className="text-sm font-bold text-slate-900 dark:text-white">{fmtDate(email.due_date)}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">Client</span>
+                                      <span className="text-sm font-bold text-slate-900 dark:text-white">{email.customer_name}</span>
+                                    </div>
                                   </div>
                                 )}
+
                                 {isInvoice && (
-                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-5">
-                                    {[
-                                      {
-                                        label: email.invoice_kind === 'deposit' ? 'Deposit due' : email.invoice_kind === 'balance' ? 'Balance due' : 'Amount',
-                                        value: fmtMoney(email.invoice_amount),
-                                        color: cfg.color,
-                                      },
-                                      ...(email.invoice_project_total
-                                        ? [{ label: 'Project total', value: fmtMoney(email.invoice_project_total), color: isDark ? '#e8eaf0' : '#0f172a' }]
-                                        : []),
-                                      { label: 'Customer', value: email.customer_name, color: isDark ? '#e8eaf0' : '#0f172a' },
-                                    ].map(f => (
-                                      <div key={f.label}>
-                                        <p className={`text-[11px] ${grayText} mb-1`}>{f.label}</p>
-                                        <p className="text-sm font-medium" style={{ color: f.color }}>{f.value}</p>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">
+                                        {email.invoice_kind === 'deposit' ? 'Deposit Required' : email.invoice_kind === 'balance' ? 'Balance Due' : 'Invoice Amount'}
+                                      </span>
+                                      <span className="text-sm font-extrabold text-emerald-600 dark:text-emerald-400">{fmtMoney(email.invoice_amount)}</span>
+                                    </div>
+                                    {email.invoice_project_total && (
+                                      <div>
+                                        <span className="text-xs text-slate-500 dark:text-slate-400 block">Project Total</span>
+                                        <span className="text-sm font-bold text-slate-900 dark:text-white">{fmtMoney(email.invoice_project_total)}</span>
                                       </div>
-                                    ))}
+                                    )}
+                                    <div>
+                                      <span className="text-xs text-slate-500 dark:text-slate-400 block">Recipient</span>
+                                      <span className="text-sm font-bold text-slate-900 dark:text-white">{email.customer_name}</span>
+                                    </div>
                                   </div>
                                 )}
+
                                 {!isQ && !isSched && !isReminder && !isInvoice && (
-                                  <p className={`text-sm ${grayText}`}>{email.subject || 'No additional details.'}</p>
+                                  <p className="text-sm text-slate-700 dark:text-slate-300">{email.subject || 'No details provided.'}</p>
                                 )}
                               </div>
                             </div>
 
-                            {/* Sidebar */}
+                            {/* Right Column: Metadata & Quick Actions */}
                             <div className="space-y-4">
-                              <div>
-                                <h5 className={`text-xs font-medium ${grayText} mb-3`}>Metadata</h5>
-                                <div className="space-y-3 p-4 rounded-xl" style={{ background: subtleBg, border: `1px solid ${subtleBorder}` }}>
-                                  {[
-                                    { k: 'Sent',   v: `${fmtDate(email.sent_at)} ${fmtTime(email.sent_at)}` },
-                                    { k: 'From',   v: email.sent_by_email },
-                                    { k: 'To',     v: email.customer_email },
-                                    { k: 'Status', v: email.status || 'sent', color: email.status === 'failed' ? '#ef4444' : '#22c55e' },
-                                  ].map(m => (
-                                    <div key={m.k} className="flex justify-between items-start gap-2">
-                                      <span className={`text-[11px] ${grayText} shrink-0`}>{m.k}</span>
-                                      <span className="text-[11px] font-medium text-right break-all" style={{ color: m.color || (isDark ? '#9ca3af' : '#64748b') }}>{m.v}</span>
-                                    </div>
-                                  ))}
-                                  {email.isDup && (
-                                    <div className="flex justify-between items-start gap-2 pt-2" style={{ borderTop: `1px solid ${subtleBorder}` }}>
-                                      <span className={`text-[11px] ${grayText}`}>Note</span>
-                                      <span className="text-[11px] font-medium text-amber-500">Possible duplicate</span>
-                                    </div>
-                                  )}
-                                  {email.error_message && (
-                                    <div className="pt-2" style={{ borderTop: `1px solid ${subtleBorder}` }}>
-                                      <p className="text-[11px] text-red-500 mb-1">Error</p>
-                                      <p className={`text-[11px] ${isDark ? 'text-red-300' : 'text-red-600'}`}>{email.error_message}</p>
-                                    </div>
-                                  )}
+                              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Metadata</h5>
+                              <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5 text-xs">
+                                <div className="flex justify-between gap-2">
+                                  <span className="text-slate-500 dark:text-slate-400">Sent At:</span>
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200">{fmtDate(email.sent_at)} {fmtTime(email.sent_at)}</span>
                                 </div>
+                                <div className="flex justify-between gap-2">
+                                  <span className="text-slate-500 dark:text-slate-400">Sender:</span>
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{email.sent_by_email}</span>
+                                </div>
+                                <div className="flex justify-between gap-2">
+                                  <span className="text-slate-500 dark:text-slate-400">Recipient:</span>
+                                  <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{email.customer_email}</span>
+                                </div>
+                                <div className="flex justify-between gap-2">
+                                  <span className="text-slate-500 dark:text-slate-400">Status:</span>
+                                  <span className={`font-bold ${email.status === 'failed' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                    {email.status || 'sent'}
+                                  </span>
+                                </div>
+
+                                {email.error_message && (
+                                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-red-600 dark:text-red-400">
+                                    <p className="font-bold">Error Log:</p>
+                                    <p className="mt-0.5">{email.error_message}</p>
+                                  </div>
+                                )}
                               </div>
+
                               {email.subject && (
-                                <div className="p-4 rounded-xl" style={{ background: subtleBg, border: `1px solid ${subtleBorder}` }}>
-                                  <p className={`text-[11px] ${grayText} mb-1`}>Subject</p>
-                                  <p className={`text-sm ${grayTextDark}`}>{email.subject}</p>
+                                <div className="bg-white dark:bg-slate-900 rounded-xl p-3 border border-slate-200 dark:border-slate-800 shadow-sm">
+                                  <span className="text-xs text-slate-400 font-bold uppercase tracking-wide block mb-0.5">Subject</span>
+                                  <p className="text-xs font-medium text-slate-800 dark:text-slate-200">{email.subject}</p>
                                 </div>
                               )}
-                              <div className="flex flex-col gap-3">
+
+                              {/* Action Buttons */}
+                              <div className="space-y-2 pt-1">
                                 {email.html_body && (
-                                  <button onClick={(e) => { e.stopPropagation(); setPreviewHtml(email.html_body ?? null); }}
-                                    className={`w-full py-3 rounded-xl text-sm font-medium transition-all ${grayTextDark} hover:${isDark ? 'text-white' : 'text-slate-900'} flex items-center justify-center gap-2`}
-                                    style={{ background: inputBg, border: `1px solid ${subtleBorder}` }}>
-                                    <FileText className="w-3.5 h-3.5" /> Preview email
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); setPreviewHtml(email.html_body ?? null); }}
+                                    className="w-full py-2.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 shadow-sm cursor-pointer"
+                                  >
+                                    <FileText className="w-3.5 h-3.5" /> Preview HTML Content
                                   </button>
                                 )}
-                                <a href={`/${company.slug}/dashboard?lead=${email.lead_id}`}
-                                  className="w-full py-3 rounded-xl text-center text-sm font-medium transition-all no-underline block text-white"
-                                  style={{ background: '#2563eb' }}>
-                                  Jump to project
+                                <a
+                                  href={`/${company.slug}/dashboard?lead=${email.lead_id}`}
+                                  className="w-full py-2.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center justify-center gap-2 shadow-sm text-center"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" /> Open Project Dashboard
                                 </a>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )
-                })}
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             ))
           )}
         </div>
 
-        {/* Load more — only shown when no filters active and more exist server-side */}
+        {/* Load More Button */}
         {hasMore && (
-          <div className="flex justify-center pt-8 pb-2">
-            <button onClick={loadMore} disabled={loadingMore}
-              className={`px-8 py-3 rounded-xl text-sm font-medium ${grayTextDark} hover:${isDark ? 'text-white' : 'text-slate-900'} transition-all disabled:opacity-40`}
-              style={{ background: subtleBg, border: `1px solid ${subtleBorder}` }}>
-{loadingMore ? 'Loading...' : `Load more (${tabTotal - allOutboxEmails.length} remaining)`}
+          <div className="flex justify-center pt-6">
+            <button
+              onClick={loadMore}
+              disabled={loadingMore}
+              className="px-6 py-3 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 shadow-sm cursor-pointer"
+            >
+              {loadingMore ? 'Fetching Emails...' : `Load More Messages (${tabTotal - allOutboxEmails.length} remaining)`}
             </button>
           </div>
         )}
-      </div>
+      </main>
 
-      {/* Email preview modal */}
+      {/* Fullscreen Email Preview Modal */}
       {previewHtml && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
-          style={{ background: 'rgba(0,0,0,0.75)' }}
-          onClick={() => setPreviewHtml(null)}>
-          <div className="relative w-full sm:max-w-3xl flex flex-col"
-            style={{ background: cardBg, border: `1px solid ${subtleBorder}`, borderRadius: '16px 16px 0 0', maxHeight: '92dvh', height: '92dvh' }}
-            onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{ borderBottom: `1px solid ${subtleBorder}` }}>
-              <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Email preview</span>
-              <button onClick={() => setPreviewHtml(null)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg ${grayTextDark} hover:${isDark ? 'text-white' : 'text-slate-900'} transition`}
-                style={{ background: subtleBg }}>
-                <X className="w-4 h-4" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 sm:p-6"
+          onClick={() => setPreviewHtml(null)}
+        >
+          <div
+            className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="text-sm font-bold text-slate-900 dark:text-white">Rendered HTML Email Preview</span>
+              </div>
+              <button
+                onClick={() => setPreviewHtml(null)}
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' } as React.CSSProperties}>
-              <div style={{ background: '#ffffff', borderRadius: '8px', pointerEvents: 'none', color: '#111' }}>
+            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-950">
+              <div className="bg-white rounded-xl p-6 shadow-sm text-slate-900">
                 <style>{`.email-preview-body * { max-width: 100% !important; box-sizing: border-box !important; } .email-preview-body table { width: 100% !important; table-layout: fixed !important; } .email-preview-body img { height: auto !important; }`}</style>
                 <div className="email-preview-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
               </div>

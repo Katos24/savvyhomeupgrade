@@ -5,7 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import {
   Lock,
   Download,
-  X,
   LayoutGrid,
   FileText,
   Tags,
@@ -14,6 +13,9 @@ import {
   Workflow,
   Mail,
   Users,
+  HelpCircle,
+  ExternalLink,
+  ChevronRight,
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -103,18 +105,25 @@ function SectionRailItem({ icon: Icon, imageUrl, label, active, locked, accentCo
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors text-left ${
-        active ? '' : 'text-[#57534e] hover:bg-[#f5f1e8]'
+      className={`group relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-left ${
+        active 
+          ? 'bg-white shadow-sm text-stone-900 font-semibold' 
+          : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/50'
       }`}
-      style={active ? { backgroundColor: `${accentColor}12`, color: accentColor } : undefined}
     >
+      {active && (
+        <span 
+          className="absolute left-0 top-2 bottom-2 w-1 rounded-r-full"
+          style={{ backgroundColor: accentColor }}
+        />
+      )}
       {imageUrl ? (
-        <img src={imageUrl} className="w-3.5 h-3.5 shrink-0" alt="" />
+        <img src={imageUrl} className="w-4 h-4 shrink-0 object-contain" alt="" />
       ) : (
-        <Icon className="w-3.5 h-3.5 shrink-0" />
+        <Icon className={`w-4 h-4 shrink-0 transition-colors ${active ? '' : 'text-stone-400 group-hover:text-stone-600'}`} style={active ? { color: accentColor } : undefined} />
       )}
       <span className="flex-1 truncate">{label}</span>
-      {locked && <Lock className="w-3 h-3 text-[#a8a29e] shrink-0" />}
+      {locked && <Lock className="w-3.5 h-3.5 text-stone-400 shrink-0" />}
     </button>
   );
 }
@@ -125,18 +134,19 @@ function SectionPill({ icon: Icon, imageUrl, label, active, locked, accentColor,
   return (
     <button
       onClick={onClick}
-      className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
-        active ? 'border-transparent' : 'border-[#e7e2d8] text-[#57534e]'
+      className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold border transition-all ${
+        active 
+          ? 'border-stone-900 bg-stone-900 text-white shadow-sm' 
+          : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
       }`}
-      style={active ? { backgroundColor: `${accentColor}14`, color: accentColor } : undefined}
     >
       {imageUrl ? (
-        <img src={imageUrl} className="w-3 h-3 shrink-0" alt="" />
+        <img src={imageUrl} className="w-3.5 h-3.5 shrink-0" alt="" />
       ) : (
-        <Icon className="w-3 h-3 shrink-0" />
+        <Icon className="w-3.5 h-3.5 shrink-0" />
       )}
       {label}
-      {locked && <Lock className="w-2.5 h-2.5" />}
+      {locked && <Lock className="w-3 h-3 text-stone-400" />}
     </button>
   );
 }
@@ -304,14 +314,11 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
 
   const isAdminForSections = currentUser?.role === 'owner' || currentUser?.role === 'admin';
 
-  // The annotation has to sit on the raw array literal itself, before any
-  // .map()/.filter() runs — annotating the end of a chain doesn't flow
-  // contextual typing back through the methods to the original literal.
   const rawSectionGroups: { label: string; items: SectionDef[] }[] = [
     {
       label: 'Get set up',
       items: [
-        { key: 'setup', label: 'Setup', icon: Rocket, visible: true },
+        { key: 'setup', label: 'Setup Guide', icon: Rocket, visible: true },
       ],
     },
     {
@@ -333,8 +340,8 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
       label: 'Running jobs',
       items: [
         { key: 'pipeline', label: 'Pipeline', icon: Workflow, locked: !can(planTier, 'settings_pipeline'), visible: isAdminForSections },
-      { key: 'email-templates', label: 'Emails', icon: Mail, locked: !can(planTier, 'settings_email_templates'), visible: isAdminForSections },
-              { key: 'team', label: 'Team', icon: Users, locked: !can(planTier, 'settings_team'), visible: isAdminForSections },
+        { key: 'email-templates', label: 'Emails', icon: Mail, locked: !can(planTier, 'settings_email_templates'), visible: isAdminForSections },
+        { key: 'team', label: 'Team', icon: Users, locked: !can(planTier, 'settings_team'), visible: isAdminForSections },
       ],
     },
     {
@@ -355,21 +362,32 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const isOwner = currentUser?.role === 'owner';
 
   return (
-    <div className="min-h-screen bg-[#faf9f5]">
-      <div className="max-w-6xl px-4 sm:px-6 py-6 sm:py-8">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold text-[#1c1917]">Home</h1>
+    <div className="min-h-screen bg-[#faf8f5] text-stone-800 antialiased">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        
+        {/* Header Bar */}
+        <div className="flex items-center justify-between pb-6 mb-6 border-b border-stone-200/80">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
+              <span>Settings</span>
+              <ChevronRight className="w-3 h-3" />
+              <span className="text-stone-800 capitalize">{activeSection.replace('-', ' ')}</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-stone-900">Workspace Settings</h1>
+          </div>
+          
           <button
             onClick={() => setShowFaqModal(true)}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#e7e2d8] text-[11px] font-semibold text-[#57534e] hover:bg-[#f5f1e8]"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold text-stone-600 hover:text-stone-900 hover:border-stone-300 shadow-sm transition-all"
             aria-label="How Lead2Project works"
           >
-            ?
+            <HelpCircle className="w-4 h-4 text-stone-500" />
+            <span>Help & FAQ</span>
           </button>
         </div>
 
-        {/* Mobile: horizontal pill strip */}
-        <div className="flex lg:hidden overflow-x-auto gap-2 pb-4 mb-4 scrollbar-none">
+        {/* Mobile: Horizontal Pill Bar */}
+        <div className="flex lg:hidden overflow-x-auto gap-2 pb-4 mb-6 scrollbar-none border-b border-stone-200">
           {visibleSections.map((s) => (
             <SectionPill
               key={s.key}
@@ -384,15 +402,15 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           ))}
         </div>
 
-        <div className="lg:flex lg:gap-8">
-          {/* Desktop: side navigation rail */}
-                  <nav className="hidden lg:block lg:w-52 lg:shrink-0 space-y-4">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+          {/* Desktop: Navigation Rail */}
+          <nav className="hidden lg:block lg:col-span-3 space-y-6 pr-2">
             {sectionGroups.map((group) => (
-              <div key={group.label}>
-                <p className="text-[10px] font-mono font-medium text-[#a8a29e] uppercase tracking-wider px-3 mb-1">
+              <div key={group.label} className="space-y-1">
+                <p className="text-[11px] font-bold text-stone-500 uppercase tracking-wider px-3 mb-2">
                   {group.label}
                 </p>
-                <div className="space-y-0.5">
+                <div className="space-y-1">
                   {group.items.map((s) => (
                     <SectionRailItem
                       key={s.key}
@@ -410,7 +428,8 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             ))}
           </nav>
 
-          <main className="flex-1 min-w-0">
+          {/* Main Workspace Area */}
+          <main className="lg:col-span-9 min-w-0">
             {activeSection === 'setup' && (
               <SetupTab checklistSteps={checklistSteps} onNavigateSection={(section) => setActiveSection(section as SectionKey)} />
             )}
@@ -496,38 +515,38 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
 
       {showQrModal && (
         <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4">
-          <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
-          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className={`p-6 rounded-xl mb-5 flex items-center justify-center transition-colors duration-500 ${qrStyle === 'dark' ? 'bg-slate-900' : 'bg-slate-50 border border-slate-100'}`}>
+          <div className="absolute inset-0 bg-stone-900/60 backdrop-blur-sm" onClick={() => setShowQrModal(false)} />
+          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl max-h-[90vh] overflow-y-auto border border-stone-100">
+            <div className={`p-6 rounded-xl mb-5 flex items-center justify-center transition-colors duration-300 ${qrStyle === 'dark' ? 'bg-stone-900' : 'bg-stone-50 border border-stone-200/60'}`}>
               <div className="relative">
                 <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" alt="QR code" />
                 {includeLogo && logoPreview && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-md border border-slate-100">
+                    <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-md border border-stone-100">
                       <img src={logoPreview} className="w-full h-full object-contain" alt="" />
                     </div>
                   </div>
                 )}
               </div>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="flex gap-2">
                 {['standard', 'brand', 'dark'].map(s => (
                   <button key={s} onClick={() => setQrStyle(s as any)}
-                    className={`flex-1 py-2.5 rounded-lg border text-xs font-medium transition-all ${qrStyle === s ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-slate-200 text-slate-500 hover:border-slate-300'}`}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                    className={`flex-1 py-2 rounded-lg border text-xs font-semibold capitalize transition-all ${qrStyle === s ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
+                    {s}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-sm font-medium text-slate-700">Embed company logo</span>
-                <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-blue-600' : 'bg-slate-300'}`}>
+              <div className="flex items-center justify-between p-3.5 bg-stone-50 rounded-xl border border-stone-200/60">
+                <span className="text-sm font-medium text-stone-700">Embed company logo</span>
+                <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-stone-900' : 'bg-stone-300'}`}>
                   <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => setShowQrModal(false)} className="py-3 text-sm font-medium text-slate-500 hover:text-slate-700 transition bg-slate-50 rounded-xl">Cancel</button>
-                <button onClick={downloadStyledQR} className="py-3 bg-slate-900 text-white rounded-xl font-medium text-sm hover:bg-slate-800 transition flex items-center justify-center gap-2">
+                <button onClick={() => setShowQrModal(false)} className="py-2.5 text-sm font-medium text-stone-600 hover:text-stone-900 transition bg-stone-100 hover:bg-stone-200/70 rounded-xl">Cancel</button>
+                <button onClick={downloadStyledQR} className="py-2.5 bg-stone-900 text-white rounded-xl font-medium text-sm hover:bg-stone-800 transition flex items-center justify-center gap-2 shadow-sm">
                   <Download className="w-4 h-4" /> Export PNG
                 </button>
               </div>
@@ -541,11 +560,14 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
 
 function LockedSection({ label, companySlug }: { label: string; companySlug: string }) {
   return (
-    <div className="max-w-3xl mx-auto py-16 text-center bg-white border border-[#e7e2d8] rounded-2xl">
-      <Lock className="w-5 h-5 text-[#a8a29e] mx-auto mb-3" />
-      <p className="text-sm font-medium text-[#1c1917]">{label} is on the Basic plan</p>
-      <a href={`/${companySlug}/home?section=billing`} className="inline-block mt-3 px-4 py-2 bg-[#1c1917] hover:bg-[#292524] text-white rounded-lg text-xs font-semibold transition-colors">
-        Upgrade to Basic
+    <div className="max-w-xl mx-auto py-12 px-6 text-center bg-white border border-stone-200 rounded-2xl shadow-sm">
+      <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mx-auto mb-4">
+        <Lock className="w-5 h-5 text-stone-500" />
+      </div>
+      <h3 className="text-base font-semibold text-stone-900">{label} is locked</h3>
+      <p className="text-xs text-stone-500 mt-1 mb-6">Upgrade your subscription to unlock {label.toLowerCase()} and additional features.</p>
+      <a href={`/${companySlug}/home?section=billing`} className="inline-flex items-center justify-center px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition-all shadow-sm">
+        Upgrade Plan
       </a>
     </div>
   );

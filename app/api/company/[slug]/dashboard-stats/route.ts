@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '@/lib/auth';
+import { getRecentPayments } from '@/lib/recentPayments';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -137,37 +138,12 @@ export async function GET(request: Request, { params }: Props) {
         AND p.quote_total::numeric > 0
     `;
 
-    // Recent payments — real transactions from the ledger, not a project's
-    // running total. Excludes refunds ('money that came in', not money
-    // going back out) — a refund showing up in a "recent payments" list
-    // would read as new revenue when it's the opposite.
-    //
-    // Sorted by created_at (when actually entered), not paid_on (the
-    // business date, freely backdated on manual entries). This is an
-    // activity feed — "recent" should mean "just happened," not "happened
-    // on a recent calendar date." Matches the same fix already applied in
-    // Financials' equivalent query, so both surfaces agree on what counts
-    // as "recent" for the same underlying data.
-    //
-    // pr.payment_status reflects the project's CURRENT state (as of now),
-    // not necessarily "was this the exact payment that completed it" — for
-    // an older row where a later payment finished the job, this still
-    // correctly shows the job as paid, just not credited to this specific
-    // row's payment as the one that tipped it over. Good enough for an
-    // at-a-glance list; a precise per-row running total would need a
-    // window function and isn't worth the complexity here.
-    const recentPaymentsPromise = sql`
-      SELECT
-        pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,
-        l.name as customer_name, pr.payment_status
-      FROM payments pay
-      JOIN projects pr ON pay.project_id = pr.id
-      JOIN leads l ON pr.lead_id = l.id
-      WHERE pay.company_id = ${companyId}
-        AND pay.kind <> 'refund'
-      ORDER BY pay.created_at DESC
-      LIMIT 6
-    `;
+    // Recent payments — now sourced from the shared lib/recentPayments.ts
+    // function instead of its own inline copy of this query. That
+    // duplication (same query independently written in this file and in
+    // Financials' page.tsx) is exactly what let the two surfaces drift
+    // out of sync — one got the created_at-sort fix, the other didn't.
+    const recentPaymentsPromise = getRecentPayments(sql, companyId, 6, true);
 
     const [
       leadsResult, estimatesResult, jobsResult, invoicesResult,

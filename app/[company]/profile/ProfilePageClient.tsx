@@ -2,14 +2,26 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Mail, Phone, Save, AlertCircle, Check } from 'lucide-react';
+import {
+  ArrowLeft,
+  User,
+  Mail,
+  Phone,
+  Save,
+  AlertCircle,
+  Check,
+  Loader2,
+  Lock,
+  KeyRound,
+  ShieldCheck,
+} from 'lucide-react';
 
-export default function ProfilePageClient({ 
-  company, 
-  currentUser 
-}: { 
-  company: any; 
-  currentUser: any; 
+export default function ProfilePageClient({
+  company,
+  currentUser,
+}: {
+  company: any;
+  currentUser: any;
 }) {
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -48,49 +60,52 @@ export default function ProfilePageClient({
       } else {
         setError(result.error || 'Failed to update profile');
       }
-    } catch (error) {
-      console.error('Profile update error:', error);
+    } catch (err) {
+      console.error('Profile update error:', err);
       setError('Failed to update profile');
     } finally {
       setSaving(false);
     }
   };
 
-  const hasChanges = 
+  const hasChanges =
     formData.name !== (currentUser.name || '') ||
     formData.email !== (currentUser.email || '') ||
     formData.phone !== (currentUser.phone || '');
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      
+    <div className="min-h-screen bg-slate-50/60 font-sans antialiased">
       {/* HEADER */}
-      <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-40">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-          <div className="flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-xs">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0 flex-1">
               {company.logo_url ? (
-                <img 
-                  src={company.logo_url} 
+                <img
+                  src={company.logo_url}
                   alt={`${company.name} logo`}
-                  className="h-10 sm:h-14 w-auto object-contain flex-shrink-0"
+                  className="h-10 sm:h-12 w-auto object-contain shrink-0"
                 />
               ) : (
-                <div className="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg sm:text-2xl shadow-lg flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-900 rounded-xl flex items-center justify-center text-white font-bold text-lg sm:text-xl shadow-xs shrink-0">
                   {company.name.charAt(0)}
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-3xl font-bold text-slate-900 truncate">My Profile</h1>
-                <p className="text-xs sm:text-sm text-slate-600">Manage your account information</p>
+                <h1 className="text-lg sm:text-2xl font-bold text-slate-900 truncate tracking-tight">
+                  My Profile
+                </h1>
+                <p className="text-xs sm:text-sm text-slate-500">
+                  Manage your personal account settings
+                </p>
               </div>
             </div>
-            
+
             <button
               onClick={() => router.push(`/${company.slug}/dashboard`)}
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 font-semibold transition px-4 py-2 rounded-lg hover:bg-slate-100"
+              className="inline-flex items-center gap-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition px-3.5 py-2 rounded-xl hover:bg-slate-100"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4" />
               <span className="hidden sm:inline">Dashboard</span>
             </button>
           </div>
@@ -98,137 +113,158 @@ export default function ProfilePageClient({
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        
-        {/* Success/Error Messages */}
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
+        {/* Alerts */}
         {success && (
-          <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg flex items-center gap-3">
-            <Check className="w-5 h-5 flex-shrink-0" />
+          <div className="mb-6 bg-emerald-50 border border-emerald-200/80 text-emerald-800 px-4 py-3.5 rounded-xl flex items-center gap-3 text-sm shadow-xs animate-in fade-in slide-in-from-top-1">
+            <Check className="w-5 h-5 text-emerald-600 shrink-0" />
             <span className="font-medium">{success}</span>
           </div>
         )}
 
         {error && (
-          <div className="mb-6 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="mb-6 bg-rose-50 border border-rose-200/80 text-rose-800 px-4 py-3.5 rounded-xl flex items-center gap-3 text-sm shadow-xs animate-in fade-in slide-in-from-top-1">
+            <AlertCircle className="w-5 h-5 text-rose-600 shrink-0" />
             <span className="font-medium">{error}</span>
           </div>
         )}
 
         {/* Profile Card */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-          
-          {/* Header with Avatar */}
-          <div className="bg-gradient-to-r from-purple-50 to-pink-50 px-6 py-8 border-b border-slate-200">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-4xl shadow-lg">
+        <div className="bg-white rounded-2xl shadow-xs border border-slate-200/80 overflow-hidden">
+          {/* Header Banner & User Summary */}
+          <div className="bg-gradient-to-r from-slate-900 to-slate-800 px-6 sm:px-8 py-8 text-white">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
+              <div className="w-20 h-20 sm:w-22 sm:h-22 bg-white/10 backdrop-blur-xs rounded-2xl border border-white/20 flex items-center justify-center text-white font-bold text-3xl shadow-inner shrink-0">
                 {currentUser.name?.charAt(0)?.toUpperCase() || '?'}
               </div>
-              <div className="text-center sm:text-left">
-                <h2 className="text-2xl font-bold text-slate-900">{currentUser.name}</h2>
-                <p className="text-slate-600 text-sm mt-1">{currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1)} • {company.name}</p>
-                <p className="text-slate-500 text-xs mt-1">Member since {new Date(currentUser.created_at).toLocaleDateString()}</p>
+              <div className="min-w-0 space-y-1">
+                <h2 className="text-xl sm:text-2xl font-bold truncate">
+                  {currentUser.name}
+                </h2>
+                <div className="flex items-center justify-center sm:justify-start gap-2 text-slate-300 text-xs sm:text-sm">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="capitalize">{currentUser.role}</span>
+                  <span>•</span>
+                  <span className="truncate">{company.name}</span>
+                </div>
+                <p className="text-slate-400 text-xs pt-1">
+                  Member since {new Date(currentUser.created_at).toLocaleDateString()}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Form Fields */}
-          <div className="p-6 space-y-6">
-            
-            {/* Name Field */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                <User className="w-4 h-4" />
-                Full Name *
-              </label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-base"
-                placeholder="John Doe"
-              />
-            </div>
+          <div className="p-6 sm:p-8 space-y-6">
+            <div className="grid gap-6">
+              {/* Full Name */}
+              <div>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  <User className="w-4 h-4 text-slate-500" />
+                  Full Name <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  placeholder="John Doe"
+                />
+              </div>
 
-            {/* Email Field */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                <Mail className="w-4 h-4" />
-                Email Address *
-              </label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-base"
-                placeholder="john@example.com"
-              />
-            </div>
+              {/* Email */}
+              <div>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  <Mail className="w-4 h-4 text-slate-500" />
+                  Email Address <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                  placeholder="john@example.com"
+                />
+              </div>
 
-            {/* Phone Field */}
-            <div>
-              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 mb-2">
-                <Phone className="w-4 h-4" />
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => {
-                  const input = e.target.value.replace(/\D/g, '');
-                  if (input.length <= 10) {
-                    let formatted = input;
-                    if (input.length > 6) {
-                      formatted = `(${input.slice(0, 3)}) ${input.slice(3, 6)}-${input.slice(6, 10)}`;
-                    } else if (input.length > 3) {
-                      formatted = `(${input.slice(0, 3)}) ${input.slice(3)}`;
-                    } else if (input.length > 0) {
-                      formatted = `(${input}`;
+              {/* Phone */}
+              <div>
+                <label className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  <Phone className="w-4 h-4 text-slate-500" />
+                  Phone Number
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => {
+                    const input = e.target.value.replace(/\D/g, '');
+                    if (input.length <= 10) {
+                      let formatted = input;
+                      if (input.length > 6) {
+                        formatted = `(${input.slice(0, 3)}) ${input.slice(3, 6)}-${input.slice(6, 10)}`;
+                      } else if (input.length > 3) {
+                        formatted = `(${input.slice(0, 3)}) ${input.slice(3)}`;
+                      } else if (input.length > 0) {
+                        formatted = `(${input}`;
+                      }
+                      setFormData({ ...formData, phone: formatted });
                     }
-                    setFormData({ ...formData, phone: formatted });
-                  }
-                }}
-                placeholder="(555) 123-4567"
-                maxLength={14}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition text-base"
-              />
-              <p className="text-xs text-slate-500 mt-1">US format: (XXX) XXX-XXXX</p>
+                  }}
+                  placeholder="(555) 123-4567"
+                  maxLength={14}
+                  className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-sm text-slate-800 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-100"
+                />
+                <p className="text-[11px] text-slate-500 mt-1.5">US format: (XXX) XXX-XXXX</p>
+              </div>
             </div>
 
-          {/* Password Change Link */}
-<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-  <h3 className="font-semibold text-blue-900 mb-2">Change Password</h3>
-  <p className="text-sm text-blue-700 mb-3">Need to update your password?</p>
+            {/* Password Management */}
+            <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 flex items-center justify-between gap-4">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                  <Lock className="w-3.5 h-3.5 text-slate-600" /> Password & Security
+                </div>
+                <p className="text-xs text-slate-500">
+                  Need to change your password? Request a secure reset link.
+                </p>
+              </div>
+              <a
+                href="/forgot-password"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-semibold text-slate-700 hover:text-slate-900 shadow-xs transition shrink-0"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-slate-500" />
+                Reset
+              </a>
+            </div>
 
-  <a
-    href="/forgot-password"
-    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold text-sm"
-  >
-    Reset Password →
-  </a>
-</div>
-
-
-            {/* Save Button */}
-            <div className="flex gap-3 pt-4">
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <button
+                type="button"
                 onClick={() => router.push(`/${company.slug}/dashboard`)}
-                className="flex-1 px-6 py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-semibold transition"
+                className="px-5 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition shadow-xs"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSave}
                 disabled={saving || !hasChanges}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-lg font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition shadow-xs active:scale-95 disabled:opacity-50 disabled:pointer-events-none"
               >
-                <Save className="w-4 h-4" />
+                {saving ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Save className="w-4 h-4" />
+                )}
                 {saving ? 'Saving...' : 'Save Changes'}
               </button>
             </div>
 
-            {!hasChanges && (
-              <p className="text-center text-sm text-slate-500 italic">No changes to save</p>
+            {!hasChanges && !saving && (
+              <p className="text-center text-xs text-slate-400 italic pt-1">
+                No un-saved changes
+              </p>
             )}
           </div>
         </div>

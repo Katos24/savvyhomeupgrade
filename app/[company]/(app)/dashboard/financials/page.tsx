@@ -1,6 +1,7 @@
 import { neon } from '@neondatabase/serverless';
 import { notFound } from 'next/navigation';
 import FinancialsClient from './FinancialsClient';
+import { getRecentPayments } from '@/lib/recentPayments';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,25 +67,11 @@ export default async function FinancialsPage({
     ORDER BY p.created_at DESC
   `;
 
-  // Sorted by created_at (when actually entered), not paid_on (the
-  // business date, freely backdated by whoever records a manual payment).
-  // This is an activity feed — "recent" should mean "just happened,"
-  // not "happened on a recent calendar date." A payment entered today
-  // but backdated to last week previously had to out-compete every
-  // other payment with a later paid_on for one of the top 6 slots, so it
-  // could silently vanish from "recent" the moment it was created.
-  const paymentRows = await sql`
-    SELECT
-      pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,
-      l.name as customer_name
-    FROM payments pay
-    JOIN projects pr ON pay.project_id = pr.id
-    JOIN leads l ON pr.lead_id = l.id
-    WHERE pay.company_id = ${company.id}
-      AND pay.kind <> 'refund'
-    ORDER BY pay.created_at DESC
-    LIMIT 6
-  `;
+  // Now sourced from the shared lib/recentPayments.ts function instead of
+  // its own inline copy — same duplication risk as Dashboard's version,
+  // which is exactly what let the two surfaces disagree on what counts
+  // as "recent" for the same underlying data.
+  const paymentRows = await getRecentPayments(sql, company.id, 6, false);
 
   return (
     <FinancialsClient

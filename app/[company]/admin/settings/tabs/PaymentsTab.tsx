@@ -9,9 +9,7 @@ import {
   ExternalLink,
   Zap,
   X,
-  Link2,
   PenLine,
-  Send,
   HelpCircle,
   ChevronDown,
   ChevronUp,
@@ -19,13 +17,19 @@ import {
   ShieldCheck,
   Mail,
   FileText,
-  ClipboardCheck,
   Calendar,
-  Bell,
+  CreditCard,
+  Building2,
+  UserCheck,
+  Receipt,
+  Eye,
+  Check,
+  SparkleIcon,
+  ArrowRight
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────
-   CONSTANTS
+   CONSTANTS & HELPERS
 ───────────────────────────────────────────────────────────── */
 
 const SAMPLE_INVOICE_NUMBER = 'INV-1042';
@@ -48,145 +52,90 @@ function describeBlockingReasons(
 }
 
 /* ─────────────────────────────────────────────────────────────
-   SHARED UI
+   BRAND & BADGE COMPONENTS
 ───────────────────────────────────────────────────────────── */
 
 function StripeWordmark({ className = 'text-xl' }: { className?: string }) {
   return (
-    <span className={`font-extrabold tracking-tight text-[#635BFF] ${className}`}>
+    <span className={`font-black tracking-tight text-[#635BFF] ${className}`}>
       stripe
     </span>
   );
 }
 
-function SupportedNetworks() {
-  const networks = ['Visa', 'Mastercard', 'Amex', 'Apple Pay', 'Google Pay'];
+function MethodBadge({ network }: { network: string }) {
   return (
-    <div className="flex flex-wrap items-center gap-1.5">
-      {networks.map((n) => (
-        <span key={n} className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-500">
-          {n}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function SectionCard({
-  icon: Icon,
-  iconColor = 'text-indigo-600',
-  iconBg = 'bg-indigo-50',
-  title,
-  subtitle,
-  children,
-}: {
-  icon: any;
-  iconColor?: string;
-  iconBg?: string;
-  title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
-      <div className="mb-5 flex items-start gap-3">
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${iconBg} ${iconColor}`}>
-          <Icon className="h-4 w-4" />
-        </div>
-        <div>
-          <h3 className="text-sm font-bold text-slate-900">{title}</h3>
-          {subtitle && <p className="mt-0.5 text-xs leading-relaxed text-slate-500">{subtitle}</p>}
-        </div>
-      </div>
-      {children}
-    </div>
+    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-2xs transition-all hover:bg-white hover:shadow-xs">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+      {network}
+    </span>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   ACTIVE METHOD BANNER — two states only: Stripe live, or not.
-   Manual collection (cash/Venmo/check/etc.) always works from the
-   Invoice tab's Record Payment action with zero setup, so it's not
-   a "method" this page configures — just what happens by default.
+   HERO / STATUS BANNER
 ───────────────────────────────────────────────────────────── */
 
-function ActiveMethodBanner({ company }: { company: any }) {
+function ConnectionStatusHero({ company }: { company: any }) {
   const stripeActive = !!company.stripe_connect_onboarded && company.stripe_payment_status === 'active';
 
-  if (stripeActive) {
-    return (
-      <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 sm:p-5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-          <Zap className="h-4 w-4" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-emerald-900">Stripe is live on your invoices</p>
-          <p className="mt-0.5 text-xs leading-relaxed text-emerald-800">
-            Automatic — when a customer pays by card, this app is notified instantly and the
-            invoice updates itself. No action needed from you.
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-linear-to-b from-slate-900 via-slate-900 to-slate-950 p-6 text-white shadow-xl sm:p-8">
+      {/* Decorative ambient background glows */}
+      <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-violet-500/15 blur-3xl" />
+
+      <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-300 backdrop-blur-md">
+            {stripeActive ? (
+              <>
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                </span>
+                Live Payment Gateway
+              </>
+            ) : (
+              <>
+                <Zap className="h-3.5 w-3.5 text-amber-400" />
+                Manual Collection Default
+              </>
+            )}
+          </div>
+
+          <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
+            {stripeActive ? 'Automatic Card Payments Active' : 'Connect Stripe to Accept Cards'}
+          </h2>
+
+          <p className="max-w-xl text-xs sm:text-sm text-slate-400 leading-relaxed">
+            {stripeActive
+              ? 'Invoices automatically issue digital checkout links. Real-time webhook notifications update your ledger instantly.'
+              : 'Record cash, check, or external transfers instantly with zero fees. Connect Stripe below whenever you are ready to accept cards.'}
           </p>
         </div>
-      </div>
-    );
-  }
 
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:p-5">
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-200 text-slate-500">
-        <PenLine className="h-4 w-4" />
-      </div>
-      <div>
-        <p className="text-sm font-bold text-slate-800">No automatic payment method connected</p>
-        <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
-          That's fine — collect payment however your customer prefers (cash, Venmo, Zelle, check)
-          and record it yourself from the Invoice tab. Connect Stripe below if you'd rather cards
-          get tracked automatically.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   HOW IT WORKS
-───────────────────────────────────────────────────────────── */
-
-function HowItWorksAccordion() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between p-4 text-left font-medium text-slate-700 hover:text-slate-900 sm:p-5"
-      >
-        <span className="flex items-center gap-2 text-sm font-semibold">
-          <HelpCircle className="h-4 w-4 text-slate-400" />
-          How do invoice payments work?
-        </span>
-        {open ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
-      </button>
-      {open && (
-        <div className="space-y-3 border-t border-slate-100 p-4 pt-4 text-xs leading-relaxed text-slate-600 sm:p-5 sm:text-sm">
-          <div className="flex items-start gap-2.5">
-            <Zap className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-            <p><strong className="font-semibold text-slate-800">With Stripe connected:</strong> every invoice email includes a secure pay-online link, and the invoice updates itself to "Paid" the instant a card payment clears — nothing for you to do.</p>
-          </div>
-          <div className="flex items-start gap-2.5">
-            <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-            <p><strong className="font-semibold text-slate-800">Without it:</strong> collect payment however works for the job — cash, Venmo, Zelle, check — then hit "Record Payment" on the invoice yourself once it lands.</p>
+        <div className="shrink-0">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-md">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              {stripeActive ? <Zap className="h-5 w-5 text-emerald-400" /> : <PenLine className="h-5 w-5 text-indigo-300" />}
+            </div>
+            <div>
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Default Mode</p>
+              <p className="text-sm font-bold text-white">{stripeActive ? 'Stripe Checkout' : 'Manual / Offline'}</p>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   STRIPE CONNECT — logic unchanged from before
+   STRIPE SETUP CARD (HERO STYLE)
 ───────────────────────────────────────────────────────────── */
 
-function StripeConnectSection({ company }: { company: any }) {
+function StripeSetupCard({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
   const [redirectStatus, setRedirectStatus] = useState<'idle' | 'error' | 'denied' | 'already_linked'>('idle');
   const [connectError, setConnectError] = useState<string | null>(null);
@@ -254,158 +203,170 @@ function StripeConnectSection({ company }: { company: any }) {
     }
   }
 
+  const checklistItems = [
+    { icon: Building2, title: 'Tax ID', desc: 'EIN for entities, or SSN/ITIN for sole proprietors' },
+    { icon: FileText, title: 'Legal Information', desc: 'Registered business name, contact info, and address' },
+    { icon: CreditCard, title: 'Payout Destination', desc: 'Bank account and routing number for standard daily transfers' },
+    { icon: UserCheck, title: 'Identity Check', desc: 'Legal representative details and photo ID (if prompted)' },
+  ];
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <StripeWordmark className="text-lg" />
-          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">
-            <Sparkles className="h-3 w-3" /> Recommended
-          </span>
+    <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all hover:shadow-md">
+      {/* Top Banner Header */}
+      <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#635BFF]/10 text-[#635BFF]">
+            <StripeWordmark className="text-2xl" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-900">Direct Card Integration</h3>
+              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
+                <Sparkles className="h-3 w-3" /> Recommended
+              </span>
+            </div>
+            <p className="text-xs text-slate-500">Instant deposits, automatic ledger updates, zero manual intervention.</p>
+          </div>
         </div>
-        {checkingStatus && (
-          <span className="flex items-center gap-1 text-xs text-slate-400">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Syncing...
-          </span>
-        )}
+
+        <div className="flex items-center gap-2">
+          {checkingStatus && (
+            <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600" /> Syncing...
+            </span>
+          )}
+          <div className="flex items-center gap-1">
+            {['Visa', 'Mastercard', 'Amex', 'Apple Pay'].map((net) => (
+              <MethodBadge key={net} network={net} />
+            ))}
+          </div>
+        </div>
       </div>
 
-      <p className="text-sm text-slate-500">
-        Accept credit cards, Apple Pay, and debit payments directly on invoices.
-      </p>
-
-      <SupportedNetworks />
-
-      {isConnected && paymentStatus === 'restricted' && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4 text-sm">
-          <div className="flex items-center gap-2 font-semibold text-rose-900">
-            <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
-            Payouts temporarily on hold
-          </div>
-          <p className="mt-1 text-xs leading-relaxed text-rose-700">{describeBlockingReasons(blockingReasons)}</p>
-          <a
-            href="https://dashboard.stripe.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-2.5 inline-flex items-center gap-1 text-xs font-semibold text-rose-800 underline hover:text-rose-900"
-          >
-            Complete verification on Stripe <ArrowUpRight className="h-3 w-3" />
-          </a>
-        </div>
-      )}
-
-      {redirectStatus === 'error' && (
-        <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
-          Something went wrong during Stripe setup. Please try connecting again.
-        </p>
-      )}
-      {connectError && (
-        <p className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
-          {connectError}
-        </p>
-      )}
-
-      {isConnected ? (
-        paymentStatus === 'active' ? (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="p-6 sm:p-8 space-y-6">
+        {isConnected && paymentStatus === 'restricted' && (
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 text-sm">
+            <div className="flex items-center gap-2 font-bold text-rose-900">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+              Payouts temporarily on hold
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-rose-700">{describeBlockingReasons(blockingReasons)}</p>
             <a
               href="https://dashboard.stripe.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-indigo-700"
+              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-rose-800 underline hover:text-rose-900"
             >
-              Manage Stripe Dashboard <ArrowUpRight className="h-4 w-4" />
+              Complete verification on Stripe <ArrowUpRight className="h-3 w-3" />
             </a>
-            <p className="text-xs text-slate-500">Card payments are live. View payouts and refunds inside Stripe.</p>
           </div>
+        )}
+
+        {redirectStatus === 'error' && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
+            Something went wrong during Stripe setup. Please try connecting again.
+          </div>
+        )}
+        {connectError && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
+            {connectError}
+          </div>
+        )}
+
+        {isConnected ? (
+          paymentStatus === 'active' ? (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-emerald-50/50 border border-emerald-100 p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-emerald-900">Connected and Ready</p>
+                  <p className="text-xs text-emerald-700">Online pay links are active on all new customer invoices.</p>
+                </div>
+              </div>
+              <a
+                href="https://dashboard.stripe.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition-all"
+              >
+                Stripe Dashboard <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-indigo-50/50 border border-indigo-100 p-5">
+              <div>
+                <p className="text-sm font-bold text-indigo-900">Setup Pending Completion</p>
+                <p className="text-xs text-indigo-700">Stripe requires additional business verification before payouts open.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleConnect}
+                disabled={loading}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#635BFF] px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#534ae6] disabled:opacity-50"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                Resume Setup <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )
         ) : (
-          <button
-            type="button"
-            onClick={handleConnect}
-            disabled={loading}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-indigo-700 disabled:opacity-50"
-          >
-            {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            Resume Setup on Stripe
-            {!loading && <ArrowUpRight className="h-4 w-4" />}
-          </button>
-        )
-      ) : (
-        <div className="space-y-4 rounded-xl border border-slate-200/80 bg-slate-50/50 p-4 sm:p-5">
-          <div className="space-y-2 text-xs leading-relaxed text-slate-600 sm:text-sm">
-            <p className="flex items-center gap-2 font-semibold text-slate-800">
-              <ShieldCheck className="h-4 w-4 text-indigo-600" /> Fast & secure setup
-            </p>
-            <p>
-              Already have a Stripe account? Connecting takes under a minute — Stripe recognizes
-              you and skips straight to linking it. First time with Stripe? Plan on about 5–10
-              minutes; identity verification is handled entirely by Stripe, not by us.
-            </p>
-          </div>
+          <div className="space-y-6">
+            <div className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+              <ShieldCheck className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
+              <div className="text-xs text-slate-600 leading-relaxed">
+                <span className="font-bold text-slate-900">Secure 2-Minute Setup:</span> Existing Stripe accounts pair instantly. New setups take ~5 minutes and are managed end-to-end on Stripe's encrypted infrastructure.
+              </div>
+            </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-3.5 sm:p-4">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
-              If you're setting up Stripe for the first time, have these ready
-            </p>
-            <ul className="mt-2.5 space-y-2 text-xs text-slate-600 sm:text-sm">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span>
-                  <span className="font-semibold text-slate-800">Tax ID</span> — an EIN if you're
-                  a registered business, or your SSN/ITIN if you're a sole proprietor
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span>
-                  <span className="font-semibold text-slate-800">Business basics</span> — legal
-                  name, address, and phone number
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span>
-                  <span className="font-semibold text-slate-800">Bank account &amp; routing
-                  number</span> — where your payouts get deposited
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span>
-                  <span className="font-semibold text-slate-800">Your personal details</span> —
-                  name, date of birth, and address, as the account's responsible person
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span>
-                  Sometimes a <span className="font-semibold text-slate-800">photo ID</span> —
-                  only if Stripe can't verify your identity automatically
-                </span>
-              </li>
-            </ul>
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-              Exact requirements can vary by business type and location — Stripe will only ask
-              for what applies to you.
-            </p>
-          </div>
+            {/* Preparation Cards Grid */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Have these items ready before clicking connect:
+              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {checklistItems.map((item, idx) => {
+                  const IconComp = item.icon;
+                  return (
+                    <div key={idx} className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 transition-all hover:border-slate-300 hover:shadow-2xs">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
+                        <IconComp className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{item.title}</p>
+                        <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{item.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
 
-          <button
-            type="button"
-            onClick={handleConnect}
-            disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-[#635BFF] px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition hover:bg-[#534ae6] disabled:opacity-60 sm:w-auto"
-          >
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (<>Connect with Stripe <ArrowUpRight className="h-4 w-4" /></>)}
-          </button>
-        </div>
-      )}
+            <button
+              type="button"
+              onClick={handleConnect}
+              disabled={loading}
+              className="group relative flex w-full items-center justify-center gap-2 rounded-2xl bg-[#635BFF] px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 transition-all hover:bg-[#534ae6] hover:shadow-lg hover:shadow-indigo-500/30 active:scale-[0.99] disabled:opacity-60"
+            >
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  Connect with Stripe
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   INVOICE TERMS — unchanged
+   TERMS & CONDITIONS
 ───────────────────────────────────────────────────────────── */
 
 function InvoiceTermsSection({ company }: { company: any }) {
@@ -439,41 +400,46 @@ function InvoiceTermsSection({ company }: { company: any }) {
   }
 
   return (
-    <SectionCard
-      icon={ClipboardCheck}
-      iconColor="text-slate-600"
-      iconBg="bg-slate-100"
-      title="Terms & Conditions"
-      subtitle="Fine print appended to every invoice PDF — late fees, warranty terms, payment policy."
-    >
-      <textarea
-        value={terms}
-        onChange={(e) => setTerms(e.target.value)}
-        rows={4}
-        placeholder="e.g. Payment due within 15 days. A 1.5% monthly late fee applies to overdue balances. All work is warrantied for 12 months from completion."
-        className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-      />
-      <div className="mt-3 flex items-center justify-between">
-        <p className="text-[11px] text-slate-400">Applies to every invoice automatically — no need to re-enter it per job.</p>
+    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+      <div className="mb-5 flex items-start gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
+          <Receipt className="h-5 w-5" />
+        </div>
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Standard Payment Terms</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Fine print automatically appended to all generated PDF invoices.</p>
+        </div>
+      </div>
+
+      <div className="relative">
+        <textarea
+          value={terms}
+          onChange={(e) => setTerms(e.target.value)}
+          rows={3}
+          placeholder="e.g. Net 15 days. A 1.5% monthly late fee applies to overdue balances. All work is warrantied for 12 months."
+          className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+        />
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-[11px] text-slate-400">Applies globally across all invoices.</p>
         <button
           type="button"
           onClick={handleSave}
           disabled={saving || !isDirty}
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-40"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30"
         >
-          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-          {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Terms'}
-          {saved && !saving && <CheckCircle2 className="h-4 w-4 text-emerald-400" />}
+          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          {saving ? 'Saving...' : saved ? 'Saved Successfully' : 'Save Default Terms'}
+          {saved && !saving && <Check className="h-3.5 w-3.5 text-emerald-400" />}
         </button>
       </div>
-    </SectionCard>
+    </div>
   );
 }
 
 /* ─────────────────────────────────────────────────────────────
-   PREVIEWS — unchanged; still correctly reflects whichever method
-   is actually active, including legacy manual links if a company
-   already has one set from before this page was simplified
+   PREVIEWS & EMAIL OVERVIEW
 ───────────────────────────────────────────────────────────── */
 
 function PreviewsSection({ company }: { company: any }) {
@@ -496,191 +462,141 @@ function PreviewsSection({ company }: { company: any }) {
   const payLabel = effectiveType ? paymentMethodLabels[effectiveType] || 'Pay Now' : null;
   const accent = company.email_brand_color_1 || '#4F46E5';
   const companyName = company.name || 'Your Business Name';
-   const previewUrl = `/api/company/${company.slug}/preview-invoice`;
+  const previewUrl = `/api/company/${company.slug}/preview-invoice`;
 
-  // Grounded in the real send actions that actually exist today — not
-  // every conceivable email, just the ones this app can genuinely send.
-  const emailTypes = [
-    {
-      key: 'quote',
-      icon: FileText,
-      label: 'Quote',
-      trigger: 'Sent when you email a quote from the Quote tab.',
-      tag: 'Manual send',
-    },
-    {
-      key: 'schedule',
-      icon: Calendar,
-      label: 'Schedule Confirmation',
-      trigger: 'Sent when you schedule the job and notify the customer.',
-      tag: 'Manual send',
-    },
-    {
-      key: 'invoice',
-      icon: FileText,
-      label: 'Deposit / Balance / Invoice',
-      trigger: 'Sent when you send an invoice — automatically shows the deposit or remaining balance, whichever applies.',
-      tag: 'Manual send',
-    },
-    {
-      key: 'reminder',
-      icon: Bell,
-      label: 'Payment Reminder',
-      trigger: 'Sent when you remind a customer about an unpaid invoice.',
-      tag: 'Manual send',
-    },
-    {
-      key: 'confirmation',
-      icon: CheckCircle2,
-      label: 'Payment Confirmation',
-      trigger: stripeActive
-        ? "Stripe automatically emails the customer a receipt when they pay by card. That's a generic Stripe receipt, not a branded email from your business."
-        : "Nothing is sent automatically today. When you record cash, check, or Venmo manually, the customer isn't notified — worth a personal follow-up.",
-      tag: stripeActive ? 'Automatic (Stripe)' : 'Not sent yet',
-    },
-  ];
-
-    return (
-    <div className="space-y-6">
-      {/* Full catalog of email types lives in Settings > Emails — one
-          source of truth instead of a second copy here that could drift
-          out of sync with it. */}
-      <a
-        href={`/${company.slug}/home?section=email-templates`}
-        className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3.5 transition hover:border-slate-300 hover:bg-slate-50"
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-            <Mail className="h-4 w-4" />
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">See every customer email type</p>
-            <p className="text-xs text-slate-500">Which ones are editable, and which aren't — in Settings → Emails</p>
-          </div>
+  return (
+    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Client Presentation Preview</h3>
+          <p className="text-xs text-slate-500">How your invoices and digital notifications display to customers.</p>
         </div>
-        <ArrowUpRight className="h-4 w-4 shrink-0 text-slate-400" />
-      </a>
 
-      {/* Segmented control — one tab lifted on a white pill, the way
-          macOS/iOS switches between views, instead of two flat buttons */}
-      <div className="inline-flex items-center gap-1 rounded-full bg-slate-100 p-1">
-        <button
-          type="button"
-          onClick={() => setActiveTab('email')}
-          className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-            activeTab === 'email' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Mail className="h-3.5 w-3.5" /> Email
-        </button>
-        <button
-          type="button"
-          onClick={() => setActiveTab('invoice')}
-          className={`inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-semibold transition ${
-            activeTab === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <FileText className="h-3.5 w-3.5" /> Invoice
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Segmented Control */}
+          <div className="inline-flex items-center rounded-2xl bg-slate-100 p-1 border border-slate-200/60">
+            <button
+              type="button"
+              onClick={() => setActiveTab('email')}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                activeTab === 'email' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <Mail className="h-3.5 w-3.5" /> Email
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('invoice')}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
+                activeTab === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+              }`}
+            >
+              <FileText className="h-3.5 w-3.5" /> Invoice PDF
+            </button>
+          </div>
+
+          <a
+            href={`/${company.slug}/home?section=email-templates`}
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+          >
+            Templates <ArrowUpRight className="h-3.5 w-3.5 text-slate-400" />
+          </a>
+        </div>
       </div>
 
       {activeTab === 'email' && (
-        <div className="mx-auto w-full max-w-[580px] overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-          {/* Window chrome — frames this as "what lands in their inbox"
-              rather than a floating card with no context */}
-          <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+        <div className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md">
+          {/* Email Frame Bar */}
+          <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
             <div className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-              <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
             </div>
             <p className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-500">
-              {companyName} &lt;{company.email || 'you@yourbusiness.com'}&gt;
+              {companyName} &lt;{company.email || 'billing@yourbusiness.com'}&gt;
             </p>
           </div>
 
-          <div className="border-b border-slate-100 px-6 py-3.5">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Subject</p>
-            <p className="mt-0.5 truncate text-sm font-bold text-slate-900">
+          <div className="border-b border-slate-100 px-6 py-3 bg-slate-50/30">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subject</p>
+            <p className="mt-0.5 truncate text-xs font-bold text-slate-900">
               Invoice {SAMPLE_INVOICE_NUMBER} from {companyName}
             </p>
           </div>
 
-          <div className="px-6 py-7 sm:px-8">
+          <div className="p-6 sm:p-8">
             <div className="mb-6">
               {company.logo_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={company.logo_url} alt={companyName} className="h-8 w-auto object-contain" />
               ) : (
-                <span className="text-sm font-extrabold tracking-tight text-slate-900">{companyName}</span>
+                <span className="text-sm font-black tracking-tight text-slate-900">{companyName}</span>
               )}
             </div>
 
-            <p className="text-sm font-semibold text-slate-900">Hi {SAMPLE_CUSTOMER_NAME},</p>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">
-              Here's invoice <span className="font-semibold text-slate-900">{SAMPLE_INVOICE_NUMBER}</span> for{' '}
-              <span className="font-semibold text-slate-900">${SAMPLE_TOTAL.toFixed(2)}</span>. You can pay
-              securely online or download the PDF below.
+            <p className="text-sm font-bold text-slate-900">Hello {SAMPLE_CUSTOMER_NAME},</p>
+            <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600">
+              Your invoice <span className="font-semibold text-slate-900">{SAMPLE_INVOICE_NUMBER}</span> for{' '}
+              <span className="font-semibold text-slate-900">${SAMPLE_TOTAL.toFixed(2)}</span> is ready. You can review details or pay securely online below.
             </p>
 
             <div className="mt-6 space-y-2.5">
               {payLabel ? (
                 <div
-                  className="rounded-xl py-3 text-center text-sm font-bold text-white shadow-sm"
+                  className="rounded-xl py-3 text-center text-xs font-bold text-white shadow-sm"
                   style={{ backgroundColor: accent }}
                 >
                   {payLabel} — ${SAMPLE_TOTAL.toFixed(2)}
                 </div>
               ) : (
-                <p className="rounded-xl bg-amber-50 py-3 text-center text-xs font-semibold text-amber-800">
-                  No payment link attached yet
-                </p>
+                <div className="rounded-xl bg-amber-50 py-3 text-center text-xs font-bold text-amber-800">
+                  Manual Collection — No Online Link
+                </div>
               )}
-              <div className="rounded-xl border border-slate-200 py-3 text-center text-sm font-semibold text-slate-700">
-                Download Invoice PDF
+              <div className="rounded-xl border border-slate-200 py-3 text-center text-xs font-bold text-slate-700">
+                Download Attached PDF
               </div>
             </div>
 
             <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
               <Calendar className="h-3.5 w-3.5" />
-              Due by <span className="font-semibold text-slate-600">{SAMPLE_DUE_DATE}</span>
+              Due on <span className="font-semibold text-slate-600">{SAMPLE_DUE_DATE}</span>
             </div>
           </div>
         </div>
       )}
 
       {activeTab === 'invoice' && (
-        <div className="overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
-            <span className="text-xs font-semibold text-slate-600">Live preview — reflects your real invoice template</span>
+        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 p-3 sm:p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-500">Live Dynamic Render</span>
             <button
               type="button"
               onClick={() => setExpandedInvoice(true)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-xs transition hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50"
             >
-              Open Full Screen <ExternalLink className="h-3.5 w-3.5" />
+              Full Screen <Eye className="h-3.5 w-3.5" />
             </button>
           </div>
-          <div className="bg-slate-100/60 p-4 sm:p-6">
-            <div className="mx-auto h-[520px] w-full max-w-[640px] overflow-hidden rounded-lg border border-slate-200/70 bg-white shadow-xs">
-              <iframe src={previewUrl} title="Sample invoice preview" className="h-full w-full border-0 pointer-events-none" />
-            </div>
+          <div className="mx-auto h-[480px] w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-2xs">
+            <iframe src={previewUrl} title="Sample invoice preview" className="h-full w-full border-0 pointer-events-none" />
           </div>
         </div>
       )}
 
       {expandedInvoice && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
           onClick={() => setExpandedInvoice(false)}
         >
           <div
-            className="relative flex h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+            className="relative flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <span className="text-sm font-semibold text-slate-800">Invoice Preview</span>
-              <button type="button" onClick={() => setExpandedInvoice(false)} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <span className="text-sm font-bold text-slate-900">Document Inspection</span>
+              <button type="button" onClick={() => setExpandedInvoice(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -693,36 +609,75 @@ function PreviewsSection({ company }: { company: any }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   MAIN — no method picker. One thing to configure (Stripe);
-   manual collection just works from the Invoice tab regardless.
+   HOW IT WORKS ACCORDION
+───────────────────────────────────────────────────────────── */
+
+function HowItWorksAccordion() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex w-full items-center justify-between p-6 text-left font-bold text-slate-800 hover:bg-slate-50/50 transition"
+      >
+        <span className="flex items-center gap-2.5 text-sm">
+          <HelpCircle className="h-4 w-4 text-indigo-600" />
+          How do online invoice payments work?
+        </span>
+        {open ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
+      </button>
+      {open && (
+        <div className="space-y-4 border-t border-slate-100 p-6 pt-4 text-xs leading-relaxed text-slate-600 sm:text-sm">
+          <div className="flex items-start gap-3 rounded-2xl bg-indigo-50/50 p-4">
+            <Zap className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
+            <div>
+              <p className="font-bold text-slate-900">With Stripe Connected</p>
+              <p className="mt-0.5 text-xs text-slate-600">Invoices automatically append secure pay-online checkout links. The moment a client pays, webhooks mark the invoice paid and log the deposit.</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
+            <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-slate-600" />
+            <div>
+              <p className="font-bold text-slate-900">Without Stripe (Manual Mode)</p>
+              <p className="mt-0.5 text-xs text-slate-600">Accept cash, Zelle, Venmo, or check offline. Click "Record Payment" manually on the invoice tab to update balances.</p>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────────────
+   MAIN PAGE LAYOUT
 ───────────────────────────────────────────────────────────── */
 
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
   return (
-    <div className="w-full font-sans text-slate-900 antialiased space-y-6">
-      <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900">Payments & Invoicing</h1>
-          <p className="mt-0.5 text-xs font-medium text-slate-500">
-            Connect Stripe for automatic card payments, or collect however you normally do and
-            record it on the invoice.
-          </p>
-        </div>
+    <div className="mx-auto max-w-5xl space-y-8 font-sans text-slate-900 antialiased pb-12">
+      {/* Header */}
+      <div>
+        <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Payments & Processing</h1>
+        <p className="mt-1 text-xs sm:text-sm font-medium text-slate-500">
+          Manage payment processing, automatic card collection, and invoice layout settings.
+        </p>
       </div>
 
-        <ActiveMethodBanner company={company} />
+      {/* Connection State Banner */}
+      <ConnectionStatusHero company={company} />
 
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-xs sm:p-6">
-          <StripeConnectSection company={company} />
-        </div>
+      {/* Stripe Interactive Card */}
+      <StripeSetupCard company={company} />
 
-        <HowItWorksAccordion />
+      {/* Help & Workflow FAQ */}
+      <HowItWorksAccordion />
 
-        <InvoiceTermsSection company={company} />
+      {/* Global Invoice Terms */}
+      <InvoiceTermsSection company={company} />
 
-        <SectionCard icon={Send} title="Sending & Client View" subtitle="When you send an invoice, this is what the customer sees.">
-          <PreviewsSection company={company} />
-        </SectionCard>
+      {/* Realtime Previews */}
+      <PreviewsSection company={company} />
     </div>
   );
 }

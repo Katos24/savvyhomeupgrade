@@ -1,15 +1,15 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
   Calendar, User,
   X, Eye,
   CheckCircle2, Clock,
-  History, Loader2, Save, Mail, MapPin
+  History, Loader2, Save, Mail, MapPin, AlertTriangle
 } from 'lucide-react';
-import SchedulingCalendarModal from './SchedulingCalendarModal';
+import SchedulingCalendarModal, { type PickerMode } from './SchedulingCalendarModal';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import { getSchedulingConfig } from '@/lib/schedulingConfig';
 
@@ -33,18 +33,19 @@ export default function SchedulingSection({
   teamMembers = [] 
 }: SchedulingSectionProps) {
   const [saving, setSaving] = useState(false);
-  const [showCalendarModal, setShowCalendarModal] = useState(false);
-  const [modalInitialStep, setModalInitialStep] = useState<'date' | 'time' | 'people'>('date');
-  const openScheduleModal = (step: 'date' | 'time' | 'people') => {
-    setModalInitialStep(step);
-    setShowCalendarModal(true);
-  };
+
+  // Which single picker is open, if any — null means closed. Each mode
+  // is a completely isolated flow now (see SchedulingCalendarModal.tsx):
+  // opening 'date' only ever lets you pick a date and confirms only that;
+  // it can't sweep you into time or people afterward.
+  const [activePicker, setActivePicker] = useState<PickerMode | null>(null);
+
   const [showEmailModal, setShowEmailModal] = useState(false);
 
   const [scheduledDate, setScheduledDate] = useState('');
   const [scheduledTime, setScheduledTime] = useState('');
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
-
+  const [assigneeConflict, setAssigneeConflict] = useState(false);
   const assignedTo = selectedAssignees[0] || '';
   const additionalAssignees = selectedAssignees.slice(1);
   const [estimatedHours, setEstimatedHours] = useState('');
@@ -57,8 +58,38 @@ export default function SchedulingSection({
   const [scheduledEndTime, setScheduledEndTime] = useState('');
   const [eventLocation, setEventLocation] = useState('');
 
-  // Track initial state to indicate dirty / unsaved changes
   const [initialState, setInitialState] = useState<any>({});
+
+  // Background check, independent of whichever picker (if any) is
+  // currently open — this closes the actual gap: if People gets picked
+  // before Date/Time exist, there's nothing to check against yet and the
+  // picker correctly says so. But if Date/Time gets set or changed
+  // AFTERWARD, nothing previously re-validated the assignees already
+  // chosen. This re-checks whenever any of the three pieces change, so
+  // the badge itself reflects the current truth instead of a stale count.
+  useEffect(() => {
+    if (!scheduledDate || !scheduledTime || selectedAssignees.length === 0 || teamMembers.length === 0) {
+      setAssigneeConflict(false);
+      return;
+    }
+    const params = new URLSearchParams({
+      date: scheduledDate,
+      start: scheduledTime,
+      names: selectedAssignees.join(','),
+    });
+    if (scheduledEndTime) params.set('end', scheduledEndTime);
+    if (lead?.project_id) params.set('excludeProjectId', String(lead.project_id));
+
+    fetch(`/api/company/${companySlug}/availability/assignees?${params}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!data.success) return;
+        const anyBusy = selectedAssignees.some((name) => data.availability?.[name]?.available === false);
+        setAssigneeConflict(anyBusy);
+      })
+      .catch(() => {});
+  }, [scheduledDate, scheduledTime, scheduledEndTime, selectedAssignees, teamMembers, companySlug, lead?.project_id]);
+
 
   useEffect(() => {
     setScheduledEndTime(lead?.scheduled_end_time ? lead.scheduled_end_time : '');
@@ -137,7 +168,6 @@ export default function SchedulingSection({
     );
   }, [scheduledDate, scheduledTime, scheduledEndTime, eventLocation, selectedAssignees, estimatedHours, actualHours, initialState]);
 
-  // Formatted date and time strings for the summary button and email modal
   const scheduledDateFormatted = useMemo(() => {
     if (!scheduledDate) return null;
     try {
@@ -232,29 +262,32 @@ export default function SchedulingSection({
         lastHtmlBody={lastHtmlBody}
       />
 
-      {/* SCHEDULE MODAL — date, time, end time, AND assignees all live
-          here now, in that order. Confirming sets all four at once. */}
-      <SchedulingCalendarModal
-        isOpen={showCalendarModal}
-        onClose={() => setShowCalendarModal(false)}
-        onConfirm={(date, time, endTime, assignees) => {
-          setScheduledDate(date);
-          setScheduledTime(time);
-          setScheduledEndTime(endTime || '');
-          setSelectedAssignees(assignees);
-        }}
-        companySlug={companySlug}
-        currentScheduledDate={scheduledDate}
-        currentScheduledTime={scheduledTime}
-        currentScheduledEndTime={scheduledEndTime}
-        selectedAssignees={selectedAssignees}
-        teamMembers={teamMembers}
-        currentLeadId={lead?.id}
-        currentProjectId={lead?.project_id}
-        bufferMinutes={schedulingConfig.bufferMinutes}
-        showEndTime={schedulingConfig.showEndTime}
-        initialStep={modalInitialStep}
-      />
+      {/* THE THREE ISOLATED PICKERS — one modal component, but each open
+          only ever operates on the ONE field it was opened for. Confirming
+          Date never touches time or assignees, and vice versa. */}
+      {activePicker && (
+        <SchedulingCalendarModal
+          isOpen={true}
+          mode={activePicker}
+          onClose={() => setActivePicker(null)}
+          onConfirmDate={(date) => setScheduledDate(date)}
+          onConfirmTime={(time, endTime) => {
+            setScheduledTime(time);
+            setScheduledEndTime(endTime || '');
+          }}
+          onConfirmPeople={(assignees) => setSelectedAssignees(assignees)}
+          companySlug={companySlug}
+          currentScheduledDate={scheduledDate}
+          currentScheduledTime={scheduledTime}
+          currentScheduledEndTime={scheduledEndTime}
+          selectedAssignees={selectedAssignees}
+          teamMembers={teamMembers}
+          currentLeadId={lead?.id}
+          currentProjectId={lead?.project_id}
+          bufferMinutes={schedulingConfig.bufferMinutes}
+          showEndTime={schedulingConfig.showEndTime}
+        />
+      )}
 
       {/* EMAIL PREVIEW MODAL */}
       <AnimatePresence>
@@ -298,7 +331,8 @@ export default function SchedulingSection({
       {/* MAIN CONTAINER */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-sm flex flex-col relative z-10">
         
-        {/* HEADER & PRIMARY ACTIONS */}
+        {/* HEADER — Save moved OUT of here, into the sticky bar below.
+            This header now just shows status + Send Schedule. */}
         <div className="px-4 sm:px-5 py-3.5 border-b border-slate-100 bg-slate-50/50 rounded-t-2xl flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -331,32 +365,39 @@ export default function SchedulingSection({
                 setShowEmailModal(true);
               }}
               disabled={!hasProject || !scheduledDate}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition touch-manipulation disabled:opacity-40 min-h-[42px] sm:min-h-0"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-semibold shadow-xs transition touch-manipulation disabled:opacity-40 min-h-[42px]"
             >
               <Mail className="w-3.5 h-3.5 text-blue-600" />
               <span>{outboxLog.length > 0 ? 'Resend Schedule' : 'Send Schedule'}</span>
             </button>
 
-            <button
+            {/* Always in the same spot — transforms rather than
+                appearing/disappearing. Muted and quiet when there's
+                nothing new; flips to a bright color with a gentle scale
+                pulse (not Tailwind's default opacity-fade animate-pulse,
+                which reads as more of an alert flash than a soft nudge)
+                the moment something's unsaved. */}
+            <motion.button
               type="button"
-              onClick={() => handleSave()}
-              disabled={saving}
-              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 sm:py-1.5 text-xs font-semibold rounded-xl transition shadow-xs touch-manipulation min-h-[42px] sm:min-h-0 ${
-                isDirty ? 'bg-blue-600 hover:bg-blue-700 text-white' : 'bg-slate-900 hover:bg-slate-800 text-white'
-              } disabled:opacity-50`}
+              onClick={handleSave}
+              disabled={!isDirty || saving}
+              animate={isDirty && !saving ? { scale: [1, 1.035, 1] } : { scale: 1 }}
+              transition={isDirty && !saving ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.15 }}
+              className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-colors touch-manipulation min-h-[42px] ${
+                isDirty
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-600/30 active:scale-95'
+                  : 'bg-slate-100 text-slate-400 cursor-default'
+              }`}
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-              {saving ? 'Saving...' : 'Save'}
-            </button>
+              {saving ? 'Saving...' : isDirty ? 'Save changes' : 'Saved'}
+            </motion.button>
           </div>
         </div>
 
-        {/* MAIN BODY: FORM & SIDEBAR */}
+        {/* MAIN BODY */}
         <div className="p-4 sm:p-5 grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
-          {/* LEFT 2 COLS: ONE schedule summary that opens the merged modal,
-              plus Location as its own separate field (not a date/time/
-              assignee concept, stays inline). */}
           <div className="lg:col-span-2 space-y-4">
 
             <div>
@@ -366,7 +407,7 @@ export default function SchedulingSection({
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => openScheduleModal('date')}
+                  onClick={() => setActivePicker('date')}
                   className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition touch-manipulation min-h-[44px] ${
                     scheduledDate
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -379,7 +420,7 @@ export default function SchedulingSection({
 
                 <button
                   type="button"
-                  onClick={() => openScheduleModal('time')}
+                  onClick={() => setActivePicker('time')}
                   className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition touch-manipulation min-h-[44px] ${
                     scheduledTime
                       ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
@@ -392,24 +433,29 @@ export default function SchedulingSection({
 
                 <button
                   type="button"
-                  onClick={() => openScheduleModal('people')}
+                  onClick={() => setActivePicker('people')}
                   className={`flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition touch-manipulation min-h-[44px] ${
-                    selectedAssignees.length > 0
-                      ? 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
-                      : 'border-slate-200 bg-slate-50/70 text-slate-500 hover:bg-slate-50'
+                    selectedAssignees.length === 0
+                      ? 'border-slate-200 bg-slate-50/70 text-slate-500 hover:bg-slate-50'
+                      : assigneeConflict
+                      ? 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                      : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
                   }`}
                 >
-                  <User size={13} className="shrink-0" />
+                  {assigneeConflict && selectedAssignees.length > 0 ? (
+                    <AlertTriangle size={13} className="shrink-0" />
+                  ) : (
+                    <User size={13} className="shrink-0" />
+                  )}
                   {selectedAssignees.length === 0
                     ? 'Assign staff'
                     : selectedAssignees.length === 1
-                    ? selectedAssignees[0]
-                    : `${selectedAssignees.length} assigned`}
+                    ? assigneeConflict ? `${selectedAssignees[0]} · Busy` : selectedAssignees[0]
+                    : assigneeConflict ? `${selectedAssignees.length} assigned · Conflict` : `${selectedAssignees.length} assigned`}
                 </button>
               </div>
             </div>
 
-            {/* LOCATION */}
             {schedulingConfig.showEndTime && (
               <div className="pt-2 border-t border-slate-100">
                 <label className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
@@ -426,7 +472,6 @@ export default function SchedulingSection({
             )}
           </div>
 
-          {/* RIGHT 1 COL: JOB HOURS WIDGET */}
           <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
@@ -583,6 +628,12 @@ export default function SchedulingSection({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* PROMINENT STICKY SAVE BAR — viewport-fixed, not tucked into a
+          shared header row. Only appears while something's actually
+          unsaved, so it can't be missed on either desktop or mobile, and
+          doesn't require scrolling back up to find it. Safe-area padding
+          on the bottom for phones with a home indicator. */}
     </div>
   );
 }
