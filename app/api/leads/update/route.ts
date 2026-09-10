@@ -9,7 +9,7 @@ import { stripe } from '@/lib/stripe'
 import { autoAdvanceStatus } from '@/lib/statusAutomation';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
 import { getSchedulingConfig } from '@/lib/schedulingConfig';
-import { getDepositAmount, isDepositSatisfied, getAmountDueNow } from '@/lib/billing';
+import { getDepositAmount, isDepositSatisfied, getAmountDueNow, getBillingState } from '@/lib/billing';
 
 
 
@@ -767,7 +767,7 @@ await sql`UPDATE projects
       updated_at = NOW()
   WHERE id = ${lead.project_id}`;
 
-  const emailResult = await sendQuoteToCustomer({
+   const emailResult = await sendQuoteToCustomer({
   customerEmail: lead.email,
   customerName: lead.name,
   companyName: lead.company_name || 'Your Service Provider',
@@ -779,16 +779,15 @@ await sql`UPDATE projects
   quoteToken: quoteToken,
   contractorEmail: lead.company_email,
   taxRate: lead.quote_tax_rate ? parseFloat(lead.quote_tax_rate) : undefined,
-  // Computed here so the email doesn't reimplement the percent/fixed rule.
-  // Same formula as depositFor() in getOrCreateCheckoutSession — capped at
-  // the total so a fixed deposit larger than the job reads honestly.
-  depositAmount: (() => {
-    const t = parseFloat(lead.quote_total || '0');
-    const v = parseFloat(lead.deposit_value || '0');
-    if (!lead.deposit_type || v <= 0 || t <= 0) return undefined;
-    const raw = lead.deposit_type === 'percent' ? (t * v) / 100 : v;
-    return Math.min(Math.round(raw * 100) / 100, t);
-  })(),
+  // Was an inline duplicate of getDepositAmount()'s exact formula — the
+  // same category of drift lib/billing.ts's own header comment warns
+  // about. Now calls the shared function directly, matching what
+  // get_payment_link already did correctly elsewhere in this same file.
+  depositAmount: getDepositAmount({
+    total: parseFloat(lead.quote_total || '0'),
+    depositType: lead.deposit_type,
+    depositValue: lead.deposit_value,
+  }) || undefined,
   depositLabel: lead.deposit_type === 'percent' && parseFloat(lead.deposit_value || '0') > 0
     ? `${parseFloat(lead.deposit_value)}%`
     : undefined,
@@ -1260,38 +1259,27 @@ const leadCheck = await sql`
   // inside the Stripe branch below, so a company without Stripe active (or a
   // failed checkout call) sent an email with no record of whether a deposit
   // or the balance actually went out.
-   const depositType = lead.deposit_type || null;
-  const depositValueRaw = parseFloat(lead.deposit_value || '0');
-  const hasDepositTerms = !!depositType && depositValueRaw > 0;
-  const fullDepositAmount = hasDepositTerms
-    ? Math.min(
-        Math.round((depositType === 'percent' ? (invoiceTotal * depositValueRaw) / 100 : depositValueRaw) * 100) / 100,
-        invoiceTotal
-      )
-    : 0;
+  // Was an inline reimplementation of the full deposit/collection logic —
+  // its own copy of the exact formula and satisfaction check lib/billing.ts
+  // already centralizes. Flagged as the highest-stakes instance of this
+  // duplication found anywhere in the app, since it's what actually goes
+  // out to a real customer, not just an internal display. getBillingState()
+  // computes everything below in one call, guaranteed internally
+  // consistent — no way for depositAmount, collectionKind, and chargeAmount
+  // to drift relative to each other within this request.
   const paidSoFar = parseFloat(lead.payment_amount || '0');
-  // Sticky, not recomputed — same fix applied to BillingSection.tsx,
-  // LeadModalHeader.tsx, and lib/billing.ts. The old rule recalculated
-  // fullDepositAmount against the CURRENT invoiceTotal every time this ran,
-  // so raising the quote after the deposit was already satisfied would
-  // silently flip this back to "deposit" mode — meaning collectionKind
-  // below becomes 'deposit' instead of 'balance', and the customer
-  // receives an email/PDF asking for another deposit-sized payment on a
-  // job where the deposit was already paid in full. This is the
-  // highest-stakes instance of this bug found across the app, since it's
-  // what actually goes out to a real customer, not just an internal display.
-  const depositSatisfied = hasDepositTerms && !!lead.deposit_paid_at;
-
-   const collectionKind: 'deposit' | 'balance' | 'full' = hasDepositTerms
-    ? (depositSatisfied ? 'balance' : 'deposit')
-    : 'full';
-  const chargeAmount = collectionKind === 'deposit'
-    ? Math.round((fullDepositAmount - paidSoFar) * 100) / 100
-    : Math.max(invoiceTotal - paidSoFar, 0);
+  const billing = getBillingState({
+    total: invoiceTotal,
+    paidAmount: paidSoFar,
+    depositType: lead.deposit_type,
+    depositValue: lead.deposit_value,
+    depositPaidAt: lead.deposit_paid_at,
+  });
+  const collectionKind = billing.collectionKind;
+  const chargeAmount = billing.amountDueNow;
   // sendInvoiceToCustomer's collectionKind param predates the 'full' case —
   // it only distinguishes deposit vs. balance, treating "unset" as full amount.
   const emailCollectionKind = collectionKind === 'full' ? undefined : collectionKind;
-
   if (lead.stripe_payment_status === 'active' && invoiceTotal > 0) {
     try {
       const checkout = await getOrCreateCheckoutSession({
