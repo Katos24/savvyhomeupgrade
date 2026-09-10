@@ -178,10 +178,20 @@ export async function GET(
     const kindLabels: Record<string, string> = {
       deposit: 'Deposit paid',
       balance: 'Balance paid',
+      refund: 'Refund',
     };
 
+    // Was filtering out any row with amount <= 0 — which silently
+    // excluded every refund from the itemized breakdown. amountPaid
+    // (used elsewhere on this same PDF) is the NET figure, already
+    // refund-inclusive from the payments trigger — so a customer who
+    // paid $500 and got $200 refunded would see "$500 paid" itemized
+    // here while the balance math implied only $300 credit, with
+    // nothing on the document explaining the gap. Now includes refund
+    // rows (kept negative) so the itemized list actually sums to the
+    // same net figure quoted elsewhere on the invoice.
     const paymentBreakdown = paymentRows
-      .filter((p: any) => parseFloat(p.amount) > 0)
+      .filter((p: any) => parseFloat(p.amount) !== 0)
       .map((p: any) => ({
         label: kindLabels[p.kind] || 'Payment received',
         amount: parseFloat(p.amount) || 0,

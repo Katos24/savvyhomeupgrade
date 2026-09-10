@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useMemo, useTransition, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Download, ChevronDown, RefreshCw } from 'lucide-react';
 import FinancialsOverview from './FinancialsOverview';
 import InvoicesList from './InvoicesList';
@@ -38,28 +38,49 @@ export default function FinancialsClient({
 }: Props) {
   const [period, setPeriod] = useState('year');
   const [periodOpen, setPeriodOpen] = useState(false);
-  // Draft values for the custom range inputs — kept separate from the
-  // applied range below so typing a start date alone can't briefly
-  // filter anything before Apply is actually pressed.
   const [customStartDraft, setCustomStartDraft] = useState('');
   const [customEndDraft, setCustomEndDraft] = useState('');
-  // The actually-applied range. Stays null until Apply is pressed with
-  // both dates filled — this is what "never full history unless
-  // selected" means in practice: there's no moment where 'custom' is
-  // active with an incomplete or empty range.
   const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(null);
-  // Search, lifted up from InvoicesList.tsx so the export can share the
-  // same filter instead of only ever exporting an unfiltered list
-  // regardless of what the person is actually looking at.
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<Tab>('overview');
   const [activeFilter, setActiveFilter] = useState<InvoiceState | 'all'>('all');
   const router = useRouter();
-  // page.tsx does the real DB queries as a server component — refresh()
-  // re-runs those and streams fresh props down to this component without
-  // a full browser reload, and without remounting this component, so the
-  // current tab/filter selection survives the refresh.
+  const pathname = usePathname();
   const [isRefreshing, startRefresh] = useTransition();
+
+  // Same shared 'dashboard-theme' key and same storage/focus-listener
+  // pattern CompanyShell already uses. This page previously had zero
+  // dark-mode code at all — every card hardcoded light colors — while
+  // sitting inside a shell that DOES paint a dark background when the
+  // toggle is on elsewhere (Dashboard, Leads). That mismatch, not any
+  // actual bug, was the 'renders weird when dark carries over' report:
+  // a light-only page rendered on top of a dark shell background.
+  const [isDark, setIsDark] = useState<boolean>(true);
+  // FIXED: the previous version relied on 'storage' and 'focus' browser
+  // events to notice a theme change made on another page. Neither one
+  // actually fires for the ordinary case of clicking a sidebar link and
+  // navigating from Dashboard to Financials in the same tab — 'storage'
+  // only fires in OTHER tabs/windows, never the one that made the
+  // change, and 'focus' only fires when the whole browser window
+  // regains focus (switching apps or tabs), not on an in-app route
+  // change. The only thing that ever re-ran the read was a hard reload,
+  // which is exactly "you need to refresh to go back to light." Keying
+  // this effect on pathname instead means it re-reads localStorage on
+  // every actual navigation into this page, mount or not — matching how
+  // someone actually moves between pages in practice. 'storage' and
+  // 'focus' are kept too, harmlessly, for the genuinely separate cases
+  // they DO cover (a second tab open side by side, or switching back
+  // from another app).
+  useEffect(() => {
+    const onStorage = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+    onStorage();
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('focus', onStorage);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('focus', onStorage);
+    };
+  }, [pathname]);
 
   const periodFiltered = useMemo(
     () => filterByPeriod(projects, period, customRange?.start, customRange?.end),
@@ -100,16 +121,17 @@ export default function FinancialsClient({
         customer_name: p.customer_name,
         payment_date: p.paid_on,
         _collected: parseFloat(p.amount) || 0,
+        // FIXED: this mapping picked four specific fields and silently
+        // dropped everything else — including payment_status, even
+        // after page.tsx started actually fetching it. It existed the
+        // whole time on `p.payment_status`, it just never survived the
+        // trip from the raw query result to what FinancialsOverview
+        // actually receives as props.
+        payment_status: p.payment_status,
       })),
     [realPayments]
   );
 
-  // New, dedicated export for this page — separate from the existing
-  // export-csv route, which is shared with other parts of the app and
-  // wasn't purpose-built for invoice fields or this page's filters.
-  // Previously only ever passed the time period; the status filter
-  // (Draft/Sent/Overdue/etc.) was silently ignored, so exporting while
-  // looking at "Overdue" still exported everything. Now passes both.
   const exportHref = (() => {
     const params = new URLSearchParams();
     if (period !== 'all') params.set('period', period);
@@ -122,32 +144,37 @@ export default function FinancialsClient({
     return `/api/company/${company.slug}/financials-export?${params.toString()}`;
   })();
 
-  // Callback to bridge Overview clicks directly to filtered Invoices list view
   const handleSelectFilter = (filterKey: InvoiceState | 'all') => {
     setActiveFilter(filterKey);
     setTab('invoices');
   };
 
   return (
-    <div className="text-stone-900">
+    <div className={isDark ? 'bg-[#0b0f17] min-h-screen text-slate-100' : 'bg-[#faf9f5] min-h-screen text-stone-900'}>
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-[#1c1917]">Financials</h1>
+          <h1 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>Financials</h1>
           <div className="flex items-center gap-2">
             <div className="relative">
               <button
                 onClick={() => setPeriodOpen((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-lg border border-stone-300 bg-white px-3.5 py-2 text-sm font-medium text-stone-700 transition-colors hover:bg-stone-50"
+                className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${
+                  isDark
+                    ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+                }`}
               >
                 {period === 'custom' && customRange
                   ? `${customRange.start} – ${customRange.end}`
                   : PERIODS.find((p) => p.value === period)?.label}
-                <ChevronDown className="h-3.5 w-3.5 text-stone-400" />
+                <ChevronDown className={`h-3.5 w-3.5 ${isDark ? 'text-slate-400' : 'text-stone-400'}`} />
               </button>
               {periodOpen && (
                 <>
                   <div className="fixed inset-0 z-10" onClick={() => setPeriodOpen(false)} />
-                  <div className="absolute right-0 top-full z-20 mt-1.5 w-64 overflow-hidden rounded-xl border border-stone-200 bg-white shadow-lg">
+                  <div className={`absolute right-0 top-full z-20 mt-1.5 w-64 overflow-hidden rounded-xl border shadow-lg ${
+                    isDark ? 'border-white/10 bg-[#0f1420]' : 'border-stone-200 bg-white'
+                  }`}>
                     {PERIODS.filter((p) => p.value !== 'custom').map((p) => (
                       <button
                         key={p.value}
@@ -155,21 +182,25 @@ export default function FinancialsClient({
                           setPeriod(p.value);
                           setPeriodOpen(false);
                         }}
-                        className={`block w-full px-4 py-2.5 text-left text-sm transition-colors hover:bg-stone-50 ${
-                          period === p.value ? 'font-semibold text-teal-800' : 'text-stone-600'
+                        className={`block w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                          isDark ? 'hover:bg-white/5' : 'hover:bg-stone-50'
+                        } ${
+                          period === p.value
+                            ? 'font-semibold text-teal-500'
+                            : isDark ? 'text-slate-300' : 'text-stone-600'
                         }`}
                       >
                         {p.label}
                       </button>
                     ))}
-                    {/* Custom range gets its own inline inputs rather than
-                        applying immediately on click — this is the actual
-                        mechanism behind "never full history unless
-                        selected": there's no click that activates 'custom'
-                        with an empty or half-filled range. Nothing happens
-                        until Apply is pressed with both dates present. */}
-                    <div className={`border-t border-stone-100 px-4 py-3 ${period === 'custom' ? 'bg-teal-50/40' : ''}`}>
-                      <p className={`mb-2 text-sm ${period === 'custom' ? 'font-semibold text-teal-800' : 'text-stone-600'}`}>
+                    <div className={`border-t px-4 py-3 ${isDark ? 'border-white/10' : 'border-stone-100'} ${
+                      period === 'custom' ? (isDark ? 'bg-teal-500/10' : 'bg-teal-50/40') : ''
+                    }`}>
+                      <p className={`mb-2 text-sm ${
+                        period === 'custom'
+                          ? 'font-semibold text-teal-500'
+                          : isDark ? 'text-slate-300' : 'text-stone-600'
+                      }`}>
                         Custom range
                       </p>
                       <div className="space-y-2">
@@ -178,14 +209,18 @@ export default function FinancialsClient({
                           value={customStartDraft}
                           onChange={(e) => setCustomStartDraft(e.target.value)}
                           max={customEndDraft || undefined}
-                          className="w-full rounded-lg border border-stone-300 px-2.5 py-1.5 text-xs outline-none focus:border-teal-700"
+                          className={`w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-teal-500 ${
+                            isDark ? 'border-white/10 bg-white/5 text-slate-100' : 'border-stone-300 bg-white'
+                          }`}
                         />
                         <input
                           type="date"
                           value={customEndDraft}
                           onChange={(e) => setCustomEndDraft(e.target.value)}
                           min={customStartDraft || undefined}
-                          className="w-full rounded-lg border border-stone-300 px-2.5 py-1.5 text-xs outline-none focus:border-teal-700"
+                          className={`w-full rounded-lg border px-2.5 py-1.5 text-xs outline-none focus:border-teal-500 ${
+                            isDark ? 'border-white/10 bg-white/5 text-slate-100' : 'border-stone-300 bg-white'
+                          }`}
                         />
                         <button
                           onClick={() => {
@@ -195,7 +230,9 @@ export default function FinancialsClient({
                             setPeriodOpen(false);
                           }}
                           disabled={!customStartDraft || !customEndDraft}
-                          className="w-full rounded-lg bg-stone-900 py-1.5 text-xs font-medium text-white transition-colors hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-40"
+                          className={`w-full rounded-lg py-1.5 text-xs font-medium text-white transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                            isDark ? 'bg-white/10 hover:bg-white/20' : 'bg-stone-900 hover:bg-stone-800'
+                          }`}
                         >
                           Apply
                         </button>
@@ -208,14 +245,22 @@ export default function FinancialsClient({
             <button
               onClick={() => startRefresh(() => router.refresh())}
               disabled={isRefreshing}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50 disabled:opacity-50"
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${
+                isDark
+                  ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+              }`}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
             </button>
             <a
               href={exportHref}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-stone-300 bg-white px-3 py-2 text-xs font-medium text-stone-700 transition-colors hover:bg-stone-50"
+              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                isDark
+                  ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+              }`}
             >
               <Download className="h-3.5 w-3.5" />
               Export
@@ -223,7 +268,7 @@ export default function FinancialsClient({
           </div>
         </div>
 
-        <div className="mb-6 flex items-center gap-6 border-b border-stone-200">
+        <div className={`mb-6 flex items-center gap-6 border-b ${isDark ? 'border-white/10' : 'border-stone-200'}`}>
           {([
             ['overview', 'Overview'],
             ['invoices', 'Invoices'],
@@ -237,19 +282,22 @@ export default function FinancialsClient({
                 setTab(key);
               }}
               className={`relative pb-3 text-sm font-medium transition-colors ${
-                tab === key ? 'text-stone-900' : 'text-stone-500 hover:text-stone-700'
+                tab === key
+                  ? isDark ? 'text-white' : 'text-stone-900'
+                  : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-stone-500 hover:text-stone-700'
               }`}
             >
               {label}
-              {tab === key && <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-stone-900" />}
+              {tab === key && (
+                <span className={`absolute inset-x-0 -bottom-px h-0.5 rounded-full ${isDark ? 'bg-white' : 'bg-stone-900'}`} />
+              )}
             </button>
           ))}
         </div>
 
-        {/* Both tabs stay mounted (display toggle) so switching tabs never
-            resets the Invoices tab's own search/filter state. */}
         <div style={{ display: tab === 'overview' ? 'block' : 'none' }}>
           <FinancialsOverview
+            isDark={isDark}
             totalOwed={totalOwed}
             totalCollected={totalCollected}
             totalQuoted={totalQuoted}

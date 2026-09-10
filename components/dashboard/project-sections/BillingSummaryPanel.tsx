@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import {
   CheckCircle,
   Download,
@@ -14,38 +15,67 @@ import {
   Lock,
   QrCode,
   RotateCcw,
+  ExternalLink,
 } from 'lucide-react';
 
-const fmt = (n: number | null | undefined) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
+// ==========================================
+// Types & Interfaces
+// ==========================================
 
-function fmtDate(d: string | null | undefined) {
-  if (!d) return null;
-  const datePart = d.split('T')[0];
-  const [year, month, day] = datePart.split('-').map(Number);
-  if (!year || !month || !day) return null;
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+export type StepStatus = 'locked' | 'ready' | 'sent' | 'overdue' | 'done';
+
+export interface StepAction {
+  label: string;
+  onClick: () => void;
 }
 
-type StepStatus = 'locked' | 'ready' | 'sent' | 'overdue' | 'done';
-type Step = {
+export interface Step {
   key: string;
   title: string;
   amount: number;
   status: StepStatus;
   sub?: string;
-  action?: { label: string; onClick: () => void };
+  action?: StepAction;
   needsUpgrade?: boolean;
-  editAction?: { label: string; onClick: () => void };
-};
+  editAction?: StepAction;
+}
 
-type BillingSummaryPanelProps = {
-  lead: any;
-  company: any;
+export interface Payment {
+  id: number;
+  amount: number;
+  kind?: 'payment' | 'refund';
+  method: string;
+  paid_on?: string | null;
+  is_stripe?: boolean;
+  card_brand?: string;
+  card_last4?: string;
+  stripe_payment_intent_id?: string;
+}
+
+export interface ActivityLogEntry {
+  id: number;
+  type: string;
+  status?: string;
+  created_at: string;
+  has_body?: boolean;
+  metadata?: {
+    kind?: 'deposit' | 'balance' | string;
+  };
+}
+
+export interface Lead {
+  paid_at?: string | null;
+  refunded_at?: string | null;
+  stripe_payment_intent_id?: string;
+}
+
+export interface Company {
+  slug: string;
+}
+
+export interface BillingSummaryPanelProps {
+  lead?: Lead | null;
+  company?: Company | null;
 
   invoiceNumber: string;
   invoiceSent: boolean;
@@ -67,8 +97,8 @@ type BillingSummaryPanelProps = {
   dueNowLabel: string;
 
   steps: Step[];
-  depositPayments: any[];
-  balancePayments: any[];
+  depositPayments: Payment[];
+  balancePayments: Payment[];
   reversedAmountFor: (paymentId: number) => number;
 
   handleDownload: () => void;
@@ -82,10 +112,10 @@ type BillingSummaryPanelProps = {
 
   openRecordPaymentModal: () => void;
 
-  payments: any[];
-  paymentBadgeLabel: (p: any) => string;
+  payments: Payment[];
+  paymentBadgeLabel: (p: Payment) => string;
   deletingPaymentId: number | null;
-  setConfirmDeletePayment: React.Dispatch<React.SetStateAction<any | null>>;
+  setConfirmDeletePayment: React.Dispatch<React.SetStateAction<Payment | null>>;
   setReverseAmountDraft: React.Dispatch<React.SetStateAction<string>>;
   setReverseNoteDraft: React.Dispatch<React.SetStateAction<string>>;
 
@@ -99,9 +129,93 @@ type BillingSummaryPanelProps = {
   dueDateLocked: boolean;
   openDueDateEditor: () => void;
   activeMethodLabel: string | null;
-  activityLog: any[];
+  activityLog: ActivityLogEntry[];
   loadPreview: (entryId: number) => void;
-};
+}
+
+// ==========================================
+// Performance-Optimized Formatters
+// ==========================================
+
+const usdFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+});
+
+const fmt = (n: number | null | undefined): string => usdFormatter.format(n || 0);
+
+function fmtDate(d: string | null | undefined): string | null {
+  if (!d) return null;
+  const datePart = d.split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
+function fmtShortDateTime(isoString: string): { dateStr: string; timeStr: string } {
+  const date = new Date(isoString);
+  return {
+    dateStr: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    timeStr: date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+  };
+}
+
+// ==========================================
+// Sub-Components
+// ==========================================
+
+function StatusBadge({
+  status,
+  stepNumber,
+}: {
+  status: StepStatus;
+  stepNumber: number;
+}) {
+  const baseClasses =
+    'absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold';
+
+  switch (status) {
+    case 'done':
+      return (
+        <span className={`${baseClasses} bg-emerald-500 text-white`}>
+          <CheckCircle className="w-4 h-4" />
+        </span>
+      );
+    case 'overdue':
+      return (
+        <span className={`${baseClasses} bg-rose-50 border border-rose-300 text-rose-600`}>
+          <AlertCircle className="w-3.5 h-3.5" />
+        </span>
+      );
+    case 'sent':
+      return (
+        <span className={`${baseClasses} bg-amber-50 border border-amber-300 text-amber-600`}>
+          <Clock className="w-3.5 h-3.5" />
+        </span>
+      );
+    case 'ready':
+      return (
+        <span className={`${baseClasses} bg-white border-2 border-brand-700 text-brand-700`}>
+          {stepNumber}
+        </span>
+      );
+    case 'locked':
+    default:
+      return (
+        <span className={`${baseClasses} bg-[#f5f1e8] border border-[#e7e2d8] text-[#a8a29e]`}>
+          <Lock className="w-3 h-3" />
+        </span>
+      );
+  }
+}
+
+// ==========================================
+// Main Component
+// ==========================================
 
 export default function BillingSummaryPanel({
   lead,
@@ -155,22 +269,33 @@ export default function BillingSummaryPanel({
   return (
     <div className="bg-white border border-[#e7e2d8] rounded-2xl overflow-hidden">
       <div className="p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
-
-        {/* LEFT: Total, progress checklist, actions, payment history */}
+        {/* LEFT COLUMN */}
         <div className="space-y-6 min-w-0">
           <div className="rounded-xl border border-[#e7e2d8] p-5">
+            {/* Header / Invoice Metadata */}
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-[#a8a29e]">Total</span>
-              <span className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-                invoiceSent ? 'bg-emerald-50 text-emerald-700' : 'bg-[#f5f1e8] text-[#78716c]'
-              }`}>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-[#a8a29e]">
+                Total
+              </span>
+              <span
+                className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
+                  invoiceSent ? 'bg-emerald-50 text-emerald-700' : 'bg-[#f5f1e8] text-[#78716c]'
+                }`}
+              >
                 {invoiceNumber} · {invoiceSent ? 'Sent' : 'Draft'}
               </span>
             </div>
-            <p className="text-3xl font-semibold text-[#1c1917] tabular-nums leading-tight">{fmt(total)}</p>
+
+            <p className="text-3xl font-semibold text-[#1c1917] tabular-nums leading-tight">
+              {fmt(total)}
+            </p>
+
+            {/* Tax Settings */}
             {taxLocked ? (
               invoiceTaxRate > 0 && (
-                <p className="text-[11px] text-[#a8a29e] mt-0.5 tabular-nums">Incl. {invoiceTaxRate}% tax</p>
+                <p className="text-[11px] text-[#a8a29e] mt-0.5 tabular-nums">
+                  Incl. {invoiceTaxRate}% tax
+                </p>
               )
             ) : (
               <button
@@ -182,12 +307,14 @@ export default function BillingSummaryPanel({
                 {invoiceTaxRate > 0 ? `Incl. ${invoiceTaxRate}% tax` : 'Add tax'}
               </button>
             )}
-            {isPaid && !isClosed ? (
+
+            {isPaid && !isClosed && (
               <p className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-emerald-600">
                 <CheckCircle className="w-3.5 h-3.5" /> Paid in full
               </p>
-            ) : null}
+            )}
 
+            {/* Amount Due Callout */}
             {amountDueNow > 0 && (
               <div
                 className={`mt-4 rounded-xl border p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${
@@ -201,23 +328,28 @@ export default function BillingSummaryPanel({
                 >
                   {dueNowLabel}
                 </p>
-                <p className="text-2xl font-bold text-[#1c1917] tabular-nums">{fmt(amountDueNow)}</p>
+                <p className="text-2xl font-bold text-[#1c1917] tabular-nums">
+                  {fmt(amountDueNow)}
+                </p>
               </div>
             )}
 
             <div className="border-t border-[#f0ece1] my-4" />
 
+            {/* Settlement Growth Alert */}
             {wasSettledThenGrew && (
               <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-[11px] text-blue-800">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-600" />
                 <span>
-                  This job was paid in full{lead?.paid_at ? ` on ${fmtDate(lead.paid_at)}` : ''}. {fmt(remaining)} in
-                  new work has been added to the quote since then — this bills the difference, not the
+                  This job was paid in full
+                  {lead?.paid_at ? ` on ${fmtDate(lead.paid_at)}` : ''}. {fmt(remaining)} in new work
+                  has been added to the quote since then — this bills the difference, not the
                   original invoice again.
                 </span>
               </div>
             )}
 
+            {/* Horizontal Step Indicator */}
             {!(isClosed && !refundedButOwing) && (
               <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-semibold">
                 {steps.map((step, i) => (
@@ -243,6 +375,7 @@ export default function BillingSummaryPanel({
               </div>
             )}
 
+            {/* Refunded or Closed State */}
             {isClosed && !refundedButOwing ? (
               <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3.5">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
@@ -251,17 +384,18 @@ export default function BillingSummaryPanel({
                     {isPartiallyRefunded ? 'Partially refunded' : 'Refunded'}
                   </p>
                   <p className="mt-0.5">
-                    {fmt(refundedAmount)} refunded{lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}. No
-                    balance remains on this job.
+                    {fmt(refundedAmount)} refunded
+                    {lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}. No balance
+                    remains on this job.
                   </p>
                   {isStripeVerified && (
                     <a
-                      href={`https://dashboard.stripe.com/payments/${lead.stripe_payment_intent_id}`}
+                      href={`https://dashboard.stripe.com/payments/${lead?.stripe_payment_intent_id}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="mt-1.5 inline-block text-[11px] font-semibold text-amber-900 hover:underline"
+                      className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 hover:underline"
                     >
-                      View charge &amp; refund in Stripe ↗
+                      View charge &amp; refund in Stripe <ExternalLink className="w-3 h-3" />
                     </a>
                   )}
                 </div>
@@ -273,161 +407,172 @@ export default function BillingSummaryPanel({
                     <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600" />
                     <span>
                       <strong>{fmt(refundedAmount)} refunded</strong>
-                      {lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}. {fmt(remaining)} remains
-                      outstanding on this invoice.
+                      {lead?.refunded_at ? ` on ${fmtDate(lead.refunded_at)}` : ''}. {fmt(remaining)}{' '}
+                      remains outstanding on this invoice.
                       {isStripeVerified && (
-                        <>
-                          {' '}
-                          <a
-                            href={`https://dashboard.stripe.com/payments/${lead.stripe_payment_intent_id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-semibold text-amber-900 hover:underline whitespace-nowrap"
-                          >
-                            View in Stripe ↗
-                          </a>
-                        </>
+                        <a
+                          href={`https://dashboard.stripe.com/payments/${lead?.stripe_payment_intent_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-1 inline-flex items-center gap-0.5 font-semibold text-amber-900 hover:underline whitespace-nowrap"
+                        >
+                          View in Stripe <ExternalLink className="w-3 h-3" />
+                        </a>
                       )}
                     </span>
                   </div>
                 )}
 
+                {/* Steps List */}
                 <div className="mt-4">
-                  {steps.map((step, i) => (
-                    <div key={step.key} className="relative pb-6 pl-9 last:pb-0">
-                      {i < steps.length - 1 && (
-                        <span
-                          className={`absolute left-3.5 top-7 bottom-0 w-px ${
-                            step.status === 'done' ? 'bg-emerald-300' : 'bg-[#e7e2d8]'
-                          }`}
-                        />
-                      )}
-                      <span
-                        className={`absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold ${
-                          step.status === 'done'
-                            ? 'bg-emerald-500 text-white'
-                            : step.status === 'overdue'
-                            ? 'bg-rose-50 border border-rose-300 text-rose-600'
-                            : step.status === 'sent'
-                            ? 'bg-amber-50 border border-amber-300 text-amber-600'
-                            : step.status === 'ready'
-                            ? 'bg-white border-2 border-brand-700 text-brand-700'
-                            : 'bg-[#f5f1e8] border border-[#e7e2d8] text-[#a8a29e]'
-                        }`}
-                      >
-                        {step.status === 'done' ? (
-                          <CheckCircle className="w-4 h-4" />
-                        ) : step.status === 'overdue' ? (
-                          <AlertCircle className="w-3.5 h-3.5" />
-                        ) : step.status === 'sent' ? (
-                          <Clock className="w-3.5 h-3.5" />
-                        ) : step.status === 'locked' ? (
-                          <Lock className="w-3 h-3" />
-                        ) : (
-                          i + 1
-                        )}
-                      </span>
+                  {steps.map((step, i) => {
+                    const stepPayments =
+                      step.key === 'deposit'
+                        ? depositPayments
+                        : step.key === 'balance'
+                        ? balancePayments
+                        : [];
 
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className={`text-sm font-semibold ${step.status === 'locked' ? 'text-[#a8a29e]' : 'text-[#1c1917]'}`}>
-                            {step.title}
-                          </p>
-                          {step.sub && (
+                    return (
+                      <div key={step.key} className="relative pb-6 pl-9 last:pb-0">
+                        {i < steps.length - 1 && (
+                          <span
+                            className={`absolute left-3.5 top-7 bottom-0 w-px ${
+                              step.status === 'done' ? 'bg-emerald-300' : 'bg-[#e7e2d8]'
+                            }`}
+                          />
+                        )}
+
+                        <StatusBadge status={step.status} stepNumber={i + 1} />
+
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
                             <p
-                              className={`text-[12px] mt-0.5 ${
-                                step.status === 'done'
-                                  ? 'text-emerald-600 font-medium'
-                                  : step.status === 'overdue'
-                                  ? 'text-rose-700 font-semibold'
-                                  : step.status === 'sent'
-                                  ? 'text-amber-800 font-semibold'
-                                  : step.status === 'ready'
-                                  ? 'text-brand-700 font-medium'
-                                  : 'text-[#a8a29e]'
+                              className={`text-sm font-semibold ${
+                                step.status === 'locked' ? 'text-[#a8a29e]' : 'text-[#1c1917]'
                               }`}
                             >
-                              {step.sub}
+                              {step.title}
                             </p>
-                          )}
+                            {step.sub && (
+                              <p
+                                className={`text-[12px] mt-0.5 ${
+                                  step.status === 'done'
+                                    ? 'text-emerald-600 font-medium'
+                                    : step.status === 'overdue'
+                                    ? 'text-rose-700 font-semibold'
+                                    : step.status === 'sent'
+                                    ? 'text-amber-800 font-semibold'
+                                    : step.status === 'ready'
+                                    ? 'text-brand-700 font-medium'
+                                    : 'text-[#a8a29e]'
+                                }`}
+                              >
+                                {step.sub}
+                              </p>
+                            )}
+                          </div>
+                          <p
+                            className={`text-sm font-bold tabular-nums shrink-0 ${
+                              step.status === 'locked' ? 'text-[#d6d3d1]' : 'text-[#1c1917]'
+                            }`}
+                          >
+                            {fmt(step.amount)}
+                          </p>
                         </div>
-                        <p
-                          className={`text-sm font-bold tabular-nums shrink-0 ${
-                            step.status === 'locked' ? 'text-[#d6d3d1]' : 'text-[#1c1917]'
-                          }`}
-                        >
-                          {fmt(step.amount)}
-                        </p>
-                      </div>
 
-                      {(step.action || step.needsUpgrade || step.editAction) && (
-                        <div className="mt-2.5 flex flex-col items-start gap-2">
-                          {(step.key === 'deposit' ? depositPayments : step.key === 'balance' ? balancePayments : []).length > 1 && (
-                        <div className="mt-2 space-y-1 pl-0.5">
-                          {(step.key === 'deposit' ? depositPayments : balancePayments).map((p: any) => {
-                            const refunded = reversedAmountFor(p.id);
-                            return (
-                              <div key={p.id} className="flex items-center justify-between text-[11px] text-[#78716c]">
-                                <span>
-                                  {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
-                                  {refunded > 0 && <span className="text-amber-700"> · {fmt(refunded)} refunded</span>}
-                                </span>
-                                <span className="tabular-nums font-medium text-[#57534e]">
-                                  {fmt(Math.max(p.amount - refunded, 0))}
-                                </span>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                      {step.action && (
-                        <button
-                          onClick={step.action.onClick}
+                        {/* Step Breakdown & Actions */}
+                        <div className="mt-2.5 space-y-2">
+                          {stepPayments.length > 1 && (
+                            <div className="space-y-1 pl-0.5">
+                              {stepPayments.map((p) => {
+                                const refunded = reversedAmountFor(p.id);
+                                return (
+                                  <div
+                                    key={p.id}
+                                    className="flex items-center justify-between text-[11px] text-[#78716c]"
+                                  >
+                                    <span>
+                                      {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
+                                      {refunded > 0 && (
+                                        <span className="text-amber-700">
+                                          {' '}
+                                          · {fmt(refunded)} refunded
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="tabular-nums font-medium text-[#57534e]">
+                                      {fmt(Math.max(p.amount - refunded, 0))}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {step.action && (
+                            <button
+                              type="button"
+                              onClick={step.action.onClick}
                               className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors"
                             >
                               <Send className="w-3.5 h-3.5" />
                               {step.action.label}
                             </button>
                           )}
+
                           {step.needsUpgrade && (
-                            <a
-                              href={`/${company?.slug}/admin/settings#billing`}
-                              className="text-[11px] font-semibold text-brand-700 hover:underline"
-                            >
-                              Upgrade to send invoices
-                            </a>
+                            <div>
+                              <a
+                                href={`/${company?.slug}/admin/settings#billing`}
+                                className="text-[11px] font-semibold text-brand-700 hover:underline"
+                              >
+                                Upgrade to send invoices
+                              </a>
+                            </div>
                           )}
+
                           {step.editAction && (
-                            <button
-                              onClick={step.editAction.onClick}
-                              className="inline-flex items-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-3 py-1 text-[11px] font-semibold text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
-                            >
-                              <Edit2 className="w-3 h-3" />
-                              {step.editAction.label}
-                            </button>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={step.editAction.onClick}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-3 py-1 text-[11px] font-semibold text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                                {step.editAction.label}
+                              </button>
+                            </div>
                           )}
                         </div>
-                      )}
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </>
             )}
           </div>
 
+          {/* Action Toolbar */}
           <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#e7e2d8] bg-[#faf9f5] px-4 py-3">
             <div className="inline-flex rounded-lg border border-[#e7e2d8] bg-white overflow-hidden shrink-0">
               <button
+                type="button"
                 onClick={handleDownload}
                 disabled={downloading}
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] transition-colors disabled:opacity-50"
               >
-                {downloading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                {downloading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Download className="w-3.5 h-3.5" />
+                )}
                 Download PDF
               </button>
 
               {hasPayLink && !isPaid && (!isClosed || refundedButOwing) && remaining > 0 && (
                 <button
+                  type="button"
                   onClick={handleGetPaymentLink}
                   className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] border-l border-[#e7e2d8] transition-colors"
                 >
@@ -440,6 +585,7 @@ export default function BillingSummaryPanel({
             <div className="flex items-center gap-2 flex-wrap">
               {showReminderLink && (
                 <button
+                  type="button"
                   onClick={() => setShowReminderConfirm(true)}
                   disabled={daysSinceReminder === 0}
                   className="inline-flex items-center gap-1 px-2 py-2 rounded-lg text-[10px] font-medium text-[#a8a29e] hover:text-[#57534e] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
@@ -451,6 +597,7 @@ export default function BillingSummaryPanel({
 
               {(!isClosed || refundedButOwing) && !isPaid && (
                 <button
+                  type="button"
                   onClick={openRecordPaymentModal}
                   className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-emerald-200 text-xs font-semibold text-emerald-700 bg-white hover:bg-emerald-50 transition-colors"
                 >
@@ -461,69 +608,79 @@ export default function BillingSummaryPanel({
             </div>
           </div>
 
+          {/* Payment Transactions History */}
           {payments.length > 0 && (
             <div className="rounded-xl border border-[#e7e2d8] overflow-hidden">
               <div className="px-4 pt-3.5 pb-2 text-[11px] font-medium uppercase tracking-wide text-[#a8a29e] bg-[#faf9f5]">
                 Payment Transactions
               </div>
               <div className="divide-y divide-[#f0ece1]">
-                {payments.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between px-4 py-3 text-xs">
-                    <div>
-                      <div className="flex items-center gap-2 font-semibold text-[#1c1917] tabular-nums">
-                        <span>{p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}</span>
-                        <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-[#f5f1e8] text-[#57534e] whitespace-nowrap">
-                        {paymentBadgeLabel(p)}
-                      </span>
-                      </div>
-                      <p className="text-[11px] text-[#a8a29e] capitalize mt-0.5">
-                        {p.is_stripe && p.card_brand
-                          ? `${p.card_brand} ····${p.card_last4}`
-                          : !p.is_stripe && p.method === 'stripe'
-                          ? 'Stripe (manual)'
-                          : p.method.replace('_', ' ')}
-                        {p.paid_on && ` · ${fmtDate(p.paid_on)}`}
-                      </p>
-                    </div>
+                {payments.map((p) => {
+                  const reversedAmt = reversedAmountFor(p.id);
+                  const canReverse = !p.is_stripe && p.kind !== 'refund' && reversedAmt < p.amount;
 
-                    <div className="flex items-center gap-1 shrink-0">
-                      {p.is_stripe && p.kind !== 'refund' && p.stripe_payment_intent_id && (
-                        <a
-                          href={`https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-2 py-1 rounded-lg text-[10px] font-semibold text-brand-700 hover:bg-brand-50 whitespace-nowrap transition-colors"
-                        >
-                          Stripe ↗
-                        </a>
-                      )}
-                      {!p.is_stripe && p.kind !== 'refund' && reversedAmountFor(p.id) < p.amount && (
-                        <button
-                          onClick={() => {
-                            const remainingReversible = p.amount - reversedAmountFor(p.id);
-                            setConfirmDeletePayment(p);
-                            setReverseAmountDraft(String(remainingReversible));
-                            setReverseNoteDraft('');
-                          }}
-                          disabled={deletingPaymentId === p.id}
-                          className="p-1.5 rounded-lg text-[#d6d3d1] hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
-                          aria-label="Reverse payment"
-                        >
-                          {deletingPaymentId === p.id ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <RotateCcw className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      )}
+                  return (
+                    <div key={p.id} className="flex items-center justify-between px-4 py-3 text-xs">
+                      <div>
+                        <div className="flex items-center gap-2 font-semibold text-[#1c1917] tabular-nums">
+                          <span>
+                            {p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}
+                          </span>
+                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-[#f5f1e8] text-[#57534e] whitespace-nowrap">
+                            {paymentBadgeLabel(p)}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#a8a29e] capitalize mt-0.5">
+                          {p.is_stripe && p.card_brand
+                            ? `${p.card_brand} ····${p.card_last4}`
+                            : !p.is_stripe && p.method === 'stripe'
+                            ? 'Stripe (manual)'
+                            : p.method.replace('_', ' ')}
+                          {p.paid_on && ` · ${fmtDate(p.paid_on)}`}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        {p.is_stripe && p.kind !== 'refund' && p.stripe_payment_intent_id && (
+                          <a
+                            href={`https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold text-brand-700 hover:bg-brand-50 whitespace-nowrap transition-colors"
+                          >
+                            Stripe <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        )}
+                        {canReverse && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const remainingReversible = p.amount - reversedAmt;
+                              setConfirmDeletePayment(p);
+                              setReverseAmountDraft(String(remainingReversible));
+                              setReverseNoteDraft('');
+                            }}
+                            disabled={deletingPaymentId === p.id}
+                            className="p-1.5 rounded-lg text-[#d6d3d1] hover:text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                            aria-label="Reverse payment"
+                          >
+                            {deletingPaymentId === p.id ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
         </div>
 
+        {/* RIGHT COLUMN: Settings & Outbox Log */}
         <div className="bg-[#faf9f5] border border-[#e7e2d8] rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
           <div>
             <p className="text-[11px] font-medium text-[#a8a29e] uppercase tracking-wide mb-2.5">
@@ -560,13 +717,21 @@ export default function BillingSummaryPanel({
                   >
                     <Calendar
                       className={`w-3.5 h-3.5 ${
-                        isOverdue ? 'text-rose-500' : !dueDate ? 'text-amber-500' : 'text-[#a8a29e]'
+                        isOverdue
+                          ? 'text-rose-500'
+                          : !dueDate
+                          ? 'text-amber-500'
+                          : 'text-[#a8a29e]'
                       }`}
                     />
                     {dueDate ? (
                       <>
                         {fmtDate(dueDate)}
-                        {isOverdue && <span className="text-[10px] font-bold uppercase tracking-wide">· Overdue</span>}
+                        {isOverdue && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide">
+                            · Overdue
+                          </span>
+                        )}
                       </>
                     ) : (
                       'Set Date'
@@ -599,58 +764,57 @@ export default function BillingSummaryPanel({
               {activityLog.length === 0 ? (
                 <p className="text-xs text-[#a8a29e] py-2 text-center">No emails sent yet.</p>
               ) : (
-                activityLog.map((entry: any, i: number) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-[#e7e2d8] text-xs"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'
-                        }`}
-                      />
-                      <div className="min-w-0">
-                        <p className="font-medium text-[#292524] truncate">
-                          {entry.type === 'invoice'
-                            ? entry.metadata?.kind === 'deposit'
-                              ? 'Deposit Sent'
-                              : entry.metadata?.kind === 'balance'
-                              ? 'Balance Sent'
-                              : 'Invoice Sent'
-                            : entry.type === 'payment_reminder'
-                            ? 'Reminder Sent'
-                            : entry.type}
-                        </p>
-                        <p className="text-[11px] text-[#a8a29e]">
-                          {new Date(entry.created_at).toLocaleDateString(undefined, {
-                            month: 'short',
-                            day: 'numeric',
-                          })}{' '}
-                          ·{' '}
-                          {new Date(entry.created_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </p>
-                      </div>
-                    </div>
+                activityLog.map((entry) => {
+                  const { dateStr, timeStr } = fmtShortDateTime(entry.created_at);
+                  const isDeposit = entry.metadata?.kind === 'deposit';
+                  const isBalance = entry.metadata?.kind === 'balance';
 
-                    {entry.has_body && (
-                      <button
-                        onClick={() => loadPreview(entry.id)}
-                        className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-[#e7e2d8] text-[#57534e] hover:text-[#1c1917] hover:bg-[#f5f1e8] rounded-lg text-[11px] font-medium transition-colors"
-                      >
-                        <Eye className="w-3 h-3" /> Preview
-                      </button>
-                    )}
-                  </div>
-                ))
+                  const label =
+                    entry.type === 'invoice'
+                      ? isDeposit
+                        ? 'Deposit Sent'
+                        : isBalance
+                        ? 'Balance Sent'
+                        : 'Invoice Sent'
+                      : entry.type === 'payment_reminder'
+                      ? 'Reminder Sent'
+                      : entry.type;
+
+                  return (
+                    <div
+                      key={entry.id}
+                      className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-[#e7e2d8] text-xs"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-2 h-2 rounded-full shrink-0 ${
+                            entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'
+                          }`}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium text-[#292524] truncate">{label}</p>
+                          <p className="text-[11px] text-[#a8a29e]">
+                            {dateStr} · {timeStr}
+                          </p>
+                        </div>
+                      </div>
+
+                      {entry.has_body && (
+                        <button
+                          type="button"
+                          onClick={() => loadPreview(entry.id)}
+                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-[#e7e2d8] text-[#57534e] hover:text-[#1c1917] hover:bg-[#f5f1e8] rounded-lg text-[11px] font-medium transition-colors"
+                        >
+                          <Eye className="w-3 h-3" /> Preview
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
         </div>
-
       </div>
     </div>
   );

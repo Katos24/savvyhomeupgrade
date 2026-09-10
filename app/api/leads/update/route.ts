@@ -1131,31 +1131,58 @@ else if (action === 'update_lead_step2') {
 else if (action === 'save_invoice') {
   const { invoice_number, invoice_data, invoice_status } = body;
 
+  // Fetches current values, not just the id — this is what makes the
+  // fix below possible. Previously this action always ran as a FULL
+  // overwrite, even when the caller (BillingSection's due-date editor)
+  // only ever sends invoice_number + due_date and nothing else. That
+  // meant invoice_data became the string "undefined"
+  // (JSON.stringify(undefined) isn't valid JSON), invoice_status
+  // silently reset to 'draft', and invoice_sent_at got wiped back to
+  // null — on every single due-date change, even for an invoice that
+  // had genuinely already been sent to the customer.
   const projects = await sql`
-    SELECT id FROM projects WHERE lead_id = ${id}
+    SELECT id, invoice_number, invoice_data, invoice_status, invoice_sent_at, payment_due_date
+    FROM projects WHERE lead_id = ${id}
   `;
 
   if (projects.length === 0) {
     return NextResponse.json({ error: 'Project not found' }, { status: 404 });
   }
 
-  const projectId = projects[0].id;
+  const existing = projects[0];
+  const projectId = existing.id;
+
+  // Each field only changes if THIS call actually provided it — otherwise
+  // it keeps exactly what was already in the database. `!== undefined` is
+  // deliberate, not `|| existing...`, so an intentional empty string or
+  // false value from a future caller isn't treated as "not provided."
+  const nextInvoiceNumber = invoice_number !== undefined ? invoice_number : existing.invoice_number;
+  const nextInvoiceDataValue = invoice_data !== undefined ? invoice_data : existing.invoice_data;
+  const nextInvoiceStatus = invoice_status !== undefined ? invoice_status : existing.invoice_status;
+  // invoice_sent_at is derived from invoice_status, so it only recomputes
+  // when invoice_status was actually part of this specific call. If this
+  // call didn't touch invoice_status at all, invoice_sent_at is left
+  // exactly as it was — sent stays sent, draft stays draft.
+  const nextInvoiceSentAt = invoice_status !== undefined
+    ? (invoice_status === 'sent' ? new Date().toISOString() : null)
+    : existing.invoice_sent_at;
+  const nextDueDate = due_date !== undefined ? (due_date || null) : existing.payment_due_date;
 
   await sql`
   UPDATE projects
   SET
-    invoice_number = ${invoice_number},
-    invoice_data = ${JSON.stringify(invoice_data)},
-    invoice_status = ${invoice_status || 'draft'},
-    payment_due_date = ${due_date || null},
-    invoice_sent_at = ${invoice_status === 'sent' ? new Date().toISOString() : null},
+    invoice_number = ${nextInvoiceNumber},
+    invoice_data = ${JSON.stringify(nextInvoiceDataValue)},
+    invoice_status = ${nextInvoiceStatus},
+    payment_due_date = ${nextDueDate},
+    invoice_sent_at = ${nextInvoiceSentAt},
     updated_at = NOW()
   WHERE id = ${projectId}
 `;
 
   const invoiceEntry = {
     type: 'invoice_saved',
-    text: `Invoice ${invoice_number} saved`,
+    text: `Invoice ${nextInvoiceNumber} saved`,
     user_name: user_name,
     user_email: user_email,
     timestamp: new Date().toISOString()

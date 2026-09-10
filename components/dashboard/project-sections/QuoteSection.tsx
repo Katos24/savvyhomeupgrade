@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import QuoteModals from './QuoteModals';
+import { getDepositAmount } from '@/lib/billing';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type QuoteSectionProps = {
@@ -39,6 +40,15 @@ const formatCategoryLabel = (value?: string) =>
 
 const noSpinners =
   '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+
+// Module-level, not component state — persists across every lead opened
+// in this browser session (not a full page reload), since templates are
+// company-wide, not per-lead. Without this, switching between leads
+// re-triggered the exact same fetch every single time, which is what
+// made the empty-state template cards feel like they were popping in
+// late — there was no skeleton AND no cache, so the cards just silently
+// didn't exist until the request happened to resolve.
+const templatesCache = new Map<string, any[]>();
 
 export default function QuoteSection({
   lead,
@@ -120,12 +130,27 @@ export default function QuoteSection({
 
   useEffect(() => {
     if (!companySlug) return;
-    setTemplatesLoading(true);
+    // Cache paints instantly if present — not a substitute for a real
+    // fetch, just removes the blank/loading moment on every lead after
+    // the first one this session.
+    const cached = templatesCache.get(companySlug);
+    if (cached) {
+      setAllTemplates(cached);
+      const match = lead?.category ? cached.find((t: any) => t.category === lead.category) : null;
+      setCategoryTemplate(match || null);
+      setTemplatesLoading(false);
+    } else {
+      setTemplatesLoading(true);
+    }
+    // Always fetches fresh regardless of cache hit — a template edited in
+    // Settings a moment ago shouldn't stay stale here for the rest of
+    // the session.
     fetch(`/api/company/${companySlug}/quote-templates`)
       .then((r) => r.json())
       .then((data) => {
         if (data.success) {
           const templates = data.templates || [];
+          templatesCache.set(companySlug, templates);
           setAllTemplates(templates);
           const match = lead?.category
             ? templates.find((t: any) => t.category === lead.category)
@@ -435,13 +460,10 @@ export default function QuoteSection({
 
   const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;
   const depositValue = parseFloat(lead?.deposit_value || '0');
-  const depositAmount =
-    depositType && depositValue > 0 && total > 0
-      ? Math.min(
-          Math.round((depositType === 'percent' ? (total * depositValue) / 100 : depositValue) * 100) / 100,
-          total
-        )
-      : 0;
+  // Was an inline duplicate of the exact formula in lib/billing.ts's
+  // getDepositAmount() — the same category of drift that caused three
+  // separate deposit bugs this session. Now imports the real thing.
+  const depositAmount = getDepositAmount({ total, depositType, depositValue });
 
   const quoteAccepted = !!(lead?.project_quote_accepted_at || lead?.quote_accepted_at);
 
@@ -552,36 +574,66 @@ export default function QuoteSection({
                 what happened by default. */}
             {quoteData.length === 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {categoryTemplate && (
-                  <button
-                    onClick={handleLoadTemplate}
-                    className="text-left p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <p className="text-sm font-bold text-indigo-950">
-                      Load {formatCategoryLabel(lead?.category || categoryTemplate.category)} Template
-                    </p>
-                    <p className="text-xs text-indigo-700 mt-1">
-                      {categoryTemplate.items?.length || 0} standard line items with default pricing
-                    </p>
-                  </button>
-                )}
+                {templatesLoading ? (
+                  // Reserves the exact layout space the real cards below
+                  // take up, instead of them silently not existing and
+                  // then popping in once the fetch resolves — that pop-in
+                  // was the actual source of the "glitchy" feeling.
+                  <>
+                    <div className="h-[104px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
+                    <div className="h-[104px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
+                  </>
+                ) : (
+                  <>
+                    {categoryTemplate && (
+                      <button
+                        onClick={handleLoadTemplate}
+                        className="text-left p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <p className="text-sm font-bold text-indigo-950">
+                          Load {formatCategoryLabel(lead?.category || categoryTemplate.category)} Template
+                        </p>
+                        <p className="text-xs text-indigo-700 mt-1">
+                          {categoryTemplate.items?.length || 0} standard line items with default pricing
+                        </p>
+                      </button>
+                    )}
 
-                {allTemplates.length > 0 && (
-                  <button
-                    onClick={() => setShowTemplateBrowser(true)}
-                    className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
-                  >
-                    <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center mb-3">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <p className="text-sm font-bold text-slate-900">Browse Templates</p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Pick from {allTemplates.length} saved template{allTemplates.length === 1 ? '' : 's'}
-                    </p>
-                  </button>
+                    {allTemplates.length > 0 ? (
+                      <button
+                        onClick={() => setShowTemplateBrowser(true)}
+                        className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center mb-3">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <p className="text-sm font-bold text-slate-900">Browse Templates</p>
+                        <p className="text-xs text-slate-500 mt-1">
+                          Pick from {allTemplates.length} saved template{allTemplates.length === 1 ? '' : 's'}
+                        </p>
+                      </button>
+                    ) : (
+                      // Genuinely zero templates exist anywhere — only
+                      // shown once loading is confirmed complete, not
+                      // while allTemplates is simply still empty because
+                      // the fetch hasn't resolved yet.
+                      <a
+                        href={`/${companySlug}/home?section=categories`}
+                        className="text-left p-4 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 transition cursor-pointer block"
+                      >
+                        <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">
+                          <FileText className="w-4 h-4" />
+                        </div>
+                        <p className="text-sm font-bold text-indigo-950">Set Up Pricing Templates</p>
+                        <p className="text-xs text-indigo-700 mt-1">
+                          Save reusable pricing for your services so future quotes take seconds
+                        </p>
+                      </a>
+                    )}
+                  </>
                 )}
 
                 <button
@@ -858,14 +910,18 @@ export default function QuoteSection({
                             >
                               <Sparkles className="w-4 h-4 text-amber-500" />
                             </button>
-                            {allTemplates.length > 0 && (
-                              <button
-                                onClick={() => setShowTemplateBrowser(true)}
-                                className="shrink-0 px-3.5 py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 active:scale-[0.99] transition"
-                                aria-label="Browse Templates"
-                              >
-                                <FileText className="w-4 h-4 text-indigo-500" />
-                              </button>
+                            {templatesLoading ? (
+                              <div className="shrink-0 w-[52px] h-[46px] rounded-xl bg-slate-100 animate-pulse" />
+                            ) : (
+                              allTemplates.length > 0 && (
+                                <button
+                                  onClick={() => setShowTemplateBrowser(true)}
+                                  className="shrink-0 px-3.5 py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 active:scale-[0.99] transition"
+                                  aria-label="Browse Templates"
+                                >
+                                  <FileText className="w-4 h-4 text-indigo-500" />
+                                </button>
+                              )
                             )}
                           </div>
                         </div>

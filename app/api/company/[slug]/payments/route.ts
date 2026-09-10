@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import { getCollectionKind } from '@/lib/billing';
+import { getCollectionKind, getDepositAmount } from '@/lib/billing';
 
 const VALID_METHODS = ['cash', 'check', 'credit_card', 'zelle', 'venmo', 'paypal', 'stripe', 'other'];
 const fmtAmount = (n: number) => `$${n.toFixed(2)}`;
@@ -272,14 +272,41 @@ export async function POST(
       // it here (not overwrite) so multiple reversals over time add up
       // correctly instead of each one clobbering the last.
       const newStatus = collected <= 0 ? 'refunded' : 'partially_refunded';
-      await sql`
-        UPDATE projects SET
-          payment_status = ${newStatus},
-          refunded_amount = COALESCE(refunded_amount, 0) + ${requestedAmount},
-          refunded_at = NOW(),
-          updated_at = NOW()
-        WHERE id = ${original.project_id} AND company_id = ${auth.company.id}
-      `;
+
+      // deposit_paid_at is deliberately sticky (see lib/billing.ts) so a
+      // quote growing after the deposit was already paid can't silently
+      // un-satisfy it. A refund is a genuinely different situation: the
+      // money behind that timestamp may no longer exist. If this refund
+      // dropped net collected below the deposit target, the deposit is
+      // no longer actually satisfied — the sticky protection was never
+      // meant to survive the underlying payment being given back.
+      const depositAmount = getDepositAmount({
+        total: Number(refreshed?.quote_total) || 0,
+        depositType: refreshed?.deposit_type,
+        depositValue: refreshed?.deposit_value,
+      });
+      const depositStillSatisfied = depositAmount <= 0 || collected >= depositAmount;
+
+      if (depositStillSatisfied) {
+        await sql`
+          UPDATE projects SET
+            payment_status = ${newStatus},
+            refunded_amount = COALESCE(refunded_amount, 0) + ${requestedAmount},
+            refunded_at = NOW(),
+            updated_at = NOW()
+          WHERE id = ${original.project_id} AND company_id = ${auth.company.id}
+        `;
+      } else {
+        await sql`
+          UPDATE projects SET
+            payment_status = ${newStatus},
+            refunded_amount = COALESCE(refunded_amount, 0) + ${requestedAmount},
+            refunded_at = NOW(),
+            deposit_paid_at = NULL,
+            updated_at = NOW()
+          WHERE id = ${original.project_id} AND company_id = ${auth.company.id}
+        `;
+      }
 
       return NextResponse.json({
         success: true,

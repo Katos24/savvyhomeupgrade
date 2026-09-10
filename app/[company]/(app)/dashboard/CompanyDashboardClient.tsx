@@ -613,6 +613,14 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         const statusInfo = p.payment_status && p.payment_status !== 'paid'
                           ? getPaymentStatusDisplay(p.payment_status)
                           : null;
+                        // Same principle applied on Financials: an amount
+                        // rendered in the same strong, full-emphasis color
+                        // as every normal payment claims "uncomplicated,"
+                        // right next to a badge saying otherwise. Dimming
+                        // it here makes the distinction visible at a
+                        // glance instead of only on reading the badge text.
+                        const isRefundRelated =
+                          p.payment_status === 'refunded' || p.payment_status === 'partially_refunded';
                         return (
                           <button
                             key={p.id}
@@ -630,7 +638,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                               </p>
                             </div>
                             <div className="flex flex-col items-end gap-1 shrink-0">
-                              <p className={`text-xs sm:text-sm font-semibold tabular-nums ${cardText}`}>
+                              <p className={`text-xs sm:text-sm font-semibold tabular-nums ${isRefundRelated ? subText : cardText}`}>
                                 {fmtMoney(parseFloat(String(p.amount)))}
                               </p>
                               {statusInfo && (

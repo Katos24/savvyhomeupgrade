@@ -140,7 +140,12 @@ export default function QuoteModals({
 }: QuoteModalsProps) {
   const [browserMode, setBrowserMode] = useState<'templates' | 'items'>('templates');
   const [itemSearchQuery, setItemSearchQuery] = useState('');
-  const [addedKeys, setAddedKeys] = useState<Set<string>>(new Set());
+  // Content key -> the quoteData row id that add created. A plain Set
+  // only ever remembered "this was added at some point," with no way to
+  // know which specific row to remove on a second click — clicking again
+  // just ran the same add logic again, creating a genuine duplicate
+  // instead of the toggle the checkmark UI implied.
+  const [addedItems, setAddedItems] = useState<Map<string, number>>(new Map());
 
   // Reset to a clean state each time the browser opens, since this
   // component never unmounts — only the modal's visibility toggles.
@@ -148,7 +153,7 @@ export default function QuoteModals({
     if (showTemplateBrowser) {
       setBrowserMode('templates');
       setItemSearchQuery('');
-      setAddedKeys(new Set());
+      setAddedItems(new Map());
     }
   }, [showTemplateBrowser]);
 
@@ -184,15 +189,44 @@ export default function QuoteModals({
   const poolItemKey = (item: { description: string; unitPrice: number; quantity: number }) =>
     `${item.description.toLowerCase()}|${item.unitPrice}|${item.quantity}`;
 
-  // Adds just this one item to the current quote — doesn't touch or
-  // replace anything already on it, and the modal stays open so several
-  // can be added in a row. Marks it "added" persistently (not just a
-  // toast) since a toast alone was too easy to miss.
-  const addPoolItemToQuote = (item: { description: string; unitPrice: number; quantity: number }) => {
+  // Cross-checks the tracked row id against what's actually still in
+  // quoteData, rather than trusting the map blindly — if that exact row
+  // got removed a different way (the table's own trash icon on that
+  // line), this correctly reverts to "not added" instead of the button
+  // getting stuck showing a stale checkmark for a row that's already gone.
+  const isPoolItemAdded = (item: { description: string; unitPrice: number; quantity: number }) => {
+    const trackedId = addedItems.get(poolItemKey(item));
+    if (trackedId === undefined) return false;
+    return quoteData.some((i: any) => i.id === trackedId);
+  };
+
+  // A real toggle now, not a one-way add. First click adds the row and
+  // remembers its id; a second click removes that exact row and clears
+  // the tracking, so a third click can add it fresh again. Previously the
+  // button always called the same add logic regardless of state, so a
+  // second click silently created a duplicate instead of undoing the first.
+  const togglePoolItem = (item: { description: string; unitPrice: number; quantity: number }) => {
+    const key = poolItemKey(item);
+    const trackedId = addedItems.get(key);
+    const currentlyAdded = trackedId !== undefined && quoteData.some((i: any) => i.id === trackedId);
+
+    if (currentlyAdded) {
+      setQuoteData((prev) => prev.filter((i: any) => i.id !== trackedId));
+      setAddedItems((prev) => {
+        const next = new Map(prev);
+        next.delete(key);
+        return next;
+      });
+      setIsDirty(true);
+      toast.success(`Removed "${item.description}"`);
+      return;
+    }
+
+    const newId = Date.now();
     setQuoteData((prev) => [
       ...prev,
       {
-        id: Date.now(),
+        id: newId,
         description: item.description,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -200,7 +234,7 @@ export default function QuoteModals({
       },
     ]);
     setIsDirty(true);
-    setAddedKeys((prev) => new Set(prev).add(poolItemKey(item)));
+    setAddedItems((prev) => new Map(prev).set(key, newId));
     toast.success(`Added "${item.description}"`);
   };
 
@@ -478,11 +512,11 @@ export default function QuoteModals({
                       </p>
                     ) : (
                       filteredLineItems.map((item, i) => {
-                        const isAdded = addedKeys.has(poolItemKey(item));
+                        const isAdded = isPoolItemAdded(item);
                         return (
                           <button
                             key={i}
-                            onClick={() => addPoolItemToQuote(item)}
+                            onClick={() => togglePoolItem(item)}
                             className={`w-full flex items-center justify-between gap-2 sm:gap-3 p-3 border rounded-lg transition cursor-pointer text-left active:scale-[0.98] ${
                               isAdded
                                 ? 'border-emerald-200 bg-emerald-50/60'

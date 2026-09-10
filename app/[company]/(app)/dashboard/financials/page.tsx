@@ -71,7 +71,15 @@ export default async function FinancialsPage({
   // its own inline copy — same duplication risk as Dashboard's version,
   // which is exactly what let the two surfaces disagree on what counts
   // as "recent" for the same underlying data.
-  const paymentRows = await getRecentPayments(sql, company.id, 6, false);
+  //
+  // FIXED: last argument was `false` — meaning this call never fetched
+  // payment_status at all, so FinancialsOverview's "Recent Cash Inflows"
+  // card had no way to show a refunded/partial badge even after that
+  // component was updated to render one. A payment that was later fully
+  // refunded looked identical to real, uncomplicated revenue here, while
+  // Dashboard's own Recent Payments (which does pass true) correctly
+  // showed the badge for the exact same underlying data.
+  const paymentRows = await getRecentPayments(sql, company.id, 6, true);
 
   return (
     <FinancialsClient

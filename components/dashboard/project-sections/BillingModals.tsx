@@ -9,6 +9,7 @@ import {
   CreditCard,
   AlertCircle,
   Clock,
+  Check,
 } from 'lucide-react';
 
 const fmt = (n: number | null | undefined) =>
@@ -64,6 +65,9 @@ type BillingModalsProps = {
   dueDate: string;
   setDueDate: React.Dispatch<React.SetStateAction<string>>;
   handleSendInvoice: () => void;
+  confirmSendInvoice: () => void;
+  showNoDueDateWarning: boolean;
+  setShowNoDueDateWarning: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Confirm Delete/Reverse Payment
   confirmDeletePayment: any | null;
@@ -168,6 +172,9 @@ export default function BillingModals({
   dueDate,
   setDueDate,
   handleSendInvoice,
+  confirmSendInvoice,
+  showNoDueDateWarning,
+  setShowNoDueDateWarning,
   confirmDeletePayment,
   setConfirmDeletePayment,
   deletingPaymentId,
@@ -392,7 +399,19 @@ export default function BillingModals({
                   {!dueDate && (
                     <div className="mt-2 flex items-start gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-xs text-amber-800">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-amber-600" />
-                      <span>No due date set.</span>
+                      <div className="flex-1">
+                        <span>No due date set.</span>
+                        {showNoDueDateWarning && (
+                          <button
+                            type="button"
+                            onClick={handleSendInvoice}
+                            disabled={sending}
+                            className="block mt-1.5 font-semibold text-amber-900 underline hover:no-underline disabled:opacity-50"
+                          >
+                            Send anyway without a due date →
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -401,7 +420,10 @@ export default function BillingModals({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowSendConfirm(false)}
+                  onClick={() => {
+                    setShowSendConfirm(false);
+                    setShowNoDueDateWarning(false);
+                  }}
                   disabled={sending}
                   className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
                 >
@@ -409,7 +431,7 @@ export default function BillingModals({
                 </button>
                 <button
                   type="button"
-                  onClick={handleSendInvoice}
+                  onClick={confirmSendInvoice}
                   disabled={sending}
                   className="flex-1 py-2.5 bg-brand-700 hover:bg-brand-800 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
@@ -553,74 +575,103 @@ export default function BillingModals({
 
               <div className="space-y-3 mb-5 text-xs">
                 <div>
-                  <label className="block font-medium text-[#57534e] mb-1">Amount Collected</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={paymentAmount}
-                    onChange={(e) => {
-                      const stripped = e.target.value
-                        .replace(/[^0-9.]/g, '')
-                        .replace(/(\..*?)\./g, '$1');
-                      setRawAmount(stripped);
-                      setPaymentAmount(stripped);
-                    }}
-                    onFocus={() => setPaymentAmount(rawAmount)}
-                    onBlur={() => {
-                      const num = parseFloat(rawAmount || '0');
-                      if (!isNaN(num) && num > 0) {
-                        setPaymentAmount(
-                          num.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
-                        );
-                      }
-                    }}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2.5 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg text-sm font-bold tabular-nums outline-none focus:bg-white focus:border-brand-700"
-                  />
+                  <label htmlFor="record-payment-amount" className="block font-medium text-[#57534e] mb-1">Amount Collected</label>
+                  <div className="flex items-center gap-1.5 px-3 py-2.5 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg focus-within:bg-white focus-within:border-brand-700">
+                    <span className="text-sm font-bold text-[#a8a29e] shrink-0">$</span>
+                    <input
+                      id="record-payment-amount"
+                      type="text"
+                      inputMode="decimal"
+                      value={paymentAmount}
+                      onChange={(e) => {
+                        const stripped = e.target.value
+                          .replace(/[^0-9.]/g, '')
+                          .replace(/(\..*?)\./g, '$1');
+                        setRawAmount(stripped);
+                        setPaymentAmount(stripped);
+                      }}
+                      onFocus={() => setPaymentAmount(rawAmount)}
+                      onBlur={() => {
+                        const num = parseFloat(rawAmount || '0');
+                        if (!isNaN(num) && num > 0) {
+                          setPaymentAmount(
+                            num.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          );
+                        }
+                      }}
+                      placeholder="0.00"
+                      className="w-full bg-transparent text-sm font-bold tabular-nums outline-none"
+                    />
+                  </div>
 
                   <div className="mt-2 grid gap-1.5">
-                    {hasDepositTerms && !depositPaid && depositAmount > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const shortfall = Math.max(depositAmount - paidAmount, 0);
-                          setRawAmount(shortfall.toString());
-                          setPaymentAmount(
-                            shortfall.toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
-                          );
-                          if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
-                        }}
-                        className="w-full p-2 rounded-lg border border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8] flex items-center justify-between transition-colors text-[11px]"
-                      >
-                        <span>Fill Required Deposit</span>
-                        <span className="font-bold tabular-nums">{fmt(Math.max(depositAmount - paidAmount, 0))}</span>
-                      </button>
-                    )}
-                    {remaining > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setRawAmount(remaining.toString());
-                          setPaymentAmount(
-                            remaining.toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
-                          );
-                          if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
-                        }}
-                        className="w-full p-2 rounded-lg border border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8] flex items-center justify-between transition-colors text-[11px]"
-                      >
-                        <span>Fill Full Balance</span>
-                        <span className="font-bold tabular-nums">{fmt(remaining)}</span>
-                      </button>
-                    )}
+                    {hasDepositTerms && !depositPaid && depositAmount > 0 && (() => {
+                      const shortfall = Math.max(depositAmount - paidAmount, 0);
+                      // Compares the current typed amount against what this
+                      // preset would fill — a real toggle-looking state, not
+                      // just a static button, so it's clear at a glance
+                      // which preset (if either) matches what's in the field.
+                      const isSelected =
+                        parseFloat(rawAmount || '0') === shortfall && shortfall > 0;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRawAmount(shortfall.toString());
+                            setPaymentAmount(
+                              shortfall.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            );
+                            if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
+                          }}
+                          className={`w-full p-2 rounded-lg border flex items-center justify-between transition-colors text-[11px] ${
+                            isSelected
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                              : 'border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8]'
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-1.5">
+                            {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                            Fill Required Deposit
+                          </span>
+                          <span className="font-bold tabular-nums">{fmt(shortfall)}</span>
+                        </button>
+                      );
+                    })()}
+                    {remaining > 0 && (() => {
+                      const isSelected = parseFloat(rawAmount || '0') === remaining;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRawAmount(remaining.toString());
+                            setPaymentAmount(
+                              remaining.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            );
+                            if (!paymentDate) setPaymentDate(new Date().toISOString().split('T')[0]);
+                          }}
+                          className={`w-full p-2 rounded-lg border flex items-center justify-between transition-colors text-[11px] ${
+                            isSelected
+                              ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
+                              : 'border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8]'
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-1.5">
+                            {isSelected && <Check className="w-3.5 h-3.5 text-emerald-600" />}
+                            Fill Full Balance
+                          </span>
+                          <span className="font-bold tabular-nums">{fmt(remaining)}</span>
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
 

@@ -34,6 +34,18 @@ export default function CompanyShell({
     // exactly what a hydration mismatch is. Always matching the server's
     // default first, then correcting once mounted, avoids that at the
     // cost of a brief flash to the wrong theme on first load.
+    //
+    // FIXED: was keyed on an empty dependency array — meaning this only
+    // ever re-ran on a hard reload, since neither 'storage' nor 'focus'
+    // fire for an ordinary in-app navigation (storage only fires in
+    // OTHER tabs, focus only fires when the whole browser window regains
+    // focus, not on a route change within an already-focused tab). Since
+    // CompanyShell persists across every page as a shared layout, it
+    // never remounts on navigation either — so toggling theme on
+    // Dashboard, then clicking into another page, could leave this
+    // wrapper's own background/mobile bar showing the stale theme until
+    // a hard refresh. Keying on pathname makes it re-check on every
+    // actual navigation, matching how someone really moves through the app.
     const onStorage = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
     onStorage();
     window.addEventListener('storage', onStorage);
@@ -42,7 +54,7 @@ export default function CompanyShell({
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('focus', onStorage);
     };
-  }, []);
+  }, [pathname]);
   // Home has its own dense sub-navigation rail — running the full-width
   // main sidebar at the same time leaves too little room for content
   // (this is what caused OverviewTab's fields to overflow). Nudge to

@@ -40,6 +40,14 @@ amountPaid?: number;
    *  lump "Amount Paid" — so the PDF reflects how the job was actually
    *  paid, not just the end total. */
   paymentBreakdown?: { label: string; amount: number; date?: string }[];
+  /** No longer used — colors are fixed (see FIXED COLORS below), not
+   *  derived from the company's brand. Kept in the type, still accepted
+   *  and silently ignored, so any existing caller that still passes these
+   *  doesn't need to change or break. Certain brand hex values (very pale
+   *  pastels, some saturated hues) still rendered muddy or illegible even
+   *  after the old darken/lighten math tried to correct them — fixed,
+   *  proven colors sidestep that entirely instead of chasing a better
+   *  correction algorithm. */
   brandColor1?: string;
   brandColor2?: string;
 };
@@ -52,80 +60,6 @@ function formatPhone(phone: string): string {
   return digits.length === 10
     ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
     : phone;
-}
-
-function isValidHex(hex: string): boolean {
-  return /^#[0-9A-Fa-f]{6}$/.test(hex);
-}
-
-function hexToRgb(hex: string) {
-  const h = hex.replace('#', '');
-  return rgb(
-    parseInt(h.substring(0, 2), 16) / 255,
-    parseInt(h.substring(2, 4), 16) / 255,
-    parseInt(h.substring(4, 6), 16) / 255
-  );
-}
-
-function hexToHsl(hex: string): [number, number, number] {
-  const h = hex.replace('#', '');
-  let r = parseInt(h.substring(0, 2), 16) / 255;
-  let g = parseInt(h.substring(2, 4), 16) / 255;
-  let b = parseInt(h.substring(4, 6), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let hue = 0, sat = 0;
-  const lit = (max + min) / 2;
-  if (max !== min) {
-    const d = max - min;
-    sat = lit > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: hue = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
-      case g: hue = ((b - r) / d + 2) / 6; break;
-      case b: hue = ((r - g) / d + 4) / 6; break;
-    }
-  }
-  return [hue * 360, sat * 100, lit * 100];
-}
-
-function hslToRgbColor(h: number, s: number, l: number) {
-  const hN = h / 360, sN = s / 100, lN = l / 100;
-  let r: number, g: number, b: number;
-  if (s === 0) {
-    r = g = b = lN;
-  } else {
-    const hue2rgb = (p: number, q: number, t: number) => {
-      if (t < 0) t += 1;
-      if (t > 1) t -= 1;
-      if (t < 1/6) return p + (q - p) * 6 * t;
-      if (t < 1/2) return q;
-      if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-      return p;
-    };
-    const q = lN < 0.5 ? lN * (1 + sN) : lN + sN - lN * sN;
-    const p = 2 * lN - q;
-    r = hue2rgb(p, q, hN + 1/3);
-    g = hue2rgb(p, q, hN);
-    b = hue2rgb(p, q, hN - 1/3);
-  }
-  return rgb(r, g, b);
-}
-
-function darkenForHeader(hex: string) {
-  if (!isValidHex(hex)) return rgb(0.10, 0.13, 0.18);
-  let [h, s, l] = hexToHsl(hex);
-  if (l < 5) return rgb(0.10, 0.13, 0.18);
-  if (l > 85) return rgb(0.10, 0.13, 0.18);
-  l = Math.max(20, Math.min(32, l));
-  if (s > 80) s = s * 0.75;
-  return hslToRgbColor(h, s, l);
-}
-
-function accentForWhite(hex: string) {
-  if (!isValidHex(hex)) return rgb(0.02, 0.59, 0.43);
-  const [h, s, l] = hexToHsl(hex);
-  if (l > 70) return hslToRgbColor(h, s, 45);
-  if (l < 5) return rgb(0.10, 0.13, 0.18);
-  return hexToRgb(hex);
 }
 
 /** Truncate by measured width — a proportional font makes 49 narrow chars and
@@ -170,10 +104,13 @@ export async function generateInvoicePDFBuffer(data: InvoicePDFData): Promise<Ui
   let page: PDFPage = doc.addPage([width, height]);
   pages.push(page);
 
-  // ── COLORS ───────────────────────────────────────────────
-  const headerColor  = darkenForHeader(data.brandColor1 || '#1e293b');
-  const accentColor  = accentForWhite(data.brandColor1 || '#1e293b');
-  const accent2Color = accentForWhite(data.brandColor2 || '#10b981');
+  // ── FIXED COLORS — no longer derived from company branding. These are
+  // the exact same values this file already fell back to whenever a
+  // brand color was missing or invalid, so they're proven to render
+  // correctly in this layout, not new/untested choices.
+  const headerColor  = rgb(0.10, 0.13, 0.18); // was darkenForHeader()'s fallback
+  const accentColor  = rgb(0.02, 0.59, 0.43); // was accentForWhite()'s fallback
+  const accent2Color = rgb(0.063, 0.725, 0.506); // distinct, semantic "paid/success" green
 
   const black     = rgb(0.07, 0.07, 0.07);
   const darkGray  = rgb(0.20, 0.22, 0.25);
@@ -466,7 +403,12 @@ y -= 6;
       for (const payment of data.paymentBreakdown) {
         const label = payment.date ? `${payment.label} — ${payment.date}` : payment.label;
         page.drawText(label, { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
-        drawRightAligned(page, `- ${fmt(payment.amount)}`, totalsRight, y, 9, fontRegular, gray);
+        // A refund (negative amount) adds back to what's owed rather
+        // than reducing it — the opposite direction of every other row
+        // here. Previously this always prepended "-", so a refund would
+        // have rendered as "- -$200.00" instead of the correct "+ $200.00".
+        const isRefundLine = payment.amount < 0;
+        drawRightAligned(page, `${isRefundLine ? '+' : '-'} ${fmt(Math.abs(payment.amount))}`, totalsRight, y, 9, fontRegular, gray);
         y -= 14;
       }
     } else {
@@ -482,7 +424,8 @@ y -= 6;
         for (const payment of data.paymentBreakdown) {
           const label = payment.date ? `${payment.label} — ${payment.date}` : payment.label;
           page.drawText(label, { x: totalsX + 10, y, size: 9, font: fontRegular, color: gray });
-          drawRightAligned(page, `- ${fmt(payment.amount)}`, totalsRight, y, 9, fontRegular, gray);
+          const isRefundLine = payment.amount < 0;
+          drawRightAligned(page, `${isRefundLine ? '+' : '-'} ${fmt(Math.abs(payment.amount))}`, totalsRight, y, 9, fontRegular, gray);
           y -= 14;
         }
       } else {

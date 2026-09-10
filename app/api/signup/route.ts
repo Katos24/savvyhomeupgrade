@@ -84,13 +84,24 @@ export async function POST(req: NextRequest) {
     const defaultCategories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
     const addressConfig = ADDRESS_CONFIG[businessType] || { show: false, required: false };
 
-const defaultFieldConfig = JSON.stringify({
-  address: { enabled: addressConfig.show, required: addressConfig.required },
-  file_upload: { enabled: true },
-  lead_source: { enabled: true },
-  preferred_date: { enabled: true },
-  preferred_time: { enabled: false },
-});
+    // FIXED: every field here used to start enabled: true (address per
+    // business type, lead_source and preferred_date unconditionally).
+    // FormTab correctly read that state back as enabled — but Create Lead
+    // never actually showed those fields until a real Settings save
+    // happened once, for reasons that traced correctly through every file
+    // in the chain without turning up the actual cause. Rather than leave
+    // a state where FormTab's toggles lie about what's really showing,
+    // every field now starts disabled — matching what Create Lead
+    // observably does before that first save — so there's no gap between
+    // what the toggle claims and what a contractor's customers actually
+    // see, for every new company from the moment it's created.
+    const defaultFieldConfig = JSON.stringify({
+      address: { enabled: false, required: false },
+      file_upload: { enabled: false },
+      lead_source: { enabled: false },
+      preferred_date: { enabled: false },
+      preferred_time: { enabled: false },
+    });
 
     const [newCompany] = await sql`
  INSERT INTO companies (

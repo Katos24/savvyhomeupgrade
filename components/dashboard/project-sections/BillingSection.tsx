@@ -185,7 +185,14 @@ export default function BillingSection({
   // already-satisfied deposit back to "not paid," which is the bug this fixes.
   const depositPaid = hasDepositTerms && !!lead?.deposit_paid_at;
 
-  const wasSettledThenGrew = !!depositPayment && !!balancePayment && !isPaid && !isClosed && remaining > 0;
+  // Was `!!depositPayment && !!balancePayment` — which only meant "a
+  // deposit-kind payment exists AND a balance-kind payment exists,"
+  // regardless of whether the job was ever actually paid in full. Paying
+  // a deposit, then later paying anything at all toward the balance,
+  // satisfied that condition and falsely claimed the job "was paid in
+  // full" when it never was. paid_at is the real signal — the same
+  // sticky flag this banner's own date display already reads below.
+  const wasSettledThenGrew = !!lead?.paid_at && !isPaid && !isClosed && remaining > 0;
   const currentAmountDue = hasDepositTerms && !depositPaid ? depositAmount : remaining;
 
   // Pure date-string comparison (YYYY-MM-DD sorts correctly as a string,
@@ -247,9 +254,17 @@ export default function BillingSection({
       setSendDueDateDraft(dueDate);
       return;
     }
-    const days = awaitingDeposit ? 0 : defaultBalanceDueDays;
+    // Previously defaulted to TODAY for a deposit send (days = 0) —
+    // silently setting an invoice due the same day it's sent, easy to
+    // miss since nothing about the UI called attention to it. Deposits
+    // now start blank; only the balance-send default (a real number of
+    // days out) still pre-fills automatically.
+    if (awaitingDeposit) {
+      setSendDueDateDraft('');
+      return;
+    }
     const d = new Date();
-    d.setDate(d.getDate() + days);
+    d.setDate(d.getDate() + defaultBalanceDueDays);
     setSendDueDateDraft(d.toISOString().split('T')[0]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSendConfirm]);
@@ -282,6 +297,22 @@ export default function BillingSection({
     }
   };
 
+  // A blank due date is now a deliberate possibility (see the effect
+  // above), not just "hasn't loaded yet" — so sending with one blank
+  // needs an explicit checkpoint instead of silently going out with no
+  // due date at all. This wraps the real send: BillingModals' Send
+  // button should call confirmSendInvoice, not handleSendInvoice
+  // directly, so this check actually runs first.
+  const [showNoDueDateWarning, setShowNoDueDateWarning] = useState(false);
+
+  const confirmSendInvoice = () => {
+    if (!sendDueDateDraft) {
+      setShowNoDueDateWarning(true);
+      return;
+    }
+    handleSendInvoice();
+  };
+
   const handleSendInvoice = async () => {
     setSending(true);
     try {
@@ -303,6 +334,7 @@ export default function BillingSection({
         toast.success('Invoice sent');
         setDueDate(sendDueDateDraft); // now genuinely saved — safe to reflect in the sidebar
         setShowSendConfirm(false);
+        setShowNoDueDateWarning(false);
         await onRefresh();
       } else toast.error(result.error || 'Failed to send invoice');
     } catch {
@@ -835,6 +867,9 @@ export default function BillingSection({
         setDueDateDraft={setDueDateDraft}
         handleDueDateChange={handleDueDateChange}
         handleSendInvoice={handleSendInvoice}
+        confirmSendInvoice={confirmSendInvoice}
+        showNoDueDateWarning={showNoDueDateWarning}
+        setShowNoDueDateWarning={setShowNoDueDateWarning}
         confirmDeletePayment={confirmDeletePayment}
         setConfirmDeletePayment={setConfirmDeletePayment}
         deletingPaymentId={deletingPaymentId}
