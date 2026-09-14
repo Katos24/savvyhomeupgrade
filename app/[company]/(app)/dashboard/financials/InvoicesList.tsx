@@ -242,80 +242,130 @@ export default function InvoicesList({
         </div>
 
         {rows.length === 0 ? (
-          <p className="px-5 py-14 text-center text-[14px] text-stone-400">No invoices match.</p>
-        ) : (
-          pagedRows.map((p, i) => {
-            const meta = STATE_META[p._state as InvoiceState] || STATE_META.draft;
-            const alreadyReminded = p._remindedToday || remindedIds.has(p.id);
-            const canRemind = !isBookkeeperView && p._owed > 0.005 && p._invoiced;
-            return (
-              <button
-                key={p.id}
-                onClick={() => setSelected(p)}
-                className={`grid w-full grid-cols-2 gap-2 px-4 py-3.5 text-left transition-colors hover:bg-stone-50/60 lg:grid-cols-[minmax(0,1fr)_100px_110px_90px_90px_90px] lg:items-center lg:gap-3 lg:py-2.5 ${
-                  i > 0 ? 'border-t border-stone-100' : ''
+  <p className="px-5 py-14 text-center text-[14px] text-stone-400">No invoices match.</p>
+) : (
+  pagedRows.map((p, i) => {
+    const meta = STATE_META[p._state as InvoiceState] || STATE_META.draft;
+    const alreadyReminded = p._remindedToday || remindedIds.has(p.id);
+    const canRemind = !isBookkeeperView && p._owed > 0.005 && p._invoiced;
+    return (
+      <button
+        key={p.id}
+        onClick={() => setSelected(p)}
+        className={`w-full text-left px-4 py-3.5 transition-colors hover:bg-stone-50/60 ${
+          i > 0 ? 'border-t border-stone-100' : ''
+        }`}
+      >
+        {/* MOBILE — stacked card, every value labeled, below lg: only */}
+        <div className="lg:hidden space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <p className="truncate text-[14px] font-medium text-stone-900">{p.customer_name || 'Unnamed'}</p>
+              <p className="truncate text-[12px] text-stone-500">{p.invoice_number || 'No invoice #'}</p>
+            </div>
+            <span className="shrink-0 text-[14px] font-semibold tabular-nums text-stone-900">{fmtExact(p._total)}</span>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+              style={{ backgroundColor: meta.bg, color: meta.text }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
+              {meta.label}
+            </span>
+            {p._billingPhase && (
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${
+                p._billingPhase === 'deposit' ? 'text-amber-600' : 'text-blue-600'
+              }`}>
+                {p._billingPhase === 'deposit' ? 'Deposit due' : 'Balance due'}
+              </span>
+            )}
+            {p._collectedUnsent && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-600">
+                {fmtExact(p._collected)} collected, not invoiced
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between text-[12px] text-stone-500">
+            <span>Due <span className="tabular-nums text-stone-700">{fmtDate(p.payment_due_date)}</span></span>
+            <span>Sent <span className="tabular-nums text-stone-700">{fmtDate(p.invoice_sent_at)}</span></span>
+          </div>
+
+          {canRemind && (
+            <span
+              role="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setRemindTarget(p);
+              }}
+              className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+                alreadyReminded
+                  ? 'border-stone-200 bg-stone-50 text-stone-400'
+                  : 'border-stone-300 bg-white text-stone-600 hover:border-teal-700 hover:text-teal-800'
+              }`}
+            >
+              <BellRing className="h-3 w-3" />
+              {alreadyReminded ? 'Reminded' : 'Remind'}
+            </span>
+          )}
+        </div>
+
+        {/* DESKTOP — original 6-column grid, unchanged, lg: and up only */}
+        <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_100px_110px_90px_90px_90px] lg:items-center lg:gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-medium text-stone-900">{p.customer_name || 'Unnamed'}</p>
+            <p className="truncate text-[12px] text-stone-500">{p.invoice_number || 'No invoice #'}</p>
+          </div>
+          <div className="text-[13px] font-semibold tabular-nums text-stone-900">{fmtExact(p._total)}</div>
+          <div>
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+              style={{ backgroundColor: meta.bg, color: meta.text }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
+              {meta.label}
+            </span>
+            {p._billingPhase && (
+              <p className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
+                p._billingPhase === 'deposit' ? 'text-amber-600' : 'text-blue-600'
+              }`}>
+                {p._billingPhase === 'deposit' ? 'Deposit due' : 'Balance due'}
+              </p>
+            )}
+            {p._collectedUnsent && (
+              <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600">
+                {fmtExact(p._collected)} collected, not invoiced
+              </p>
+            )}
+          </div>
+          <div className="text-[12px] tabular-nums text-stone-500">{fmtDate(p.payment_due_date)}</div>
+          <div className="text-[12px] tabular-nums text-stone-500">{fmtDate(p.invoice_sent_at)}</div>
+          <div className="flex justify-end">
+            {canRemind && (
+              <span
+                role="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setRemindTarget(p);
+                }}
+                className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
+                  alreadyReminded
+                    ? 'border-stone-200 bg-stone-50 text-stone-400'
+                    : 'border-stone-300 bg-white text-stone-600 hover:border-teal-700 hover:text-teal-800'
                 }`}
               >
-                <div className="col-span-2 min-w-0 lg:col-span-1">
-                  <p className="truncate text-[14px] font-medium text-stone-900">{p.customer_name || 'Unnamed'}</p>
-                  <p className="truncate text-[12px] text-stone-500">{p.invoice_number || 'No invoice #'}</p>
-                </div>
-                <div className="text-[13px] font-semibold tabular-nums text-stone-900">{fmtExact(p._total)}</div>
-                <div>
-                  <span
-                    className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
-                    style={{ backgroundColor: meta.bg, color: meta.text }}
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: meta.dot }} />
-                    {meta.label}
-                  </span>
-                  {/* Deposit-vs-balance detail, same cell as the status
-                      pill — deliberately not a new grid column, so this
-                      slots into the existing 2-col mobile / 6-col desktop
-                      layout without disturbing either. */}
-                  {p._billingPhase && (
-                    <p
-                      className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
-                        p._billingPhase === 'deposit' ? 'text-amber-600' : 'text-blue-600'
-                      }`}
-                    >
-                      {p._billingPhase === 'deposit' ? 'Deposit due' : 'Balance due'}
-                    </p>
-                  )}
-                  {/* Real fact worth surfacing, deliberately not its own
-                      filter bucket — money came in for the current phase
-                      but nothing's actually been invoiced for it yet. */}
-                  {p._collectedUnsent && (
-                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600">
-                      {fmtExact(p._collected)} collected, not invoiced
-                    </p>
-                  )}
-                </div>
-                <div className="text-[12px] tabular-nums text-stone-500">{fmtDate(p.payment_due_date)}</div>
-                <div className="text-[12px] tabular-nums text-stone-500">{fmtDate(p.invoice_sent_at)}</div>
-                <div className="flex justify-end">
-                  {canRemind && (
-                    <span
-                      role="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setRemindTarget(p);
-                      }}
-                      className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium transition-colors ${
-                        alreadyReminded
-                          ? 'border-stone-200 bg-stone-50 text-stone-400'
-                          : 'border-stone-300 bg-white text-stone-600 hover:border-teal-700 hover:text-teal-800'
-                      }`}
-                    >
-                      <BellRing className="h-3 w-3" />
-                      {alreadyReminded ? 'Reminded' : 'Remind'}
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })
-        )}
+                <BellRing className="h-3 w-3" />
+                {alreadyReminded ? 'Reminded' : 'Remind'}
+              </span>
+            )}
+          </div>
+        </div>
+      </button>
+    );
+  })
+)}
       </div>
 
       {rows.length > 0 && (
