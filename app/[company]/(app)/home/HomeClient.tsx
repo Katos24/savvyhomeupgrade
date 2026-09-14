@@ -321,12 +321,12 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         { key: 'setup', label: 'Setup Guide', icon: Rocket, visible: true },
       ],
     },
-    {
+   {
       label: 'Your business',
       items: [
         { key: 'overview', label: 'Overview', icon: LayoutGrid, visible: true },
+        { key: 'categories', label: 'Services', icon: Tags, locked: categoriesLocked, visible: true },
         { key: 'form', label: 'Booking form', icon: FileText, visible: true },
-        { key: 'categories', label: 'Categories', icon: Tags, locked: categoriesLocked, visible: true },
       ],
     },
     {
@@ -371,7 +371,9 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
               <span>Settings</span>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-stone-800 capitalize">{activeSection.replace('-', ' ')}</span>
+<span className="text-stone-800 capitalize">
+  {visibleSections.find((s) => s.key === activeSection)?.label || activeSection}
+</span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-stone-900">Workspace Settings</h1>
           </div>

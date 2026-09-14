@@ -42,11 +42,9 @@ const formatPhoneNumber = (value: string) => {
 export default function CustomerListClient({
   projects = [],
   companySlug,
-  accentColor = '#2563eb',
 }: {
   projects?: Project[];
   companySlug: string;
-  accentColor?: string;
 }) {
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -146,10 +144,7 @@ export default function CustomerListClient({
                   onClick={() => setExpandedEmail(isExpanded ? null : customer.email)}
                   className="w-full p-4 sm:p-5 flex items-center gap-4 text-left hover:bg-[#faf9f5] transition-colors"
                 >
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-sm shrink-0"
-                    style={{ backgroundColor: `${accentColor}18`, color: accentColor }}
-                  >
+                  <div className="w-11 h-11 rounded-xl bg-[#f5f1e8] text-[#1c1917] flex items-center justify-center font-semibold text-sm shrink-0 border border-[#e7e2d8]">
                     {customer.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -182,9 +177,10 @@ export default function CustomerListClient({
                       <a
                         href={customer.phone ? `tel:${customer.phone}` : undefined}
                         className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors ${
-                          customer.phone ? 'text-white hover:opacity-90' : 'bg-[#f5f1e8] text-[#a8a29e] pointer-events-none'
+                          customer.phone
+                            ? 'bg-[#292524] text-white hover:bg-[#1c1917]'
+                            : 'bg-[#f5f1e8] text-[#a8a29e] pointer-events-none'
                         }`}
-                        style={customer.phone ? { backgroundColor: accentColor } : undefined}
                       >
                         <Phone className="w-3.5 h-3.5" /> Call
                       </a>
@@ -253,7 +249,7 @@ export default function CustomerListClient({
           <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-[#e7e2d8] mt-4">
             <p className="text-[#1c1917] font-medium text-sm">No matches found</p>
             <p className="text-[#a8a29e] text-xs mt-1">Try a different name or phone number</p>
-            <button onClick={() => setSearchTerm('')} className="mt-3 text-xs font-medium" style={{ color: accentColor }}>
+            <button onClick={() => setSearchTerm('')} className="mt-3 text-xs font-medium text-[#1c1917] underline hover:text-[#78716c] transition-colors">
               Show all customers
             </button>
           </div>
