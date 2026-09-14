@@ -17,7 +17,7 @@ import CompletionSummaryModal from './CompletionSummaryModal';
 import { canDeleteLead, can, type PlanTier } from '@/lib/permissions';
 import LockedTabsPreview from '@/components/dashboard/LockedTabsPreview';
 
-type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
+type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'expenses' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 
 type LeadModalProps = {
   lead: any;
@@ -165,6 +165,7 @@ export default function LeadModal({
       schedule:  { title: 'Job Scheduling',      description: 'Schedule jobs, set arrival times, and manage your crew calendar.', plan: 'Basic' },
       quote:     { title: 'Quote Builder',       description: 'Build professional quotes with line items and send them in one click.', plan: 'Basic' },
       payment:   { title: 'Payment Tracking',    description: 'Track payments, send reminders, and mark jobs as paid.', plan: 'Basic' },
+      expenses:  { title: 'Expense Tracking',   description: 'Log project expenses, track material and labor costs, and monitor job profitability.', plan: 'Basic' },
       tasks:     { title: 'Task Lists',          description: 'Build task checklists for each job and track completion.', plan: 'Basic' },
       photos:    { title: 'Media & Documents',   description: 'Upload before/after photos and job documents.', plan: 'Basic' },
       reminders: { title: 'Follow-up Reminders', description: 'Set follow-up dates and get reminded to check in.', plan: 'Basic' },
@@ -174,6 +175,7 @@ export default function LeadModal({
       schedule:  { locked: !can(planTier, 'scheduling') },
       quote:     { locked: !can(planTier, 'quotes') },
       payment:   { locked: !can(planTier, 'quotes') },
+      expenses:  { locked: !can(planTier, 'quotes') },
       tasks:     { locked: !can(planTier, 'custom_tasks') },
       photos:    { locked: !can(planTier, 'docs_on_card') },
       reminders: { locked: !can(planTier, 'scheduling') },
@@ -228,6 +230,7 @@ export default function LeadModal({
             schedule:  { title: 'Job Scheduling',    desc: 'Set job dates, arrival windows, and manage your crew calendar.', plan: 'Basic' },
             quote:     { title: 'Quote Builder',     desc: 'Build professional quotes with line items and send them in one click.', plan: 'Basic' },
             payment:   { title: 'Payment Tracking',  desc: 'Track payments, send reminders, and mark jobs as paid.', plan: 'Basic' },
+            expenses:  { title: 'Expense Tracking', desc: 'Log project costs, receipt items, and manage material budgets.', plan: 'Basic' },
             tasks:     { title: 'Task Management',   desc: 'Create task checklists for each job type and track completion.', plan: 'Basic' },
             photos:    { title: 'Media & Documents', desc: 'Upload before & after photos and attach job documents.', plan: 'Basic' },
             reminders: { title: 'Follow-up Reminders', desc: 'Set follow-up dates and get reminded to check in.', plan: 'Basic' },

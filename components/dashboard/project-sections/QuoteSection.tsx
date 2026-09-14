@@ -238,12 +238,13 @@ export default function QuoteSection({
           user_email: currentUser?.email || '',
         }),
       });
-      if (res.ok) {
+           const result = await res.json().catch(() => null);
+      if (res.ok && result?.success !== false) {
         toast.success('Quote saved successfully');
         await onRefresh();
         setIsDirty(false);
       } else {
-        toast.error('Failed to save quote');
+        toast.error(result?.error || 'Failed to save quote');
       }
     } catch {
       toast.error('Failed to save quote');

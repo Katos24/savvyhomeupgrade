@@ -38,6 +38,12 @@ export interface Step {
   action?: StepAction;
   needsUpgrade?: boolean;
   editAction?: StepAction;
+  // Added for the deposit/balance due-date split — each phase now
+  // carries its own due date instead of one shared field.
+  dueDate?: string | null;
+  isOverdue?: boolean;
+  editDueDateAction?: StepAction;
+  dueDateLocked?: boolean;
 }
 
 export interface Payment {
@@ -119,22 +125,19 @@ export interface BillingSummaryPanelProps {
   setReverseAmountDraft: React.Dispatch<React.SetStateAction<string>>;
   setReverseNoteDraft: React.Dispatch<React.SetStateAction<string>>;
 
-  // Right column
+  // Right column — due date now lives per-step, so these are just the
+  // deposit-terms summary and payment link status.
   hasDepositTerms: boolean;
   depositType: 'percent' | 'fixed' | null;
   depositValue: number;
   depositAmount: number;
-  dueDate: string;
-  isOverdue: boolean;
-  dueDateLocked: boolean;
-  openDueDateEditor: () => void;
   activeMethodLabel: string | null;
   activityLog: ActivityLogEntry[];
   loadPreview: (entryId: number) => void;
 }
 
 // ==========================================
-// Performance-Optimized Formatters
+// Formatters
 // ==========================================
 
 const usdFormatter = new Intl.NumberFormat('en-US', {
@@ -168,49 +171,154 @@ function fmtShortDateTime(isoString: string): { dateStr: string; timeStr: string
 // Sub-Components
 // ==========================================
 
-function StatusBadge({
-  status,
-  stepNumber,
-}: {
-  status: StepStatus;
-  stepNumber: number;
-}) {
+function StatusBadge({ status }: { status: StepStatus }) {
   const baseClasses =
-    'absolute left-0 top-0 flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-bold';
+    'inline-flex h-6 items-center gap-1 rounded-full px-2 text-[10px] font-bold uppercase tracking-wide shrink-0';
 
   switch (status) {
     case 'done':
       return (
-        <span className={`${baseClasses} bg-emerald-500 text-white`}>
-          <CheckCircle className="w-4 h-4" />
+        <span className={`${baseClasses} bg-emerald-50 text-emerald-700`}>
+          <CheckCircle className="w-3 h-3" /> Paid
         </span>
       );
     case 'overdue':
       return (
-        <span className={`${baseClasses} bg-rose-50 border border-rose-300 text-rose-600`}>
-          <AlertCircle className="w-3.5 h-3.5" />
+        <span className={`${baseClasses} bg-rose-50 text-rose-600`}>
+          <AlertCircle className="w-3 h-3" /> Overdue
         </span>
       );
     case 'sent':
       return (
-        <span className={`${baseClasses} bg-amber-50 border border-amber-300 text-amber-600`}>
-          <Clock className="w-3.5 h-3.5" />
+        <span className={`${baseClasses} bg-amber-50 text-amber-600`}>
+          <Clock className="w-3 h-3" /> Sent
         </span>
       );
     case 'ready':
       return (
-        <span className={`${baseClasses} bg-white border-2 border-brand-700 text-brand-700`}>
-          {stepNumber}
+        <span className={`${baseClasses} bg-brand-50 text-brand-700`}>
+          Ready
         </span>
       );
     case 'locked':
     default:
       return (
-        <span className={`${baseClasses} bg-[#f5f1e8] border border-[#e7e2d8] text-[#a8a29e]`}>
-          <Lock className="w-3 h-3" />
+        <span className={`${baseClasses} bg-[#f5f1e8] text-[#a8a29e]`}>
+          <Lock className="w-3 h-3" /> Locked
         </span>
       );
   }
+}
+
+// One deposit/balance box. Mobile: full width, stacked. Desktop: two
+// columns side by side via the grid this is called from — this
+// component itself doesn't need to know which, it just fills its cell.
+function PhaseBox({ step }: { step: Step }) {
+  const isLocked = step.status === 'locked';
+
+  return (
+    <div
+      className={`rounded-2xl border p-4 sm:p-5 h-full flex flex-col ${
+        isLocked
+          ? 'border-dashed border-[#e7e2d8] bg-[#faf9f5]/60 opacity-60'
+          : step.status === 'done'
+          ? 'border-emerald-200 bg-emerald-50/30'
+          : step.status === 'overdue'
+          ? 'border-rose-200 bg-rose-50/30'
+          : 'border-[#e7e2d8] bg-white'
+      }`}
+    >
+            <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-[#a8a29e]">
+            {step.title}
+          </p>
+          <p
+            className={`text-xl sm:text-2xl font-bold tabular-nums mt-0.5 ${
+              isLocked ? 'text-[#d6d3d1]' : 'text-[#1c1917]'
+            }`}
+          >
+            {fmt(step.amount)}
+          </p>
+        </div>
+        <StatusBadge status={step.status} />
+      </div>
+
+      {step.sub && (
+        <p
+          className={`text-[12px] mb-3 ${
+            step.status === 'done'
+              ? 'text-emerald-700 font-medium'
+              : step.status === 'overdue'
+              ? 'text-rose-700 font-semibold'
+              : step.status === 'sent'
+              ? 'text-amber-800 font-semibold'
+              : step.status === 'ready'
+              ? 'text-brand-700 font-medium'
+              : 'text-[#a8a29e]'
+          }`}
+        >
+          {step.sub}
+        </p>
+      )}
+
+      {!isLocked && step.editDueDateAction && (
+        <div className="flex items-center justify-between gap-2 mb-3 text-[11px]">
+          <span className="text-[#a8a29e]">Due</span>
+          {step.dueDateLocked ? (
+            <span className="font-medium text-[#57534e]">
+              {step.dueDate ? fmtDate(step.dueDate) : 'Not set'}
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={step.editDueDateAction.onClick}
+              className={`inline-flex items-center gap-1 font-semibold rounded-lg px-1.5 py-0.5 -mr-1.5 transition-colors ${
+                step.isOverdue
+                  ? 'text-rose-700 hover:bg-rose-100'
+                  : !step.dueDate
+                  ? 'text-amber-700 hover:bg-amber-100'
+                  : 'text-[#1c1917] hover:text-brand-700'
+              }`}
+            >
+              <Calendar className="w-3 h-3" />
+              {step.editDueDateAction.label}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="mt-auto space-y-2">
+        {step.action && (
+          <button
+            type="button"
+            onClick={step.action.onClick}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors"
+          >
+            <Send className="w-3.5 h-3.5" />
+            {step.action.label}
+          </button>
+        )}
+
+        {step.needsUpgrade && (
+          <p className="text-[11px] text-[#a8a29e] text-center">
+            {step.sub}
+          </p>
+        )}
+
+        {step.editAction && (
+          <button
+            type="button"
+            onClick={step.editAction.onClick}
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+          >
+            <Edit2 className="w-3 h-3" />
+            {step.editAction.label}
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 // ==========================================
@@ -258,14 +366,18 @@ export default function BillingSummaryPanel({
   depositType,
   depositValue,
   depositAmount,
-  dueDate,
-  isOverdue,
-  dueDateLocked,
-  openDueDateEditor,
   activeMethodLabel,
   activityLog,
   loadPreview,
 }: BillingSummaryPanelProps) {
+  // The boxes to actually render — deposit+balance side by side, or a
+  // single invoice box for jobs with no deposit terms. The 'complete'
+  // step (hasDepositTerms case) isn't rendered as a third box; its
+  // information (isPaid, paid date) already drives the emerald "Paid in
+  // full" banner below instead.
+  const boxSteps = steps.filter((s) => s.key !== 'complete');
+  const completeStep = steps.find((s) => s.key === 'complete');
+
   return (
     <div className="bg-white border border-[#e7e2d8] rounded-2xl overflow-hidden">
       <div className="p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
@@ -290,7 +402,6 @@ export default function BillingSummaryPanel({
               {fmt(total)}
             </p>
 
-            {/* Tax Settings */}
             {taxLocked ? (
               invoiceTaxRate > 0 && (
                 <p className="text-[11px] text-[#a8a29e] mt-0.5 tabular-nums">
@@ -311,19 +422,19 @@ export default function BillingSummaryPanel({
             {isPaid && !isClosed && (
               <p className="mt-1.5 inline-flex items-center gap-1 text-[13px] font-semibold text-emerald-600">
                 <CheckCircle className="w-3.5 h-3.5" /> Paid in full
+                {completeStep?.sub ? ` — ${completeStep.sub.replace('Completed ', '')}` : ''}
               </p>
             )}
 
-            {/* Amount Due Callout */}
             {amountDueNow > 0 && (
               <div
                 className={`mt-4 rounded-xl border p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${
-                  isOverdue ? 'border-rose-200 bg-rose-50' : 'border-brand-100 bg-brand-50/60'
+                  isClosed ? 'border-rose-200 bg-rose-50' : 'border-brand-100 bg-brand-50/60'
                 }`}
               >
                 <p
                   className={`text-[11px] font-bold uppercase tracking-wide ${
-                    isOverdue ? 'text-rose-700' : 'text-brand-700'
+                    isClosed ? 'text-rose-700' : 'text-brand-700'
                   }`}
                 >
                   {dueNowLabel}
@@ -336,7 +447,6 @@ export default function BillingSummaryPanel({
 
             <div className="border-t border-[#f0ece1] my-4" />
 
-            {/* Settlement Growth Alert */}
             {wasSettledThenGrew && (
               <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-[11px] text-blue-800">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-600" />
@@ -346,32 +456,6 @@ export default function BillingSummaryPanel({
                   has been added to the quote since then — this bills the difference, not the
                   original invoice again.
                 </span>
-              </div>
-            )}
-
-            {/* Horizontal Step Indicator */}
-            {!(isClosed && !refundedButOwing) && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] font-semibold">
-                {steps.map((step, i) => (
-                  <span key={step.key} className="inline-flex items-center gap-1.5">
-                    {i > 0 && <span className="text-[#d6d3d1]">→</span>}
-                    <span
-                      className={
-                        step.status === 'done'
-                          ? 'text-emerald-600'
-                          : step.status === 'overdue'
-                          ? 'text-rose-600'
-                          : step.status === 'sent'
-                          ? 'text-amber-700'
-                          : step.status === 'ready'
-                          ? 'text-brand-700'
-                          : 'text-[#a8a29e]'
-                      }
-                    >
-                      {step.title}
-                    </span>
-                  </span>
-                ))}
               </div>
             )}
 
@@ -423,132 +507,70 @@ export default function BillingSummaryPanel({
                   </div>
                 )}
 
-                {/* Steps List */}
-                <div className="mt-4">
-                  {steps.map((step, i) => {
-                    const stepPayments =
-                      step.key === 'deposit'
-                        ? depositPayments
-                        : step.key === 'balance'
-                        ? balancePayments
-                        : [];
+                {/* TWO-BOX GRID — stacked on mobile, side by side from sm
+                    up. A single box (no-deposit jobs) just fills the
+                    grid alone rather than sitting oddly next to an empty
+                    cell — grid-cols-1 with a single item naturally does
+                    this without extra conditional logic. */}
+                                <div className="mt-4 grid grid-cols-1 gap-3">
+                  {boxSteps.map((step) => (
+                    <PhaseBox key={step.key} step={step} />
+                  ))}
+                </div>
 
-                    return (
-                      <div key={step.key} className="relative pb-6 pl-9 last:pb-0">
-                        {i < steps.length - 1 && (
-                          <span
-                            className={`absolute left-3.5 top-7 bottom-0 w-px ${
-                              step.status === 'done' ? 'bg-emerald-300' : 'bg-[#e7e2d8]'
-                            }`}
-                          />
-                        )}
-
-                        <StatusBadge status={step.status} stepNumber={i + 1} />
-
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p
-                              className={`text-sm font-semibold ${
-                                step.status === 'locked' ? 'text-[#a8a29e]' : 'text-[#1c1917]'
-                              }`}
-                            >
-                              {step.title}
-                            </p>
-                            {step.sub && (
-                              <p
-                                className={`text-[12px] mt-0.5 ${
-                                  step.status === 'done'
-                                    ? 'text-emerald-600 font-medium'
-                                    : step.status === 'overdue'
-                                    ? 'text-rose-700 font-semibold'
-                                    : step.status === 'sent'
-                                    ? 'text-amber-800 font-semibold'
-                                    : step.status === 'ready'
-                                    ? 'text-brand-700 font-medium'
-                                    : 'text-[#a8a29e]'
-                                }`}
-                              >
-                                {step.sub}
-                              </p>
-                            )}
-                          </div>
-                          <p
-                            className={`text-sm font-bold tabular-nums shrink-0 ${
-                              step.status === 'locked' ? 'text-[#d6d3d1]' : 'text-[#1c1917]'
-                            }`}
-                          >
-                            {fmt(step.amount)}
-                          </p>
-                        </div>
-
-                        {/* Step Breakdown & Actions */}
-                        <div className="mt-2.5 space-y-2">
-                          {stepPayments.length > 1 && (
-                            <div className="space-y-1 pl-0.5">
-                              {stepPayments.map((p) => {
-                                const refunded = reversedAmountFor(p.id);
-                                return (
-                                  <div
-                                    key={p.id}
-                                    className="flex items-center justify-between text-[11px] text-[#78716c]"
-                                  >
-                                    <span>
-                                      {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
-                                      {refunded > 0 && (
-                                        <span className="text-amber-700">
-                                          {' '}
-                                          · {fmt(refunded)} refunded
-                                        </span>
-                                      )}
-                                    </span>
-                                    <span className="tabular-nums font-medium text-[#57534e]">
-                                      {fmt(Math.max(p.amount - refunded, 0))}
-                                    </span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-
-                          {step.action && (
-                            <button
-                              type="button"
-                              onClick={step.action.onClick}
-                              className="inline-flex items-center gap-1.5 rounded-lg bg-brand-700 px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-800 transition-colors"
-                            >
-                              <Send className="w-3.5 h-3.5" />
-                              {step.action.label}
-                            </button>
-                          )}
-
-                          {step.needsUpgrade && (
-                            <div>
-                              <a
-                                href={`/${company?.slug}/admin/settings#billing`}
-                                className="text-[11px] font-semibold text-brand-700 hover:underline"
-                              >
-                                Upgrade to send invoices
-                              </a>
-                            </div>
-                          )}
-
-                          {step.editAction && (
-                            <div>
-                              <button
-                                type="button"
-                                onClick={step.editAction.onClick}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-3 py-1 text-[11px] font-semibold text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                                {step.editAction.label}
-                              </button>
-                            </div>
-                          )}
+                {/* Individual payment rows per phase, when more than one
+                    payment exists for that phase — same detail the old
+                    timeline showed, now under its own box's section. */}
+                {(depositPayments.length > 1 || balancePayments.length > 1) && (
+                  <div className="mt-3 space-y-3">
+                    {depositPayments.length > 1 && (
+                      <div className="rounded-lg border border-[#e7e2d8] p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-[#a8a29e] mb-1.5">
+                          Deposit payments
+                        </p>
+                        <div className="space-y-1">
+                          {depositPayments.map((p) => {
+                            const refunded = reversedAmountFor(p.id);
+                            return (
+                              <div key={p.id} className="flex items-center justify-between text-[11px] text-[#78716c]">
+                                <span>
+                                  {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
+                                  {refunded > 0 && <span className="text-amber-700"> · {fmt(refunded)} refunded</span>}
+                                </span>
+                                <span className="tabular-nums font-medium text-[#57534e]">
+                                  {fmt(Math.max(p.amount - refunded, 0))}
+                                </span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    )}
+                    {balancePayments.length > 1 && (
+                      <div className="rounded-lg border border-[#e7e2d8] p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-[#a8a29e] mb-1.5">
+                          Balance payments
+                        </p>
+                        <div className="space-y-1">
+                          {balancePayments.map((p) => {
+                            const refunded = reversedAmountFor(p.id);
+                            return (
+                              <div key={p.id} className="flex items-center justify-between text-[11px] text-[#78716c]">
+                                <span>
+                                  {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
+                                  {refunded > 0 && <span className="text-amber-700"> · {fmt(refunded)} refunded</span>}
+                                </span>
+                                <span className="tabular-nums font-medium text-[#57534e]">
+                                  {fmt(Math.max(p.amount - refunded, 0))}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -684,7 +706,7 @@ export default function BillingSummaryPanel({
         <div className="bg-[#faf9f5] border border-[#e7e2d8] rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
           <div>
             <p className="text-[11px] font-medium text-[#a8a29e] uppercase tracking-wide mb-2.5">
-              Invoice Settings &amp; Dates
+              Invoice Settings
             </p>
             <div className="space-y-2.5 text-xs">
               {hasDepositTerms && (
@@ -696,49 +718,6 @@ export default function BillingSummaryPanel({
                   </span>
                 </div>
               )}
-
-              <div className="flex flex-wrap justify-between items-center gap-x-3 gap-y-1">
-                <span className="text-[#78716c]">Payment Due Date</span>
-                {dueDateLocked ? (
-                  <span className="font-medium text-[#1c1917]">
-                    {dueDate ? fmtDate(dueDate) : 'Not set'}
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={openDueDateEditor}
-                    className={`cursor-pointer inline-flex items-center gap-1.5 font-semibold rounded-lg px-2 py-1 -mr-2 transition-colors ${
-                      isOverdue
-                        ? 'text-rose-700 bg-rose-50 hover:bg-rose-100'
-                        : !dueDate
-                        ? 'text-amber-700 bg-amber-50 hover:bg-amber-100'
-                        : 'text-[#1c1917] hover:text-brand-700'
-                    }`}
-                  >
-                    <Calendar
-                      className={`w-3.5 h-3.5 ${
-                        isOverdue
-                          ? 'text-rose-500'
-                          : !dueDate
-                          ? 'text-amber-500'
-                          : 'text-[#a8a29e]'
-                      }`}
-                    />
-                    {dueDate ? (
-                      <>
-                        {fmtDate(dueDate)}
-                        {isOverdue && (
-                          <span className="text-[10px] font-bold uppercase tracking-wide">
-                            · Overdue
-                          </span>
-                        )}
-                      </>
-                    ) : (
-                      'Set Date'
-                    )}
-                  </button>
-                )}
-              </div>
 
               <div className="flex justify-between items-center">
                 <span className="text-[#78716c]">Payment Link Gateway</span>

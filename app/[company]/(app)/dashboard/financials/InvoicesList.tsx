@@ -109,8 +109,16 @@ export default function InvoicesList({
           return dir * (at - bt);
         }
         case 'sent': {
-          const at = a.invoice_sent_at ? new Date(a.invoice_sent_at).getTime() : null;
-          const bt = b.invoice_sent_at ? new Date(b.invoice_sent_at).getTime() : null;
+          // Was a.invoice_sent_at / b.invoice_sent_at directly — same
+          // stale-shared-field issue fixed in lib/invoiceState.ts.
+          // Sorting by "when was this actually sent" needs whichever
+          // phase-specific timestamp corresponds to that row's actual
+          // sent status, not a single field that can hold an old
+          // deposit-send date on a row now in its balance phase.
+          const aSent = a._billingPhase === 'deposit' ? a.inv_deposit_sent_at : a._billingPhase === 'balance' ? a.inv_sent_at : a.invoice_sent_at;
+          const bSent = b._billingPhase === 'deposit' ? b.inv_deposit_sent_at : b._billingPhase === 'balance' ? b.inv_sent_at : b.invoice_sent_at;
+          const at = aSent ? new Date(aSent).getTime() : null;
+          const bt = bSent ? new Date(bSent).getTime() : null;
           if (at === null && bt === null) return 0;
           if (at === null) return 1;
           if (bt === null) return -1;
@@ -272,6 +280,14 @@ export default function InvoicesList({
                       }`}
                     >
                       {p._billingPhase === 'deposit' ? 'Deposit due' : 'Balance due'}
+                    </p>
+                  )}
+                  {/* Real fact worth surfacing, deliberately not its own
+                      filter bucket — money came in for the current phase
+                      but nothing's actually been invoiced for it yet. */}
+                  {p._collectedUnsent && (
+                    <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-violet-600">
+                      {fmtExact(p._collected)} collected, not invoiced
                     </p>
                   )}
                 </div>

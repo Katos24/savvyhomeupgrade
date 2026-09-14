@@ -37,6 +37,17 @@ interface InvoiceDetailDrawerProps {
     invoice_sent_at?: string | null;
     payment_due_date?: string | null;
     quote_data?: string;
+    // Added — phase-aware fields deriveInvoiceRow already computes,
+    // plus deposit_paid_at and paid_at (project columns, already
+    // mirrored onto the invoice row) so this drawer can show the
+    // job's whole real history at once, not one field elected as "the"
+    // sent/paid date.
+    _billingPhase?: 'deposit' | 'balance' | null;
+    _collectedUnsent?: boolean;
+    inv_deposit_sent_at?: string | null;
+    inv_sent_at?: string | null;
+    deposit_paid_at?: string | null;
+    paid_at?: string | null;
   };
   stateMeta: StateMeta;
   onOpenBilling: () => void;
@@ -138,13 +149,68 @@ export default function InvoiceDetailDrawer({
           </div>
 
           <div className="rounded-xl border border-stone-200/80 bg-white p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between text-xs text-stone-600">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-stone-400 shrink-0" />
-                <span className="text-stone-500">Sent Date</span>
+            {project.inv_deposit_sent_at || project.deposit_paid_at || project.inv_sent_at || project.paid_at ? (
+              <>
+                {/* Full real history — each line only appears if that
+                    field actually has a value. Was a single "Sent Date"
+                    field elected by whatever phase is currently active,
+                    which threw away real facts (the deposit's own dates
+                    just disappeared once the job moved into its balance
+                    phase). This shows everything the data actually
+                    knows, unconditionally. */}
+                {project.inv_deposit_sent_at && (
+                  <div className="flex items-center justify-between text-xs text-stone-600">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-stone-400 shrink-0" />
+                      <span className="text-stone-500">Deposit Sent</span>
+                    </div>
+                    <span className="font-medium text-stone-800">{fmtDateLong(project.inv_deposit_sent_at)}</span>
+                  </div>
+                )}
+                {project.deposit_paid_at && (
+                  <div className="flex items-center justify-between text-xs text-stone-600">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-stone-400 shrink-0" />
+                      <span className="text-stone-500">Deposit Paid</span>
+                    </div>
+                    <span className="font-medium text-emerald-700">{fmtDateLong(project.deposit_paid_at)}</span>
+                  </div>
+                )}
+                {project.inv_sent_at && (
+                  <div className="flex items-center justify-between text-xs text-stone-600">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-stone-400 shrink-0" />
+                      <span className="text-stone-500">Balance Sent</span>
+                    </div>
+                    <span className="font-medium text-stone-800">{fmtDateLong(project.inv_sent_at)}</span>
+                  </div>
+                )}
+                {project.paid_at && (
+                  <div className="flex items-center justify-between text-xs text-stone-600">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-stone-400 shrink-0" />
+                      <span className="text-stone-500">Balance Paid</span>
+                    </div>
+                    <span className="font-medium text-emerald-700">{fmtDateLong(project.paid_at)}</span>
+                  </div>
+                )}
+                {project._collectedUnsent && (
+                  <div className="rounded-lg bg-violet-50 px-2.5 py-1.5 text-[11px] font-medium text-violet-700">
+                    {fmtExact(project._collected)} collected — nothing invoiced for this phase yet
+                  </div>
+                )}
+              </>
+            ) : (
+              // No deposit terms at all — only one phase ever existed,
+              // so the legacy single field is already correct here.
+              <div className="flex items-center justify-between text-xs text-stone-600">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-stone-400 shrink-0" />
+                  <span className="text-stone-500">Sent Date</span>
+                </div>
+                <span className="font-medium text-stone-800">{fmtDateLong(project.invoice_sent_at)}</span>
               </div>
-              <span className="font-medium text-stone-800">{fmtDateLong(project.invoice_sent_at)}</span>
-            </div>
+            )}
 
             <div className="flex items-center justify-between text-xs text-stone-600">
               <div className="flex items-center gap-2">

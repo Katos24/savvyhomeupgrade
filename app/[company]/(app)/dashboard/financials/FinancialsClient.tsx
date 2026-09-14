@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Download, ChevronDown, RefreshCw } from 'lucide-react';
 import FinancialsOverview from './FinancialsOverview';
 import InvoicesList from './InvoicesList';
+import FinancialsExpenses from './FinancialsExpenses';
 import { deriveInvoiceRow, filterByPeriod, BUCKETS, type InvoiceState } from '@/lib/invoiceState';
 
 export type { InvoiceState };
@@ -28,7 +29,7 @@ const PERIODS = [
   { label: 'All time', value: 'all' },
 ];
 
-export type Tab = 'overview' | 'invoices';
+export type Tab = 'overview' | 'invoices' | 'expenses';
 
 export default function FinancialsClient({
   company,
@@ -38,6 +39,7 @@ export default function FinancialsClient({
 }: Props) {
   const [period, setPeriod] = useState('year');
   const [periodOpen, setPeriodOpen] = useState(false);
+  const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [customStartDraft, setCustomStartDraft] = useState('');
   const [customEndDraft, setCustomEndDraft] = useState('');
   const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(null);
@@ -254,17 +256,71 @@ export default function FinancialsClient({
               <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <a
-              href={exportHref}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                isDark
-                  ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
-              }`}
-            >
-              <Download className="h-3.5 w-3.5" />
-              Export
-            </a>
+            {tab === 'expenses' ? (
+              <div className="relative">
+                <button
+                  onClick={() => setExportMenuOpen((v) => !v)}
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                    isDark
+                      ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                      : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+                  }`}
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Export
+                  <ChevronDown className={`h-3 w-3 ${isDark ? 'text-slate-400' : 'text-stone-400'}`} />
+                </button>
+                {exportMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setExportMenuOpen(false)} />
+                    <div className={`absolute right-0 top-full z-20 mt-1.5 w-56 overflow-hidden rounded-xl border shadow-lg ${
+                      isDark ? 'border-white/10 bg-[#0f1420]' : 'border-stone-200 bg-white'
+                    }`}>
+                      {/* Two genuinely different questions, two files —
+                          a ledger row is "one expense," a profit-summary
+                          row is "one job." Forcing both into one export
+                          means guessing wrong for someone half the time. */}
+                      <a
+                        href={`/api/company/${company.slug}/expenses-export`}
+                        onClick={() => setExportMenuOpen(false)}
+                        className={`block px-4 py-3 text-left text-sm transition-colors ${
+                          isDark ? 'hover:bg-white/5 text-slate-200' : 'hover:bg-stone-50 text-stone-700'
+                        }`}
+                      >
+                        <span className="block font-medium">Expense Ledger</span>
+                        <span className={`block text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
+                          Every logged expense, one row each
+                        </span>
+                      </a>
+                      <a
+                        href={`/api/company/${company.slug}/profit-summary-export`}
+                        onClick={() => setExportMenuOpen(false)}
+                        className={`block px-4 py-3 text-left text-sm transition-colors border-t ${
+                          isDark ? 'hover:bg-white/5 text-slate-200 border-white/10' : 'hover:bg-stone-50 text-stone-700 border-stone-100'
+                        }`}
+                      >
+                        <span className="block font-medium">Profit Summary</span>
+                        <span className={`block text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
+                          Income, expenses & profit per job
+                        </span>
+                      </a>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <a
+                href={exportHref}
+                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                  isDark
+                    ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+                }`}
+              >
+                <Download className="h-3.5 w-3.5" />
+                Export
+              </a>
+            )}
           </div>
         </div>
 
@@ -272,6 +328,7 @@ export default function FinancialsClient({
           {([
             ['overview', 'Overview'],
             ['invoices', 'Invoices'],
+            ['expenses', 'Expenses'],
           ] as const).map(([key, label]) => (
             <button
               key={key}
@@ -320,6 +377,13 @@ export default function FinancialsClient({
             onFilterChange={setActiveFilter}
             search={search}
             onSearchChange={setSearch}
+          />
+        </div>
+        <div style={{ display: tab === 'expenses' ? 'block' : 'none' }}>
+          <FinancialsExpenses
+            isDark={isDark}
+            company={company}
+            withMoney={withMoney}
           />
         </div>
       </div>

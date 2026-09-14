@@ -10,7 +10,7 @@ type Args = {
   customerName: string;
   customerEmail?: string | null;
   companySlug: string;
- /** Tax-inclusive contract total. Caller computes it the same way the
+  /** Tax-inclusive contract total. Caller computes it the same way the
    *  invoice does, so the customer is never charged a different number
    *  than the document shows. */
   contractTotal: number;
@@ -56,7 +56,7 @@ export function depositFor(
  * kept charging its original (now stale) amount after the quote grew.
  */
 export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutResult> {
- const {
+  const {
     projectId,
     connectedAccountId,
     customerName,
@@ -152,7 +152,16 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
         },
       ],
       customer_email: customerEmail || undefined,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${projectId}`,
+      // Added &session_id={CHECKOUT_SESSION_ID} — {CHECKOUT_SESSION_ID}
+      // is a literal Stripe template placeholder, substituted by Stripe
+      // itself on redirect, not a bug. Without this, the success page had
+      // to guess which payment had just happened by querying "most
+      // recent payment on this project" — which showed the wrong kind
+      // (deposit instead of balance) whenever the webhook that inserts
+      // the real payment row hadn't finished processing yet when the
+      // redirect landed. Passing the exact session ID lets the success
+      // page look up the exact transaction instead of guessing.
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${projectId}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard?payment=cancelled`,
       // kind is advisory only — the webhook re-derives it from the ledger so a
       // replayed or tampered session can't mislabel a row.

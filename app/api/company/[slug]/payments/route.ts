@@ -235,20 +235,21 @@ export async function POST(
 
       await sql`
         INSERT INTO payments (
-          project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-          note, recorded_by, reversed_payment_id
-        ) VALUES (
-          ${original.project_id},
-          ${auth.company.id},
-          ${-Math.abs(requestedAmount)},
-          ${original.invoiced_total},
-          'other',
-          'refund',
-          ${new Date().toISOString().split('T')[0]},
-          ${note ? `Reversal of payment #${paymentId}: ${note}` : `Reversal of payment #${paymentId}`},
-          ${auth.user.name || auth.user.email || 'Unknown'},
-          ${paymentId}
-        )
+  project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+  note, recorded_by, reversed_payment_id, invoice_id
+) VALUES (
+  ${original.project_id},
+  ${auth.company.id},
+  ${-Math.abs(requestedAmount)},
+  ${original.invoiced_total},
+  'other',
+  'refund',
+  ${new Date().toISOString().split('T')[0]},
+  ${note ? `Reversal of payment #${paymentId}: ${note}` : `Reversal of payment #${paymentId}`},
+  ${auth.user.name || auth.user.email || 'Unknown'},
+  ${paymentId},
+  (SELECT id FROM invoices WHERE project_id = ${original.project_id})
+)
       `;
 
       const refreshed = await loadProject(original.project_id, auth.company.id);
@@ -400,19 +401,20 @@ export async function POST(
 
     await sql`
       INSERT INTO payments (
-        project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-        note, recorded_by
-      ) VALUES (
-        ${projectId},
-        ${auth.company.id},
-        ${amount},
-        ${total || null},
-        ${method},
-        ${resolvedKind},
-        ${paidOn ?? new Date().toISOString().split('T')[0]},
-        ${note},
-        ${auth.user.name || auth.user.email || 'Unknown'}
-      )
+  project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+  note, recorded_by, invoice_id
+) VALUES (
+  ${projectId},
+  ${auth.company.id},
+  ${amount},
+  ${total || null},
+  ${method},
+  ${resolvedKind},
+  ${paidOn ?? new Date().toISOString().split('T')[0]},
+  ${note},
+  ${auth.user.name || auth.user.email || 'Unknown'},
+  (SELECT id FROM invoices WHERE project_id = ${projectId})
+)
     `;
 
     // payments_sync_project has already updated projects.payment_amount and

@@ -60,6 +60,15 @@ export async function GET(
     }
 
     // ── 2. Fetch Lead & Joined Project Data ────────────────────
+    // ADDED: LEFT JOIN to invoices, purely additive. Every field above
+    // this join is completely unchanged from before — existing UI
+    // (BillingSection, LeadModalHeader, etc.) keeps reading the legacy
+    // p.invoice_number / p.invoice_sent_at / p.deposit_* fields exactly
+    // as it always has, unaware anything changed. New fields are
+    // prefixed inv_ specifically because several legacy project columns
+    // already use bare names like invoice_number/invoice_sent_at —
+    // reusing those names here would silently overwrite the legacy
+    // values in the response object.
     const leads = await sql`
       SELECT
         l.*,
@@ -78,9 +87,10 @@ export async function GET(
         p.ai_brief,
         p.quote_total,
         p.quote_tax_rate,
-        p.deposit_type,
+               p.deposit_type,
         p.deposit_value,
         p.deposit_paid_at,
+        p.deposit_due_date,
         p.quote_sent_at as project_quote_sent_at,
         p.quote_accepted_at as project_quote_accepted_at,
         p.quote_declined_at as project_quote_declined_at,
@@ -111,9 +121,24 @@ export async function GET(
         p.tasks as project_tasks,
         p.follow_up_date,
         p.internal_notes as project_internal_notes,
-        p.follow_up_notes
+        p.follow_up_notes,
+        i.id as inv_id,
+        i.label as inv_label,
+        i.amount as inv_amount,
+        i.status as inv_status,
+        i.payment_amount as inv_payment_amount,
+        i.due_date as inv_due_date,
+        i.sent_at as inv_sent_at,
+        i.paid_at as inv_paid_at,
+        i.refunded_at as inv_refunded_at,
+        i.refund_amount as inv_refund_amount,
+        i.deposit_type as inv_deposit_type,
+        i.deposit_value as inv_deposit_value,
+        i.deposit_sent_at as inv_deposit_sent_at,
+        i.deposit_paid_at as inv_deposit_paid_at
       FROM leads l
       LEFT JOIN projects p ON p.lead_id = l.id
+      LEFT JOIN invoices i ON i.project_id = p.id
       WHERE l.id = ${leadId}
         AND l.company_id = ${companyId}
         AND l.deleted = false

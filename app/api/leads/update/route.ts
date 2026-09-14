@@ -599,6 +599,51 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         }
       }
 
+            if (dep && !dep.deposit_type && parseFloat(dep.collected || '0') === 0 && dep.category) {
+        const tpl = await sql`
+          SELECT deposit_type, deposit_value
+          FROM quote_templates
+          WHERE company_id = ${dep.company_id} AND category = ${dep.category}
+          LIMIT 1
+        `;
+        const t = tpl[0];
+        if (t?.deposit_type && Number(t.deposit_value) > 0) {
+          await sql`
+            UPDATE projects
+            SET deposit_type = ${t.deposit_type},
+                deposit_value = ${Number(t.deposit_value)}
+            WHERE id = ${projectId}
+          `;
+        }
+      }
+
+      // Guards against accidentally dropping the quote total below what's
+      // already been collected. Anything above what's collected is fine —
+      // adding line items, growing the total mid-job (wasSettledThenGrew
+      // already supports that elsewhere) — only a total that would fall
+      // BELOW money already in hand gets blocked, since that's what
+      // produces a silent "Paid in full" on a job that's actually been
+      // overpaid relative to its own new total.
+            // Rounded to cents before comparing — floating-point arithmetic
+      // across multiple line items (especially with a tax-rate
+      // multiplication) can leave a "removed an item, recalculated"
+      // total a fraction of a cent off from what it should exactly
+      // equal. A strict comparison on the raw floats treated that noise
+      // as "genuinely below what's collected," blocking a save that was
+      // actually restoring the original, correct total.
+      const collected = parseFloat(dep?.collected || '0');
+      const newTotalCents = Math.round(parseFloat(quote_total) * 100);
+      const collectedCents = Math.round(collected * 100);
+      if (collected > 0 && newTotalCents < collectedCents) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `This quote can't total less than the $${collected.toFixed(2)} already collected. Issue a refund first if you need to reduce it below that.`,
+          },
+          { status: 400 }
+        );
+      }
+
 console.log('save_quote tax rate received:', quote_tax_rate, typeof quote_tax_rate);
 
    // Get current payment amount before updating
@@ -1128,19 +1173,11 @@ else if (action === 'update_lead_step2') {
 
 // ==================== SAVE INVOICE ====================
 else if (action === 'save_invoice') {
-  const { invoice_number, invoice_data, invoice_status } = body;
+  const { invoice_number, invoice_data, invoice_status, due_date_phase } = body;
 
-  // Fetches current values, not just the id — this is what makes the
-  // fix below possible. Previously this action always ran as a FULL
-  // overwrite, even when the caller (BillingSection's due-date editor)
-  // only ever sends invoice_number + due_date and nothing else. That
-  // meant invoice_data became the string "undefined"
-  // (JSON.stringify(undefined) isn't valid JSON), invoice_status
-  // silently reset to 'draft', and invoice_sent_at got wiped back to
-  // null — on every single due-date change, even for an invoice that
-  // had genuinely already been sent to the customer.
   const projects = await sql`
-    SELECT id, invoice_number, invoice_data, invoice_status, invoice_sent_at, payment_due_date
+    SELECT id, invoice_number, invoice_data, invoice_status, invoice_sent_at,
+           payment_due_date, deposit_due_date
     FROM projects WHERE lead_id = ${id}
   `;
 
@@ -1151,33 +1188,50 @@ else if (action === 'save_invoice') {
   const existing = projects[0];
   const projectId = existing.id;
 
-  // Each field only changes if THIS call actually provided it — otherwise
-  // it keeps exactly what was already in the database. `!== undefined` is
-  // deliberate, not `|| existing...`, so an intentional empty string or
-  // false value from a future caller isn't treated as "not provided."
   const nextInvoiceNumber = invoice_number !== undefined ? invoice_number : existing.invoice_number;
   const nextInvoiceDataValue = invoice_data !== undefined ? invoice_data : existing.invoice_data;
   const nextInvoiceStatus = invoice_status !== undefined ? invoice_status : existing.invoice_status;
-  // invoice_sent_at is derived from invoice_status, so it only recomputes
-  // when invoice_status was actually part of this specific call. If this
-  // call didn't touch invoice_status at all, invoice_sent_at is left
-  // exactly as it was — sent stays sent, draft stays draft.
   const nextInvoiceSentAt = invoice_status !== undefined
     ? (invoice_status === 'sent' ? new Date().toISOString() : null)
     : existing.invoice_sent_at;
-  const nextDueDate = due_date !== undefined ? (due_date || null) : existing.payment_due_date;
 
-  await sql`
-  UPDATE projects
-  SET
-    invoice_number = ${nextInvoiceNumber},
-    invoice_data = ${JSON.stringify(nextInvoiceDataValue)},
-    invoice_status = ${nextInvoiceStatus},
-    payment_due_date = ${nextDueDate},
-    invoice_sent_at = ${nextInvoiceSentAt},
-    updated_at = NOW()
-  WHERE id = ${projectId}
-`;
+  // Phase-aware — was a single nextDueDate always targeting
+  // payment_due_date, meaning editing the deposit's due date (before
+  // this fix, there was no separate deposit due date at all) actually
+  // edited the SAME column the balance would later use, guaranteeing
+  // one phase's date clobbered the other's. due_date_phase tells this
+  // action which column the caller actually means to touch; the other
+  // stays completely untouched, not even read into this branch.
+  const targetingDeposit = due_date_phase === 'deposit';
+  const nextDueDate = due_date !== undefined
+    ? (due_date || null)
+    : targetingDeposit ? existing.deposit_due_date : existing.payment_due_date;
+
+  if (targetingDeposit) {
+    await sql`
+      UPDATE projects
+      SET
+        invoice_number = ${nextInvoiceNumber},
+        invoice_data = ${JSON.stringify(nextInvoiceDataValue)},
+        invoice_status = ${nextInvoiceStatus},
+        deposit_due_date = ${nextDueDate},
+        invoice_sent_at = ${nextInvoiceSentAt},
+        updated_at = NOW()
+      WHERE id = ${projectId}
+    `;
+  } else {
+    await sql`
+      UPDATE projects
+      SET
+        invoice_number = ${nextInvoiceNumber},
+        invoice_data = ${JSON.stringify(nextInvoiceDataValue)},
+        invoice_status = ${nextInvoiceStatus},
+        payment_due_date = ${nextDueDate},
+        invoice_sent_at = ${nextInvoiceSentAt},
+        updated_at = NOW()
+      WHERE id = ${projectId}
+    `;
+  }
 
   const invoiceEntry = {
     type: 'invoice_saved',
@@ -1191,7 +1245,6 @@ else if (action === 'save_invoice') {
 
   return NextResponse.json({ success: true });
 }
-
 
 
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
@@ -1351,16 +1404,51 @@ const leadCheck = await sql`
       console.error('⚠️ Failed to log to outbox:', outboxErr);
     }
 
-    await sql`
-      UPDATE projects
-      SET invoice_status = 'sent',
-          invoice_sent_at = NOW(),
-          invoice_pdf_url = ${emailResult?.pdfUrl || null},
-          payment_due_date = ${body.due_date || null},
-          updated_at = NOW()
-      WHERE id = ${lead.project_id}
-    `;
 
+    // Mirrors this send onto the invoices table — additive, non-blocking.
+    // The email has already sent successfully by this point; a failure
+    // here shouldn't make a successful send look like an error to the
+    // contractor. Writes deposit_sent_at or sent_at (balance) based on
+    // collectionKind, already computed above by getBillingState(). Always
+    // overwrites unconditionally on every send — same semantics as the
+    // legacy invoice_sent_at = NOW() right above, just split by phase
+    // instead of one shared field.
+       try {
+      if (collectionKind === 'deposit') {
+        await sql`
+          UPDATE projects
+          SET invoice_status = 'sent',
+              invoice_sent_at = NOW(),
+              invoice_pdf_url = ${emailResult?.pdfUrl || null},
+              deposit_due_date = ${body.due_date || null},
+              updated_at = NOW()
+          WHERE id = ${lead.project_id}
+        `;
+        await sql`
+          UPDATE invoices
+          SET deposit_sent_at = NOW(), updated_at = NOW()
+          WHERE project_id = ${lead.project_id}
+        `;
+      } else {
+        await sql`
+          UPDATE projects
+          SET invoice_status = 'sent',
+              invoice_sent_at = NOW(),
+              invoice_pdf_url = ${emailResult?.pdfUrl || null},
+              payment_due_date = ${body.due_date || null},
+              updated_at = NOW()
+          WHERE id = ${lead.project_id}
+        `;
+        await sql`
+          UPDATE invoices
+          SET sent_at = NOW(), updated_at = NOW()
+          WHERE project_id = ${lead.project_id}
+        `;
+      }
+    } catch (mirrorErr) {
+      console.error('⚠️ Failed to update project/invoice after send:', mirrorErr);
+    }
+    
     await addActivityToProject(id, {
       type: 'invoice_sent',
       text: `Invoice ${invoiceNumber} emailed to customer`,

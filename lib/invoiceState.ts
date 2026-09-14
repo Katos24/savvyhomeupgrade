@@ -114,6 +114,21 @@ export function deriveInvoiceRow(p: any) {
       ? null
       : depositSatisfied ? 'balance' : 'deposit';
 
+  // Was !!p.invoice_sent_at unconditionally — that single shared field
+  // can hold a stale timestamp from an EARLIER phase's send (e.g. the
+  // deposit was sent and paid, invoice_sent_at still reflects that old
+  // send, even though the balance invoice — the CURRENT phase — was
+  // never actually sent). Checking the phase-specific field instead is
+  // what makes _collectedUnsent below detectable at all. Jobs with no
+  // deposit terms have only one phase ever, so invoice_sent_at is
+  // already correct for them — no join field needed, no fallback
+  // ambiguity.
+  const invoiced = billingPhase === 'deposit'
+    ? !!p.inv_deposit_sent_at
+    : billingPhase === 'balance'
+    ? !!p.inv_sent_at
+    : !!p.invoice_sent_at;
+
   const derived = {
     ...p,
     _total: total,
@@ -121,9 +136,16 @@ export function deriveInvoiceRow(p: any) {
     _owed: owed,
     _overdue: daysOverdue(p),
     _bucket: bucketFor(p),
-    _invoiced: !!p.invoice_sent_at,
+    _invoiced: invoiced,
     _remindedToday: !!remindedToday,
     _billingPhase: billingPhase,
+    // True when money's been collected toward the CURRENT phase but that
+    // phase's invoice was never actually sent — e.g. a cash payment
+    // recorded before any invoice went out, or a deposit paid with the
+    // balance never formally invoiced. Real, worth surfacing — but as a
+    // qualifier on whatever state (usually 'draft') the row already
+    // falls into, not a new top-level filter bucket of its own.
+    _collectedUnsent: !invoiced && collected > 0,
   };
   return { ...derived, _state: invoiceState(derived) };
 }

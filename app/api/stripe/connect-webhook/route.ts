@@ -1,460 +1,462 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
-import { cookies } from 'next/headers';
-import jwt from 'jsonwebtoken';
-import { getCollectionKind, getDepositAmount } from '@/lib/billing';
+import { headers } from 'next/headers';
+import { parseAccountStatus } from '@/lib/stripe/parseAccountStatus';
+import { getCollectionKind } from '@/lib/billing';
 
-const VALID_METHODS = ['cash', 'check', 'credit_card', 'zelle', 'venmo', 'paypal', 'stripe', 'other'];
-const fmtAmount = (n: number) => `$${n.toFixed(2)}`;
-// Two collection points per job: deposit, then balance. 'payment' described
-// an arbitrary partial, which the new model doesn't allow. Kind is derived
-// server-side from the job's deposit terms — client input is ignored.
-type AuthResult =
-  | { error: NextResponse }
-  | { company: any; user: any };
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-/**
- * Verifies the session, resolves the company by slug, and confirms the user
- * belongs to it. Returns a response to bail with on any failure.
- */
-async function authorize(slug: string, requireWriteRole: boolean): Promise<AuthResult> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('auth-token')?.value;
+export async function POST(req: NextRequest) {
+  const body = await req.text();
+  const headersList = await headers();
+  const sig = headersList.get('stripe-signature');
 
-  if (!token) {
-    return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) };
+  if (!sig) {
+    return NextResponse.json({ error: 'No signature' }, { status: 400 });
   }
 
-  let decoded: any;
+  let event;
   try {
-decoded = jwt.verify(token, process.env.JWT_SECRET!);
-  } catch {
-    return { error: NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 }) };
-  }
-
-  const companies = await sql`SELECT id, slug FROM companies WHERE slug = ${slug} LIMIT 1`;
-  if (companies.length === 0) {
-    return { error: NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 }) };
-  }
-
-  const users = await sql`
-    SELECT id, name, email, role, company_id FROM users WHERE id = ${decoded.userId} LIMIT 1
-  `;
-  const user = users[0];
-  if (!user) {
-    return { error: NextResponse.json({ success: false, error: 'User not found' }, { status: 404 }) };
-  }
-
-  if (user.company_id !== companies[0].id) {
-    return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 }) };
-  }
-
-  if (requireWriteRole && !['owner', 'admin', 'manager'].includes(user.role)) {
-    return {
-      error: NextResponse.json({ success: false, error: 'Insufficient permissions' }, { status: 403 }),
-    };
-  }
-
-  return { company: companies[0], user };
-}
-
-/** Postgres returns NUMERIC as a string; the client does arithmetic on these. */
-function shape(row: any) {
-  return {
-    id: row.id,
-    amount: Number(row.amount) || 0,
-    invoiced_total: row.invoiced_total === null ? null : Number(row.invoiced_total),
-    method: row.method,
-    kind: row.kind,
-    paid_on: row.paid_on,
-    card_brand: row.card_brand,
-    card_last4: row.card_last4,
-    note: row.note,
-    recorded_by: row.recorded_by,
-    // Non-null means it came from Stripe and can't be deleted here.
-    is_stripe: !!row.stripe_payment_intent_id,
-    stripe_payment_intent_id: row.stripe_payment_intent_id,   // ← add this line
-    reversed_payment_id: row.reversed_payment_id,
-    created_at: row.created_at,
-  };
-}
-
-async function loadPayments(projectId: number, companyId: number) {
-  const rows = await sql`
-    SELECT id, amount, invoiced_total, method, kind, paid_on,
-           card_brand, card_last4, note, recorded_by,
-           stripe_payment_intent_id, reversed_payment_id, created_at
-    FROM payments
-    WHERE project_id = ${projectId} AND company_id = ${companyId}
-    ORDER BY paid_on DESC, id DESC
-  `;
-  return rows.map(shape);
-}
-
-/** Confirms the project exists and belongs to this company. */
-async function loadProject(projectId: number, companyId: number) {
-  const rows = await sql`
-    SELECT id, company_id, quote_total, payment_amount, payment_status,
-       deposit_type, deposit_value, deposit_paid_at
-FROM projects
-WHERE id = ${projectId} AND company_id = ${companyId}
-LIMIT 1
-  `;
-  return rows[0] || null;
-}
-
-/* ═══════════════ GET — list payments for a project ═══════════════ */
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  try {
-    const { slug } = await params;
-    const auth = await authorize(slug, false);
-    if ('error' in auth) return auth.error;
-
-    const projectId = parseInt(request.nextUrl.searchParams.get('project_id') || '');
-    if (!projectId || Number.isNaN(projectId)) {
-      return NextResponse.json({ success: false, error: 'Missing project_id' }, { status: 400 });
-    }
-
-    const project = await loadProject(projectId, auth.company.id);
-    if (!project) {
-      return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
-    }
-
-    const payments = await loadPayments(projectId, auth.company.id);
-    const collected = payments.reduce((s, p) => s + p.amount, 0);
-    const total = Number(project.quote_total) || 0;
-
-    return NextResponse.json({
-      success: true,
-      payments,
-      summary: {
-        total,
-        collected,
-        remaining: Math.max(total - collected, 0),
-        status: project.payment_status,
-      },
-    });
-  } catch (error) {
-    console.error('Get payments error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to load payments',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
+    event = stripe.webhooks.constructEvent(
+      body,
+      sig,
+      process.env.STRIPE_CONNECT_WEBHOOK_SECRET!
     );
+  } catch (err: any) {
+    console.error('Connect webhook signature verification failed:', err.message);
+    return NextResponse.json({ error: err.message }, { status: 400 });
   }
-}
 
-/* ═══════════════ POST — record a manual payment ═══════════════ */
+  switch (event.type) {
+    case 'checkout.session.completed': {
+      const session = event.data.object as any;
+      const projectId = session.metadata?.projectId;
+      const eventAccountId = (event as any).account; // the connected account that sent this event
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
-) {
-  try {
-    const { slug } = await params;
-    const auth = await authorize(slug, true);
-    if ('error' in auth) return auth.error;
-
-       const body = await request.json();
-
-    // ── Reverse an existing manual payment (correction, not erasure) ──
-    // Same pattern Stripe refunds already use — a negative 'refund' row —
-    // just triggered manually instead of by a webhook. Keeps a defensible
-    // record ("recorded $500, reversed $500 on Aug 24, reason: entered
-    // wrong amount") instead of a silent hard-delete that leaves no trace
-    // either way.
-    if (body.reverse_payment_id) {
-      const paymentId = parseInt(body.reverse_payment_id);
-      if (!paymentId || Number.isNaN(paymentId)) {
-        return NextResponse.json({ success: false, error: 'Missing reverse_payment_id' }, { status: 400 });
+      if (!projectId) {
+        console.error('No projectId in Connect session metadata:', session.id);
+        break;
       }
 
-      const rows = await sql`
-        SELECT id, project_id, amount, invoiced_total, stripe_payment_intent_id, kind
-        FROM payments
-        WHERE id = ${paymentId} AND company_id = ${auth.company.id}
+      // Verify this event actually came from the connected account tied to this project's company —
+      // prevents one connected account's events from updating another company's project.
+      const projectCheck = await sql`
+        SELECT p.id, c.stripe_connect_account_id
+        FROM projects p
+        JOIN companies c ON p.company_id = c.id
+        WHERE p.id = ${parseInt(projectId)}
         LIMIT 1
       `;
-      const original = rows[0];
-      if (!original) {
-        return NextResponse.json({ success: false, error: 'Payment not found' }, { status: 404 });
-      }
-      if (original.stripe_payment_intent_id) {
-        return NextResponse.json(
-          { success: false, error: 'Card payments can\u2019t be reversed here. Issue a refund in Stripe and it will sync back.' },
-          { status: 400 }
-        );
-      }
-      if (original.kind === 'refund') {
-        return NextResponse.json(
-          { success: false, error: 'Refund records can\u2019t be reversed.' },
-          { status: 400 }
-        );
+
+      if (!projectCheck[0]) {
+        console.error('Project not found for Connect webhook:', projectId);
+        break;
       }
 
-          const originalAmount = Number(original.amount) || 0;
+if (projectCheck[0].stripe_connect_account_id !== eventAccountId) {
+        console.error(
+          `Account mismatch on Connect webhook: event from ${eventAccountId}, project ${projectId} belongs to ${projectCheck[0].stripe_connect_account_id}`
+        );
+        break;
+      }
 
-      // Cap against what's actually still reversible, not the original face
-      // amount — otherwise the same payment can be reversed repeatedly with
-      // nothing tracking that it already happened, silently over-reversing
-      // payment_amount below zero net.
-      const alreadyReversedRows = await sql`
-        SELECT COALESCE(SUM(ABS(amount)), 0) AS reversed
-        FROM payments
-        WHERE reversed_payment_id = ${paymentId} AND company_id = ${auth.company.id}
+    // Idempotency now comes from the UNIQUE constraint on
+      // payments.stripe_payment_intent_id — the insert below returns nothing
+      // on a redelivered event. Guarding on payment_status was wrong once a
+      // project can legitimately receive a deposit and then a balance.
+      // company_id is NOT NULL on payments and drives RLS, so read it here.
+      const projectRows = await sql`
+        SELECT company_id, quote_total, payment_amount,
+               deposit_type, deposit_value, deposit_paid_at
+        FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
       `;
-      const alreadyReversed = Number(alreadyReversedRows[0]?.reversed) || 0;
-      const remainingReversible = Math.max(originalAmount - alreadyReversed, 0);
+      const projectRow = projectRows[0];
 
-      if (remainingReversible <= 0) {
-        return NextResponse.json(
-          { success: false, error: 'This payment has already been fully reversed.' },
-          { status: 400 }
+      if (!projectRow) {
+        console.error(`Webhook ${event.id}: project ${projectId} not found`);
+        break;
+      }
+      if (!projectRow.company_id) {
+        console.error(`Webhook ${event.id}: project ${projectId} has no company_id`);
+        break;
+      }
+
+const amountPaid = session.amount_total ? session.amount_total / 100 : null;
+      if (amountPaid === null) {
+        // payments.amount is NOT NULL; inserting would throw and Stripe would
+        // retry forever on an event that can never succeed.
+        console.error(`Webhook ${event.id}: session ${session.id} has no amount_total`);
+        break;
+      }
+
+      // Fetch card brand/last4 once at payment time so BillingSection can
+      // display it without a live Stripe call on every page load.
+      let cardBrand: string | null = null;
+      let cardLast4: string | null = null;
+      try {
+        const intent = await stripe.paymentIntents.retrieve(
+          session.payment_intent as string,
+          { expand: ['latest_charge'] },
+          { stripeAccount: eventAccountId }
         );
+        const charge = (intent as any).latest_charge;
+        const cardDetails = charge?.payment_method_details?.card;
+        if (cardDetails) {
+          cardBrand = cardDetails.brand;
+          cardLast4 = cardDetails.last4;
+        }
+      } catch (err: any) {
+        console.error('Failed to retrieve card details for receipt:', err.message);
+        // Non-fatal — payment still gets marked paid even if this fails
       }
 
-      const requestedAmount = body.amount !== undefined ? parseFloat(body.amount) : remainingReversible;
-      if (Number.isNaN(requestedAmount) || requestedAmount <= 0) {
-        return NextResponse.json({ success: false, error: 'Enter an amount greater than zero.' }, { status: 400 });
+      // A session created for a balance is smaller than quote_total, so
+      // classify rather than assuming this settles the job. The job's
+      // deposit terms decide this, not the amount — derived here rather
+      // than read from session.metadata so a replayed session can't
+      // mislabel the row.
+      //
+      // Reads from lib/billing.ts, the single source of truth, instead of
+      // its own inline copy of this math. This one mattered more than most
+      // of the other instances of this bug: unlike a live display that
+      // self-corrects the moment the code is fixed, this determines the
+      // permanent 'kind' value written to the payments table below — a
+      // misclassification here doesn't fix itself later, it's baked into
+      // the historical record. See the note above this file's edit for
+      // whether any already-recorded rows need a separate data correction.
+      const projectQuoteTotal = parseFloat(projectRow.quote_total || '0');
+      const alreadyPaidAmount = parseFloat(projectRow.payment_amount || '0');
+      const rawKind = getCollectionKind({
+        total: projectQuoteTotal,
+        paidAmount: alreadyPaidAmount,
+        depositType: projectRow.deposit_type,
+        depositValue: projectRow.deposit_value,
+        depositPaidAt: projectRow.deposit_paid_at,
+      });
+      const paymentKind: 'deposit' | 'balance' = rawKind === 'deposit' ? 'deposit' : 'balance';
+
+      const insertedPayment = await sql`
+     INSERT INTO payments (
+  project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+  stripe_payment_intent_id, stripe_checkout_session_id,
+  card_brand, card_last4, recorded_by, invoice_id
+) VALUES (
+  ${parseInt(projectId)},
+  ${projectRow.company_id},
+  ${amountPaid},
+  ${projectQuoteTotal || null},
+  'stripe',
+  ${paymentKind},
+  CURRENT_DATE,
+  ${session.payment_intent as string},
+  ${session.id},
+  ${cardBrand},
+  ${cardLast4},
+  'Stripe',
+  (SELECT id FROM invoices WHERE project_id = ${parseInt(projectId)})
+)
+ON CONFLICT (stripe_payment_intent_id) DO NOTHING
+RETURNING id
+      `;
+
+      
+      if (insertedPayment.length === 0) {
+        console.log(`Webhook ${event.id}: intent ${session.payment_intent} already recorded — skipping`);
+        break;
       }
-      if (requestedAmount > remainingReversible) {
-        return NextResponse.json(
-          { success: false, error: `Can't reverse more than the remaining ${fmtAmount(remainingReversible)}.` },
-          { status: 400 }
+
+      // payments_sync_project recomputes projects.payment_amount,
+      // payment_status, payment_method, payment_date, card_brand, card_last4
+      // and paid_at from SUM(payments.amount). Nothing else to write.
+      console.log(
+        `✅ Project ${projectId}: ${paymentKind} of ${amountPaid} recorded via Stripe Connect`
+      );
+
+      // The trigger has already run, so this is the true collected total.
+      // Both receipts need it — a customer paying a deposit otherwise sees
+      // only the amount they just paid and assumes the job is settled.
+      const afterInsert = await sql`
+        SELECT COALESCE(payment_amount, 0) AS collected
+        FROM projects WHERE id = ${parseInt(projectId)} LIMIT 1
+      `;
+      const paidToDate = parseFloat(afterInsert[0]?.collected || '0');
+      // ── Send confirmation emails to customer and contractor ──
+      const emailData = await sql`
+        SELECT l.email as customer_email, l.name as customer_name,
+               c.id as company_id, c.name as company_name, c.email as contractor_email, c.slug as company_slug,
+               p.invoice_number
+        FROM projects p
+        JOIN leads l ON p.lead_id = l.id
+        JOIN companies c ON p.company_id = c.id
+        WHERE p.id = ${parseInt(projectId)}
+        LIMIT 1
+      `;
+      const d = emailData[0];
+
+      if (d) {
+        const { sendPaymentReceiptToCustomer, sendPaymentNotificationToContractor } = await import('@/lib/email');
+
+        if (d.customer_email) {
+         await sendPaymentReceiptToCustomer({
+            customerEmail: d.customer_email,
+            customerName: d.customer_name,
+            companyName: d.company_name,
+            companyId: d.company_id,
+            amountPaid: amountPaid || 0,
+            invoiceNumber: d.invoice_number,
+            contractTotal: projectQuoteTotal,
+            paidToDate,
+            paymentKind,
+            cardBrand,
+            cardLast4,
+          });
+        }
+
+        if (d.contractor_email) {
+          await sendPaymentNotificationToContractor({
+            contractorEmail: d.contractor_email,
+            customerName: d.customer_name,
+            companyName: d.company_name,
+            companyId: d.company_id,
+            amountPaid: amountPaid || 0,
+            dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${d.company_slug}/dashboard`,
+            contractTotal: projectQuoteTotal,
+            paidToDate,
+            paymentKind,
+          });
+        }
+      }
+
+      break;
+    }
+
+   case 'checkout.session.expired': {
+      const session = event.data.object as any;
+      console.log('Checkout session expired:', session.id, 'project:', session.metadata?.projectId);
+      // No DB update needed — project stays unpaid, contractor can resend
+      break;
+    }
+
+    // ── Fired when a contractor issues a refund (full or partial) from
+    // their own Stripe Dashboard. Stripe handles the customer-facing
+    // refund email automatically; this just keeps our DB's payment_status
+    // in sync so the dashboard doesn't keep showing "Paid" after money
+    // has actually gone back to the customer.
+    case 'charge.refunded': {
+      const charge = event.data.object as any;
+      const paymentIntentId = charge.payment_intent;
+      const eventAccountId = (event as any).account;
+ 
+      if (!paymentIntentId) {
+        console.error('charge.refunded with no payment_intent:', charge.id);
+        break;
+      }
+ 
+      // Find the payment this refund reverses. Not via
+      // projects.stripe_payment_intent_id — that column holds only the most
+      // recent payment, so refunding an earlier one would miss.
+           const refundTargetRows = await sql`
+        SELECT id, project_id, company_id, amount, invoiced_total
+        FROM payments
+        WHERE stripe_payment_intent_id = ${paymentIntentId}
+          AND kind <> 'refund'
+        LIMIT 1
+      `;
+      const refundTarget = refundTargetRows[0];
+ 
+      if (!refundTarget) {
+        console.error('No matching payment for refunded charge:', charge.id, paymentIntentId);
+        break;
+      }
+ 
+      const refundProjectId = refundTarget.project_id;
+      const refundCompanyId = refundTarget.company_id;
+      // Carry the total from the payment being reversed, not the current
+      // quote_total — the refund belongs to the job as it was invoiced then.
+      const refundInvoicedTotal = refundTarget.invoiced_total;
+ 
+      // Pull the authoritative refund list from the API rather than trusting
+      // charge.refunds on the event payload, which Stripe truncates past ~10.
+      let refunds: any[] = [];
+      try {
+        const refundList = await stripe.refunds.list(
+          { charge: charge.id, limit: 100 },
+          { stripeAccount: eventAccountId }
         );
+        refunds = refundList.data || [];
+      } catch (err: any) {
+        console.error('Failed to list refunds for charge', charge.id, err.message);
+        // Return 500 so Stripe retries — better than silently losing the refund.
+        return NextResponse.json({ error: 'refund_list_failed' }, { status: 500 });
       }
+ 
+      // Only refunds that actually moved money. Stripe can report 'pending',
+      // 'failed', or 'canceled'; recording those would understate collections.
+      const settledRefunds = refunds.filter((r) => r.status === 'succeeded');
+ 
+      if (settledRefunds.length === 0) {
+        console.log(`charge.refunded ${charge.id}: no succeeded refunds yet, nothing to record`);
+        break;
+      }
+ 
+      const refundIds = settledRefunds.map((r) => r.id);
+      const existingRows = await sql`
+        SELECT stripe_refund_id
+        FROM payments
+        WHERE stripe_refund_id = ANY(${refundIds})
+      `;
+      const alreadyRecorded = new Set(existingRows.map((r: any) => r.stripe_refund_id));
+ 
+      const newRefunds = settledRefunds.filter((r) => !alreadyRecorded.has(r.id));
+ 
+      if (newRefunds.length === 0) {
+        console.log(`charge.refunded ${charge.id}: all ${settledRefunds.length} refund(s) already recorded`);
+        break;
+      }
+ 
+      let recordedTotal = 0;
+      for (const refund of newRefunds) {
+        const refundAmount = (refund.amount || 0) / 100;
+        if (refundAmount <= 0) continue;
+ 
+        // Negative row so SUM(amount) reflects what was actually kept.
+        // ON CONFLICT covers the race where two events for the same charge
+        // arrive concurrently and both pass the check above.
+                const inserted = await sql`
+         INSERT INTO payments (
+  project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+  stripe_refund_id, note, recorded_by, reversed_payment_id, invoice_id
+) VALUES (
+  ${refundProjectId},
+  ${refundCompanyId},
+  ${-Math.abs(refundAmount)},
+  ${refundInvoicedTotal},
+  'stripe',
+  'refund',
+  CURRENT_DATE,
+  ${refund.id},
+  ${`Refund ${refund.id} against intent ${paymentIntentId}`},
+  'Stripe',
+  ${refundTarget.id},
+  (SELECT id FROM invoices WHERE project_id = ${refundProjectId})
+)
+ON CONFLICT (stripe_refund_id) DO NOTHING
+RETURNING id
+        `;
+ 
+        if (inserted.length > 0) recordedTotal += refundAmount;
+      }
+ 
+      if (recordedTotal === 0) {
+        console.log(`charge.refunded ${charge.id}: nothing new inserted after conflict check`);
+        break;
+      }
+ 
+      // payments_sync_project has recomputed projects.payment_amount from the
+      // sum, negatives included. Read it back rather than inferring status
+      // from a single charge.
+      const afterRefund = await sql`
+        SELECT COALESCE(payment_amount, 0) AS net_paid
+        FROM projects WHERE id = ${refundProjectId} LIMIT 1
+      `;
+      const netPaid = parseFloat(afterRefund[0]?.net_paid || '0');
+ 
+      await sql`
+        UPDATE projects
+        SET payment_status  = ${netPaid <= 0 ? 'refunded' : 'partially_refunded'},
+            refunded_amount = COALESCE(refunded_amount, 0) + ${recordedTotal},
+            refunded_at     = NOW()
+        WHERE id = ${refundProjectId}
+      `;
+ 
+      console.log(
+        `Project ${refundProjectId}: recorded ${newRefunds.length} refund(s) ` +
+        `totalling ${recordedTotal}, net paid now ${netPaid}`
+      );
+ 
+      break;
+    }
 
-      const note = typeof body.note === 'string' ? body.note.trim().slice(0, 500) || null : null;
+    // ── Fired when a company disconnects your platform from their Stripe
+    // dashboard side. ...
+    case 'account.application.deauthorized': {
+      const connectedAccountId = (event as any).account;
+      if (!connectedAccountId) break;
 
       await sql`
-        INSERT INTO payments (
-          project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-          note, recorded_by, reversed_payment_id
-        ) VALUES (
-          ${original.project_id},
-          ${auth.company.id},
-          ${-Math.abs(requestedAmount)},
-          ${original.invoiced_total},
-          'other',
-          'refund',
-          ${new Date().toISOString().split('T')[0]},
-          ${note ? `Reversal of payment #${paymentId}: ${note}` : `Reversal of payment #${paymentId}`},
-          ${auth.user.name || auth.user.email || 'Unknown'},
-          ${paymentId}
-        )
+       UPDATE companies
+        SET
+          stripe_connect_account_id = NULL,
+          stripe_connect_onboarded = FALSE,
+          stripe_payment_status = NULL,
+          stripe_requirements_summary = NULL
+        WHERE stripe_connect_account_id = ${connectedAccountId}
+      `;
+      console.log('Stripe Connect: account deauthorized, cleared for', connectedAccountId);
+      break;
+    }
+
+    // ── Fired whenever Stripe approves, restricts, or otherwise changes
+    // status on a connected account (e.g. charges_enabled flips, or Stripe
+    // disables an account for compliance reasons). Currently just logs —
+    // hook point for a future "your Stripe account needs attention" email.
+   case 'account.updated': {
+      const account = event.data.object as any;
+      const connectedAccountId = account.id;
+
+      const { paymentStatus, blockingReasons } = parseAccountStatus(account);
+
+      const previous = await sql`
+        SELECT stripe_payment_status
+        FROM companies
+        WHERE stripe_connect_account_id = ${connectedAccountId}
+        LIMIT 1
+      `;
+      const previousStatus = previous[0]?.stripe_payment_status;
+
+      await sql`
+        UPDATE companies
+        SET
+          stripe_payment_status = ${paymentStatus},
+          stripe_requirements_summary = ${JSON.stringify(blockingReasons)}
+        WHERE stripe_connect_account_id = ${connectedAccountId}
       `;
 
-      const refreshed = await loadProject(original.project_id, auth.company.id);
-      const payments = await loadPayments(original.project_id, auth.company.id);
-      const collected = payments.reduce((s, p) => s + p.amount, 0);
-      const total = Number(refreshed?.quote_total) || 0;
+      console.log(
+        `Stripe Connect: ${connectedAccountId} status -> ${paymentStatus}`,
+        blockingReasons.length ? blockingReasons : '(no blockers)'
+      );
 
-      // The sync trigger recalculates payment_amount correctly from this
-      // insert, but its payment_status logic can only ever PRESERVE
-      // 'refunded'/'partially_refunded' if that was already the value —
-      // it has no branch that originates that status from scratch. Left
-      // alone, a manual reversal silently kept whatever status was
-      // already there (e.g. still 'paid'), which is exactly the bug that
-      // let a fully-refunded job keep showing "Paid in Full." This is the
-      // one explicit write that actually sets it.
-      //
-      // refunded_amount is a SEPARATE stored column, read directly by
-      // BillingSummaryPanel's refund banner — nothing on this manual
-      // path ever wrote to it, so that banner always showed $0.00
-      // refunded regardless of how much was actually reversed. Accumulate
-      // it here (not overwrite) so multiple reversals over time add up
-      // correctly instead of each one clobbering the last.
-      const newStatus = collected <= 0 ? 'refunded' : 'partially_refunded';
-
-      // deposit_paid_at is deliberately sticky (see lib/billing.ts) so a
-      // quote growing after the deposit was already paid can't silently
-      // un-satisfy it. A refund is a genuinely different situation: the
-      // money behind that timestamp may no longer exist. If this refund
-      // dropped net collected below the deposit target, the deposit is
-      // no longer actually satisfied — the sticky protection was never
-      // meant to survive the underlying payment being given back.
-      const depositAmount = getDepositAmount({
-        total: Number(refreshed?.quote_total) || 0,
-        depositType: refreshed?.deposit_type,
-        depositValue: refreshed?.deposit_value,
+      if (paymentStatus === 'restricted' && previousStatus !== 'restricted') {
+        const companyRow = await sql`
+          SELECT id, email as contractor_email, name as company_name, slug as company_slug
+          FROM companies
+          WHERE stripe_connect_account_id = ${connectedAccountId}
+          LIMIT 1
+        `;
+        const c = companyRow[0];
+  if (c?.contractor_email) {
+      const { sendStripeActionNeededEmail } = await import('@/lib/email');
+      await sendStripeActionNeededEmail({
+        contractorEmail: c.contractor_email,
+        companyName: c.company_name,
+        companyId: c.id,
+        reasons: blockingReasons,
+dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${c.company_slug}/home`,
       });
-      const depositStillSatisfied = depositAmount <= 0 || collected >= depositAmount;
+    }
 
-      if (depositStillSatisfied) {
-        await sql`
-          UPDATE projects SET
-            payment_status = ${newStatus},
-            refunded_amount = COALESCE(refunded_amount, 0) + ${requestedAmount},
-            refunded_at = NOW(),
-            updated_at = NOW()
-          WHERE id = ${original.project_id} AND company_id = ${auth.company.id}
-        `;
-      } else {
-        await sql`
-          UPDATE projects SET
-            payment_status = ${newStatus},
-            refunded_amount = COALESCE(refunded_amount, 0) + ${requestedAmount},
-            refunded_at = NOW(),
-            deposit_paid_at = NULL,
-            updated_at = NOW()
-          WHERE id = ${original.project_id} AND company_id = ${auth.company.id}
-        `;
       }
 
-      return NextResponse.json({
-        success: true,
-        message: 'Payment reversed',
-        payments,
-        summary: {
-          total,
-          collected,
-          remaining: Math.max(total - collected, 0),
-          status: newStatus,
-        },
-      });
+      break;
     }
 
-    // ── Record a new manual payment (existing behavior, unchanged below) ──
-    const projectId = parseInt(body.project_id);
-
-    if (!projectId || Number.isNaN(projectId)) {
-      return NextResponse.json({ success: false, error: 'Missing project_id' }, { status: 400 });
-    }
-
-    const project = await loadProject(projectId, auth.company.id);
-    if (!project) {
-      return NextResponse.json({ success: false, error: 'Project not found' }, { status: 404 });
-    }
-
-    const amount = parseFloat(body.amount);
-    if (Number.isNaN(amount) || amount === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Enter an amount greater than zero.' },
-        { status: 400 }
-      );
-    }
-    // Refunds go through Stripe, not here — a negative manual row would let
-    // someone quietly reverse a card payment with no money moving.
-    if (amount < 0) {
-      return NextResponse.json(
-        { success: false, error: 'To refund, issue it in Stripe.' },
-        { status: 400 }
-      );
-    }
-
-    const method = VALID_METHODS.includes(body.method) ? body.method : 'other';
-
-    // Classify from what's already recorded, so the list reads sensibly.
-    // Was its own inline copy of the deposit-target and "is it satisfied"
-    // math (duplicated across at least eight other files) — now reads
-    // from lib/billing.ts, the single source of truth. getCollectionKind
-    // is sticky-aware (project.deposit_paid_at), so a quote that grew
-    // after the deposit was already satisfied still correctly classifies
-    // this payment as 'balance', not a reopened 'deposit'.
-       const alreadyPaid = Number(project.payment_amount) || 0;
-    const total = Number(project.quote_total) || 0;
-    const kind = getCollectionKind({
-      total,
-      paidAmount: alreadyPaid,
-      depositType: project.deposit_type,
-      depositValue: project.deposit_value,
-      depositPaidAt: project.deposit_paid_at,
-    });
-    // getCollectionKind can return 'full' — collapse to 'balance' since this
-    // route has no forceFull concept and the payments table's kind column
-    // only accepts 'deposit' | 'payment' | 'balance' | 'refund'.
-    const resolvedKind: 'deposit' | 'balance' = kind === 'deposit' ? 'deposit' : 'balance';
-
-    // Guard against fat-fingering an extra zero.
-    if (total > 0 && alreadyPaid + amount > total * 1.5) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: `That would collect ${(alreadyPaid + amount).toFixed(2)} on a ${total.toFixed(2)} job. Check the amount.`,
-        },
-        { status: 400 }
-      );
-    }
-
-       // Gate on whether money is actually still owed, matching
-    // getOrCreateCheckoutSession's "fully_paid" rule — not a fixed row
-    // count. A hard "2 collections max" blocked exactly this legitimate
-    // case: job paid in full, then new work added to the quote, leaving a
-    // real balance with no valid way to record it manually.
-    if (total > 0 && alreadyPaid >= total) {
-      return NextResponse.json(
-        { success: false, error: 'This job is already paid in full.' },
-        { status: 400 }
-      );
-    }
-
-    const paidOn = typeof body.paid_on === 'string' && body.paid_on ? body.paid_on : null;
-    const note = typeof body.note === 'string' ? body.note.trim().slice(0, 500) || null : null;
-
-    await sql`
-      INSERT INTO payments (
-        project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-        note, recorded_by
-      ) VALUES (
-        ${projectId},
-        ${auth.company.id},
-        ${amount},
-        ${total || null},
-        ${method},
-        ${resolvedKind},
-        ${paidOn ?? new Date().toISOString().split('T')[0]},
-        ${note},
-        ${auth.user.name || auth.user.email || 'Unknown'}
-      )
-    `;
-
-    // payments_sync_project has already updated projects.payment_amount and
-    // payment_status, so re-read rather than computing here.
-    const refreshed = await loadProject(projectId, auth.company.id);
-    const payments = await loadPayments(projectId, auth.company.id);
-    const collected = payments.reduce((s, p) => s + p.amount, 0);
-
-    return NextResponse.json({
-      success: true,
-      message: 'Payment recorded',
-      payments,
-      summary: {
-        total,
-        collected,
-        remaining: Math.max(total - collected, 0),
-        status: refreshed?.payment_status,
-      },
-    });
-  } catch (error) {
-    console.error('Record payment error:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to record payment',
-        details: error instanceof Error ? error.message : String(error),
-      },
-      { status: 500 }
-    );
+    default:
+      console.log(`Unhandled Connect event type: ${event.type}`);
+      break;
   }
-}
 
-/* ═══════════════ DELETE — disabled; use reversal instead ═══════════════
-   Manual payments were previously hard-deletable, which left no trace a
-   payment was ever recorded — no record for the contractor, no record if
-   a customer later disputes what happened. Corrections now go through
-   POST with reverse_payment_id, which inserts a negative 'refund' row
-   (same pattern Stripe refunds already used) so the history stays intact
-   regardless of payment method. */
-export async function DELETE() {
-  return NextResponse.json(
-    { success: false, error: 'Payments can\u2019t be deleted. Use the reverse action to record a correction instead.' },
-    { status: 405 }
-  );
+  return NextResponse.json({ received: true });
 }

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import {
   User, Calendar, FileText, CreditCard, ListChecks,
-  ImageIcon, MessageCircle, Bell, MoreHorizontal, Sparkles, X,
+  ImageIcon, MessageCircle, Bell, MoreHorizontal, Sparkles, X, Receipt,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -21,6 +21,7 @@ const ICONS: Record<string, any> = {
   quote: FileText,
   schedule: Calendar,
   payment: CreditCard,
+  expenses: Receipt,
   tasks: ListChecks,
   photos: ImageIcon,
   reminders: Bell,
@@ -32,14 +33,13 @@ const LABELS: Record<string, string> = {
   quote: 'Quote',
   schedule: 'Schedule',
   payment: 'Invoice',
+  expenses: 'Expenses',
   tasks: 'Tasks',
   photos: 'Media',
   reminders: 'Reminders',
   activity: 'Activity',
 };
 
-// Same visibility rules as the desktop tab strip in LeadModalHeader — kept
-// in sync manually since there wasn't a shared source to import from.
 function buildTabs(lead: any, company: any) {
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const isProject = !!lead.project_id;
@@ -49,6 +49,7 @@ function buildTabs(lead: any, company: any) {
     { id: 'quote', show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
     { id: 'schedule', show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
     { id: 'payment', show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
+    { id: 'expenses', show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
     { id: 'tasks', show: isProject || !can(planTier, 'custom_tasks'), locked: !can(planTier, 'custom_tasks') },
     { id: 'photos', show: isProject || !can(planTier, 'docs_on_card'), locked: !can(planTier, 'docs_on_card') },
     { id: 'reminders', show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
@@ -74,7 +75,7 @@ export default function MobileTabBar({ lead, company, activeTab, onTabChange, on
     setShowMore(false);
   };
 
-    const ItemButton = ({ tab }: { tab: { id: string; locked: boolean } }) => {
+  const ItemButton = ({ tab }: { tab: { id: string; locked: boolean } }) => {
     const Icon = ICONS[tab.id];
     const isActive = activeTab === tab.id;
     return (
@@ -152,12 +153,12 @@ export default function MobileTabBar({ lead, company, activeTab, onTabChange, on
       </AnimatePresence>
 
       {/* ── BOTTOM BAR ── */}
-            <div
+      <div
         className="sm:hidden flex-shrink-0 flex items-stretch border-t border-white/15 shadow-[0_-4px_16px_rgba(0,0,0,0.25)]"
         style={{ background: '#0f172a', paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         {primary.map(tab => <ItemButton key={tab.id} tab={tab} />)}
-                {overflow.length > 0 && (
+        {overflow.length > 0 && (
           <button
             onClick={() => setShowMore(true)}
             className="flex-1 flex flex-col items-center justify-center gap-1 py-2.5 min-w-0"

@@ -1,13 +1,13 @@
-'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, FileText, CreditCard, CheckSquare, Bell, Image, AlertCircle } from 'lucide-react';
+import { Calendar, FileText, CreditCard, CheckSquare, Bell, Image, AlertCircle, Receipt } from 'lucide-react';
 import SchedulingSection from './project-sections/SchedulingSection';
 import QuoteSection from './project-sections/QuoteSection';
 import BillingSection from './project-sections/BillingSection';
 import MediaSection from './project-sections/MediaSection';
 import TasksSection from './project-sections/TasksSection';
 import RemindersSection from './project-sections/RemindersSection';
+import ExpensesSection from './project-sections/ExpensesSection';
 
 type ProjectSectionProps = {
   lead: any;
@@ -47,6 +47,10 @@ export default function ProjectSection({
     if (tab === 'payment') return { section: 'financials', tab: 'payment' };
     if (tab === 'photos') return { section: 'financials', tab: 'media' };
     if (tab === 'docs') return { section: 'financials', tab: 'media' };
+    // Added — routes the new outer 'expenses' tab into the Financials
+    // section, alongside Quote/Billing/Media, same pattern every other
+    // financials-family tab already follows.
+    if (tab === 'expenses') return { section: 'financials', tab: 'expenses' };
     return { section: 'planning', tab: 'schedule' };
   };
 
@@ -56,7 +60,8 @@ export default function ProjectSection({
   const [planningTab, setPlanningTab] = useState<'schedule' | 'tasks' | 'reminders'>(
     resolved.section === 'planning' ? resolved.tab as any : 'schedule'
   );
-  const [financialsTab, setFinancialsTab] = useState<'quote' | 'payment' | 'media'>(
+  // Added 'expenses' to the financialsTab union.
+  const [financialsTab, setFinancialsTab] = useState<'quote' | 'payment' | 'media' | 'expenses'>(
     resolved.section === 'financials' ? resolved.tab as any : 'quote'
   );
   const [activeSection, setActiveSection] = useState<'planning' | 'financials'>(
@@ -134,6 +139,18 @@ export default function ProjectSection({
   color: '#f59e0b',
   count: lead?.payment_amount ? 1 : 0,
 },
+    // Added — sits alongside Quote/Billing/Media in the same tab group.
+    // No count badge yet since ExpensesSection owns its own data fetch
+    // rather than the lead object carrying an expenses array — adding a
+    // count here would need lifting that fetch up to this component or
+    // wiring it into whatever loads `lead` in the first place.
+    {
+      id: 'expenses' as const,
+      label: 'Expenses',
+      icon: Receipt,
+      color: '#ef4444',
+      count: 0,
+    },
     {
       id: 'media' as const,
       label: 'Media',
@@ -269,6 +286,13 @@ export default function ProjectSection({
     activity={activity}
   />
 )}
+          {financialsTab === 'expenses' && (
+            <ExpensesSection
+              lead={lead}
+              companySlug={companySlug}
+              hasProject={hasProject}
+            />
+          )}
           {financialsTab === 'media' && (
             <MediaSection lead={lead} currentUser={currentUser} onRefresh={onRefresh} hasProject={hasProject} />
           )}

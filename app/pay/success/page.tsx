@@ -5,9 +5,9 @@ const sql = neon(process.env.DATABASE_URL!);
 export default async function PaymentSuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ project_id?: string }>;
+  searchParams: Promise<{ project_id?: string; session_id?: string }>;
 }) {
-  const { project_id } = await searchParams;
+  const { project_id, session_id } = await searchParams;
 
   if (!project_id) {
     return <SimpleMessage title="Payment received" body="Thank you for your payment." />;
@@ -25,33 +25,35 @@ export default async function PaymentSuccessPage({
   const companyName = project?.company_name || 'the company';
   const brandColor = project?.email_brand_color_1 || '#2563eb';
 
-  // The MOST RECENT individual transaction on this project — not
-  // projects.payment_amount, which is the lifetime running total across
-  // every payment ever made on this job. Using that here was the same bug
-  // found and fixed in Financials/Dashboard earlier: if a $300 deposit was
-  // already paid last week and this customer just paid a $500 balance,
-  // the old query showed "$800" — the cumulative total — instead of the
-  // $500 they actually just paid. This is arguably the highest-stakes
-  // instance of that bug found this session, since it's shown directly to
-  // the customer as their receipt confirmation, not just an internal view.
+  // FIXED: previously always fell back to "most recent payment on this
+  // project" — the lifetime-most-recent transaction, not necessarily the
+  // one that just happened. That guess was wrong whenever the webhook
+  // inserting the real payment row hadn't finished processing yet when
+  // this page loaded (a real, observed case: a balance payment went
+  // through correctly in Stripe, but this page still showed the older
+  // deposit payment, since the balance row hadn't landed yet).
   //
-  // Caveat, stated plainly rather than hidden: with only project_id in the
-  // URL (no payment id or Stripe session id), "most recent payment on this
-  // project" is the best available proxy for "the payment that just
-  // happened," not a guaranteed exact match — if the webhook that inserts
-  // this row hasn't finished processing yet when this page loads, or two
-  // payments land in very close succession, this could show a stale or
-  // wrong row. If the success URL can be extended to carry the actual
-  // payment id or Stripe checkout session id, that would let this look up
-  // the exact transaction instead of inferring it — worth doing if that's
-  // an easy addition to whatever builds this redirect URL.
-  const paymentRows = await sql`
-    SELECT amount, kind
-    FROM payments
-    WHERE project_id = ${parseInt(project_id)}
-    ORDER BY paid_on DESC, created_at DESC
-    LIMIT 1
-  `;
+  // getOrCreateCheckoutSession now passes the real Stripe checkout
+  // session ID through success_url, so when it's present, this looks up
+  // the EXACT transaction directly instead of guessing. The old
+  // most-recent query is kept as a fallback only for checkout links
+  // created before this change went live, so nothing already sitting in
+  // someone's inbox breaks.
+  const paymentRows = session_id
+    ? await sql`
+        SELECT amount, kind
+        FROM payments
+        WHERE project_id = ${parseInt(project_id)}
+          AND stripe_checkout_session_id = ${session_id}
+        LIMIT 1
+      `
+    : await sql`
+        SELECT amount, kind
+        FROM payments
+        WHERE project_id = ${parseInt(project_id)}
+        ORDER BY paid_on DESC, created_at DESC
+        LIMIT 1
+      `;
   const payment = paymentRows[0];
   const amount = payment?.amount
     ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(parseFloat(payment.amount))

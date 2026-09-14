@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useTransition, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail } from 'lucide-react';
+import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, Receipt, DollarSign } from 'lucide-react';
 import Sidebar from '@/components/dashboard/Sidebar';
 import LeadModal from '@/components/dashboard/LeadModal';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
@@ -54,6 +54,7 @@ type DashboardStats = {
     quote_total: string | number | null;
   }>;
   revenue_this_month: number;
+  expenses_this_month?: number;
   ready_to_invoice: { count: number; value: number };
   recent_payments: Array<{
     id: number;
@@ -65,6 +66,8 @@ type DashboardStats = {
     payment_status: string | null;
   }>;
 };
+
+type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'expenses' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -101,6 +104,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [selectedLeadTab, setSelectedLeadTab] = useState<TopTab>('overview');
   const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -248,12 +252,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     [currentUser, fetchStats]
   );
 
-  const openLead = useCallback(async (leadId: number) => {
+  const openLead = useCallback(async (leadId: number, tab: TopTab = 'overview') => {
     try {
       const res = await fetch(`/api/leads/${leadId}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && data.lead) {
         setSelectedLead(data.lead);
+        setSelectedLeadTab(tab);
         setSelectedLeadPayments(data.payments || []);
         setSelectedLeadActivity(data.activity || []);
       }
@@ -264,9 +269,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   const refreshModalLead = useCallback(async () => {
     if (!selectedLead) return;
-    await openLead(selectedLead.id);
+    await openLead(selectedLead.id, selectedLeadTab);
     fetchStats();
-  }, [selectedLead, openLead, fetchStats]);
+  }, [selectedLead, selectedLeadTab, openLead, fetchStats]);
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -382,7 +387,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
-              {/* Quick Access Outbox Button */}
               <button
                 onClick={() => router.push(`/${company.slug}/outbox`)}
                 className={`p-2 sm:p-2.5 rounded-xl border transition-colors ${
@@ -536,10 +540,11 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 </div>
               </div>
 
-              {/* Business Performance & System Utilities */}
+              {/* Business Performance & Financial Utilities */}
               <div className="min-w-0">
                 <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Business Performance</h2>
                 <div className="space-y-3 sm:space-y-4">
+                  {/* Revenue Card */}
                   <div className={`rounded-2xl p-4 sm:p-5 ${cardBg}`}>
                     <div className="flex items-center justify-between">
                       <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Revenue</p>
@@ -551,6 +556,25 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     </p>
                   </div>
 
+                  {/* Expenses & Profitability Card */}
+                  <button
+                    onClick={() => router.push(`/${company.slug}/dashboard/financials#expenses`)}
+                    className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <Receipt className={`w-4 h-4 ${subText}`} />
+                        <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Job Expenses</p>
+                      </div>
+                      <ArrowRight className={`w-4 h-4 ${subText}`} />
+                    </div>
+                    <p className={`text-xs ${subText} mb-1`}>Logged project costs & materials</p>
+                    <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
+                      {fmtMoney(stats.expenses_this_month ?? 0)}
+                    </p>
+                  </button>
+
+                  {/* Ready to Invoice Card */}
                   <button
                     onClick={() => router.push(`/${company.slug}/leads?status=completed`)}
                     className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
@@ -613,12 +637,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         const statusInfo = p.payment_status && p.payment_status !== 'paid'
                           ? getPaymentStatusDisplay(p.payment_status)
                           : null;
-                        // Same principle applied on Financials: an amount
-                        // rendered in the same strong, full-emphasis color
-                        // as every normal payment claims "uncomplicated,"
-                        // right next to a badge saying otherwise. Dimming
-                        // it here makes the distinction visible at a
-                        // glance instead of only on reading the badge text.
                         const isRefundRelated =
                           p.payment_status === 'refunded' || p.payment_status === 'partially_refunded';
                         return (
@@ -674,6 +692,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       {selectedLead && (
         <LeadModal
           lead={selectedLead}
+          initialTab={selectedLeadTab}
           onClose={() => setSelectedLead(null)}
           onUpdateStatus={updateLeadStatus}
           onAddNote={addNote}

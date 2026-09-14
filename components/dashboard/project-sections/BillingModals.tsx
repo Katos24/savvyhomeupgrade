@@ -116,6 +116,7 @@ type BillingModalsProps = {
 
   // Edit Due Date
   showDueDateEditor: boolean;
+  dueDateEditorPhase: 'deposit' | 'balance';
   setShowDueDateEditor: React.Dispatch<React.SetStateAction<boolean>>;
   savingDueDate: boolean;
   currentDueDate: string;
@@ -212,7 +213,8 @@ export default function BillingModals({
   taxRateDraft,
   setTaxRateDraft,
   handleSaveTaxRate,
-  showDueDateEditor,
+   showDueDateEditor,
+  dueDateEditorPhase,
   setShowDueDateEditor,
   savingDueDate,
   currentDueDate,
@@ -934,8 +936,10 @@ export default function BillingModals({
               className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-[#1c1917]">Edit Due Date</h3>
-                <button
+                <h3 className="text-base font-semibold text-[#1c1917]">
+                  Edit {dueDateEditorPhase === 'deposit' ? 'Deposit' : 'Balance'} Due Date
+                </h3>
+                                <button
                   type="button"
                   onClick={() => !savingDueDate && setShowDueDateEditor(false)}
                   disabled={savingDueDate}

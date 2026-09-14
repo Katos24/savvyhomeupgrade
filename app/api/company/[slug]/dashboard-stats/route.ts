@@ -123,6 +123,19 @@ export async function GET(request: Request, { params }: Props) {
         AND paid_on >= ${monthStart.toISOString().split('T')[0]}
     `;
 
+    // ── Expenses this month: from the expenses ledger. Was missing
+    // entirely — the expenses table didn't exist when this route was
+    // last written, so CompanyDashboardClient's Job Expenses card had
+    // no real data to show. Same shape as revenuePromise above,
+    // deliberately — one is money in, this is money out.
+    const expensesPromise = sql`
+      SELECT COALESCE(SUM(amount), 0) as expenses_this_month
+      FROM expenses
+      WHERE company_id = ${companyId}
+        AND deleted = false
+        AND expense_date >= ${monthStart.toISOString().split('T')[0]}
+    `;
+
     // ── Ready to Invoice: completed jobs with no invoice sent yet ──
     const readyToInvoicePromise = sql`
       SELECT
@@ -147,10 +160,10 @@ export async function GET(request: Request, { params }: Props) {
 
     const [
       leadsResult, estimatesResult, jobsResult, invoicesResult,
-      schedule, revenueResult, readyResult, recentPayments,
+      schedule, revenueResult, expensesResult, readyResult, recentPayments,
     ] = await Promise.all([
       leadsPromise, estimatesPromise, jobsPromise, invoicesPromise,
-      schedulePromise, revenuePromise, readyToInvoicePromise, recentPaymentsPromise,
+      schedulePromise, revenuePromise, expensesPromise, readyToInvoicePromise, recentPaymentsPromise,
     ]);
 
     return NextResponse.json({
@@ -173,6 +186,7 @@ export async function GET(request: Request, { params }: Props) {
       },
       todays_schedule: schedule,
       revenue_this_month: parseFloat(revenueResult[0]?.revenue_this_month || '0'),
+      expenses_this_month: parseFloat(expensesResult[0]?.expenses_this_month || '0'),
       ready_to_invoice: {
         count: parseInt(readyResult[0]?.ready_count || '0', 10),
         value: parseFloat(readyResult[0]?.ready_value || '0'),

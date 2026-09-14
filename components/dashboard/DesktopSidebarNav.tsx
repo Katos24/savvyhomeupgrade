@@ -3,7 +3,7 @@
 import React from 'react';
 import {
   User, Calendar, FileText, CreditCard, ListChecks,
-  ImageIcon, MessageCircle, Bell, Sparkles,
+  ImageIcon, MessageCircle, Bell, Sparkles, Receipt,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
@@ -20,6 +20,7 @@ const ICONS: Record<string, any> = {
   quote: FileText,
   schedule: Calendar,
   payment: CreditCard,
+  expenses: Receipt,
   tasks: ListChecks,
   photos: ImageIcon,
   reminders: Bell,
@@ -31,14 +32,13 @@ const LABELS: Record<string, string> = {
   quote: 'Quote',
   schedule: 'Schedule',
   payment: 'Invoice',
+  expenses: 'Expenses',
   tasks: 'Tasks',
   photos: 'Media',
   reminders: 'Reminders',
   activity: 'Activity',
 };
 
-// Same visibility rules as MobileTabBar / the old header tab strip — kept in
-// sync by hand since there's no single shared source for this list yet.
 function buildTabs(lead: any, company: any) {
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const isProject = !!lead.project_id;
@@ -48,6 +48,7 @@ function buildTabs(lead: any, company: any) {
     { id: 'quote', show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
     { id: 'schedule', show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },
     { id: 'payment', show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
+    { id: 'expenses', show: isProject || !can(planTier, 'quotes'), locked: !can(planTier, 'quotes') },
     { id: 'tasks', show: isProject || !can(planTier, 'custom_tasks'), locked: !can(planTier, 'custom_tasks') },
     { id: 'photos', show: isProject || !can(planTier, 'docs_on_card'), locked: !can(planTier, 'docs_on_card') },
     { id: 'reminders', show: isProject || !can(planTier, 'scheduling'), locked: !can(planTier, 'scheduling') },

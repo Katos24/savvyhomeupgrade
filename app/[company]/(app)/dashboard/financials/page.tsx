@@ -33,6 +33,16 @@ export default async function FinancialsPage({
   // Same missing-column pattern already found and fixed in
   // payments/route.ts and generate-invoice-pdf/route.ts earlier — this is
   // the same gap, just in Financials' own query.
+  //
+  // ADDED: LEFT JOIN to invoices, purely additive, prefixed inv_ to avoid
+  // any collision with the existing p.invoice_sent_at / p.deposit_type
+  // fields above. This is what actually closes the gap where a job with
+  // its deposit paid but its balance invoice never sent showed as
+  // "Partial" — indistinguishable from a balance that WAS sent and is
+  // just sitting unpaid — because _invoiced only ever checked the single
+  // shared invoice_sent_at, which still held the stale deposit-send
+  // timestamp. lib/invoiceState.ts's deriveInvoiceRow is what actually
+  // uses these new fields; this query just makes them available to it.
   const projectRows = await sql`
     SELECT
       p.id,
@@ -52,14 +62,18 @@ export default async function FinancialsPage({
       p.deposit_type,
       p.deposit_value,
       p.deposit_paid_at,
+      p.paid_at,
       COALESCE(p.category, l.category) as category,
       p.status,
       p.created_at,
       p.payment_method,
       l.name as customer_name,
-      l.id as lead_id
+      l.id as lead_id,
+      i.deposit_sent_at as inv_deposit_sent_at,
+      i.sent_at as inv_sent_at
     FROM projects p
     JOIN leads l ON p.lead_id = l.id
+    LEFT JOIN invoices i ON i.project_id = p.id
     WHERE l.company_id = ${company.id}
       AND l.deleted = false
       AND p.quote_total IS NOT NULL
@@ -71,14 +85,6 @@ export default async function FinancialsPage({
   // its own inline copy — same duplication risk as Dashboard's version,
   // which is exactly what let the two surfaces disagree on what counts
   // as "recent" for the same underlying data.
-  //
-  // FIXED: last argument was `false` — meaning this call never fetched
-  // payment_status at all, so FinancialsOverview's "Recent Cash Inflows"
-  // card had no way to show a refunded/partial badge even after that
-  // component was updated to render one. A payment that was later fully
-  // refunded looked identical to real, uncomplicated revenue here, while
-  // Dashboard's own Recent Payments (which does pass true) correctly
-  // showed the badge for the exact same underlying data.
   const paymentRows = await getRecentPayments(sql, company.id, 6, true);
 
   return (

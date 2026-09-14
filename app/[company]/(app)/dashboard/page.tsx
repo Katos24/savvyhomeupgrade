@@ -9,16 +9,6 @@ import CompanyDashboardClient from './CompanyDashboardClient';
 
 export const dynamic = 'force-dynamic';
 
-// ---------------------------------------------------------------------------
-// Types
-//
-// This no longer needs to enumerate every column companies fetch uses —
-// getCompanyBySlug() does SELECT *, so every field below (and every field
-// any other part of the app adds later, like default_deposit_type or
-// default_balance_due_days) is already present on the returned row. This
-// interface just documents/type-hints the fields this specific page reads.
-// ---------------------------------------------------------------------------
-
 interface Company {
   id: number;
   business_type?: string;
@@ -50,10 +40,6 @@ interface Company {
   default_tax_rate?: number | null;
 }
 
-// ---------------------------------------------------------------------------
-// Metadata — dynamically generated per company
-// ---------------------------------------------------------------------------
-
 export async function generateMetadata(
   { params }: { params: Promise<{ company: string }> }
 ): Promise<Metadata> {
@@ -69,10 +55,6 @@ export async function generateMetadata(
     openGraph: { title: `${name} | Dashboard` },
   };
 }
-
-// ---------------------------------------------------------------------------
-// Auth — verify JWT and company membership
-// ---------------------------------------------------------------------------
 
 async function verifyAuth(companySlug: string): Promise<void> {
   const cookieStore = await cookies();
@@ -114,10 +96,6 @@ async function verifyAuth(companySlug: string): Promise<void> {
     redirect(own.length ? `/${own[0].slug}/dashboard` : '/login');
   }
 }
-
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
 
 export default async function CompanyDashboardPage({
   params,
