@@ -437,7 +437,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         {stats && (
           <>
             {/* Stat row: Leads / Estimates / Jobs / Invoices */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
+
               {/* Leads Card */}
               <div className={`rounded-2xl p-4 sm:p-6 ${cardBg}`}>
                 <div className="flex items-center justify-between mb-3">

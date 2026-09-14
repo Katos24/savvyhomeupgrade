@@ -30,20 +30,12 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
   // always renders the `true` default, corrected from localStorage after
   // mount, with a skip-guard so the write-back effect doesn't immediately
   // clobber the corrected value with the stale default.
-  const [isDark, setIsDark] = useState<boolean>(true);
-  const skipFirstThemeWrite = useRef(true);
-  useEffect(() => {
-    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
-  }, []);
-  useEffect(() => {
-    if (skipFirstThemeWrite.current) {
-      skipFirstThemeWrite.current = false;
-      return;
-    }
-    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
-  }, [isDark]);
-
-  const t = themeTokens(isDark);
+   // Dark mode removed — this tab now always renders light, matching
+  // Setup Guide and Payments, neither of which offer a toggle. themeTokens
+  // still gets called (rather than ripping out every t.xxx reference
+  // throughout this large file), just permanently pinned to its light
+  // branch, so every existing style reference stays correct automatically.
+  const t = themeTokens(false);
   const accentColor = company.email_brand_color_1 || '#2563eb';
 
   const [categories, setCategories] = useState<Category[]>(
@@ -277,8 +269,8 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
     }
   };
 
-  if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
-    return <CategoriesLockedSection companySlug={company.slug} isDark={isDark} />;
+    if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
+    return <CategoriesLockedSection companySlug={company.slug} isDark={false} />;
   }
 
   const activeModalCategory =
@@ -294,26 +286,14 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
 
   return (
     <>
-      <div className={`min-h-screen ${t.bg} transition-colors`}>
-        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-10 space-y-6 sm:space-y-8 pb-24">
+      <div className={`w-full ${t.bg} transition-colors`}>
+  <div className="w-full space-y-6 sm:space-y-8 pb-24">
           {/* Header — matches Dashboard's font-light large title + toggle */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className={`text-xs sm:text-sm font-medium ${t.subText}`}>Booking form setup</p>
-              <h1 className={`text-2xl sm:text-4xl font-light leading-tight ${t.heading}`}>Services</h1>
-              <p className={`mt-1 text-xs sm:text-sm ${t.subText}`}>
-                What customers can request, how it's priced, and what you ask them.
-              </p>
-            </div>
-            <button
-              onClick={() => setIsDark((v) => !v)}
-              className={`shrink-0 rounded-xl border p-2.5 transition-colors ${
-                isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
-              }`}
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-            </button>
+                    <div>
+            <h1 className="text-xl font-bold tracking-tight text-slate-900">Services</h1>
+            <p className="mt-0.5 text-xs font-medium text-slate-500">
+              What customers can request, how it's priced, and what you ask them.
+            </p>
           </div>
 
           {/* Stat row — same card language as Dashboard's stat grid */}
@@ -566,7 +546,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
                 quoteTemplate={quoteTemplates.find((qt) => qt.category === cat.value)}
                 questions={customQuestions.filter((q) => q.category === cat.value)}
                 expanded={expandedService === cat.value}
-                isDark={isDark}
+isDark={false}
                 accentColor={accentColor}
                 onToggleExpand={() => setExpandedService(expandedService === cat.value ? null : cat.value)}
                 onDelete={() => setDeleteConfirm({ index, label: cat.label })}
@@ -611,7 +591,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           category={activeModalCategory}
           categoryIndex={activeModal.categoryIndex}
           allCategories={categories}
-          isDark={isDark}
+isDark={false}
           onClose={() => setActiveModal(null)}
           onSaved={(updated) => {
             setCategories(updated);
@@ -628,7 +608,7 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           taxRate={taxRate}
           depositType={depositType}
           depositValue={depositValue}
-          isDark={isDark}
+isDark={false}
           onClose={() => setActiveModal(null)}
           onSaved={setQuoteTemplates}
         />
@@ -639,18 +619,18 @@ export default function CategoriesTab({ company, currentUser }: { company: any; 
           companySlug={company.slug}
           category={activeModalCategory}
           allQuestions={customQuestions}
-          isDark={isDark}
+isDark={false}
           onClose={() => setActiveModal(null)}
           onSaved={setCustomQuestions}
         />
       )}
 
-      {showQuotePreview && <QuoteSheetPreviewModal onClose={() => setShowQuotePreview(false)} isDark={isDark} />}
+      {showQuotePreview && <QuoteSheetPreviewModal onClose={() => setShowQuotePreview(false)} isDark={false} />}
 
       {deleteConfirm && (
         <DeleteServiceConfirmModal
           label={deleteConfirm.label}
-          isDark={isDark}
+isDark={false}
           onCancel={() => setDeleteConfirm(null)}
           onConfirm={confirmDeleteCategory}
         />

@@ -5,27 +5,16 @@ import {
   Loader2,
   CheckCircle2,
   AlertTriangle,
-  ArrowUpRight,
   ExternalLink,
-  Zap,
-  X,
-  PenLine,
-  HelpCircle,
   ChevronDown,
-  ChevronUp,
-  Sparkles,
-  ShieldCheck,
   Mail,
   FileText,
   Calendar,
-  CreditCard,
-  Building2,
-  UserCheck,
-  Receipt,
   Eye,
   Check,
-  SparkleIcon,
-  ArrowRight
+  X,
+  ArrowRight,
+  Link2,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────────
@@ -52,93 +41,43 @@ function describeBlockingReasons(
 }
 
 /* ─────────────────────────────────────────────────────────────
-   BRAND & BADGE COMPONENTS
+   PAYMENT PROCESSING — one status card, one truth, no duplicate
+   messaging between a hero banner and a separate setup card. All
+   the real logic (live status refresh, redirect handling, connect
+   flow) is unchanged from before — only the presentation collapsed
+   from two stacked cards into one, and the four-item prep
+   checklist moved behind a disclosure instead of always-expanded.
 ───────────────────────────────────────────────────────────── */
-
-function StripeWordmark({ className = 'text-xl' }: { className?: string }) {
-  return (
-    <span className={`font-black tracking-tight text-[#635BFF] ${className}`}>
-      stripe
-    </span>
-  );
-}
-
-function MethodBadge({ network }: { network: string }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-slate-200/80 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-600 shadow-2xs transition-all hover:bg-white hover:shadow-xs">
-      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-      {network}
-    </span>
-  );
-}
 
 /* ─────────────────────────────────────────────────────────────
-   HERO / STATUS BANNER
+   PAYMENT PROCESSING — rebuilt to match SetupTab's exact visual
+   language (bordered white card, uppercase header strip, divided
+   rows with a status box + description + status badge + chevron)
+   for a consistent look across Settings tabs.
+
+   Both real options — Stripe and a manual link — are shown as
+   genuinely visible, comparable rows with their real tradeoffs
+   stated in normal-weight, readable text. Neither is hidden behind
+   a collapsed disclosure; Stripe is still the recommended default
+   (marked as such), but the manual alternative is a first-class,
+   equally legible option, not an afterthought.
+
+   MANUAL LINK NEEDS BACKEND SUPPORT NOT YET CONFIRMED TO EXIST:
+   posts action: 'update-payment-link' to the same settings
+   endpoint InvoiceTermsCard already uses for
+   'update-invoice-terms'. If that action doesn't exist yet on
+   /api/company/[slug]/settings, it needs to be added — same
+   shape, writing payment_link_url/payment_link_type.
 ───────────────────────────────────────────────────────────── */
 
-function ConnectionStatusHero({ company }: { company: any }) {
-  const stripeActive = !!company.stripe_connect_onboarded && company.stripe_payment_status === 'active';
-
-  return (
-    <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-linear-to-b from-slate-900 via-slate-900 to-slate-950 p-6 text-white shadow-xl sm:p-8">
-      {/* Decorative ambient background glows */}
-      <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-violet-500/15 blur-3xl" />
-
-      <div className="relative z-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-center">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-indigo-300 backdrop-blur-md">
-            {stripeActive ? (
-              <>
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                </span>
-                Live Payment Gateway
-              </>
-            ) : (
-              <>
-                <Zap className="h-3.5 w-3.5 text-amber-400" />
-                Manual Collection Default
-              </>
-            )}
-          </div>
-
-          <h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-            {stripeActive ? 'Automatic Card Payments Active' : 'Connect Stripe to Accept Cards'}
-          </h2>
-
-          <p className="max-w-xl text-xs sm:text-sm text-slate-400 leading-relaxed">
-            {stripeActive
-              ? 'Invoices automatically issue digital checkout links. Real-time webhook notifications update your ledger instantly.'
-              : 'Record cash, check, or external transfers instantly with zero fees. Connect Stripe below whenever you are ready to accept cards.'}
-          </p>
-        </div>
-
-        <div className="shrink-0">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3.5 backdrop-blur-md">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-              {stripeActive ? <Zap className="h-5 w-5 text-emerald-400" /> : <PenLine className="h-5 w-5 text-indigo-300" />}
-            </div>
-            <div>
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Default Mode</p>
-              <p className="text-sm font-bold text-white">{stripeActive ? 'Stripe Checkout' : 'Manual / Offline'}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
-   STRIPE SETUP CARD (HERO STYLE)
-───────────────────────────────────────────────────────────── */
-
-function StripeSetupCard({ company }: { company: any }) {
+function PaymentProcessingSection({ company }: { company: any }) {
   const [loading, setLoading] = useState(false);
   const [redirectStatus, setRedirectStatus] = useState<'idle' | 'error' | 'denied' | 'already_linked'>('idle');
   const [connectError, setConnectError] = useState<string | null>(null);
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
+  const [stripeExpanded, setStripeExpanded] = useState(false);
+  const [manualExpanded, setManualExpanded] = useState(false);
 
   const [liveStatus, setLiveStatus] = useState<{
     isConnected: boolean;
@@ -152,6 +91,23 @@ function StripeSetupCard({ company }: { company: any }) {
     ? liveStatus.paymentStatus
     : company.stripe_payment_status ?? null;
   const blockingReasons = liveStatus ? liveStatus.blockingReasons : company.stripe_requirements_summary ?? [];
+  const stripeActive = isConnected && paymentStatus === 'active';
+
+  const [linkType, setLinkType] = useState(company.payment_link_type || 'venmo');
+  const [linkUrl, setLinkUrl] = useState(company.payment_link_url || '');
+  const [savingLink, setSavingLink] = useState(false);
+  const [linkSaved, setLinkSaved] = useState(false);
+  const linkIsSet = !!company.payment_link_url;
+  const linkIsDirty =
+    linkUrl !== (company.payment_link_url || '') || linkType !== (company.payment_link_type || 'venmo');
+
+  const methods = [
+    { value: 'venmo', label: 'Venmo' },
+    { value: 'zelle', label: 'Zelle' },
+    { value: 'cashapp', label: 'Cash App' },
+    { value: 'paypal', label: 'PayPal' },
+    { value: 'other', label: 'Other' },
+  ];
 
   async function refreshLiveStatus() {
     setCheckingStatus(true);
@@ -203,173 +159,289 @@ function StripeSetupCard({ company }: { company: any }) {
     }
   }
 
+  async function handleSaveLink() {
+    setSavingLink(true);
+    setLinkSaved(false);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-payment-link',
+          data: { payment_link_url: linkUrl.trim() || null, payment_link_type: linkType },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLinkSaved(true);
+        setTimeout(() => setLinkSaved(false), 2500);
+      }
+    } catch {
+      // Unhandled
+    } finally {
+      setSavingLink(false);
+    }
+  }
+
   const checklistItems = [
-    { icon: Building2, title: 'Tax ID', desc: 'EIN for entities, or SSN/ITIN for sole proprietors' },
-    { icon: FileText, title: 'Legal Information', desc: 'Registered business name, contact info, and address' },
-    { icon: CreditCard, title: 'Payout Destination', desc: 'Bank account and routing number for standard daily transfers' },
-    { icon: UserCheck, title: 'Identity Check', desc: 'Legal representative details and photo ID (if prompted)' },
+    { title: 'Tax ID', desc: 'EIN for a business, or SSN/ITIN if you\u2019re a sole proprietor' },
+    { title: 'Legal information', desc: 'Registered business name, contact info, and address' },
+    { title: 'Payout destination', desc: 'Bank account and routing number for daily transfers' },
+    { title: 'Identity check', desc: 'Legal representative details and photo ID, if Stripe asks' },
   ];
 
   return (
-    <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all hover:shadow-md">
-      {/* Top Banner Header */}
-      <div className="flex flex-col gap-4 border-b border-slate-100 bg-slate-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#635BFF]/10 text-[#635BFF]">
-            <StripeWordmark className="text-2xl" />
-          </div>
+    <section>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">Payment Processing</p>
+
+      {redirectStatus === 'error' && (
+        <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
+          Something went wrong during Stripe setup. Please try connecting again.
+        </div>
+      )}
+      {connectError && (
+        <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
+          {connectError}
+        </div>
+      )}
+
+      {/* ONE bordered card, header strip + divided rows — matching
+          SetupTab's checklist table exactly, so Settings tabs share a
+          consistent visual language instead of each inventing their own. */}
+      <div className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-xs">
+        <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+          <span>Choose How You Get Paid</span>
+          <span>Status</span>
+        </div>
+
+        <div className="divide-y divide-slate-100">
+          {/* ── ROW 1: STRIPE ── */}
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900">Direct Card Integration</h3>
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-bold text-indigo-600">
-                <Sparkles className="h-3 w-3" /> Recommended
-              </span>
-            </div>
-            <p className="text-xs text-slate-500">Instant deposits, automatic ledger updates, zero manual intervention.</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {checkingStatus && (
-            <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-400">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600" /> Syncing...
-            </span>
-          )}
-          <div className="flex items-center gap-1">
-            {['Visa', 'Mastercard', 'Amex', 'Apple Pay'].map((net) => (
-              <MethodBadge key={net} network={net} />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6 sm:p-8 space-y-6">
-        {isConnected && paymentStatus === 'restricted' && (
-          <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-4 text-sm">
-            <div className="flex items-center gap-2 font-bold text-rose-900">
-              <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
-              Payouts temporarily on hold
-            </div>
-            <p className="mt-1 text-xs leading-relaxed text-rose-700">{describeBlockingReasons(blockingReasons)}</p>
-            <a
-              href="https://dashboard.stripe.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-rose-800 underline hover:text-rose-900"
-            >
-              Complete verification on Stripe <ArrowUpRight className="h-3 w-3" />
-            </a>
-          </div>
-        )}
-
-        {redirectStatus === 'error' && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
-            Something went wrong during Stripe setup. Please try connecting again.
-          </div>
-        )}
-        {connectError && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-xs font-medium text-rose-700">
-            {connectError}
-          </div>
-        )}
-
-        {isConnected ? (
-          paymentStatus === 'active' ? (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-emerald-50/50 border border-emerald-100 p-5">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                  <CheckCircle2 className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-emerald-900">Connected and Ready</p>
-                  <p className="text-xs text-emerald-700">Online pay links are active on all new customer invoices.</p>
-                </div>
-              </div>
-              <a
-                href="https://dashboard.stripe.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-xs hover:bg-slate-800 transition-all"
-              >
-                Stripe Dashboard <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-2xl bg-indigo-50/50 border border-indigo-100 p-5">
-              <div>
-                <p className="text-sm font-bold text-indigo-900">Setup Pending Completion</p>
-                <p className="text-xs text-indigo-700">Stripe requires additional business verification before payouts open.</p>
-              </div>
-              <button
-                type="button"
-                onClick={handleConnect}
-                disabled={loading}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#635BFF] px-5 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-[#534ae6] disabled:opacity-50"
-              >
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Resume Setup <ArrowRight className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
-              <ShieldCheck className="h-5 w-5 text-indigo-600 shrink-0 mt-0.5" />
-              <div className="text-xs text-slate-600 leading-relaxed">
-                <span className="font-bold text-slate-900">Secure 2-Minute Setup:</span> Existing Stripe accounts pair instantly. New setups take ~5 minutes and are managed end-to-end on Stripe's encrypted infrastructure.
-              </div>
-            </div>
-
-            {/* Preparation Cards Grid */}
-            <div>
-              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">
-                Have these items ready before clicking connect:
-              </p>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                {checklistItems.map((item, idx) => {
-                  const IconComp = item.icon;
-                  return (
-                    <div key={idx} className="flex items-start gap-3 rounded-2xl border border-slate-200/80 bg-white p-3.5 transition-all hover:border-slate-300 hover:shadow-2xs">
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700">
-                        <IconComp className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">{item.title}</p>
-                        <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">{item.desc}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
             <button
               type="button"
-              onClick={handleConnect}
-              disabled={loading}
-              className="group relative flex w-full items-center justify-center gap-2 rounded-2xl bg-[#635BFF] px-6 py-3.5 text-sm font-bold text-white shadow-md shadow-indigo-500/20 transition-all hover:bg-[#534ae6] hover:shadow-lg hover:shadow-indigo-500/30 active:scale-[0.99] disabled:opacity-60"
+              onClick={() => setStripeExpanded((v) => !v)}
+              className="group flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors hover:bg-slate-50/60"
             >
-              {loading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  Connect with Stripe
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </>
-              )}
+              <div className="flex min-w-0 items-start gap-3.5 pr-4">
+                <div
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all ${
+                    stripeActive
+                      ? 'border-emerald-600 bg-emerald-600 text-white'
+                      : 'border-slate-300 bg-white group-hover:border-slate-400'
+                  }`}
+                >
+                  {stripeActive ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : (
+                    <span className="font-mono text-[10px] text-slate-400 group-hover:text-slate-600">1</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="flex items-center gap-2 text-xs font-semibold text-slate-900 sm:text-sm">
+                    Stripe
+                    <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-indigo-600">Recommended</span>
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-[13px]">
+                    Customers pay online with a card, and your ledger updates the moment they do — nothing to
+                    record by hand. Stripe takes a small processing fee on every payment, and setup takes a
+                    few minutes of real business verification.
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  stripeActive
+                    ? 'border-slate-200 bg-slate-100 text-slate-500'
+                    : isConnected
+                    ? 'border-amber-200 bg-amber-50 text-amber-800'
+                    : 'border-amber-200 bg-amber-50 text-amber-800'
+                }`}>
+                  {stripeActive ? 'Connected' : isConnected ? 'Pending' : 'Not Connected'}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${stripeExpanded ? 'rotate-180' : ''}`} />
+              </div>
             </button>
+
+            {stripeExpanded && (
+              <div className="px-5 pb-5 pl-[3.1rem]">
+                {isConnected && paymentStatus === 'restricted' && (
+                  <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50/70 p-3.5 text-sm">
+                    <div className="flex items-center gap-2 font-bold text-rose-900 text-xs">
+                      <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+                      Payouts temporarily on hold
+                    </div>
+                    <p className="mt-1 text-xs leading-relaxed text-rose-700">{describeBlockingReasons(blockingReasons)}</p>
+                    <a
+                      href="https://dashboard.stripe.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-rose-800 underline hover:text-rose-900"
+                    >
+                      Complete verification on Stripe <ArrowRight className="h-3 w-3" />
+                    </a>
+                  </div>
+                )}
+
+                {stripeActive && (
+                  <a
+                    href="https://dashboard.stripe.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                  >
+                    View Stripe Dashboard <ExternalLink className="h-3 w-3" />
+                  </a>
+                )}
+
+                {isConnected && !stripeActive && paymentStatus !== 'restricted' && (
+                  <button
+                    type="button"
+                    onClick={handleConnect}
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#635BFF] px-4 py-2 text-xs font-bold text-white hover:bg-[#534ae6] transition disabled:opacity-50"
+                  >
+                    {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    Resume Setup <ArrowRight className="h-3.5 w-3.5" />
+                  </button>
+                )}
+
+                {!isConnected && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleConnect}
+                      disabled={loading}
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-[#635BFF] px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-[#534ae6] disabled:opacity-60"
+                    >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Connect Stripe <ArrowRight className="h-4 w-4" /></>}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowChecklist((v) => !v)}
+                      className="mt-3 flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      What you&rsquo;ll need (takes about 2 minutes)
+                      <ChevronDown className={`h-3 w-3 transition-transform ${showChecklist ? 'rotate-180' : ''}`} />
+                    </button>
+                    {showChecklist && (
+                      <div className="mt-2 space-y-2 rounded-xl bg-slate-50 p-3">
+                        {checklistItems.map((item) => (
+                          <div key={item.title} className="text-[11px] leading-relaxed">
+                            <span className="font-semibold text-slate-700">{item.title}:</span>{' '}
+                            <span className="text-slate-500">{item.desc}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
           </div>
-        )}
+
+          {/* ── ROW 2: MANUAL LINK ── */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setManualExpanded((v) => !v)}
+              className="group flex w-full cursor-pointer items-center justify-between px-5 py-4 text-left transition-colors hover:bg-slate-50/60"
+            >
+              <div className="flex min-w-0 items-start gap-3.5 pr-4">
+                <div
+                  className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all ${
+                    linkIsSet
+                      ? 'border-emerald-600 bg-emerald-600 text-white'
+                      : 'border-slate-300 bg-white group-hover:border-slate-400'
+                  }`}
+                >
+                  {linkIsSet ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : (
+                    <span className="font-mono text-[10px] text-slate-400 group-hover:text-slate-600">2</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-slate-900 sm:text-sm">Manual Link</p>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600 sm:text-[13px]">
+                    Venmo, Zelle, Cash App, or PayPal — no processing fee, and works right away with no setup.
+                    The tradeoff: nothing updates automatically. Customers pay you directly, and you have to
+                    open the job and record the payment yourself once it lands. No card payments.
+                  </p>
+                </div>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className={`rounded border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                  linkIsSet
+                    ? 'border-slate-200 bg-slate-100 text-slate-500'
+                    : 'border-amber-200 bg-amber-50 text-amber-800'
+                }`}>
+                  {linkIsSet ? 'Set' : 'Not Set'}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${manualExpanded ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+
+            {manualExpanded && (
+              <div className="px-5 pb-5 pl-[3.1rem]">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <select
+                    value={linkType}
+                    onChange={(e) => setLinkType(e.target.value)}
+                    className="shrink-0 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white"
+                  >
+                    {methods.map((m) => (
+                      <option key={m.value} value={m.value}>{m.label}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="text"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="e.g. venmo.com/u/YourBusiness"
+                    className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white"
+                  />
+                </div>
+                <div className="mt-3 flex items-center justify-end">
+                  <button
+                    type="button"
+                    onClick={handleSaveLink}
+                    disabled={savingLink || !linkIsDirty}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30"
+                  >
+                    {savingLink && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {savingLink ? 'Saving...' : linkSaved ? 'Saved' : 'Save'}
+                    {linkSaved && !savingLink && <Check className="h-3.5 w-3.5 text-emerald-400" />}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+
+      <button
+        type="button"
+        onClick={() => setShowHowItWorks((v) => !v)}
+        className="mt-2 flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
+      >
+        How does this affect what customers see?
+        <ChevronDown className={`h-3 w-3 transition-transform ${showHowItWorks ? 'rotate-180' : ''}`} />
+      </button>
+      {showHowItWorks && (
+        <div className="mt-2 rounded-xl bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-500 space-y-2">
+          <p>
+            <span className="font-semibold text-slate-700">With Stripe connected:</span> every invoice
+            automatically includes a secure pay-online link. The moment a customer pays, your ledger updates
+            on its own.
+          </p>
+          <p>
+            <span className="font-semibold text-slate-700">With a manual link:</span> customers pay you
+            directly. Record it yourself with &ldquo;Record Payment&rdquo; on the job&rsquo;s Invoice tab.
+          </p>
+        </div>
+      )}
+    </section>
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   TERMS & CONDITIONS
-───────────────────────────────────────────────────────────── */
-
-function InvoiceTermsSection({ company }: { company: any }) {
+function InvoiceTermsCard({ company }: { company: any }) {
   const [terms, setTerms] = useState(company.invoice_terms || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -400,37 +472,27 @@ function InvoiceTermsSection({ company }: { company: any }) {
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
-      <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-slate-100 text-slate-700">
-          <Receipt className="h-5 w-5" />
-        </div>
-        <div>
-          <h3 className="text-base font-bold text-slate-900">Standard Payment Terms</h3>
-          <p className="mt-0.5 text-xs text-slate-500">Fine print automatically appended to all generated PDF invoices.</p>
-        </div>
-      </div>
+    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6">
+      <p className="text-sm font-bold text-slate-900">Standard Payment Terms</p>
+      <p className="mt-0.5 text-xs text-slate-500">Appears on every PDF invoice you send.</p>
 
-      <div className="relative">
-        <textarea
-          value={terms}
-          onChange={(e) => setTerms(e.target.value)}
-          rows={3}
-          placeholder="e.g. Net 15 days. A 1.5% monthly late fee applies to overdue balances. All work is warrantied for 12 months."
-          className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50/50 p-4 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
-        />
-      </div>
+      <textarea
+        value={terms}
+        onChange={(e) => setTerms(e.target.value)}
+        rows={3}
+        placeholder="e.g. Net 15 days. A 1.5% monthly late fee applies to overdue balances. All work is warrantied for 12 months."
+        className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
+      />
 
-      <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-[11px] text-slate-400">Applies globally across all invoices.</p>
+      <div className="mt-3 flex items-center justify-end">
         <button
           type="button"
           onClick={handleSave}
           disabled={saving || !isDirty}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30"
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30"
         >
           {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {saving ? 'Saving...' : saved ? 'Saved Successfully' : 'Save Default Terms'}
+          {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
           {saved && !saving && <Check className="h-3.5 w-3.5 text-emerald-400" />}
         </button>
       </div>
@@ -438,11 +500,7 @@ function InvoiceTermsSection({ company }: { company: any }) {
   );
 }
 
-/* ─────────────────────────────────────────────────────────────
-   PREVIEWS & EMAIL OVERVIEW
-───────────────────────────────────────────────────────────── */
-
-function PreviewsSection({ company }: { company: any }) {
+function InvoicePreviewCard({ company }: { company: any }) {
   const [activeTab, setActiveTab] = useState<'email' | 'invoice'>('email');
   const [expandedInvoice, setExpandedInvoice] = useState(false);
 
@@ -465,48 +523,36 @@ function PreviewsSection({ company }: { company: any }) {
   const previewUrl = `/api/company/${company.slug}/preview-invoice`;
 
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-slate-900">Client Presentation Preview</h3>
-          <p className="text-xs text-slate-500">How your invoices and digital notifications display to customers.</p>
+          <p className="text-sm font-bold text-slate-900">Preview</p>
+          <p className="text-xs text-slate-500">Exactly what customers see.</p>
         </div>
-
-        <div className="flex items-center gap-2">
-          {/* Segmented Control */}
-          <div className="inline-flex items-center rounded-2xl bg-slate-100 p-1 border border-slate-200/60">
-            <button
-              type="button"
-              onClick={() => setActiveTab('email')}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-                activeTab === 'email' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <Mail className="h-3.5 w-3.5" /> Email
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('invoice')}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
-                activeTab === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              <FileText className="h-3.5 w-3.5" /> Invoice PDF
-            </button>
-          </div>
-
-          <a
-            href={`/${company.slug}/home?section=email-templates`}
-            className="inline-flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition"
+        <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/60">
+          <button
+            type="button"
+            onClick={() => setActiveTab('email')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              activeTab === 'email' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+            }`}
           >
-            Templates <ArrowUpRight className="h-3.5 w-3.5 text-slate-400" />
-          </a>
+            <Mail className="h-3.5 w-3.5" /> Email
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('invoice')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
+              activeTab === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <FileText className="h-3.5 w-3.5" /> Invoice PDF
+          </button>
         </div>
       </div>
 
       {activeTab === 'email' && (
-        <div className="mx-auto w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md">
-          {/* Email Frame Bar */}
+        <div className="mx-auto mt-4 w-full max-w-xl overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
           <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
             <div className="flex gap-1.5">
               <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
@@ -568,18 +614,17 @@ function PreviewsSection({ company }: { company: any }) {
       )}
 
       {activeTab === 'invoice' && (
-        <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50 p-3 sm:p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-500">Live Dynamic Render</span>
+        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50 p-3">
+          <div className="mb-3 flex items-center justify-end">
             <button
               type="button"
               onClick={() => setExpandedInvoice(true)}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50"
             >
               Full Screen <Eye className="h-3.5 w-3.5" />
             </button>
           </div>
-          <div className="mx-auto h-[480px] w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-2xs">
+          <div className="mx-auto h-[420px] w-full max-w-2xl overflow-hidden rounded-lg border border-slate-200/80 bg-white">
             <iframe src={previewUrl} title="Sample invoice preview" className="h-full w-full border-0 pointer-events-none" />
           </div>
         </div>
@@ -591,11 +636,11 @@ function PreviewsSection({ company }: { company: any }) {
           onClick={() => setExpandedInvoice(false)}
         >
           <div
-            className="relative flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+            className="relative flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <span className="text-sm font-bold text-slate-900">Document Inspection</span>
+              <span className="text-sm font-bold text-slate-900">Invoice Preview</span>
               <button type="button" onClick={() => setExpandedInvoice(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
@@ -609,75 +654,30 @@ function PreviewsSection({ company }: { company: any }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   HOW IT WORKS ACCORDION
-───────────────────────────────────────────────────────────── */
-
-function HowItWorksAccordion() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between p-6 text-left font-bold text-slate-800 hover:bg-slate-50/50 transition"
-      >
-        <span className="flex items-center gap-2.5 text-sm">
-          <HelpCircle className="h-4 w-4 text-indigo-600" />
-          How do online invoice payments work?
-        </span>
-        {open ? <ChevronUp className="h-4 w-4 text-slate-400" /> : <ChevronDown className="h-4 w-4 text-slate-400" />}
-      </button>
-      {open && (
-        <div className="space-y-4 border-t border-slate-100 p-6 pt-4 text-xs leading-relaxed text-slate-600 sm:text-sm">
-          <div className="flex items-start gap-3 rounded-2xl bg-indigo-50/50 p-4">
-            <Zap className="mt-0.5 h-4 w-4 shrink-0 text-indigo-600" />
-            <div>
-              <p className="font-bold text-slate-900">With Stripe Connected</p>
-              <p className="mt-0.5 text-xs text-slate-600">Invoices automatically append secure pay-online checkout links. The moment a client pays, webhooks mark the invoice paid and log the deposit.</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 rounded-2xl bg-slate-50 p-4">
-            <PenLine className="mt-0.5 h-4 w-4 shrink-0 text-slate-600" />
-            <div>
-              <p className="font-bold text-slate-900">Without Stripe (Manual Mode)</p>
-              <p className="mt-0.5 text-xs text-slate-600">Accept cash, Zelle, Venmo, or check offline. Click "Record Payment" manually on the invoice tab to update balances.</p>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────────────────
    MAIN PAGE LAYOUT
 ───────────────────────────────────────────────────────────── */
 
 export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
   return (
-    <div className="mx-auto max-w-5xl space-y-8 font-sans text-slate-900 antialiased pb-12">
-      {/* Header */}
+    <div className="w-full font-sans text-slate-900 antialiased">
+      <div className="w-full space-y-8 pb-12">
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Payments & Processing</h1>
-        <p className="mt-1 text-xs sm:text-sm font-medium text-slate-500">
-          Manage payment processing, automatic card collection, and invoice layout settings.
+        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Payments</h1>
+        <p className="mt-1 text-xs sm:text-sm text-slate-500">
+          Connect card payments and set how your invoices look to customers.
         </p>
       </div>
 
-      {/* Connection State Banner */}
-      <ConnectionStatusHero company={company} />
+      <PaymentProcessingSection company={company} />
 
-      {/* Stripe Interactive Card */}
-      <StripeSetupCard company={company} />
-
-      {/* Help & Workflow FAQ */}
-      <HowItWorksAccordion />
-
-      {/* Global Invoice Terms */}
-      <InvoiceTermsSection company={company} />
-
-      {/* Realtime Previews */}
-      <PreviewsSection company={company} />
+      <section>
+        <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">Invoice Presentation</p>
+        <div className="space-y-3">
+          <InvoiceTermsCard company={company} />
+          <InvoicePreviewCard company={company} />
+        </div>
+      </section>
+      </div>
     </div>
   );
 }
