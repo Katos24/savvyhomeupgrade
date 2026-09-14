@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo, useTransition, useEffect } from 'react';
+import { useState, useMemo, useTransition, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Download, ChevronDown, RefreshCw } from 'lucide-react';
+import { Download, ChevronDown, RefreshCw, Sun, Moon } from 'lucide-react';
 import FinancialsOverview from './FinancialsOverview';
 import InvoicesList from './InvoicesList';
 import FinancialsExpenses from './FinancialsExpenses';
@@ -15,9 +15,6 @@ type Props = {
   company: any;
   projects: any[];
   isBookkeeperView?: boolean;
-  // Real transactions from the payments ledger — one row per actual
-  // payment, not one row per job. See page.tsx for why this had to become
-  // a separate query instead of being derived from `projects` below.
   recentPayments?: any[];
 };
 
@@ -46,44 +43,36 @@ export default function FinancialsClient({
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<Tab>('overview');
   const [activeFilter, setActiveFilter] = useState<InvoiceState | 'all'>('all');
+  
   const router = useRouter();
   const pathname = usePathname();
   const [isRefreshing, startRefresh] = useTransition();
 
-  // Same shared 'dashboard-theme' key and same storage/focus-listener
-  // pattern CompanyShell already uses. This page previously had zero
-  // dark-mode code at all — every card hardcoded light colors — while
-  // sitting inside a shell that DOES paint a dark background when the
-  // toggle is on elsewhere (Dashboard, Leads). That mismatch, not any
-  // actual bug, was the 'renders weird when dark carries over' report:
-  // a light-only page rendered on top of a dark shell background.
+  // Dark mode state management & synchronization
   const [isDark, setIsDark] = useState<boolean>(true);
-  // FIXED: the previous version relied on 'storage' and 'focus' browser
-  // events to notice a theme change made on another page. Neither one
-  // actually fires for the ordinary case of clicking a sidebar link and
-  // navigating from Dashboard to Financials in the same tab — 'storage'
-  // only fires in OTHER tabs/windows, never the one that made the
-  // change, and 'focus' only fires when the whole browser window
-  // regains focus (switching apps or tabs), not on an in-app route
-  // change. The only thing that ever re-ran the read was a hard reload,
-  // which is exactly "you need to refresh to go back to light." Keying
-  // this effect on pathname instead means it re-reads localStorage on
-  // every actual navigation into this page, mount or not — matching how
-  // someone actually moves between pages in practice. 'storage' and
-  // 'focus' are kept too, harmlessly, for the genuinely separate cases
-  // they DO cover (a second tab open side by side, or switching back
-  // from another app).
+
   useEffect(() => {
-    const onStorage = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
-    onStorage();
-    window.addEventListener('storage', onStorage);
-    window.addEventListener('focus', onStorage);
+    const syncTheme = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+    syncTheme();
+
+    window.addEventListener('storage', syncTheme);
+    window.addEventListener('focus', syncTheme);
     return () => {
-      window.removeEventListener('storage', onStorage);
-      window.removeEventListener('focus', onStorage);
+      window.removeEventListener('storage', syncTheme);
+      window.removeEventListener('focus', syncTheme);
     };
   }, [pathname]);
 
+  const skipFirstThemeWrite = useRef(true);
+  useEffect(() => {
+    if (skipFirstThemeWrite.current) {
+      skipFirstThemeWrite.current = false;
+      return;
+    }
+    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+  }, [isDark]);
+
+  // Derived Financial Data
   const periodFiltered = useMemo(
     () => filterByPeriod(projects, period, customRange?.start, customRange?.end),
     [projects, period, customRange]
@@ -123,12 +112,6 @@ export default function FinancialsClient({
         customer_name: p.customer_name,
         payment_date: p.paid_on,
         _collected: parseFloat(p.amount) || 0,
-        // FIXED: this mapping picked four specific fields and silently
-        // dropped everything else — including payment_status, even
-        // after page.tsx started actually fetching it. It existed the
-        // whole time on `p.payment_status`, it just never survived the
-        // trip from the raw query result to what FinancialsOverview
-        // actually receives as props.
         payment_status: p.payment_status,
       })),
     [realPayments]
@@ -151,32 +134,51 @@ export default function FinancialsClient({
     setTab('invoices');
   };
 
+  const buttonBaseClass = `inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+    isDark
+      ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
+      : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
+  }`;
+
   return (
-    <div className={isDark ? 'bg-[#0b0f17] min-h-screen text-slate-100' : 'bg-[#faf9f5] min-h-screen text-stone-900'}>
+    <div className={isDark ? 'min-h-screen bg-[#0b0f17] text-slate-100' : 'min-h-screen bg-[#faf9f5] text-stone-900'}>
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>Financials</h1>
-          <div className="flex items-center gap-2">
+        
+        {/* Top Header Bar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <h1 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>
+            Financials
+          </h1>
+
+          {/* Action Toolbar */}
+          <div className="flex flex-wrap items-center gap-2">
+            
+            {/* Theme Toggle Button */}
+            <button
+              onClick={() => setIsDark((v) => !v)}
+              className={buttonBaseClass}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+            </button>
+
+            {/* Period Selector Dropdown */}
             <div className="relative">
-              <button
-                onClick={() => setPeriodOpen((v) => !v)}
-                className={`inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-sm font-medium transition-colors ${
-                  isDark
-                    ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
-                }`}
-              >
+              <button onClick={() => setPeriodOpen((v) => !v)} className={buttonBaseClass}>
                 {period === 'custom' && customRange
                   ? `${customRange.start} – ${customRange.end}`
                   : PERIODS.find((p) => p.value === period)?.label}
                 <ChevronDown className={`h-3.5 w-3.5 ${isDark ? 'text-slate-400' : 'text-stone-400'}`} />
               </button>
+
               {periodOpen && (
                 <>
-                  <div className="fixed inset-0 z-10" onClick={() => setPeriodOpen(false)} />
-                  <div className={`absolute right-0 top-full z-20 mt-1.5 w-64 overflow-hidden rounded-xl border shadow-lg ${
-                    isDark ? 'border-white/10 bg-[#0f1420]' : 'border-stone-200 bg-white'
-                  }`}>
+                  <div className="fixed inset-0 z-20" onClick={() => setPeriodOpen(false)} />
+                  <div
+                    className={`absolute right-0 top-full z-30 mt-1.5 w-64 overflow-hidden rounded-xl border shadow-lg ${
+                      isDark ? 'border-white/10 bg-[#0f1420]' : 'border-stone-200 bg-white'
+                    }`}
+                  >
                     {PERIODS.filter((p) => p.value !== 'custom').map((p) => (
                       <button
                         key={p.value}
@@ -184,7 +186,7 @@ export default function FinancialsClient({
                           setPeriod(p.value);
                           setPeriodOpen(false);
                         }}
-                        className={`block w-full px-4 py-2.5 text-left text-sm transition-colors ${
+                        className={`block w-full px-4 py-2.5 text-left text-xs transition-colors ${
                           isDark ? 'hover:bg-white/5' : 'hover:bg-stone-50'
                         } ${
                           period === p.value
@@ -195,14 +197,19 @@ export default function FinancialsClient({
                         {p.label}
                       </button>
                     ))}
-                    <div className={`border-t px-4 py-3 ${isDark ? 'border-white/10' : 'border-stone-100'} ${
-                      period === 'custom' ? (isDark ? 'bg-teal-500/10' : 'bg-teal-50/40') : ''
-                    }`}>
-                      <p className={`mb-2 text-sm ${
-                        period === 'custom'
-                          ? 'font-semibold text-teal-500'
-                          : isDark ? 'text-slate-300' : 'text-stone-600'
-                      }`}>
+
+                    <div
+                      className={`border-t px-4 py-3 ${
+                        isDark ? 'border-white/10' : 'border-stone-100'
+                      } ${period === 'custom' ? (isDark ? 'bg-teal-500/10' : 'bg-teal-50/40') : ''}`}
+                    >
+                      <p
+                        className={`mb-2 text-xs font-medium ${
+                          period === 'custom'
+                            ? 'font-semibold text-teal-500'
+                            : isDark ? 'text-slate-300' : 'text-stone-600'
+                        }`}
+                      >
                         Custom range
                       </p>
                       <div className="space-y-2">
@@ -244,63 +251,57 @@ export default function FinancialsClient({
                 </>
               )}
             </div>
+
+            {/* Refresh Button */}
             <button
               onClick={() => startRefresh(() => router.refresh())}
               disabled={isRefreshing}
-              className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors disabled:opacity-50 ${
-                isDark
-                  ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-                  : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
-              }`}
+              className={`${buttonBaseClass} disabled:opacity-50`}
             >
               <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
               Refresh
             </button>
+
+            {/* Export Dropdown / Link */}
             {tab === 'expenses' ? (
               <div className="relative">
-                <button
-                  onClick={() => setExportMenuOpen((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                    isDark
-                      ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-                      : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
-                  }`}
-                >
+                <button onClick={() => setExportMenuOpen((v) => !v)} className={buttonBaseClass}>
                   <Download className="h-3.5 w-3.5" />
                   Export
                   <ChevronDown className={`h-3 w-3 ${isDark ? 'text-slate-400' : 'text-stone-400'}`} />
                 </button>
+
                 {exportMenuOpen && (
                   <>
-                    <div className="fixed inset-0 z-10" onClick={() => setExportMenuOpen(false)} />
-                    <div className={`absolute right-0 top-full z-20 mt-1.5 w-56 overflow-hidden rounded-xl border shadow-lg ${
-                      isDark ? 'border-white/10 bg-[#0f1420]' : 'border-stone-200 bg-white'
-                    }`}>
-                      {/* Two genuinely different questions, two files —
-                          a ledger row is "one expense," a profit-summary
-                          row is "one job." Forcing both into one export
-                          means guessing wrong for someone half the time. */}
+                    <div className="fixed inset-0 z-20" onClick={() => setExportMenuOpen(false)} />
+                    <div
+                      className={`absolute right-0 top-full z-30 mt-1.5 w-56 overflow-hidden rounded-xl border shadow-lg ${
+                        isDark ? 'border-white/10 bg-[#0f1420]' : 'border-stone-200 bg-white'
+                      }`}
+                    >
                       <a
                         href={`/api/company/${company.slug}/expenses-export`}
                         onClick={() => setExportMenuOpen(false)}
-                        className={`block px-4 py-3 text-left text-sm transition-colors ${
-                          isDark ? 'hover:bg-white/5 text-slate-200' : 'hover:bg-stone-50 text-stone-700'
+                        className={`block px-4 py-3 text-left transition-colors ${
+                          isDark ? 'text-slate-200 hover:bg-white/5' : 'text-stone-700 hover:bg-stone-50'
                         }`}
                       >
-                        <span className="block font-medium">Expense Ledger</span>
-                        <span className={`block text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
+                        <span className="block text-xs font-medium">Expense Ledger</span>
+                        <span className={`mt-0.5 block text-[11px] ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
                           Every logged expense, one row each
                         </span>
                       </a>
                       <a
                         href={`/api/company/${company.slug}/profit-summary-export`}
                         onClick={() => setExportMenuOpen(false)}
-                        className={`block px-4 py-3 text-left text-sm transition-colors border-t ${
-                          isDark ? 'hover:bg-white/5 text-slate-200 border-white/10' : 'hover:bg-stone-50 text-stone-700 border-stone-100'
+                        className={`block border-t px-4 py-3 text-left transition-colors ${
+                          isDark
+                            ? 'border-white/10 text-slate-200 hover:bg-white/5'
+                            : 'border-stone-100 text-stone-700 hover:bg-stone-50'
                         }`}
                       >
-                        <span className="block font-medium">Profit Summary</span>
-                        <span className={`block text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
+                        <span className="block text-xs font-medium">Profit Summary</span>
+                        <span className={`mt-0.5 block text-[11px] ${isDark ? 'text-slate-500' : 'text-stone-400'}`}>
                           Income, expenses & profit per job
                         </span>
                       </a>
@@ -309,14 +310,7 @@ export default function FinancialsClient({
                 )}
               </div>
             ) : (
-              <a
-                href={exportHref}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                  isDark
-                    ? 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10'
-                    : 'border-stone-300 bg-white text-stone-700 hover:bg-stone-50'
-                }`}
-              >
+              <a href={exportHref} className={buttonBaseClass}>
                 <Download className="h-3.5 w-3.5" />
                 Export
               </a>
@@ -324,12 +318,15 @@ export default function FinancialsClient({
           </div>
         </div>
 
+        {/* Navigation Tabs */}
         <div className={`mb-6 flex items-center gap-6 border-b ${isDark ? 'border-white/10' : 'border-stone-200'}`}>
-          {([
-            ['overview', 'Overview'],
-            ['invoices', 'Invoices'],
-            ['expenses', 'Expenses'],
-          ] as const).map(([key, label]) => (
+          {(
+            [
+              ['overview', 'Overview'],
+              ['invoices', 'Invoices'],
+              ['expenses', 'Expenses'],
+            ] as const
+          ).map(([key, label]) => (
             <button
               key={key}
               onClick={() => {
@@ -340,18 +337,27 @@ export default function FinancialsClient({
               }}
               className={`relative pb-3 text-sm font-medium transition-colors ${
                 tab === key
-                  ? isDark ? 'text-white' : 'text-stone-900'
-                  : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-stone-500 hover:text-stone-700'
+                  ? isDark
+                    ? 'text-white'
+                    : 'text-stone-900'
+                  : isDark
+                  ? 'text-slate-500 hover:text-slate-300'
+                  : 'text-stone-500 hover:text-stone-700'
               }`}
             >
               {label}
               {tab === key && (
-                <span className={`absolute inset-x-0 -bottom-px h-0.5 rounded-full ${isDark ? 'bg-white' : 'bg-stone-900'}`} />
+                <span
+                  className={`absolute inset-x-0 -bottom-px h-0.5 rounded-full ${
+                    isDark ? 'bg-white' : 'bg-stone-900'
+                  }`}
+                />
               )}
             </button>
           ))}
         </div>
 
+        {/* Tab Content */}
         <div style={{ display: tab === 'overview' ? 'block' : 'none' }}>
           <FinancialsOverview
             isDark={isDark}
@@ -368,24 +374,24 @@ export default function FinancialsClient({
             onSelectFilter={handleSelectFilter}
           />
         </div>
+        
         <div style={{ display: tab === 'invoices' ? 'block' : 'none' }}>
           <InvoicesList
             company={company}
             withMoney={withMoney}
             isBookkeeperView={isBookkeeperView}
+            isDark={isDark}
             filter={activeFilter}
             onFilterChange={setActiveFilter}
             search={search}
             onSearchChange={setSearch}
           />
         </div>
+
         <div style={{ display: tab === 'expenses' ? 'block' : 'none' }}>
-          <FinancialsExpenses
-            isDark={isDark}
-            company={company}
-            withMoney={withMoney}
-          />
+          <FinancialsExpenses isDark={isDark} company={company} withMoney={withMoney} />
         </div>
+
       </div>
     </div>
   );

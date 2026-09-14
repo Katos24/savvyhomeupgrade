@@ -285,7 +285,36 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     month: 'short',
     day: 'numeric',
   });
+
+  // Brand colors are picked for buttons/backgrounds, not guaranteed
+// readable as small text on a light page — a pale or near-white brand
+// color rendered directly as text color here became nearly invisible in
+// light mode. This checks perceived brightness and darkens anything too
+// light before using it as text, while leaving darker brand colors
+// completely untouched.
+function readableTextColor(hex: string, isDark: boolean): string {
+  const clean = hex.replace('#', '');
+  if (clean.length !== 6) return hex;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  // Standard perceived-brightness formula, 0-255.
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  // In light mode, a bright color on a light background is the problem.
+  // In dark mode, the opposite risk exists (a very dark brand color on a
+  // near-black background) — checked the same way, just inverted.
+  const tooLight = !isDark && brightness > 200;
+  const tooDark = isDark && brightness < 55;
+  if (!tooLight && !tooDark) return hex;
+  const factor = tooLight ? 0.55 : 1.8;
+  const adjust = (c: number) => Math.min(255, Math.max(0, Math.round(tooLight ? c * factor : c * factor)));
+  const toHex = (c: number) => c.toString(16).padStart(2, '0');
+  return `#${toHex(adjust(r))}${toHex(adjust(g))}${toHex(adjust(b))}`;
+}
+
   const accentColor = company.email_brand_color_1 || '#2563eb';
+  const accentTextColor = readableTextColor(accentColor, isDark);
+
 
   const bg = isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]';
   const cardBg = isDark ? 'bg-[#0f1420] border border-white/10' : 'bg-white border border-[#e7e2d8]';
@@ -296,7 +325,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${bg}`} role="status" aria-label="Loading dashboard">
-        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" style={{ color: accentColor }} />
+        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" style={{ color: accentTextColor}} />
       </div>
     );
   }

@@ -16,6 +16,7 @@ import {
   HelpCircle,
   ExternalLink,
   ChevronRight,
+  ChevronDown
 } from 'lucide-react';
 import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -388,21 +389,30 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           </button>
         </div>
 
-        {/* Mobile: Horizontal Pill Bar */}
-        <div className="flex lg:hidden overflow-x-auto gap-2 pb-4 mb-6 scrollbar-none border-b border-stone-200">
-          {visibleSections.map((s) => (
-            <SectionPill
-              key={s.key}
-              icon={s.icon}
-              imageUrl={s.imageUrl}
-              label={s.label}
-              active={activeSection === s.key}
-              locked={s.locked}
-              accentColor={accentColor}
-              onClick={() => setActiveSection(s.key)}
-            />
+       {/* Mobile: Section Dropdown Selector */}
+<div className="block lg:hidden mb-6">
+  <div className="relative">
+    <select
+      id="mobile-section-select"
+      value={activeSection}
+      onChange={(e) => setActiveSection(e.target.value as SectionKey)}
+      className="w-full appearance-none bg-white border border-stone-200/90 rounded-2xl px-4 py-3.5 pr-10 text-sm font-semibold text-stone-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 transition-all cursor-pointer"
+    >
+      {sectionGroups.map((group) => (
+        <optgroup key={group.label} label={group.label}>
+          {group.items.map((s) => (
+            <option key={s.key} value={s.key}>
+              {s.label} {s.locked ? '🔒' : ''}
+            </option>
           ))}
-        </div>
+        </optgroup>
+      ))}
+    </select>
+    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-stone-500">
+      <ChevronDown className="w-4 h-4" />
+    </div>
+  </div>
+</div>
 
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
           {/* Desktop: Navigation Rail */}
