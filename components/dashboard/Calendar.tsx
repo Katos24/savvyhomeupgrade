@@ -169,7 +169,8 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
     <div className="min-h-screen w-full bg-[#F2EDE4] text-[#0F1F3D] pb-20">
 
       {/* STICKY HEADER */}
-      <nav className="sticky top-0 z-40 bg-[#F2EDE4]/95 backdrop-blur-md border-b border-[#D1C9BD]/60 px-3 sm:px-6 py-2.5 sm:py-4">
+<nav className="sticky top-0 z-10 bg-[#F2EDE4]/95 backdrop-blur-md border-b border-[#D1C9BD]/60 px-3 sm:px-6 py-2.5 sm:py-4">
+
         <div className="w-full flex items-center justify-between gap-2">
 
           {/* Left Side Header */}
