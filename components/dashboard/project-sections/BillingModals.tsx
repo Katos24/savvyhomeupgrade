@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import {
   X,
   Loader2,
@@ -10,7 +11,9 @@ import {
   AlertCircle,
   Clock,
   Check,
+  Eye
 } from 'lucide-react';
+
 
 const fmt = (n: number | null | undefined) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
@@ -41,6 +44,11 @@ const paymentMethodLabels: Record<string, string> = {
 // modal is currently open.
 type BillingModalsProps = {
   lead: any;
+  
+
+//PReview Invoice
+    companySlug: string;
+
 
   // Send Invoice
   showSendConfirm: boolean;
@@ -151,6 +159,7 @@ type BillingModalsProps = {
 
 export default function BillingModals({
   lead,
+  companySlug,
   showSendConfirm,
   setShowSendConfirm,
   sending,
@@ -237,11 +246,42 @@ export default function BillingModals({
   lastReminderSent,
   daysSinceReminder,
   handleSendReminder,
-  previewHtml,
+   previewHtml,
   setPreviewHtml,
 }: BillingModalsProps) {
-  return (
+  const [showInvoicePreview, setShowInvoicePreview] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [loadingPreviewPdf, setLoadingPreviewPdf] = useState(false);
+
+  // The endpoint sends Content-Disposition: attachment (same reason
+  // handleDownload elsewhere does its own blob fetch instead of a plain
+  // link) — pointing an iframe straight at that URL downloads instead of
+  // rendering. Fetching as a blob and feeding the iframe an object URL
+  // sidesteps that header entirely, since it's no longer a direct
+  // navigation to the endpoint.
+  const openInvoicePreview = async () => {
+    setShowInvoicePreview(true);
+    setLoadingPreviewPdf(true);
+    try {
+      const res = await fetch(`/api/company/${companySlug}/generate-invoice-pdf?project_id=${lead?.project_id}`);
+      const blob = await res.blob();
+      setPreviewPdfUrl(URL.createObjectURL(blob));
+    } catch {
+      setPreviewPdfUrl(null);
+    } finally {
+      setLoadingPreviewPdf(false);
+    }
+  };
+
+  const closeInvoicePreview = () => {
+    setShowInvoicePreview(false);
+    if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
+    setPreviewPdfUrl(null);
+  };
+    return (
     <>
+
+    
       {/* MODAL 1: SEND INVOICE */}
       <AnimatePresence>
         {showSendConfirm && (
@@ -337,6 +377,15 @@ export default function BillingModals({
                     <p className="text-xl font-bold text-[#1c1917] tabular-nums">{fmt(remaining)}</p>
                   </div>
                 )}
+
+                               <button
+                  type="button"
+                  onClick={openInvoicePreview}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-[#e7e2d8] py-2 text-xs font-semibold text-[#57534e] hover:bg-[#f5f1e8] transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Preview the actual invoice before sending
+                </button>
 
                 <div
                   className={`flex items-start gap-2 p-2.5 rounded-xl border text-xs ${
@@ -446,6 +495,53 @@ export default function BillingModals({
                   )}
                 </button>
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+            {/* PREVIEW: the real, actual PDF the customer will receive — not
+          a recreation. Reuses the exact same endpoint handleDownload
+          already calls, so there's zero risk of this preview ever
+          drifting from what actually gets sent. */}
+           <AnimatePresence>
+        {showInvoicePreview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[300] flex items-center justify-center bg-[#1c1917]/60 backdrop-blur-sm p-3 sm:p-4"
+            onClick={closeInvoicePreview}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.97 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.97 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden shadow-2xl border border-[#e7e2d8]"
+            >
+              <div className="px-4 py-3 border-b border-[#e7e2d8] flex items-center justify-between shrink-0">
+                <span className="text-sm font-semibold text-[#1c1917]">Invoice Preview</span>
+                <button
+                  type="button"
+                  onClick={closeInvoicePreview}
+                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  aria-label="Close"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              {loadingPreviewPdf ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 animate-spin text-[#a8a29e]" />
+                </div>
+              ) : previewPdfUrl ? (
+                <iframe src={previewPdfUrl} title="Invoice preview" className="flex-1 border-0" />
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-xs text-[#a8a29e]">Couldn&rsquo;t load the preview.</p>
+                </div>
+              )}
             </motion.div>
           </motion.div>
         )}

@@ -938,6 +938,7 @@ export default function BillingSection({
 
       <BillingModals
         lead={lead}
+        companySlug={companySlug}
         showSendConfirm={showSendConfirm}
         setShowSendConfirm={setShowSendConfirm}
         sending={sending}

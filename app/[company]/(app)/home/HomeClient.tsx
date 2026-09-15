@@ -52,6 +52,7 @@ type Company = {
   stripe_connect_onboarded: boolean;
   stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
   default_tax_rate?: number | null;
+  form_categories?: any[];
 };
 
 type SectionKey =
@@ -221,7 +222,9 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           data: { logo_url: finalLogoUrl, email_brand_color_1: color1, email_brand_color_2: color2 },
         }),
       });
-      const parsedTaxRate = parseFloat(taxRate) || 0;
+            const parsedTaxRate = parseFloat(taxRate) || 0;
+      const taxRateChanged = parsedTaxRate !== (company.default_tax_rate ?? 0);
+
       await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -230,6 +233,58 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           data: { default_tax_rate: parsedTaxRate },
         }),
       });
+
+      // Automatically syncs every existing pricing template to the new
+      // rate — no confirmation banner, since that's now the whole point.
+      // Runs entirely from here so it works whether or not the Services
+      // tab is even mounted. Exempt categories are skipped and kept at
+      // 0%, matched by category value against company.form_categories,
+      // which is already available on this same company object.
+      if (taxRateChanged) {
+        try {
+          const tplRes = await fetch(`/api/company/${company.slug}/quote-templates`);
+          const tplData = await tplRes.json();
+          const templates = tplData?.templates || [];
+          if (templates.length > 0) {
+                       const overridesByCategory = new Map(
+              (company.form_categories || [])
+                .filter((c: any) => c.tax_rate_override != null)
+                .map((c: any) => [c.value, c.tax_rate_override])
+            );
+            const cleanNum = (v: any): number => {
+              const n = parseFloat(String(v).replace(/[^0-9.]/g, ''));
+              return isNaN(n) ? 0 : n;
+            };
+            const updatedTemplates = templates.map((tpl: any) => {
+              const override = overridesByCategory.get(tpl.category);
+              const nextTaxRate = override != null ? override : parsedTaxRate;
+              const normalizedItems = tpl.items.map((item: any, i: number) => {
+                const qty = cleanNum(item.quantity ?? item.qty ?? 1) || 1;
+                const price = cleanNum(item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.unit_cost ?? 0);
+                return {
+                  id: item.id || `item_${Date.now() + i}`,
+                  description: String(item.description || item.label || ''),
+                  quantity: qty,
+                  unitPrice: price,
+                  amount: Math.round(qty * price * 100) / 100,
+                };
+              });
+              const subtotal = normalizedItems.reduce((s: number, i: any) => s + i.amount, 0);
+              const nextTotal = Math.round((subtotal + subtotal * (nextTaxRate / 100)) * 100) / 100;
+              return { ...tpl, items: normalizedItems, tax_rate: nextTaxRate, total: nextTotal };
+            });
+            await fetch(`/api/company/${company.slug}/quote-templates`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'update-many', templates: updatedTemplates }),
+            });
+          }
+        } catch (syncErr) {
+          console.error('Tax sync to templates failed:', syncErr);
+          // Non-fatal — the global rate still saved successfully above;
+          // worst case, existing templates need a manual resave.
+        }
+      }
       if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
       setCompanyWebsite(normalizedWebsite);
       setCompany((prev) => ({

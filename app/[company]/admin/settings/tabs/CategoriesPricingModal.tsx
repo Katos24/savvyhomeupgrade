@@ -100,10 +100,11 @@ export default function CategoriesPricingModal({
     );
   };
 
-    // Exempt categories always compute at 0%, regardless of the
-  // company-wide rate — the toggle lives on the category itself, set
-  // from the Services list, not editable from inside this modal.
-  const effectiveTaxRate = category.tax_exempt ? 0 : taxRate;
+  // A category with its own override always uses that number,
+  // regardless of the company-wide rate — set from the Services list,
+  // not editable from inside this modal. No override means fall back to
+  // the global rate.
+  const effectiveTaxRate = category.tax_rate_override ?? taxRate;
   const subtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
   const taxAmount = subtotal * (effectiveTaxRate / 100);
   const total = subtotal + taxAmount;
@@ -326,8 +327,8 @@ export default function CategoriesPricingModal({
           <div className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border ${t.border} px-4 py-3 text-xs font-medium ${t.subText}`}>
                         <span className="flex items-center gap-1.5">
               <Percent className="h-3.5 w-3.5 text-emerald-500" />
-              Tax: <span className={`font-semibold ${t.cardText}`}>{effectiveTaxRate}%</span>
-              {category.tax_exempt && <span className="text-amber-500">(exempt)</span>}
+                           Tax: <span className={`font-semibold ${t.cardText}`}>{effectiveTaxRate}%</span>
+              {category.tax_rate_override != null && <span className="text-amber-500">(custom)</span>}
             </span>
             <span className="flex items-center gap-1.5">
               <HandCoins className="h-3.5 w-3.5 text-amber-500" />

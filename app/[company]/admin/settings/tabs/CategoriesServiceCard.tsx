@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Trash2, CheckSquare, DollarSign, HandCoins, HelpCircle, ChevronDown, ArrowRight } from 'lucide-react';
 import type { Category, QuoteTemplate, CustomQuestion } from './CategoriesTaskEditorModal';
@@ -18,7 +19,7 @@ type Props = {
   onOpenTasks: () => void;
   onOpenPricing: () => void;
     onOpenQuestions: () => void;
-  onToggleExempt: () => void;
+  onSetTaxOverride: (rate: number | null) => void;
   taxRate: number;
 };
 
@@ -33,11 +34,16 @@ export default function CategoriesServiceCard({
   onDelete,
   onOpenTasks,
   onOpenPricing,
-  onOpenQuestions,
-  onToggleExempt,
+   onOpenQuestions,
+  onSetTaxOverride,
   taxRate,
 }: Props) {
   const t = themeTokens(isDark);
+  const [editingRate, setEditingRate] = useState(false);
+  const [rateDraft, setRateDraft] = useState(
+    category.tax_rate_override != null ? String(category.tax_rate_override) : ''
+  );
+  const hasOverride = category.tax_rate_override != null;
   const taskCount = category.task_templates?.length || 0;
   const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate.deposit_value ?? 0) > 0;
   const questionCount = questions.length;
@@ -163,21 +169,71 @@ export default function CategoriesServiceCard({
                   {depositLabel(quoteTemplate!.deposit_type, quoteTemplate!.deposit_value)}
                 </span>
               )}
-                           <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleExempt();
-                }}
-                className={`ml-auto flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors ${
-                  category.tax_exempt
-                    ? isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700'
-                    : `${t.hoverBg} ${t.subText}`
-                }`}
-                title="Click to toggle whether the company-wide sales tax rate applies to this service"
-              >
-                <span className={`h-1.5 w-1.5 rounded-full ${category.tax_exempt ? 'bg-amber-500' : 'bg-slate-400'}`} />
-                {category.tax_exempt ? 'Tax exempt' : `${taxRate}% tax`}
-              </button>
+                           {editingRate ? (
+                <div className="ml-auto flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                  <input
+                    type="number"
+                    step="0.001"
+                    min="0"
+                    max="100"
+                    value={rateDraft}
+                    onChange={(e) => setRateDraft(e.target.value)}
+                    autoFocus
+                    placeholder={String(taxRate)}
+                    className={`w-16 rounded-md border px-2 py-1 text-xs font-semibold outline-none ${t.border} bg-transparent ${t.cardText}`}
+                  />
+                  <span className={`text-xs ${t.subText}`}>%</span>
+                  <button
+                    onClick={() => {
+                      const parsed = parseFloat(rateDraft);
+                      if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+                        onSetTaxOverride(parsed);
+                        setEditingRate(false);
+                      }
+                    }}
+                    className="rounded-md bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-blue-700"
+                  >
+                    Save
+                  </button>
+                  {hasOverride && (
+                    <button
+                      onClick={() => {
+                        onSetTaxOverride(null);
+                        setRateDraft('');
+                        setEditingRate(false);
+                      }}
+                      className="text-[11px] font-semibold text-rose-500 hover:text-rose-600"
+                    >
+                      Use default
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setEditingRate(false);
+                      setRateDraft(category.tax_rate_override != null ? String(category.tax_rate_override) : '');
+                    }}
+                    className={`text-[11px] font-semibold ${t.subText} hover:text-current`}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditingRate(true);
+                  }}
+                  className={`ml-auto flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors ${
+                    hasOverride
+                      ? isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700'
+                      : `${t.hoverBg} ${t.subText}`
+                  }`}
+                  title="Click to set a custom tax rate for this service, or leave it using the company default"
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${hasOverride ? 'bg-amber-500' : 'bg-slate-400'}`} />
+                  {hasOverride ? `${category.tax_rate_override}% tax (custom)` : `${taxRate}% tax`}
+                </button>
+              )}
             </div>
           </motion.div>
         )}

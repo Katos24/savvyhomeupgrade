@@ -265,9 +265,9 @@ export default function CategoriesTab({
     markDirty();
   };
 
-  const handleToggleExempt = (index: number) => {
+    const handleSetTaxOverride = (index: number, rate: number | null) => {
     setCategories((prev) =>
-      prev.map((c, i) => (i === index ? { ...c, tax_exempt: !c.tax_exempt } : c))
+      prev.map((c, i) => (i === index ? { ...c, tax_rate_override: rate } : c))
     );
     setUseDefaults(false);
     markDirty();
@@ -564,7 +564,7 @@ export default function CategoriesTab({
                                onOpenQuestions={() =>
                   setActiveModal({ type: 'questions', categoryValue: cat.value })
                 }
-                onToggleExempt={() => handleToggleExempt(index)}
+                                onSetTaxOverride={(rate) => handleSetTaxOverride(index, rate)}
                 taxRate={taxRate}
               />
             ))}
