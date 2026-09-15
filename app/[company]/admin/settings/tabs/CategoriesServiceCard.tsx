@@ -17,7 +17,9 @@ type Props = {
   onDelete: () => void;
   onOpenTasks: () => void;
   onOpenPricing: () => void;
-  onOpenQuestions: () => void;
+    onOpenQuestions: () => void;
+  onToggleExempt: () => void;
+  taxRate: number;
 };
 
 export default function CategoriesServiceCard({
@@ -32,6 +34,8 @@ export default function CategoriesServiceCard({
   onOpenTasks,
   onOpenPricing,
   onOpenQuestions,
+  onToggleExempt,
+  taxRate,
 }: Props) {
   const t = themeTokens(isDark);
   const taskCount = category.task_templates?.length || 0;
@@ -147,21 +151,34 @@ export default function CategoriesServiceCard({
               />
             </div>
 
-            {(quoteTemplate || hasDeposit) && (
-              <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 border-t pt-3 text-xs ${t.border} ${t.subText}`}>
-                {quoteTemplate && (
-                  <span>
-                    Total: <span className={`font-semibold ${t.cardText}`}>{fmt(quoteTemplate.total)}</span>
-                  </span>
-                )}
-                {hasDeposit && (
-                  <span className="flex items-center gap-1">
-                    <HandCoins className="h-3 w-3" />
-                    {depositLabel(quoteTemplate!.deposit_type, quoteTemplate!.deposit_value)}
-                  </span>
-                )}
-              </div>
-            )}
+                       <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-3 text-xs ${t.border} ${t.subText}`}>
+              {quoteTemplate && (
+                <span>
+                  Total: <span className={`font-semibold ${t.cardText}`}>{fmt(quoteTemplate.total)}</span>
+                </span>
+              )}
+              {hasDeposit && (
+                <span className="flex items-center gap-1">
+                  <HandCoins className="h-3 w-3" />
+                  {depositLabel(quoteTemplate!.deposit_type, quoteTemplate!.deposit_value)}
+                </span>
+              )}
+                           <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleExempt();
+                }}
+                className={`ml-auto flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors ${
+                  category.tax_exempt
+                    ? isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700'
+                    : `${t.hoverBg} ${t.subText}`
+                }`}
+                title="Click to toggle whether the company-wide sales tax rate applies to this service"
+              >
+                <span className={`h-1.5 w-1.5 rounded-full ${category.tax_exempt ? 'bg-amber-500' : 'bg-slate-400'}`} />
+                {category.tax_exempt ? 'Tax exempt' : `${taxRate}% tax`}
+              </button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

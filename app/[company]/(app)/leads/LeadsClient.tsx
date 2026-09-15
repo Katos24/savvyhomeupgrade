@@ -20,21 +20,6 @@ import DashboardLeadsSection from '@/components/dashboard/DashboardLeadsSection'
 import { DEFAULT_STATUSES } from '@/lib/formCategories';
 import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 
-// NOTE: DashboardStats intentionally not imported here — stats now live on
-// the Dashboard page only. This page is leads-only, full pipeline, card
-// view by default.
-//
-// NOTE on navigation: this page used to render its own Sidebar instance
-// (state, mobile overlay, the whole block) with DashboardHeader's hamburger
-// opening it. That's gone now — CompanyShell (app/[company]/CompanyShell.tsx)
-// wraps every page under this route and already provides the real
-// navigation: a pinned, collapsible rail on desktop, and its own working
-// mobile drawer with its own hamburger in its own top bar. The version that
-// used to live here was invisible/unreachable dead code — CompanyShell's
-// instance is what's actually in the DOM regardless of what this file did.
-// Confirmed via CompanyShell.tsx and app/[company]/layout.tsx directly
-// before removing this, not assumed.
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -83,6 +68,16 @@ function getDateBoundaries() {
   return { now, todayStart, yesterdayStart, weekStart, monthStart };
 }
 
+const isColorDark = (hex: string) => {
+  const cleanHex = hex.replace('#', '');
+  if (cleanHex.length !== 6) return true;
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return luminance < 0.5;
+};
+
 // ---------------------------------------------------------------------------
 // Main Component
 // ---------------------------------------------------------------------------
@@ -97,20 +92,15 @@ export default function LeadsClient({ company }: { company: Company }) {
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [serverStatusCounts, setServerStatusCounts] = useState<Record<string, number>>({});
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [globalStats, setGlobalStats] = useState<any>(null);
+  const [, setGlobalStats] = useState<any>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [loadError, setLoadError] = useState('');
   const [newLeadCount, setNewLeadCount] = useState(0);
 
   // UI state
   const [selectedLead, setSelectedLead] = useState<any>(null);
-  // Payments and activity ship with the lead from /api/leads/[id] so the
-  // billing panel has no loading states of its own to get wrong.
   const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
-  // Defaults to cards (not table) and uses its own localStorage key —
-  // deliberately separate from whatever key the old combined dashboard
-  // used, since this is now a distinct page with its own preference.
   const [currentView, setCurrentView] = useState<ViewMode>(() => {
     if (typeof window === 'undefined') return 'cards';
     return (localStorage.getItem('leads-view') as ViewMode) || 'cards';
@@ -125,37 +115,21 @@ export default function LeadsClient({ company }: { company: Company }) {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  // Deep-linked from Dashboard's stat cards (?status=quoted, ?payment=...).
-  // Lazy initializers, not a useEffect — same reasoning as currentView and
-  // isDark below using localStorage this way. The mount effect a few lines
-  // down calls fetchLeads(1) synchronously on first render; if these were
-  // set via an effect instead, that first fetch would already have gone
-  // out with 'all' before the URL-derived value ever took effect.
-  //
-  // NOTE on ?payment=awaiting specifically: reading it here is necessary
-  // regardless, but the backend's payment filter does a literal
-  // `payment_status = ${payment}` match, and 'awaiting' was never a real
-  // stored value — it's a compound Dashboard-only concept (invoice_sent_at
-  // set AND payment_status not 'paid'). Until the backend either gains a
-  // real 'awaiting' branch or that link points somewhere else, this will
-  // read correctly but the resulting fetch will silently return zero
-  // leads. Wiring it here doesn't fix that — see the backend route.
-  const [filterStatus, setFilterStatus] = useState(() => {
+  const [filterStatus, setFilterStatus] = useState<string>(() => {
     if (typeof window === 'undefined') return 'all';
     return new URLSearchParams(window.location.search).get('status') || 'all';
   });
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterAssignee, setFilterAssignee] = useState('all');
-  const [filterPayment, setFilterPayment] = useState(() => {
+  
+  // Explicitly typed to string to support "awaiting_deposit" & custom filters
+  const [filterPayment, setFilterPayment] = useState<string>(() => {
     if (typeof window === 'undefined') return 'all';
     return new URLSearchParams(window.location.search).get('payment') || 'all';
   });
- const [startDate, setStartDate] = useState('');
+  const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  // Table View's sort — drives both the column header arrows and the
-  // actual server-side ORDER BY. null sortKey means "server default"
-  // (created_at DESC), same as today's unsorted state.
   const [sortKey, setSortKey] = useState<string | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showExportModal, setShowExportModal] = useState(false);
@@ -171,7 +145,6 @@ export default function LeadsClient({ company }: { company: Company }) {
   useEffect(() => { localStorage.setItem('leads-view', currentView); }, [currentView]);
   useEffect(() => { localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light'); }, [isDark]);
 
-  // Tour — only from URL param or manual trigger, never auto
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('tour') === '1') {
@@ -180,10 +153,6 @@ export default function LeadsClient({ company }: { company: Company }) {
     }
   }, [company.slug]);
  
-  // Clean the URL after reading ?status=/?payment= above — the values are
-  // already captured in filterStatus/filterPayment's lazy initializers, so
-  // this just prevents a page refresh from re-applying (or getting stuck
-  // showing) a stale deep-link filter in the address bar.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('status') || params.get('payment')) {
@@ -204,7 +173,7 @@ export default function LeadsClient({ company }: { company: Company }) {
   const fetchLeads = useCallback(async (page = 1, silent = false, overrides: Record<string, string> = {}) => {
     try {
       if (page === 1 && isInitialLoad) {
-        // first load — loading screen handles it
+        // initial load handled by loader UI
       } else if (!silent) {
         setIsRefreshing(true);
       }
@@ -216,7 +185,7 @@ export default function LeadsClient({ company }: { company: Company }) {
       const payment  = overrides.payment   !== undefined ? overrides.payment   : filterPayment;
       const tFilter  = overrides.timeFilter!== undefined ? overrides.timeFilter: timeFilter;
       const sDate    = overrides.startDate !== undefined ? overrides.startDate : startDate;
-const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDate;
+      const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDate;
       const sKey     = overrides.sortKey   !== undefined ? overrides.sortKey   : sortKey;
       const sDir     = overrides.sortDir   !== undefined ? overrides.sortDir   : sortDir;
 
@@ -226,7 +195,7 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
       if (assignee && assignee !== 'all') params.set('assignee',   assignee);
       if (payment  && payment  !== 'all') params.set('payment',    payment);
       if (tFilter  && tFilter  !== 'all') params.set('timeFilter', tFilter);
-    if (sDate) params.set('startDate', sDate);
+      if (sDate) params.set('startDate', sDate);
       if (eDate) params.set('endDate',   eDate);
       if (sKey)  { params.set('sort', sKey); params.set('sortDir', sDir); }
 
@@ -243,14 +212,14 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
       if (data.globalStats) setGlobalStats(data.globalStats);
       setRefreshKey(k => k + 1);
       setLoadError('');
-    } catch (e) {
-      console.error('Failed to fetch leads:', e);
-      setLoadError('Could not load leads. Check your connection and try again.');
-    } finally {
-      setIsInitialLoad(false);
-      setIsRefreshing(false);
-    }
-}, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir]);
+   } catch (e) {
+    console.error('Failed to fetch leads:', e);
+    setLoadError('Could not load leads. Check your connection and try again.');
+  } finally { // Fixed typo here
+    setIsInitialLoad(false);
+    setIsRefreshing(false);
+  }
+  }, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir]);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -277,27 +246,17 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
     fetchTeamMembers();
   }, []);
 
- useEffect(() => {
+  useEffect(() => {
     if (isInitialLoad) return;
     fetchLeads(1, true);
   }, [filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir, fetchLeads]);
 
-  // Deep-link to lead from URL. Always fetches full detail regardless of
-  // isInitialLoad — previously, if isInitialLoad was still true at the
-  // exact render this effect fired, the fetch was skipped entirely, but
-  // the URL param had already been stripped a few lines above. That left
-  // no way to retry: the modal opened with the bare list-row lead (no
-  // payments) permanently, until some unrelated action forced a refetch.
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const leadId = params.get('lead');
     if (!leadId) return;
     const lead = allLeads.find(l => l.id === parseInt(leadId));
-    if (lead) {
-      // The list row has no payments or activity — open with what we have
-      // and let the detail fetch below fill them in.
-      setSelectedLead(lead);
-    }
+    if (lead) setSelectedLead(lead);
     window.history.replaceState({}, '', window.location.pathname);
     fetch(`/api/leads/${leadId}`, { cache: 'no-store' })
       .then(r => r.json())
@@ -311,18 +270,14 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
       .catch(() => {});
   }, [allLeads]);
 
-  // Poll for new leads
   const lastPollCount = useRef<number | null>(null);
 
   useEffect(() => {
     if (isInitialLoad) return;
-
     const interval = setInterval(async () => {
       if (document.hidden) return;
       try {
-        const res = await fetch(`/api/company/${company.slug}/leads/count`, {
-          cache: 'no-store',
-        });
+        const res = await fetch(`/api/company/${company.slug}/leads/count`, { cache: 'no-store' });
         if (!res.ok) return;
         const data = await res.json();
         if (!data.success) return;
@@ -350,23 +305,14 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
     user_email: currentUser?.email || '',
   });
 
-  const handleLogout = useCallback(async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    startTransition(() => router.push('/login'));
-  }, [router]);
-
   const updateLeadStatus = useCallback(async (id: number, status: string, oldStatus: string, sendReview = true) => {
     try {
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id,
-          status,
-          action: 'update_status',
-          old_status: oldStatus,
-          send_review_request: sendReview,
-          ...userMeta(),
+          id, status, action: 'update_status', old_status: oldStatus,
+          send_review_request: sendReview, ...userMeta(),
         }),
       });
       const result = await res.json();
@@ -450,8 +396,6 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
     } catch (e) { console.error('refreshModalLead:', e); }
   }, [fetchLeads, selectedLead]);
 
-  // Opening from the list used to hand the modal a row from allLeads, which
-  // has no payments or activity. Show it immediately, then fetch the detail.
   const openLead = useCallback(async (lead: any) => {
     setSelectedLead(lead);
     setSelectedLeadPayments([]);
@@ -484,9 +428,7 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
       startDate: '', endDate: '',
     });
   }, [fetchLeads]);
- 
-  // Same toggle behavior TableView used to own locally: click a new
-  // column -> sort desc; click the same column again -> flip direction.
+
   const handleSortChange = useCallback((key: string) => {
     if (sortKey === key) {
       setSortDir(prevDir => (prevDir === 'desc' ? 'asc' : 'desc'));
@@ -496,50 +438,74 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
     }
   }, [sortKey]);
 
+  // Stable event handlers
+  const handleDismissNewLeads = useCallback(() => {
+    setNewLeadCount(0);
+    lastPollCount.current = null;
+    fetchLeads(1);
+  }, [fetchLeads]);
+
+  const handleToastSelectLead = useCallback((leadId: number) => {
+    const lead = allLeads.find((l) => l.id === leadId);
+    if (lead) openLead(lead);
+  }, [allLeads, openLead]);
+
+  const handleCloseLeadModal = useCallback(() => setSelectedLead(null), []);
+  const handleCloseCreateModal = useCallback(() => setIsCreateModalOpen(false), []);
+  const handleOpenCreateModal = useCallback(() => setIsCreateModalOpen(true), []);
+  const handleCloseExportModal = useCallback(() => setShowExportModal(false), []);
+  const handleOpenExportModal = useCallback(() => setShowExportModal(true), []);
+  const handleCloseLockedModal = useCallback(() => setLockedDashboardModal(null), []);
+  const handleStartTour = useCallback(() => setTourActive(true), []);
+  const handleCompleteTour = useCallback(() => setTourActive(false), []);
+  const handleRefreshLeads = useCallback(() => fetchLeads(1, false), [fetchLeads]);
+  const handleLoadMoreLeads = useCallback(() => fetchLeads(pagination.page + 1, false), [fetchLeads, pagination.page]);
+
   // -------------------------------------------------------------------------
   // Derived data
   // -------------------------------------------------------------------------
 
-  const { todayStart, yesterdayStart, weekStart } = getDateBoundaries();
-
   const filteredLeads = useMemo(() => allLeads, [allLeads]);
 
-  const groups = useMemo(() => [
-    { title: 'Today', leads: filteredLeads.filter(l => new Date(l.created_at) >= todayStart) },
-    { title: 'Yesterday', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= yesterdayStart && d < todayStart; }) },
-    { title: 'Earlier This Week', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= weekStart && d < yesterdayStart; }) },
-    { title: 'Older', leads: filteredLeads.filter(l => new Date(l.created_at) < weekStart) },
-  ], [filteredLeads]);
+  const groups = useMemo(() => {
+    const { todayStart, yesterdayStart, weekStart } = getDateBoundaries();
+    return [
+      { title: 'Today', leads: filteredLeads.filter(l => new Date(l.created_at) >= todayStart) },
+      { title: 'Yesterday', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= yesterdayStart && d < todayStart; }) },
+      { title: 'Earlier This Week', leads: filteredLeads.filter(l => { const d = new Date(l.created_at); return d >= weekStart && d < yesterdayStart; }) },
+      { title: 'Older', leads: filteredLeads.filter(l => new Date(l.created_at) < weekStart) },
+    ];
+  }, [filteredLeads]);
 
-  const categories = useMemo(() =>
-    company.form_categories?.map((c: any) => c.value || c).filter(Boolean) ||
-    [...new Set(allLeads.map(l => l.category).filter(Boolean))],
-  [company.form_categories, allLeads]);
+  const categories = useMemo(() => {
+    if (company.form_categories?.length) {
+      return company.form_categories.map((c: any) => c.value || c).filter(Boolean);
+    }
+    const catSet = new Set<string>();
+    for (let i = 0; i < allLeads.length; i++) {
+      if (allLeads[i].category) catSet.add(allLeads[i].category);
+    }
+    return Array.from(catSet);
+  }, [company.form_categories, allLeads]);
 
   const hasActiveFilters = filterStatus !== 'all' || filterCategory !== 'all' || filterAssignee !== 'all'
     || filterPayment !== 'all' || timeFilter !== 'all' || !!startDate || !!endDate || !!searchQuery;
 
+  const { brandColor1, brandColor2, isBrand1Dark, isBrand2Dark, accentColor } = useMemo(() => {
+    const c1 = company.email_brand_color_1 || '#2563eb';
+    const c2 = company.email_brand_color_2 || '#4f46e5';
+    return {
+      brandColor1: c1,
+      brandColor2: c2,
+      isBrand1Dark: isColorDark(c1),
+      isBrand2Dark: isColorDark(c2),
+      accentColor: c1,
+    };
+  }, [company.email_brand_color_1, company.email_brand_color_2]);
+
   // -------------------------------------------------------------------------
-  // Modern Branded Loading Screen with Contrast-Aware Text & Logo
+  // Render Loader
   // -------------------------------------------------------------------------
-
-  const brandColor1 = company.email_brand_color_1 || '#2563eb';
-  const brandColor2 = company.email_brand_color_2 || '#4f46e5';
-
-  // Helper to determine if a hex color is dark (returns true if dark, false if light)
-  const isColorDark = (hex: string) => {
-    const cleanHex = hex.replace('#', '');
-    if (cleanHex.length !== 6) return true; // fallback safe
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
-    // Standard relative luminance formula
-    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return luminance < 0.5;
-  };
-
-  const isBrand1Dark = isColorDark(brandColor1);
-  const isBrand2Dark = isColorDark(brandColor2);
 
   if (isInitialLoad) {
     return (
@@ -550,7 +516,6 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
         role="status"
         aria-label="Loading leads"
       >
-        {/* Ambient Glow Orbs */}
         <div
           className="absolute -top-24 -left-24 w-96 h-96 rounded-full blur-3xl opacity-35 animate-pulse"
           style={{ background: brandColor1 }}
@@ -562,7 +527,6 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
           aria-hidden="true"
         />
 
-        {/* Glassmorphic Loading Card */}
         <div
           className={`relative z-10 flex flex-col items-center p-8 sm:p-10 rounded-3xl border backdrop-blur-xl transition-all shadow-2xl ${
             isDark
@@ -570,15 +534,11 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
               : 'bg-white/80 border-slate-200/80 shadow-slate-200/60'
           }`}
         >
-          {/* Logo Container with Orbit Spinner */}
           <div className="relative flex items-center justify-center mb-6">
-            {/* Ambient Logo Glow */}
             <div
               className="absolute w-20 h-20 rounded-full blur-xl opacity-40 animate-pulse"
               style={{ background: `radial-gradient(circle, ${brandColor1}, ${brandColor2})` }}
             />
-
-            {/* Orbiting Spinner Ring around Logo */}
             <div className="absolute inset-0 -m-3.5 flex items-center justify-center">
               <Loader2
                 className="w-20 h-20 animate-spin opacity-85"
@@ -587,7 +547,6 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
               />
             </div>
 
-            {/* Company Logo / Fallback Avatar */}
             <div
               className={`relative z-10 w-14 h-14 rounded-2xl p-2 flex items-center justify-center overflow-hidden border shadow-inner ${
                 isDark ? 'bg-slate-900/90 border-slate-700/60' : 'bg-white border-slate-200'
@@ -600,7 +559,6 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
                   className="w-full h-full object-contain rounded-xl"
                 />
               ) : (
-                /* Fallback initial with dynamic high-contrast text color */
                 <div
                   className="w-full h-full rounded-xl flex items-center justify-center font-bold text-xl uppercase tracking-wider shadow-sm"
                   style={{
@@ -614,16 +572,10 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
             </div>
           </div>
 
-          {/* Typography */}
-          <p
-            className={`text-base font-semibold tracking-wide ${
-              isDark ? 'text-slate-100' : 'text-slate-900'
-            }`}
-          >
+          <p className={`text-base font-semibold tracking-wide ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
             Loading leads
           </p>
 
-          {/* Contrast-Aware Brand Subtitle Pill */}
           <div
             className="mt-2.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase shadow-xs transition-colors"
             style={{
@@ -639,9 +591,8 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
   }
 
   // -------------------------------------------------------------------------
-  // Render
+  // Render Main Layout
   // -------------------------------------------------------------------------
-  const accentColor = company.email_brand_color_1 || '#2563eb';
 
   return (
     <div className={`min-h-screen relative selection:bg-blue-500/30 transition-colors ${
@@ -660,11 +611,6 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
         Skip to main content
       </a>
 
-      {/* Sidebar removed from here — CompanyShell now owns navigation
-          entirely (pinned desktop rail + its own mobile drawer/hamburger).
-          The block that used to be here was invisible dead code. */}
-
-      {/* Banners */}
       <div className="relative z-10">
         <TrialBanner
           subscriptionStatus={company.subscription_status || 'inactive'}
@@ -677,35 +623,28 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
    
         <PaymentToastPoller
           slug={company.slug}
-          onSelectLead={(leadId) => {
-            const lead = allLeads.find((l) => l.id === leadId);
-            if (lead) openLead(lead);
-          }}
+          onSelectLead={handleToastSelectLead}
         />
       </div>
 
-      {/* MAIN */}
       <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
-
         <DashboardHeader
           company={company}
           isDark={isDark}
           isRefreshing={isRefreshing}
           planTier={planTier}
-          onCreateLead={() => setIsCreateModalOpen(true)}
+          onCreateLead={handleOpenCreateModal}
           onLockedFeature={setLockedDashboardModal}
-          onRefresh={() => fetchLeads(1, false)}
+          onRefresh={handleRefreshLeads}
           accentColor={accentColor}
         />
-
-        {/* No DashboardStats here — this page is leads-only now. */}
 
         <div className="mb-4 sm:mb-6">
           <FreePlanBanner
             company={company}
             isDark={isDark}
-            onStartTour={() => setTourActive(true)}
-            onCreateLead={() => setIsCreateModalOpen(true)}
+            onStartTour={handleStartTour}
+            onCreateLead={handleOpenCreateModal}
             leadCount={allLeads.length}
             allLeads={allLeads}
           />
@@ -754,18 +693,14 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
           clearFilters={clearFilters}
           onSelectLead={openLead}
           newLeadCount={newLeadCount}
-          onDismissNewLeads={() => {
-            setNewLeadCount(0);
-            lastPollCount.current = null;
-            fetchLeads(1);
-          }}
+          onDismissNewLeads={handleDismissNewLeads}
           refreshKey={refreshKey}
           onBulkUpdate={handleBulkUpdate}
           onBulkDelete={handleBulkDelete}
-          onShowExportModal={() => setShowExportModal(true)}
+          onShowExportModal={handleOpenExportModal}
           onLockedFeature={setLockedDashboardModal}
-           pagination={pagination}
-          onLoadMore={() => fetchLeads(pagination.page + 1, false)}
+          pagination={pagination}
+          onLoadMore={handleLoadMoreLeads}
           accentColor={accentColor}
           sortKey={sortKey}
           sortDir={sortDir}
@@ -776,7 +711,7 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
       {/* Modals & Components */}
       {selectedLead && (
         <LeadModal
-          lead={selectedLead} onClose={() => setSelectedLead(null)}
+          lead={selectedLead} onClose={handleCloseLeadModal}
           onUpdateStatus={updateLeadStatus} onAddNote={addNote}
           onDeleteLead={deleteLead} onRefresh={refreshModalLead}
           payments={selectedLeadPayments} activity={selectedLeadActivity}
@@ -788,7 +723,7 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
       )}
 
       <CreateLeadModal
-        isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)}
+        isOpen={isCreateModalOpen} onClose={handleCloseCreateModal}
         onSuccess={() => {
           lastPollCount.current = null;
           fetchLeads(1, true);
@@ -809,7 +744,7 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
       <LockedFeatureModal
         featureKey={lockedDashboardModal}
         companySlug={company.slug}
-        onClose={() => setLockedDashboardModal(null)}
+        onClose={handleCloseLockedModal}
       />
 
       {tourActive && (
@@ -819,14 +754,14 @@ const eDate    = overrides.endDate   !== undefined ? overrides.endDate   : endDa
           onToggleTheme={() => setIsDark(v => !v)}
           onToggleView={(view) => setCurrentView(view)}
           onOpenSidebar={() => {}}
-          onOpenCreateModal={() => setIsCreateModalOpen(true)}
-          onComplete={() => setTourActive(false)}
+          onOpenCreateModal={handleOpenCreateModal}
+          onComplete={handleCompleteTour}
         />
       )}
 
       <DashboardExportModal
         isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
+        onClose={handleCloseExportModal}
         companySlug={company.slug}
         isDark={isDark}
       />

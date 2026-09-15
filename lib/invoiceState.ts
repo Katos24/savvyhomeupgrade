@@ -90,15 +90,16 @@ export function filterByPeriod(
  *  computed field the display and the export both need. Call this once
  *  per row instead of re-deriving pieces of it separately. */
 export function deriveInvoiceRow(p: any) {
-  const total = parseFloat(p.quote_total || '0');
-  // payment_amount is SUM(payments) including negative refund rows, so
-  // it's already net.
+   const total = parseFloat(p.quote_total || '0');
   const collected = parseFloat(p.payment_amount || '0');
   const remindedToday =
     p.reminder_sent_at &&
     new Date(p.reminder_sent_at).toDateString() === new Date().toDateString();
 
-  const owed = Math.max(total - collected, 0);
+  // Whole-job remaining — used only to decide whether ANYTHING is still
+  // owed at all (billingPhase below), regardless of which phase. This is
+  // NOT the value exposed as _owed once a phase is known; see below.
+  const rawOwed = Math.max(total - collected, 0);
 
   const billingInputs = {
     total,
@@ -107,12 +108,26 @@ export function deriveInvoiceRow(p: any) {
     depositValue: p.deposit_value,
     depositPaidAt: p.deposit_paid_at,
   };
-  const hasDepositTerms = getDepositAmount(billingInputs) > 0;
+  const depositAmount = getDepositAmount(billingInputs);
+  const hasDepositTerms = depositAmount > 0;
   const depositSatisfied = isDepositSatisfied(billingInputs);
   const billingPhase: 'deposit' | 'balance' | null =
-    !hasDepositTerms || owed <= 0.005
+    !hasDepositTerms || rawOwed <= 0.005
       ? null
       : depositSatisfied ? 'balance' : 'deposit';
+
+  // FIXED: was always total-collected regardless of phase, so a draft
+  // deposit-phase row showed the WHOLE job's remaining balance as "owed"
+  // instead of just the deposit target — a 25% deposit on $441.02 showed
+  // $441.02 owed instead of the real ~$110 deposit amount. During the
+  // deposit phase, what's actually due right now is the deposit target
+  // minus whatever's been collected toward it. Once the deposit is
+  // satisfied, billingPhase flips to 'balance' and this correctly falls
+  // back to the whole-job remaining amount, since that IS the real
+  // amount due at that point.
+  const owed = billingPhase === 'deposit'
+    ? Math.max(depositAmount - collected, 0)
+    : rawOwed;
 
   // Was !!p.invoice_sent_at unconditionally — that single shared field
   // can hold a stale timestamp from an EARLIER phase's send (e.g. the

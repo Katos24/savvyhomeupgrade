@@ -84,10 +84,11 @@ export default function CategoriesTab({
     return raw.map((q: any) => ({ ...q, category: q.category || fallbackCategory }));
   });
 
-  const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
-  const [editingTaxRate, setEditingTaxRate] = useState(false);
-  const [taxRateDraft, setTaxRateDraft] = useState(String(company.default_tax_rate ?? 0));
-  const [taxRateSaving, setTaxRateSaving] = useState(false);
+    // Read-only here now — editing lives on the Overview tab. A plain
+  // derived value, not its own useState, so it always reflects the
+  // current company prop with zero risk of going stale after a save
+  // made elsewhere.
+  const taxRate = company.default_tax_rate ?? 0;
 
   const [depositType, setDepositType] = useState<DepositType | null>(
     company.default_deposit_type ?? null
@@ -128,29 +129,7 @@ export default function CategoriesTab({
 
   const markDirty = useCallback(() => setIsDirty(true), []);
 
-  const saveTaxRate = async () => {
-    const parsed = parseFloat(taxRateDraft);
-    if (isNaN(parsed) || parsed < 0 || parsed > 100) return;
-    setTaxRateSaving(true);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-tax-rate', data: { default_tax_rate: parsed } }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setTaxRate(parsed);
-        setEditingTaxRate(false);
-        if (quoteTemplates.length > 0) setApplyTarget('tax');
-      }
-    } catch {
-    } finally {
-      setTaxRateSaving(false);
-    }
-  };
-
-  const saveDepositDefault = async (clearIt = false) => {
+    const saveDepositDefault = async (clearIt = false) => {
     const parsed = clearIt ? 0 : parseFloat(depositValueDraft);
     const nextType: DepositType | null = clearIt ? null : depositTypeDraft;
 
@@ -276,11 +255,19 @@ export default function CategoriesTab({
     markDirty();
   };
 
-  const confirmDeleteCategory = () => {
+    const confirmDeleteCategory = () => {
     if (!deleteConfirm) return;
     setCategories((prev) => prev.filter((_, i) => i !== deleteConfirm.index));
     setUseDefaults(false);
     setDeleteConfirm(null);
+    markDirty();
+  };
+
+  const handleToggleExempt = (index: number) => {
+    setCategories((prev) =>
+      prev.map((c, i) => (i === index ? { ...c, tax_exempt: !c.tax_exempt } : c))
+    );
+    setUseDefaults(false);
     markDirty();
   };
 
@@ -454,53 +441,7 @@ export default function CategoriesTab({
                     <Plus className="h-3.5 w-3.5" /> Add service
                   </motion.button>
 
-                  {editingTaxRate ? (
-                    <div
-                      className={`flex w-full flex-wrap items-center gap-2 rounded-xl border ${t.border} px-3 py-2 sm:w-auto`}
-                    >
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="number"
-                          step="0.001"
-                          min="0"
-                          max="100"
-                          value={taxRateDraft}
-                          onChange={(e) => setTaxRateDraft(e.target.value)}
-                          autoFocus
-                          className={`w-16 border-none bg-transparent text-sm font-semibold outline-none ${t.cardText}`}
-                        />
-                        <span className={`text-xs font-semibold ${t.subText}`}>%</span>
-                      </div>
-                      <div className="ml-auto flex items-center gap-3 sm:ml-0">
-                        <button
-                          onClick={saveTaxRate}
-                          disabled={taxRateSaving}
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white transition hover:bg-blue-700"
-                        >
-                          {taxRateSaving ? '...' : 'Save'}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setEditingTaxRate(false);
-                            setTaxRateDraft(String(taxRate));
-                          }}
-                          className={`text-[11px] font-semibold ${t.subText} hover:text-current`}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setEditingTaxRate(true)}
-                      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border ${t.border} px-4 py-2.5 text-xs font-semibold ${t.cardText} transition hover:bg-slate-50 sm:w-auto sm:justify-start`}
-                    >
-                      <Percent className={`h-3.5 w-3.5 ${t.subText}`} />
-                      Tax rate: {taxRate}%
-                    </button>
-                  )}
-
-                  {editingDepositDefault ? (
+                                   {editingDepositDefault ? (
                     <div
                       className={`flex w-full flex-wrap items-center gap-2 rounded-xl border ${t.border} px-3 py-2 sm:w-auto`}
                     >
@@ -603,7 +544,7 @@ export default function CategoriesTab({
           {/* Service Cards List */}
           <div className="space-y-3">
             {categories.map((cat, index) => (
-              <CategoriesServiceCard
+                           <CategoriesServiceCard
                 key={cat.value}
                 category={cat}
                 index={index}
@@ -618,9 +559,11 @@ export default function CategoriesTab({
                 onDelete={() => setDeleteConfirm({ index, label: cat.label })}
                 onOpenTasks={() => setActiveModal({ type: 'tasks', categoryIndex: index })}
                 onOpenPricing={() => setActiveModal({ type: 'pricing', categoryValue: cat.value })}
-                onOpenQuestions={() =>
+                               onOpenQuestions={() =>
                   setActiveModal({ type: 'questions', categoryValue: cat.value })
                 }
+                onToggleExempt={() => handleToggleExempt(index)}
+                taxRate={taxRate}
               />
             ))}
           </div>

@@ -55,16 +55,19 @@ export default function CategoriesPricingModal({
   const [quoteSaving, setQuoteSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
 
-  const addLineItem = () => {
+    const addLineItem = () => {
     if (!newDesc.trim()) {
       setLineItemError('Enter a description.');
       return;
     }
-    const price = clean(newPrice);
+    // Same cents-rounding as updateLineItem above, applied before the
+    // zero-check so "0.001" doesn't slip through as a nonzero price.
+    const price = Math.round(clean(newPrice) * 100) / 100;
     if (!newPrice || price === 0) {
       setLineItemError('Enter a valid price.');
       return;
     }
+
     const qty = clean(newQty) || 1;
     setEditingLineItems((prev) => [
       ...prev,
@@ -76,12 +79,20 @@ export default function CategoriesPricingModal({
     setLineItemError('');
   };
 
-  const updateLineItem = (id: string, field: 'description' | 'quantity' | 'unitPrice', value: string) => {
+    const updateLineItem = (id: string, field: 'description' | 'quantity' | 'unitPrice', value: string) => {
     setEditingLineItems((prev) =>
       prev.map((item) => {
         if (item.id !== id) return item;
         if (field === 'description') return { ...item, description: value };
-        const num = clean(value);
+        const rawNum = clean(value);
+        // Rounded to cents at the point of commit — a price with more
+        // than 2 decimal places doesn't correspond to real currency and
+        // would otherwise propagate into the quote total and deposit math.
+        // FOUND A SECOND BUG FIXING THIS: the original stored the raw
+        // unrounded `num` into the field while computing `amount` off a
+        // separate `price` variable — meaning the displayed unit price and
+        // the amount it was multiplied into could silently disagree.
+        const num = field === 'unitPrice' ? Math.round(rawNum * 100) / 100 : rawNum;
         const qty = field === 'quantity' ? num || 1 : item.quantity;
         const price = field === 'unitPrice' ? num : item.unitPrice;
         return { ...item, [field]: num, amount: qty * price };
@@ -89,8 +100,12 @@ export default function CategoriesPricingModal({
     );
   };
 
+    // Exempt categories always compute at 0%, regardless of the
+  // company-wide rate — the toggle lives on the category itself, set
+  // from the Services list, not editable from inside this modal.
+  const effectiveTaxRate = category.tax_exempt ? 0 : taxRate;
   const subtotal = editingLineItems.reduce((s, i) => s + i.amount, 0);
-  const taxAmount = subtotal * (taxRate / 100);
+  const taxAmount = subtotal * (effectiveTaxRate / 100);
   const total = subtotal + taxAmount;
   const deposit = depositFor(total, depositType, depositValue);
   const balance = total - deposit;
@@ -106,12 +121,12 @@ export default function CategoriesPricingModal({
     }
     setQuoteSaving(true);
     setQuoteError('');
-    const templateData = {
+        const templateData = {
       id: existingTemplate?.id || `custom_${Date.now()}`,
       category: category.value,
       items: editingLineItems,
       total,
-      tax_rate: taxRate,
+      tax_rate: effectiveTaxRate,
       deposit_type: depositValue > 0 ? depositType : null,
       deposit_value: depositValue > 0 ? depositValue : null,
     };
@@ -296,9 +311,9 @@ export default function CategoriesPricingModal({
               <span>Subtotal</span>
               <span>{fmt(subtotal)}</span>
             </div>
-            {taxRate > 0 && (
+                        {effectiveTaxRate > 0 && (
               <div className={`flex items-center justify-between text-xs font-medium ${t.subText}`}>
-                <span>Tax ({taxRate}%)</span>
+                <span>Tax ({effectiveTaxRate}%)</span>
                 <span>{fmt(taxAmount)}</span>
               </div>
             )}
@@ -309,9 +324,10 @@ export default function CategoriesPricingModal({
           </div>
 
           <div className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl border ${t.border} px-4 py-3 text-xs font-medium ${t.subText}`}>
-            <span className="flex items-center gap-1.5">
+                        <span className="flex items-center gap-1.5">
               <Percent className="h-3.5 w-3.5 text-emerald-500" />
-              Tax: <span className={`font-semibold ${t.cardText}`}>{taxRate}%</span>
+              Tax: <span className={`font-semibold ${t.cardText}`}>{effectiveTaxRate}%</span>
+              {category.tax_exempt && <span className="text-amber-500">(exempt)</span>}
             </span>
             <span className="flex items-center gap-1.5">
               <HandCoins className="h-3.5 w-3.5 text-amber-500" />

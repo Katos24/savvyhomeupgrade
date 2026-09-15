@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import { 
@@ -29,15 +29,7 @@ type CalendarProps = {
   companySlug: string;
   onSelectLead: (lead: Lead) => void;
   statusOptions: any[];
-  /** Called when a job is picked from the "+ Add a job to this day"
-   *  drawer flow — carries the job and the day it should be scheduled
-   *  onto, so the parent can seed the date and open straight to Schedule. */
   onScheduleJob?: (job: { project_id: number; lead_id: number; customer_name: string }, day: string) => void;
-  /** Bump this to refetch events without remounting the component — a
-   *  remount (the old approach, via a `key` prop from the parent) wipes
-   *  view/currentDate/filters/search back to defaults on every refresh,
-   *  which is why saving a schedule kept snapping back to the default
-   *  view. This just adds a dependency to the existing fetch effect. */
   refreshTrigger?: number;
 };
 
@@ -94,20 +86,18 @@ function timeRank(timeStr?: string): number {
 export default function Calendar({ companySlug, onSelectLead, statusOptions, onScheduleJob, refreshTrigger }: CalendarProps) {
   const [events, setEvents] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => new Date());
   const [view, setView] = useState<ViewMode>('week');
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [drawerDay, setDrawerDay] = useState<string | null>(null);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
 
-  const safeStatusOptions = statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES;
+  const safeStatusOptions = useMemo(() => 
+    statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES,
+  [statusOptions]);
 
-  useEffect(() => { 
-    fetchScheduledJobs(); 
-  }, [companySlug, refreshTrigger]);
-
-  async function fetchScheduledJobs() {
+  const fetchScheduledJobs = useCallback(async () => {
     try {
       const response = await fetch(`/api/company/${companySlug}/leads?calendarAll=true`);
       const data = await response.json();
@@ -117,18 +107,24 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
     } finally { 
       setLoading(false); 
     }
-  }
+  }, [companySlug]);
 
-  const getStatusConfig = (status: string) =>
-    safeStatusOptions.find((s: any) => s.value === status) || safeStatusOptions[0];
+  useEffect(() => { 
+    fetchScheduledJobs(); 
+  }, [fetchScheduledJobs, refreshTrigger]);
+
+  const getStatusConfig = useCallback((status: string) => {
+    return safeStatusOptions.find((s: any) => s.value === status) || safeStatusOptions[0];
+  }, [safeStatusOptions]);
 
   const filteredEvents = useMemo(() => {
+    const term = searchTerm.toLowerCase();
     return events.filter((e: Lead) => {
       const matchesAssignee = filterAssignee === 'all' || e.assigned_to === filterAssignee;
-      const matchesSearch = !searchTerm || 
-        e.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        e.address_line_1?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = !term || 
+        e.name?.toLowerCase().includes(term) ||
+        e.category?.toLowerCase().includes(term) ||
+        e.address_line_1?.toLowerCase().includes(term);
       return matchesAssignee && matchesSearch;
     });
   }, [events, filterAssignee, searchTerm]);
@@ -146,38 +142,47 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
     return map;
   }, [filteredEvents]);
 
-  const handleNav = (dir: number) => {
-    const d = new Date(currentDate);
-    if (view === 'month') d.setMonth(d.getMonth() + dir);
-    else if (view === 'week') d.setDate(d.getDate() + (dir * 7));
-    else if (view === 'day') d.setDate(d.getDate() + dir);
-    setCurrentDate(d);
-  };
+  const assignees = useMemo(() => 
+    Array.from(new Set(events.map((e: Lead) => e.assigned_to))).filter(Boolean),
+  [events]);
 
-  const activeDrawerEvents = drawerDay ? eventsByDay[drawerDay] || [] : [];
+  const handleNav = useCallback((dir: number) => {
+    setCurrentDate((prev) => {
+      const d = new Date(prev);
+      if (view === 'month') d.setMonth(d.getMonth() + dir);
+      else if (view === 'week') d.setDate(d.getDate() + (dir * 7));
+      else if (view === 'day') d.setDate(d.getDate() + dir);
+      return d;
+    });
+  }, [view]);
 
-  if (loading) return (
-    <div className="flex h-screen w-full items-center justify-center bg-[#F2EDE4]">
-      <div className="text-center space-y-4">
-        <div className="w-10 h-10 border-4 border-[#1a6645] border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading Schedule</p>
+  const activeDrawerEvents = useMemo(() => 
+    drawerDay ? eventsByDay[drawerDay] || [] : [],
+  [drawerDay, eventsByDay]);
+
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#F2EDE4]">
+        <div className="text-center space-y-4">
+          <div className="w-10 h-10 border-4 border-[#1a6645] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading Schedule</p>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
 
   return (
-    <div className="min-h-screen w-full bg-[#F2EDE4] text-[#0F1F3D] pb-20">
+    <div className="min-h-screen w-full bg-[#F2EDE4] text-[#0F1F3D] pb-20 select-none">
 
       {/* STICKY HEADER */}
-<nav className="sticky top-0 z-10 bg-[#F2EDE4]/95 backdrop-blur-md border-b border-[#D1C9BD]/60 px-3 sm:px-6 py-2.5 sm:py-4">
-
-        <div className="w-full flex items-center justify-between gap-2">
+      <nav className="sticky top-0 z-20 bg-[#F2EDE4]/95 backdrop-blur-md border-b border-[#D1C9BD]/60 px-3 sm:px-6 py-2.5 sm:py-4 transition-all">
+        <div className="w-full flex items-center justify-between gap-2 max-w-7xl mx-auto">
 
           {/* Left Side Header */}
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => window.history.back()}
-              className="shrink-0 p-2 bg-white rounded-xl shadow-xs border border-[#D1C9BD] hover:scale-105 transition-transform"
+              className="shrink-0 p-2 bg-white rounded-xl shadow-xs border border-[#D1C9BD] hover:scale-105 active:scale-95 transition-transform"
               aria-label="Back"
             >
               <ArrowLeft size={16} />
@@ -211,7 +216,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
           {/* Date Navigator */}
           <div className="flex items-center justify-between bg-white px-3 py-2 rounded-2xl shadow-xs border border-[#D1C9BD]">
             <div className="flex items-center gap-1">
-              <button onClick={() => handleNav(-1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+              <button onClick={() => handleNav(-1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Previous">
                 <ChevronLeft size={16} />
               </button>
               <button
@@ -220,7 +225,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
               >
                 Today
               </button>
-              <button onClick={() => handleNav(1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors">
+              <button onClick={() => handleNav(1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Next">
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -244,7 +249,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 className="w-full text-[11px] font-bold bg-transparent outline-none placeholder:text-slate-400"
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="text-slate-400">
+                <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600">
                   <X size={12} />
                 </button>
               )}
@@ -258,7 +263,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 className="text-[10px] font-black uppercase outline-none bg-transparent cursor-pointer max-w-[90px] sm:max-w-none truncate"
               >
                 <option value="all">Assignee</option>
-                {Array.from(new Set(events.map((e: Lead) => e.assigned_to))).filter(Boolean).map((a: any) => (
+                {assignees.map((a: any) => (
                   <option key={a} value={a}>{a}</option>
                 ))}
               </select>
@@ -269,17 +274,17 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
         {/* STATUS LEGEND */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1">
           {safeStatusOptions.map((s: any) => (
-            <div key={s.value} className="flex items-center gap-1.5 bg-white/70 px-2 py-0.5 rounded-full border border-[#D1C9BD]/40 shrink-0">
+            <div key={s.value} className="flex items-center gap-1.5 bg-white/70 px-2.5 py-1 rounded-full border border-[#D1C9BD]/40 shrink-0 shadow-2xs">
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: resolveStatusColor(s.color) }} />
               <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-600">{s.label}</span>
             </div>
           ))}
         </div>
 
-        {/* ACTIVE VIEW */}
+        {/* ACTIVE VIEW (Optimized Key to prevent re-animating on typing) */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={view + currentDate.toISOString() + filterAssignee + searchTerm}
+            key={`${view}-${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -290,7 +295,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 currentDate={currentDate}
                 eventsByDay={eventsByDay}
                 onSelect={onSelectLead}
-                onOpenDrawer={(dayStr: string) => setDrawerDay(dayStr)}
+                onOpenDrawer={setDrawerDay}
                 getStatus={getStatusConfig}
               />
             )}
@@ -382,8 +387,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
         )}
       </AnimatePresence>
 
-      {/* ADD JOB TO DAY — the search picker, opened from the drawer's
-          "+ Add job" button above. */}
+      {/* ADD JOB TO DAY MODAL */}
       {drawerDay && onScheduleJob && (
         <AddJobToDayModal
           isOpen={showAddJobModal}
@@ -401,9 +405,9 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
   );
 }
 
-// ── SUB-COMPONENTS ──
+// ── MEMOIZED SUB-COMPONENTS ──
 
-function ViewTab({ active, onClick, icon: Icon, shortLabel, fullLabel }: any) {
+const ViewTab = memo(function ViewTab({ active, onClick, icon: Icon, shortLabel, fullLabel }: any) {
   return (
     <button
       onClick={onClick}
@@ -416,9 +420,9 @@ function ViewTab({ active, onClick, icon: Icon, shortLabel, fullLabel }: any) {
       <span className="hidden sm:inline">{fullLabel}</span>
     </button>
   );
-}
+});
 
-function JobCard({ 
+const JobCard = memo(function JobCard({ 
   job, 
   onSelect, 
   getStatus 
@@ -434,11 +438,11 @@ function JobCard({
   return (
     <button
       onClick={() => onSelect(job)}
-      className="w-full text-left p-3.5 bg-white rounded-xl border border-[#D1C9BD]/70 shadow-xs hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+      className="w-full text-left p-3.5 bg-white rounded-xl border border-[#D1C9BD]/70 shadow-2xs hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
     >
       <div className="flex items-center justify-between gap-1 mb-1.5">
         <span
-          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide px-2 py-1 rounded-full truncate max-w-[130px]"
+          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full truncate max-w-[130px]"
           style={{ backgroundColor: `${color}1A`, color }}
         >
           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
@@ -472,18 +476,18 @@ function JobCard({
       )}
     </button>
   );
-}
+});
 
-function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus }: any) {
+const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus }: any) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startDay = new Date(year, month, 1).getDay();
 
-  const cells = [
+  const cells = useMemo(() => [
     ...Array(startDay).fill(null), 
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1)
-  ];
+  ], [startDay, daysInMonth]);
 
   const DAY_LABELS_MOBILE = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   const DAY_LABELS_DESKTOP = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -519,60 +523,58 @@ function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus
               } ${isToday ? 'bg-emerald-50/40' : ''}`}
             >
               {!isNull && (
-                <>
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <span className={`text-[9px] sm:text-[10px] font-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded ${
-                        isToday ? 'bg-[#1a6645] text-white shadow-xs' : 'text-slate-500'
-                      }`}>
-                        {day}
+                <div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[9px] sm:text-[10px] font-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded ${
+                      isToday ? 'bg-[#1a6645] text-white shadow-xs' : 'text-slate-500'
+                    }`}>
+                      {day}
+                    </span>
+                    {dayEvents.length > 0 && (
+                      <span className="text-[8px] font-black text-[#1a6645] bg-emerald-100/80 px-1 rounded-full">
+                        {dayEvents.length}
                       </span>
-                      {dayEvents.length > 0 && (
-                        <span className="text-[8px] font-black text-[#1a6645] bg-emerald-100/80 px-1 rounded-full">
-                          {dayEvents.length}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Desktop Detailed Badges */}
-                    <div className="hidden sm:flex flex-col gap-1 mt-1">
-                      {dayEvents.slice(0, 3).map((e: Lead) => {
-                        const color = resolveStatusColor(getStatus(e.job_status || e.status || '').color);
-                        return (
-                          <button
-                            key={e.id}
-                            onClick={(evt) => {
-                              evt.stopPropagation();
-                              onSelect(e);
-                            }}
-                            className="w-full flex items-center justify-between gap-1 text-[8px] font-semibold px-1.5 py-1 rounded-md border-l-2 truncate text-left transition-all hover:shadow-sm hover:brightness-95"
-                            style={{ backgroundColor: `${color}14`, borderColor: color, color }}
-                          >
-                            <span className="truncate normal-case">{e.name}</span>
-                            <span className="text-[7px] opacity-70 shrink-0 ml-1">{formatTime12h(e.scheduled_time)}</span>
-                          </button>
-                        );
-                      })}
-                      {dayEvents.length > 3 && (
-                        <p className="text-[7px] font-black text-slate-400 pl-0.5">+{dayEvents.length - 3} more</p>
-                      )}
-                    </div>
-
-                    {/* Mobile Dot Indicators */}
-                    <div className="sm:hidden flex flex-wrap gap-0.5 mt-1 justify-center">
-                      {dayEvents.slice(0, 3).map((e: Lead) => (
-                        <span
-                          key={e.id}
-                          className="w-1.5 h-1.5 rounded-full shrink-0"
-                          style={{ backgroundColor: resolveStatusColor(getStatus(e.job_status || e.status || '').color) }}
-                        />
-                      ))}
-                      {dayEvents.length > 3 && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                      )}
-                    </div>
+                    )}
                   </div>
-                </>
+
+                  {/* Desktop Detailed Badges */}
+                  <div className="hidden sm:flex flex-col gap-1 mt-1">
+                    {dayEvents.slice(0, 3).map((e: Lead) => {
+                      const color = resolveStatusColor(getStatus(e.job_status || e.status || '').color);
+                      return (
+                        <button
+                          key={e.id}
+                          onClick={(evt) => {
+                            evt.stopPropagation();
+                            onSelect(e);
+                          }}
+                          className="w-full flex items-center justify-between gap-1 text-[8px] font-semibold px-1.5 py-1 rounded-md border-l-2 truncate text-left transition-all hover:shadow-2xs hover:brightness-95"
+                          style={{ backgroundColor: `${color}14`, borderColor: color, color }}
+                        >
+                          <span className="truncate normal-case">{e.name}</span>
+                          <span className="text-[7px] opacity-70 shrink-0 ml-1">{formatTime12h(e.scheduled_time)}</span>
+                        </button>
+                      );
+                    })}
+                    {dayEvents.length > 3 && (
+                      <p className="text-[7px] font-black text-slate-400 pl-0.5">+{dayEvents.length - 3} more</p>
+                    )}
+                  </div>
+
+                  {/* Mobile Dot Indicators */}
+                  <div className="sm:hidden flex flex-wrap gap-0.5 mt-1 justify-center">
+                    {dayEvents.slice(0, 3).map((e: Lead) => (
+                      <span
+                        key={e.id}
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ backgroundColor: resolveStatusColor(getStatus(e.job_status || e.status || '').color) }}
+                      />
+                    ))}
+                    {dayEvents.length > 3 && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           );
@@ -580,21 +582,20 @@ function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus
       </div>
     </div>
   );
-}
+});
 
-function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus, onScheduleJob, companySlug }: any) {
-  const start = new Date(currentDate);
-  start.setDate(currentDate.getDate() - currentDate.getDay());
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(start); 
-    d.setDate(start.getDate() + i); 
-    return d;
-  });
+const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus, onScheduleJob, companySlug }: any) {
+  const weekDays = useMemo(() => {
+    const start = new Date(currentDate);
+    start.setDate(currentDate.getDate() - currentDate.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start); 
+      d.setDate(start.getDate() + i); 
+      return d;
+    });
+  }, [currentDate]);
+
   const todayStr = dayKey(new Date());
-  // Which day's "+ Add job" modal is currently open, if any — Week
-  // already shows full per-day detail inline, so this opens the picker
-  // directly for that column instead of routing through Month's day
-  // drawer, which doesn't exist in this view.
   const [addJobDay, setAddJobDay] = useState<string | null>(null);
 
   return (
@@ -685,9 +686,9 @@ function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus, onScheduleJo
       )}
     </div>
   );
-}
+});
 
-function DayDetailView({ currentDate, eventsByDay, onSelect, getStatus }: any) {
+const DayDetailView = memo(function DayDetailView({ currentDate, eventsByDay, onSelect, getStatus }: any) {
   const dStr = dayKey(currentDate);
   const dayEvents = eventsByDay[dStr] || [];
 
@@ -718,35 +719,42 @@ function DayDetailView({ currentDate, eventsByDay, onSelect, getStatus }: any) {
       )}
     </div>
   );
-}
+});
 
-function AgendaListView({ events, onSelect, getStatus }: any) {
-  const sortedEvents = useMemo(() => {
-    return [...events].sort((a: Lead, b: Lead) => {
-      const dateA = a.scheduled_date ? new Date(a.scheduled_date).getTime() : 0;
-      const dateB = b.scheduled_date ? new Date(b.scheduled_date).getTime() : 0;
-      return dateA - dateB;
-    });
+const AgendaListView = memo(function AgendaListView({ events, onSelect, getStatus }: any) {
+  const upcomingEvents = useMemo(() => {
+    const todayStr = dayKey(new Date());
+    
+    return events
+      .filter((a: Lead) => {
+        const dateStr = leadDayKey(a);
+        return dateStr && dateStr >= todayStr;
+      })
+      .sort((a: Lead, b: Lead) => {
+        const timeA = String(a.scheduled_date).slice(0, 10);
+        const timeB = String(b.scheduled_date).slice(0, 10);
+        return timeA.localeCompare(timeB);
+      });
   }, [events]);
 
   return (
     <div className="bg-white rounded-2xl border border-[#D1C9BD] p-3 sm:p-5 shadow-md">
       <h3 className="text-xs font-black uppercase tracking-widest text-[#0F1F3D] mb-3">
-        Upcoming Agenda ({sortedEvents.length})
+        Upcoming Agenda ({upcomingEvents.length})
       </h3>
 
-      {sortedEvents.length === 0 ? (
+      {upcomingEvents.length === 0 ? (
         <div className="py-12 text-center text-slate-400">
           <List size={32} className="mx-auto mb-2 opacity-30" />
-          <p className="text-xs font-black uppercase tracking-widest">No matching scheduled jobs</p>
+          <p className="text-xs font-black uppercase tracking-widest">No upcoming scheduled jobs</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {sortedEvents.map((job: Lead) => {
+          {upcomingEvents.map((job: Lead) => {
             const statusConfig = getStatus(job.job_status || job.status || '');
             const color = resolveStatusColor(statusConfig?.color);
             const dateDisplay = job.scheduled_date 
-              ? new Date(`${job.scheduled_date.slice(0, 10)}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+              ? new Date(`${String(job.scheduled_date).slice(0, 10)}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
               : 'TBD';
 
             return (
@@ -756,7 +764,7 @@ function AgendaListView({ events, onSelect, getStatus }: any) {
                 className="flex items-center justify-between gap-2 p-3 rounded-xl border border-[#D1C9BD]/60 bg-[#faf9f5] hover:bg-white hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="px-2 py-1 bg-[#0F1F3D] text-white rounded-lg text-center shrink-0 min-w-[55px]">
+                  <div className="px-2 py-1 bg-[#0F1F3D] text-[#faf9f5] rounded-lg text-center shrink-0 min-w-[55px]">
                     <span className="text-[9px] font-black uppercase block">{dateDisplay}</span>
                     <span className="text-[8px] text-slate-300 font-medium block">{formatTime12h(job.scheduled_time)}</span>
                   </div>
@@ -782,4 +790,4 @@ function AgendaListView({ events, onSelect, getStatus }: any) {
       )}
     </div>
   );
-}
+});

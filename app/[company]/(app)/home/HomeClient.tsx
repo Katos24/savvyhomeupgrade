@@ -232,7 +232,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         email_brand_color_1: color1,
         email_brand_color_2: color2,
       }));
-      setLogoFile(null);
+         setLogoFile(null);
       setIsEditingBrand(false);
       setBrandSaved(true);
       setTimeout(() => setBrandSaved(false), 2000);
@@ -244,6 +244,13 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     }
   };
 
+  // Without this, saving the tax rate on Overview only updated that
+  // tab's own local state. Categories reads company.default_tax_rate
+  // from this SAME shared object, so nothing told it anything changed —
+  // hence needing a full page refresh to see the new rate reflected.
+  const handleTaxRateSaved = (newRate: number) => {
+    setCompany((prev) => ({ ...prev, default_tax_rate: newRate }));
+  };
   const planTier = (company.plan_tier || 'free') as PlanTier;
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
@@ -460,7 +467,8 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
                 publicLink={publicLink}
                 copied={copied}
                 onCopy={handleCopy}
-                onNavigateSection={(section) => setActiveSection(section as SectionKey)}
+                              onNavigateSection={(section) => setActiveSection(section as SectionKey)}
+                onTaxRateSaved={handleTaxRateSaved}
               />
             )}
 

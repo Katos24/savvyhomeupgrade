@@ -18,6 +18,10 @@ const PaymentRemindersWidget = dynamic(() => import('@/components/dashboard/Paym
 const PaymentToastPoller = dynamic(() => import('@/components/dashboard/PaymentToastPoller'), { ssr: false });
 const TrialBanner = dynamic(() => import('@/components/TrialBanner'), { ssr: false });
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
 type Company = {
   id: number;
   name: string;
@@ -72,7 +76,10 @@ type DashboardStats = {
 
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'expenses' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 
-// --- Pure Utilities Hoisted Outside Component Scope ---
+// ---------------------------------------------------------------------------
+// Helpers (Hoisted outside component)
+// ---------------------------------------------------------------------------
+
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 
@@ -110,6 +117,10 @@ function readableTextColor(hex: string, isDark: boolean): string {
   const toHex = (c: number) => c.toString(16).padStart(2, '0');
   return `#${toHex(adjust(r))}${toHex(adjust(g))}${toHex(adjust(b))}`;
 }
+
+// ---------------------------------------------------------------------------
+// Main Component
+// ---------------------------------------------------------------------------
 
 export default function CompanyDashboardClient({ company }: { company: Company }) {
   const router = useRouter();
@@ -291,7 +302,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     fetchStats();
   }, [selectedLead, selectedLeadTab, openLead, fetchStats]);
 
-  // Memoized derived calculations
+  // Dynamic values
   const { greeting, todayLabel } = useMemo(() => {
     const h = new Date().getHours();
     let g = 'Good evening';
@@ -320,6 +331,15 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const subText = isDark ? 'text-slate-400' : 'text-[#78716c]';
   const heading = isDark ? 'text-slate-100' : 'text-[#1c1917]';
 
+  // Stable handlers for JSX listeners
+  const handleOpenCreateModal = useCallback(() => setIsCreateModalOpen(true), []);
+  const handleCloseCreateModal = useCallback(() => setIsCreateModalOpen(false), []);
+  const handleCloseLeadModal = useCallback(() => setSelectedLead(null), []);
+  const handleCloseLockedModal = useCallback(() => setLockedDashboardModal(null), []);
+  const handleCloseSidebar = useCallback(() => setSidebarOpen(false), []);
+  const handleOpenSidebar = useCallback(() => setSidebarOpen(true), []);
+  const handleToggleTheme = useCallback(() => setIsDark((v) => !v), []);
+
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${bg}`} role="status" aria-label="Loading dashboard">
@@ -332,15 +352,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     <div className={`min-h-screen relative transition-colors ${bg}`}>
       <Toaster position="top-right" richColors />
 
-      {/* Sidebar overlay (Lazy Mounted) */}
+      {/* Sidebar overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 transition-all duration-300 z-[10000]"
-          aria-hidden={!sidebarOpen}
-        >
+        <div className="fixed inset-0 transition-all duration-300 z-[10000]" aria-hidden={!sidebarOpen}>
           <div
             className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 opacity-100"
-            onClick={() => setSidebarOpen(false)}
+            onClick={handleCloseSidebar}
           />
           <aside
             className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] transition-transform duration-300 translate-x-0 z-[10001]"
@@ -353,7 +370,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               currentUser={currentUser}
               onLogout={handleLogout}
               isOpen={sidebarOpen}
-              onClose={() => setSidebarOpen(false)}
+              onClose={handleCloseSidebar}
               currentView="cards"
               onViewChange={() => {}}
               brandColor1={company.email_brand_color_1 || '#2563eb'}
@@ -376,7 +393,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-5 sm:py-8 lg:py-12 relative z-10 font-sans">
-        {/* Header */}
+        {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 sm:mb-8 gap-4">
           <div className="min-w-0">
             <p className={`text-xs sm:text-sm font-medium ${subText}`}>{todayLabel}</p>
@@ -422,7 +439,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               </button>
 
               <button
-                onClick={() => setIsDark((v) => !v)}
+                onClick={handleToggleTheme}
                 className={`p-2 sm:p-2.5 rounded-xl border transition-colors ${
                   isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
                 }`}
@@ -433,7 +450,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               </button>
 
               <button
-                onClick={() => setSidebarOpen(true)}
+                onClick={handleOpenSidebar}
                 className={`lg:hidden p-2 sm:p-2.5 rounded-xl border transition-colors ${
                   isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
                 }`}
@@ -466,7 +483,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 <div className="flex items-center justify-between mb-3">
                   <p className={`text-base sm:text-lg font-medium ${cardText}`}>Leads</p>
                   <button
-                    onClick={() => setIsCreateModalOpen(true)}
+                    onClick={handleOpenCreateModal}
                     className="inline-flex items-center gap-1 text-xs font-bold text-white bg-[#1c1917] rounded-full px-3 py-1.5 hover:opacity-90 transition min-h-[32px]"
                   >
                     <Plus className="w-3 h-3" /> Add lead
@@ -515,7 +532,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
               {/* Today's Schedule */}
               <div className="min-w-0">
-                <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Today&rsquo;s Schedule</h2>
+                <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Today&apos;s Schedule</h2>
                 <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
                   <div className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
                     <p className={`text-xl sm:text-2xl font-semibold ${cardText}`}>
@@ -579,7 +596,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     </p>
                   </div>
 
-                  {/* Expenses & Profitability Card */}
+                  {/* Expenses Card */}
                   <button
                     onClick={() => router.push(`/${company.slug}/dashboard/financials#expenses`)}
                     className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
@@ -632,7 +649,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
             {/* Side-by-Side Grid: Payment Reminders & Recent Payments */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 sm:mt-8">
-              {/* Left Column: Payment Reminders Widget */}
+              {/* Payment Reminders Widget */}
               <div className="flex flex-col h-full min-w-0">
                 <PaymentRemindersWidget
                   slug={company.slug}
@@ -643,7 +660,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 />
               </div>
 
-              {/* Right Column: Recent Payments */}
+              {/* Recent Payments */}
               <div className="flex flex-col h-full min-w-0">
                 <div className={`rounded-2xl border ${cardBg} overflow-hidden font-sans flex flex-col h-full`}>
                   <div className={`flex items-center justify-between px-4 sm:px-5 py-3.5 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
@@ -717,7 +734,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         <LeadModal
           lead={selectedLead}
           initialTab={selectedLeadTab}
-          onClose={() => setSelectedLead(null)}
+          onClose={handleCloseLeadModal}
           onUpdateStatus={updateLeadStatus}
           onAddNote={addNote}
           onDeleteLead={deleteLead}
@@ -736,7 +753,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       {isCreateModalOpen && (
         <CreateLeadModal
           isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
+          onClose={handleCloseCreateModal}
           onSuccess={() => fetchStats()}
           companySlug={company.slug}
           companyId={company.id}
@@ -756,7 +773,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       <LockedFeatureModal
         featureKey={lockedDashboardModal}
         companySlug={company.slug}
-        onClose={() => setLockedDashboardModal(null)}
+        onClose={handleCloseLockedModal}
       />
     </div>
   );

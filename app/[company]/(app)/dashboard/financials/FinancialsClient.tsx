@@ -42,7 +42,7 @@ export default function FinancialsClient({
   const [customRange, setCustomRange] = useState<{ start: string; end: string } | null>(null);
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<Tab>('overview');
-  const [activeFilter, setActiveFilter] = useState<InvoiceState | 'all'>('all');
+const [activeFilter, setActiveFilter] = useState<InvoiceState | 'all' | 'awaiting_deposit' | 'awaiting_balance'>('all');
   
   const router = useRouter();
   const pathname = usePathname();
@@ -382,7 +382,7 @@ export default function FinancialsClient({
             isBookkeeperView={isBookkeeperView}
             isDark={isDark}
             filter={activeFilter}
-            onFilterChange={setActiveFilter}
+            onFilterChange={setActiveFilter}  
             search={search}
             onSearchChange={setSearch}
           />

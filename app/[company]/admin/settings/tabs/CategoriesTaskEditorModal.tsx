@@ -19,7 +19,7 @@ export type QuoteTemplate = {
   deposit_type?: DepositType | null;
   deposit_value?: number | null;
 };
-export type Category = { value: string; label: string; task_templates?: TaskTemplate[] };
+export type Category = { value: string; label: string; task_templates?: TaskTemplate[]; tax_exempt?: boolean };
 
 export type CustomQuestion = {
   id: string;

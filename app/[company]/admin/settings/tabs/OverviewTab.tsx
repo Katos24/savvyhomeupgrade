@@ -20,6 +20,7 @@ import {
   CreditCard,
   Receipt,
   Trash2,
+  Percent
 } from 'lucide-react';
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -85,10 +86,11 @@ type OverviewTabProps = {
   onSaveBranding: () => void;
   qrCodeUrl: string;
   onShowQrModal: () => void;
-  publicLink: string;
+    publicLink: string;
   copied: boolean;
   onCopy: () => void;
   onNavigateSection: (section: string) => void;
+  onTaxRateSaved: (rate: number) => void;
 };
 
 function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refreshToken?: number }) {
@@ -99,6 +101,9 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
   const planTier = (company.plan_tier || 'free') as PlanTier;
   const canSendInvoices = can(planTier, 'send_invoice_email');
   const previewUrl = `/api/company/${company.slug}/preview-invoice?v=${refreshToken}`;
+
+
+  
 
   useEffect(() => {
     if (!expanded) return;
@@ -208,13 +213,40 @@ export default function OverviewTab({
   onSaveBranding,
   qrCodeUrl,
   onShowQrModal,
-  publicLink,
+    publicLink,
   copied,
   onCopy,
   onNavigateSection,
+  onTaxRateSaved,
 }: OverviewTabProps) {
   const [emailError, setEmailError] = useState('');
   const [invoicePreviewRefreshToken, setInvoicePreviewRefreshToken] = useState(0);
+  const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
+  const [editingTaxRate, setEditingTaxRate] = useState(false);
+  const [taxRateDraft, setTaxRateDraft] = useState(String(company.default_tax_rate ?? 0));
+  const [taxRateSaving, setTaxRateSaving] = useState(false);
+
+  const saveTaxRate = async () => {
+    const parsed = parseFloat(taxRateDraft);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) return;
+    setTaxRateSaving(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-tax-rate', data: { default_tax_rate: parsed } }),
+      });
+      const result = await res.json();
+      if (result.success) {
+        setTaxRate(parsed);
+        setEditingTaxRate(false);
+        onTaxRateSaved(parsed);
+      }
+    } catch {}
+    finally {
+      setTaxRateSaving(false);
+    }
+  };
 
   const planTier = (company.plan_tier ?? 'free') as PlanTier;
   const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
@@ -253,6 +285,7 @@ export default function OverviewTab({
       setBccSaving(false);
     }
   };
+
 
   const handleConfirmDigestToggle = async () => {
     const newVal = !digestEnabled;
@@ -550,6 +583,8 @@ export default function OverviewTab({
 
           {/* RIGHT COLUMN: Automations, Plan & Payment Status (5 cols) */}
           <div className="xl:col-span-5 space-y-6">
+
+            
                         
             {/* Card A: Automations */}
                         <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
@@ -658,7 +693,9 @@ export default function OverviewTab({
                   </div>
                 </div>
 
-                {/* Payment Status Row */}
+                
+
+                                {/* Payment Status Row */}
                 <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                   <span className="text-xs font-semibold text-slate-800 sm:w-28 sm:shrink-0">Payment Status</span>
                   <div className="min-w-0 flex-1">
@@ -668,9 +705,64 @@ export default function OverviewTab({
               </div>
             </div>
 
+            {/* Card C: Tax Rate */}
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+              <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Sales Tax</h2>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-xs text-slate-500 mb-3">
+                  Applied to every quote by default. Individual services can be marked tax-exempt from the Services page.
+                </p>
+                {editingTaxRate ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      max="100"
+                      value={taxRateDraft}
+                      onChange={(e) => setTaxRateDraft(e.target.value)}
+                      autoFocus
+                      className="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm font-semibold text-slate-900 outline-none focus:border-slate-900"
+                    />
+                    <span className="text-xs font-semibold text-slate-500">%</span>
+                    <button
+                      type="button"
+                      onClick={saveTaxRate}
+                      disabled={taxRateSaving}
+                      className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      {taxRateSaving ? '...' : 'Save'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingTaxRate(false);
+                        setTaxRateDraft(String(taxRate));
+                      }}
+                      className="text-xs font-semibold text-slate-500 hover:text-slate-800"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setEditingTaxRate(true)}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
+                  >
+                    <Pencil className="h-3.5 w-3.5 text-slate-600" />
+                    Tax rate: {taxRate}%
+                  </button>
+                )}
+              </div>
+            </div>
+
           </div>
 
         </div>
+        
 
         {/* FULL WIDTH: Lead Intake / Booking Link */}
                <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
