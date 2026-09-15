@@ -26,9 +26,6 @@ const fmtDateLong = (d: string | null) => {
   return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 };
 
-// Two variants per state — light and dark — since the dot/text/bg colors
-// that work on a white row need different values on a dark one, same
-// reasoning already applied in FinancialsOverview.tsx's own STATE_META.
 const STATE_META: Record<InvoiceState, { label: string; dot: string; light: { text: string; bg: string }; dark: { text: string; bg: string } }> = {
   draft:    { label: 'Draft',    dot: '#a8a29e', light: { text: '#57534e', bg: '#a8a29e18' }, dark: { text: '#d6d3d1', bg: '#a8a29e26' } },
   sent:     { label: 'Sent',     dot: '#3b82f6', light: { text: '#1d4ed8', bg: '#3b82f618' }, dark: { text: '#93c5fd', bg: '#3b82f626' } },
@@ -37,12 +34,43 @@ const STATE_META: Record<InvoiceState, { label: string; dot: string; light: { te
   paid:     { label: 'Paid',     dot: '#22c55e', light: { text: '#15803d', bg: '#22c55e18' }, dark: { text: '#86efac', bg: '#22c55e26' } },
 };
 
-const FILTERS: { key: InvoiceState | 'all'; label: string }[] = [
+// Widened beyond the shared InvoiceState type, local to this component —
+// splits what used to be one ambiguous 'sent'/'partial' bucket into
+// phase-aware ones, since "$X owed" meant something different depending
+// on whether it was the deposit or the balance still outstanding.
+type ListFilter = InvoiceState | 'all' | 'awaiting_deposit' | 'awaiting_balance';
+
+// One real function instead of a plain equality check — 'overdue' stays
+// its own urgent, cross-cutting bucket (same priority _state already
+// gives it internally), Draft/Paid are unchanged, and the two new
+// buckets split the old 'sent'/'partial' state by which phase is
+// actually outstanding. Legacy 'sent'/'partial' values are still
+// accepted (Overview's cards still pass them) and mapped onto the
+// closest real meaning, so that entry point keeps showing sensible
+// rows even though no single pill highlights as selected for it.
+const matchesFilter = (p: any, f: ListFilter): boolean => {
+  if (f === 'all') return true;
+  if (f === 'draft') return p._state === 'draft';
+  if (f === 'overdue') return p._state === 'overdue';
+  if (f === 'paid') return p._state === 'paid';
+  if (f === 'awaiting_deposit') {
+    return p._billingPhase === 'deposit' && p._state !== 'overdue' && p._state !== 'paid';
+  }
+  if (f === 'awaiting_balance') {
+    return p._billingPhase === 'balance' && p._state !== 'overdue' && p._state !== 'paid';
+  }
+  if (f === 'sent' || f === 'partial') {
+    return !!p._billingPhase && p._state !== 'overdue' && p._state !== 'paid' && p._state !== 'draft';
+  }
+  return false;
+};
+
+const FILTERS: { key: ListFilter; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'draft', label: 'Draft' },
-  { key: 'sent', label: 'Sent' },
+  { key: 'awaiting_deposit', label: 'Awaiting Deposit' },
+  { key: 'awaiting_balance', label: 'Awaiting Balance' },
   { key: 'overdue', label: 'Overdue' },
-  { key: 'partial', label: 'Partial' },
   { key: 'paid', label: 'Paid' },
 ];
 
@@ -61,8 +89,8 @@ export default function InvoicesList({
   company: any;
   withMoney: any[];
   isBookkeeperView: boolean;
-  filter: InvoiceState | 'all';
-  onFilterChange: (value: InvoiceState | 'all') => void;
+  filter: ListFilter;
+  onFilterChange: (value: ListFilter) => void;
   search: string;
   onSearchChange: (value: string) => void;
   isDark?: boolean;
@@ -75,8 +103,6 @@ export default function InvoicesList({
   const [sending, setSending] = useState(false);
   const [remindedIds, setRemindedIds] = useState<Set<number>>(new Set());
 
-  // Shared tokens, same pattern as FinancialsOverview.tsx — built once
-  // here rather than repeating the isDark ternary at every className.
   const cardBase = isDark ? 'border-white/10 bg-[#0f1420]' : 'border-stone-200 bg-white';
   const headerBg = isDark ? 'bg-white/5 border-white/10' : 'bg-stone-50/70 border-stone-200';
   const labelText = isDark ? 'text-slate-400' : 'text-stone-500';
@@ -90,14 +116,14 @@ export default function InvoicesList({
     : 'border-stone-300 bg-white text-stone-600 hover:bg-stone-50';
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { all: withMoney.length };
-    for (const p of withMoney) c[p._state] = (c[p._state] || 0) + 1;
+    const c: Record<string, number> = {};
+    for (const f of FILTERS) c[f.key] = withMoney.filter((p) => matchesFilter(p, f.key)).length;
     return c;
   }, [withMoney]);
 
   const rows = useMemo(() => {
     let list = withMoney;
-    if (filter !== 'all') list = list.filter((p) => p._state === filter);
+    if (filter !== 'all') list = list.filter((p) => matchesFilter(p, filter));
     if (search.trim()) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -118,7 +144,7 @@ export default function InvoicesList({
         case 'customer':
           return dir * (a.customer_name || '').localeCompare(b.customer_name || '');
         case 'amount':
-          return dir * (a._total - b._total);
+          return dir * (a._owed - b._owed);
         case 'due': {
           const at = a.payment_due_date ? new Date(a.payment_due_date).getTime() : null;
           const bt = b.payment_due_date ? new Date(b.payment_due_date).getTime() : null;
@@ -214,6 +240,8 @@ export default function InvoicesList({
     );
   };
 
+  const phaseLabel = (p: any) => (p._billingPhase === 'deposit' ? 'Deposit' : p._billingPhase === 'balance' ? 'Balance' : null);
+
   return (
     <div>
       {/* Filter pills */}
@@ -249,9 +277,13 @@ export default function InvoicesList({
       </div>
 
       <div className={`overflow-hidden rounded-xl border ${cardBase}`}>
-        <div className={`hidden grid-cols-[minmax(0,1fr)_100px_110px_90px_90px_90px] gap-3 border-b px-4 py-2.5 lg:grid ${headerBg}`}>
+        {/* 7 columns now — Total Bill and Remaining shown separately,
+            not collapsed into one strikethrough number. Remaining is what
+            drives sort/urgency; Total is context, always visible. */}
+        <div className={`hidden grid-cols-[minmax(0,1fr)_90px_100px_110px_90px_90px_90px] gap-3 border-b px-4 py-2.5 lg:grid ${headerBg}`}>
           <SortHeader col="customer" label="Client" />
-          <SortHeader col="amount" label="Amount" />
+          <span className={`text-[11px] font-medium uppercase tracking-wide ${labelText}`}>Total Bill</span>
+          <SortHeader col="amount" label="Remaining" />
           <span className={`text-[11px] font-medium uppercase tracking-wide ${labelText}`}>Status</span>
           <SortHeader col="due" label="Due" />
           <SortHeader col="sent" label="Sent" />
@@ -266,6 +298,7 @@ export default function InvoicesList({
             const meta = isDark ? stateDef.dark : stateDef.light;
             const alreadyReminded = p._remindedToday || remindedIds.has(p.id);
             const canRemind = !isBookkeeperView && p._owed > 0.005 && p._invoiced;
+            const phase = phaseLabel(p);
             return (
               <button
                 key={p.id}
@@ -274,14 +307,22 @@ export default function InvoicesList({
                   i > 0 ? `border-t ${rowBorder}` : ''
                 }`}
               >
-                {/* MOBILE — stacked card, every value labeled, below lg: only */}
+                {/* MOBILE */}
                 <div className="lg:hidden space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className={`truncate text-[14px] font-medium ${valueText}`}>{p.customer_name || 'Unnamed'}</p>
                       <p className={`truncate text-[12px] ${labelText}`}>{p.invoice_number || 'No invoice #'}</p>
                     </div>
-                    <span className={`shrink-0 text-[14px] font-semibold tabular-nums ${valueText}`}>{fmtExact(p._total)}</span>
+                    <div className="shrink-0 text-right">
+                      <p className={`text-[14px] font-semibold tabular-nums ${valueText}`}>
+                        {fmtExact(p._owed)}
+                        {phase && <span className={`ml-1 text-[10px] font-normal ${labelText}`}>{phase.toLowerCase()}</span>}
+                      </p>
+                      {p._owed !== p._total && (
+                        <p className={`text-[11px] tabular-nums ${subText}`}>of {fmtExact(p._total)}</p>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 flex-wrap">
@@ -292,15 +333,6 @@ export default function InvoicesList({
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stateDef.dot }} />
                       {stateDef.label}
                     </span>
-                    {p._billingPhase && (
-                      <span className={`text-[10px] font-semibold uppercase tracking-wide ${
-                        p._billingPhase === 'deposit'
-                          ? (isDark ? 'text-amber-400' : 'text-amber-600')
-                          : (isDark ? 'text-blue-400' : 'text-blue-600')
-                      }`}>
-                        {p._billingPhase === 'deposit' ? 'Deposit due' : 'Balance due'}
-                      </span>
-                    )}
                     {p._collectedUnsent && (
                       <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>
                         {fmtExact(p._collected)} collected, not invoiced
@@ -334,13 +366,17 @@ export default function InvoicesList({
                   )}
                 </div>
 
-                {/* DESKTOP — original 6-column grid, unchanged shape, lg: and up only */}
-                <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_100px_110px_90px_90px_90px] lg:items-center lg:gap-3">
+                {/* DESKTOP — 7 columns matching the new header */}
+                <div className="hidden lg:grid lg:grid-cols-[minmax(0,1fr)_90px_100px_110px_90px_90px_90px] lg:items-center lg:gap-3">
                   <div className="min-w-0">
                     <p className={`truncate text-[14px] font-medium ${valueText}`}>{p.customer_name || 'Unnamed'}</p>
                     <p className={`truncate text-[12px] ${labelText}`}>{p.invoice_number || 'No invoice #'}</p>
                   </div>
-                  <div className={`text-[13px] font-semibold tabular-nums ${valueText}`}>{fmtExact(p._total)}</div>
+                  <div className={`text-[12px] tabular-nums ${labelText}`}>{fmtExact(p._total)}</div>
+                  <div>
+                    <div className={`text-[13px] font-semibold tabular-nums ${valueText}`}>{fmtExact(p._owed)}</div>
+                    {phase && <div className={`text-[10px] uppercase tracking-wide ${labelText}`}>{phase}</div>}
+                  </div>
                   <div>
                     <span
                       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
@@ -349,15 +385,6 @@ export default function InvoicesList({
                       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: stateDef.dot }} />
                       {stateDef.label}
                     </span>
-                    {p._billingPhase && (
-                      <p className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
-                        p._billingPhase === 'deposit'
-                          ? (isDark ? 'text-amber-400' : 'text-amber-600')
-                          : (isDark ? 'text-blue-400' : 'text-blue-600')
-                      }`}>
-                        {p._billingPhase === 'deposit' ? 'Deposit due' : 'Balance due'}
-                      </p>
-                    )}
                     {p._collectedUnsent && (
                       <p className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>
                         {fmtExact(p._collected)} collected, not invoiced

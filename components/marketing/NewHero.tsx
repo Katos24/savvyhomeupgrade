@@ -1,468 +1,354 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Check, ChevronRight } from 'lucide-react';
+import {
+  ArrowRight,
+  CheckCircle2,
+  Clock,
+  ShieldCheck,
+  Send,
+  FileText,
+  CreditCard,
+  Calendar,
+  BookOpen,
+  Sparkles,
+  Star,
+  Check,
+  Building2,
+  DollarSign,
+  Briefcase,
+} from 'lucide-react';
 import Link from 'next/link';
-import { Fraunces, Work_Sans, IBM_Plex_Mono, Caveat } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 
-// Font loading lives here for a self-contained drop-in. If Hero is the only
-// place these fonts are used, this is fine as-is. If other pages will reuse
-// Fraunces / Work Sans, move these four calls to app/layout.tsx instead and
-// just keep the CSS variable names below in sync.
-const fraunces = Fraunces({
+const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-fraunces',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
 });
-const workSans = Work_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-work',
-});
-const plexMono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-mono',
-});
-const caveat = Caveat({
-  subsets: ['latin'],
-  weight: ['500', '600'],
-  variable: '--font-caveat',
-});
-
-// Palette (not in the Tailwind theme — arbitrary values throughout):
-// paper #F5EFE1 · paper-deep #ECE1C8 · card #FBF7EC
-// ink #262019 · ink-soft #6B6152 · ink-faint #A79A83
-// amber #DE9138 · amber-deep #B5701F · rust #A8432A · line #DDD0B4
-
-const TRADES = [
-  { name: 'Roofing', caption: 'Roofing, sunrise', src: '/images/roofing.webp', rotate: -5 },
-  { name: 'HVAC', caption: 'HVAC, attic install', src: '/images/hvac.webp', rotate: 3 },
-  { name: 'Plumbing', caption: 'Plumbing, rough-in', src: '/images/plumbing.webp', rotate: -2 },
-  { name: 'Electrical', caption: 'Electrical, panel swap', src: '/images/electrical.webp', rotate: 4 },
-  { name: 'Solar', caption: 'Solar, rooftop mount', src: '/images/solar.webp', rotate: -4 },
-];
 
 const FEATURES = [
-  { title: 'See every job at a glance', desc: 'Your whole week, roofs to rough-ins, on one board.' },
-  { title: 'Put jobs on the calendar', desc: 'Drag a job onto the schedule and the crew gets a text.' },
-  { title: 'Send quotes from the truck', desc: 'Type a price, tap send, get approved before you leave the driveway.' },
-  { title: 'Turn happy customers into reviews', desc: 'A five-star job gets a five-star review request, automatically.' },
-];
-
-type CardLine = { label: string; value: string; strong?: boolean };
-type CardStage = {
-  step: string;
-  label: string;
-  job: string;
-  meta: string;
-  lines: CardLine[];
-  tag: string;
-  tagStyle: 'neutral' | 'amber' | 'stamp';
-};
-
-const CARD_STAGES: CardStage[] = [
   {
-    step: '01',
-    label: 'QUOTE SENT',
-    job: 'Roofing — Reroof',
-    meta: 'Built from the "Standard reroof" template, edited in under a minute',
-    lines: [{ label: 'Total', value: '$4,280.00', strong: true }],
-    tag: 'Awaiting approval',
-    tagStyle: 'neutral',
+    icon: DollarSign,
+    color: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    title: 'Upfront deposits',
+    desc: 'Set a deposit percentage on any estimate. The payment link goes out the moment the client signs.',
   },
   {
-    step: '02',
-    label: 'DEPOSIT REQUESTED',
-    job: 'Roofing — Reroof',
-    meta: '30% down, balance due on completion',
-    lines: [
-      { label: 'Deposit due', value: '$1,284.00' },
-      { label: 'Balance due', value: '$2,996.00' },
-    ],
-    tag: 'Sent via Stripe',
-    tagStyle: 'neutral',
+    icon: Send,
+    color: 'bg-teal-50 text-teal-600 border-teal-100',
+    title: 'Balances, chased for you',
+    desc: 'Remaining balances go out on schedule with automatic reminders until the job is paid in full.',
   },
   {
-    step: '03',
-    label: 'DEPOSIT PAID',
-    job: 'Roofing — Reroof',
-    meta: 'Stripe confirmed the charge automatically',
-    lines: [
-      { label: 'Deposit received', value: '$1,284.00', strong: true },
-      { label: 'Balance queued', value: '$2,996.00' },
-    ],
-    tag: 'Balance ready to send',
-    tagStyle: 'amber',
+    icon: FileText,
+    color: 'bg-cyan-50 text-cyan-600 border-cyan-100',
+    title: 'Emailed PDF invoices',
+    desc: 'Every invoice and estimate emails as a clean PDF, with a full outbox history of what was sent and when.',
   },
   {
-    step: '04',
-    label: 'PAID IN FULL',
-    job: 'Roofing — Reroof',
-    meta: 'Balance collected the moment the job wrapped',
-    lines: [{ label: 'Total collected', value: '$4,280.00', strong: true }],
-    tag: 'PAID',
-    tagStyle: 'stamp',
+    icon: ShieldCheck,
+    color: 'bg-blue-50 text-blue-600 border-blue-100',
+    title: 'Secure Stripe payments',
+    desc: 'Card and bank payments run through Stripe, so client details stay protected and payouts land fast.',
+  },
+  {
+    icon: Calendar,
+    color: 'bg-indigo-50 text-indigo-600 border-indigo-100',
+    title: 'Scheduling',
+    desc: 'Book crews, set job dates, and keep the calendar tied to the same job the money lives on.',
+  },
+  {
+    icon: BookOpen,
+    color: 'bg-slate-50 text-slate-700 border-slate-200',
+    title: 'Price book & templates',
+    desc: 'Build estimates from saved line items and reusable templates instead of typing them out again.',
+  },
+  {
+    icon: Sparkles,
+    color: 'bg-teal-50 text-teal-700 border-teal-100',
+    title: 'Custom branding',
+    desc: 'Your logo, colors, and business details on every estimate, invoice, and client email.',
+  },
+  {
+    icon: Star,
+    color: 'bg-amber-50 text-amber-600 border-amber-100',
+    title: 'Google reviews',
+    desc: 'Ask for a Google review automatically once a job is paid, while the work is still fresh.',
   },
 ];
 
 export default function Hero() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [userScrolled, setUserScrolled] = useState(false);
-  const stripRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const reduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reduced) return;
-
-    const timer = setInterval(() => {
-      setActiveIndex((prev) => (prev + 1) % TRADES.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    if (userScrolled) return;
-    const strip = stripRef.current;
-    const card = strip?.children[activeIndex] as HTMLElement | undefined;
-    if (!strip || !card) return;
-
-    strip.scrollTo({
-      left: card.offsetLeft - strip.offsetLeft - 24,
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-    });
-  }, [activeIndex, userScrolled]);
-
   return (
-    <section
-      className={`${fraunces.variable} ${workSans.variable} ${plexMono.variable} ${caveat.variable} relative overflow-hidden bg-[#F5EFE1] pt-28 pb-20 sm:pt-36 sm:pb-28 px-6 sm:px-12 font-[family-name:var(--font-work)]`}
+    <div
+      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-[#F4F7F6] text-slate-900 antialiased selection:bg-[#00828A]/20 selection:text-[#00828A]`}
     >
-      <div className="max-w-6xl mx-auto">
-        {/* ── HERO: copy + work order ticket ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start mb-20 sm:mb-28">
-          <div className="lg:col-span-7">
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex items-center gap-2.5 mb-6 font-[family-name:var(--font-mono)] text-[12.5px] tracking-[0.12em] font-semibold text-[#B5701F]"
-            >
-              <span className="w-[7px] h-[7px] rounded-full bg-[#A8432A] shrink-0" />
-              TICKET N&deg;10482 &middot; STATUS: BOOKED
-            </motion.div>
+      {/* ── 1. HERO SECTION (Adjusted top padding for fixed/sticky Navbar) ── */}
+      <section className="relative overflow-hidden pt-24 sm:pt-32 lg:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8">
+        {/* Ambient Top Glow */}
+        <div className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[520px] bg-gradient-to-b from-teal-100/50 via-emerald-50/20 to-transparent blur-3xl -z-10" />
 
-            <motion.h1
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.08 }}
-              className="font-[family-name:var(--font-fraunces)] font-medium text-[34px] sm:text-5xl lg:text-[58px] leading-[1.08] tracking-tight text-[#262019] mb-6"
-            >
-              Book the job. Send the quote.
-              <br />
-              Get paid before you&rsquo;ve{' '}
-              <span className="bg-[linear-gradient(transparent_62%,rgba(222,145,56,0.45)_62%)]">
-                packed up the truck.
-              </span>
-            </motion.h1>
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8 items-center">
+            {/* Left Column: Copy */}
+            <div className="lg:col-span-5 space-y-6 text-center sm:text-left">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-sm text-xs font-semibold text-slate-700"
+              >
+                <span className="w-2 h-2 rounded-full bg-[#00828A]" />
+                Built for contractors & field teams
+              </motion.div>
 
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.16 }}
-              className="text-lg text-[#6B6152] leading-relaxed max-w-lg mb-8"
-            >
-              The scheduling, quoting, and invoicing tool that runs from your phone
-              &mdash; so the paperwork doesn&rsquo;t wait until you&rsquo;re home.
-            </motion.p>
+              <motion.h1
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.08 }}
+                className="text-3xl sm:text-5xl lg:text-[52px] font-extrabold leading-[1.1] tracking-tight text-slate-900"
+              >
+                Take the deposit before you pull a single stud.
+              </motion.h1>
 
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.24 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-6"
-            >
-              <Link href="/signup" className="w-full sm:w-auto">
-                <button className="w-full sm:w-auto bg-[#DE9138] text-[#262019] font-bold text-[15.5px] px-6 py-3.5 rounded-[10px] border-[1.5px] border-[#262019] shadow-[4px_4px_0_0_#A8432A] hover:shadow-[2px_2px_0_0_#A8432A] hover:translate-x-[2px] hover:translate-y-[2px] active:shadow-none active:translate-x-[4px] active:translate-y-[4px] transition-all duration-150 flex items-center justify-center gap-2">
-                  Start free &mdash; no card needed
-                  <ArrowRight size={17} />
-                </button>
-              </Link>
+              <motion.p
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.16 }}
+                className="text-base sm:text-lg text-slate-600 leading-relaxed font-normal"
+              >
+                Lead2Project sends estimates, collects upfront deposits through Stripe, and chases project balances with emailed PDF invoices &mdash; so the money lands while the crew is still on site.
+              </motion.p>
 
-              <Link href="/demo" className="w-full sm:w-auto">
-                <button className="w-full sm:w-auto text-[#262019] font-semibold text-[15.5px] px-6 py-3.5 rounded-[10px] border-[1.5px] border-dashed border-[#A79A83] hover:border-[#262019] hover:bg-[#262019]/[0.03] transition-colors flex items-center justify-center gap-2">
-                  See a real work order
-                </button>
-              </Link>
-            </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.24 }}
+                className="flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-4 pt-2"
+              >
+                <Link href="/signup" className="w-full sm:w-auto">
+                  <button className="w-full sm:w-auto bg-[#00828A] hover:bg-[#006e75] text-white font-bold text-sm px-7 py-3.5 rounded-xl shadow-md shadow-[#00828A]/20 transition-all duration-200 flex items-center justify-center gap-2">
+                    Start free
+                  </button>
+                </Link>
+                <span className="text-xs text-slate-500 font-medium">
+                  No card required. Setup in 4 minutes.
+                </span>
+              </motion.div>
+            </div>
 
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-              className="text-[13.5px] font-medium text-[#A79A83]"
-            >
-              Free for solo crews. Set up before your coffee&rsquo;s done.
-            </motion.p>
-          </div>
-
-          {/* Work order ticket — signature element */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end w-full">
-            <motion.div
-              initial={{ opacity: 0, rotate: -11, y: 16 }}
-              animate={{ opacity: 1, rotate: -4, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2, ease: [0.2, 0.9, 0.3, 1.2] }}
-              className="relative w-full max-w-[340px] bg-[#FBF7EC] border border-[#DDD0B4] rounded-[4px] p-6 pb-5 shadow-[6px_6px_0_rgba(38,32,25,0.08)]"
-            >
-              <div
-                className="absolute -left-[7px] top-0 bottom-0 w-3.5"
-                style={{
-                  backgroundImage: 'radial-gradient(circle, #F5EFE1 4.5px, transparent 4.6px)',
-                  backgroundSize: '14px 20px',
-                  backgroundRepeat: 'repeat-y',
-                }}
-              />
-
-              <div className="flex justify-between items-start border-b border-dashed border-[#DDD0B4] pb-3.5 mb-3.5">
-                <div>
-                  <div className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-[0.1em] font-semibold text-[#A79A83]">
-                    WORK ORDER
+            {/* Right Column: Mobile & Desktop Responsive Mockup */}
+            <div className="lg:col-span-7 relative">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.7, delay: 0.15 }}
+                className="relative mx-auto max-w-[660px] bg-slate-900 p-2 sm:p-3.5 rounded-[20px] sm:rounded-[24px] shadow-2xl border border-slate-800/80"
+              >
+                {/* Screen Outer */}
+                <div className="bg-[#0B1520] rounded-[14px] sm:rounded-[16px] overflow-hidden border border-slate-800 text-slate-800 shadow-inner">
+                  {/* App Header */}
+                  <div className="bg-[#0F1E2E] border-b border-slate-800 px-3 sm:px-4 py-2.5 flex items-center justify-between text-xs text-slate-400">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500/80" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                      </div>
+                      <span className="font-semibold text-slate-200 flex items-center gap-1.5 ml-1 text-[11px] sm:text-xs">
+                        <Briefcase className="w-3.5 h-3.5 text-[#00828A]" /> Lead2Project
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="bg-[#00828A] text-white font-semibold text-[10px] sm:text-[11px] px-2.5 py-1 rounded-md">
+                        Send Invoice
+                      </span>
+                    </div>
                   </div>
-                  <div className="font-[family-name:var(--font-mono)] text-[15px] font-semibold text-[#262019] mt-1">
-                    #10482
+
+                  {/* Dashboard Content */}
+                  <div className="grid grid-cols-12 bg-slate-50 min-h-[320px] sm:min-h-[360px] text-xs">
+                    {/* App Sidebar (Hidden on small mobile screens for clean layout) */}
+                    <div className="hidden md:block col-span-3 bg-[#0F1E2E] border-r border-slate-800/60 p-3 space-y-3 text-slate-400 font-medium">
+                      <div className="text-[10px] uppercase font-bold text-slate-500 px-2 tracking-wider">
+                        Workspace
+                      </div>
+                      <div className="space-y-1">
+                        <div className="bg-[#00828A]/20 text-[#00828A] font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-2">
+                          <FileText className="w-3.5 h-3.5" /> Invoices
+                        </div>
+                        <div className="px-2.5 py-1.5 hover:text-slate-200 flex items-center gap-2">
+                          <Calendar className="w-3.5 h-3.5" /> Schedule
+                        </div>
+                        <div className="px-2.5 py-1.5 hover:text-slate-200 flex items-center gap-2">
+                          <Send className="w-3.5 h-3.5" /> Estimates
+                        </div>
+                        <div className="px-2.5 py-1.5 hover:text-slate-200 flex items-center gap-2">
+                          <Star className="w-3.5 h-3.5" /> Reviews
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Main Invoice View */}
+                    <div className="col-span-12 md:col-span-9 p-3.5 sm:p-5 bg-white space-y-3 sm:space-y-4">
+                      <div className="flex justify-between items-start border-b border-slate-100 pb-2.5">
+                        <div>
+                          <div className="text-sm sm:text-base font-bold text-slate-900">
+                            Invoice
+                          </div>
+                          <div className="text-slate-400 font-mono text-[10px] sm:text-[11px]">
+                            L2P-2026-1041
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-slate-500 text-[10px] sm:text-[11px]">
+                            Job: Roof & Framing
+                          </div>
+                          <div className="text-emerald-600 font-semibold text-[10px] sm:text-[11px] flex items-center justify-end gap-1">
+                            <CheckCircle2 className="w-3 h-3" /> Deposit Received
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Payment Schedule Cards */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 pt-0.5">
+                        <div className="p-3 bg-teal-50/60 border border-teal-100 rounded-xl space-y-1">
+                          <div className="flex items-center justify-between text-teal-800">
+                            <span className="font-semibold text-[10.5px] sm:text-[11px]">
+                              Upfront Deposit (40%)
+                            </span>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-teal-600" />
+                          </div>
+                          <div className="text-base sm:text-lg font-bold text-slate-900">
+                            $12,500.00
+                          </div>
+                          <div className="text-[9.5px] sm:text-[10px] text-teal-700/80">
+                            Paid via Stripe &middot; Sept 14
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-slate-900 text-white rounded-xl space-y-1.5 shadow-sm">
+                          <div className="flex items-center justify-between text-slate-300">
+                            <span className="font-semibold text-[10.5px] sm:text-[11px]">
+                              Balance Due
+                            </span>
+                            <Clock className="w-3.5 h-3.5 text-amber-400" />
+                          </div>
+                          <div className="text-base sm:text-lg font-bold text-white">
+                            $17,850.00
+                          </div>
+                          <button className="w-full bg-[#00828A] hover:bg-[#006e75] text-white text-[10px] sm:text-[10.5px] font-semibold py-1.5 rounded-md transition-colors">
+                            Send Final Invoice
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Invoice Item Breakdown */}
+                      <div className="space-y-1.5 sm:space-y-2 border-t border-slate-100 pt-2.5 sm:pt-3">
+                        <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Line Items
+                        </div>
+                        <div className="space-y-1 text-[11px] sm:text-[11.5px]">
+                          <div className="flex justify-between text-slate-700">
+                            <span>Teardown & Materials</span>
+                            <span className="font-semibold text-slate-900">
+                              $18,400.00
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-slate-700">
+                            <span>Framing & Labor</span>
+                            <span className="font-semibold text-slate-900">
+                              $11,950.00
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="font-[family-name:var(--font-mono)] text-xs font-semibold tracking-[0.08em] text-[#A8432A] border-2 border-[#A8432A] rounded-md px-2.5 py-1 rotate-[9deg] opacity-85">
-                  PAID
-                </div>
-              </div>
-
-              <div className="font-[family-name:var(--font-fraunces)] text-lg font-medium text-[#262019] mb-0.5">
-                Roofing
-              </div>
-              <div className="text-[13px] text-[#6B6152] mb-4">
-                Shingle replacement &middot; 2,400 sq ft
-              </div>
-
-              <div className="font-[family-name:var(--font-mono)] text-[12.5px] text-[#6B6152] space-y-1">
-                <div className="flex justify-between py-0.5">
-                  <span>Labor</span>
-                  <span>$2,400.00</span>
-                </div>
-                <div className="flex justify-between py-0.5">
-                  <span>Materials</span>
-                  <span>$1,880.00</span>
-                </div>
-                <div className="flex justify-between text-sm font-semibold text-[#262019] border-t border-dashed border-[#DDD0B4] mt-1.5 pt-2.5">
-                  <span>Total</span>
-                  <span>$4,280.00</span>
-                </div>
-              </div>
-
-              <div className="mt-4 pt-3 border-t border-dashed border-[#DDD0B4] text-[11.5px] text-[#A79A83]">
-                Quoted 7:42am &middot; Approved in 12 min
-              </div>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* ── PHOTO STRIP: pinned job-site polaroids ── */}
-        <div className="mb-20 sm:mb-24">
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <p className="font-[family-name:var(--font-mono)] text-xs font-semibold tracking-[0.12em] text-[#A79A83]">
-              ON THE JOB &mdash; EVERY TRADE
-            </p>
-            <div className="flex items-center gap-2">
-              {TRADES.map((t, i) => (
-                <button
-                  key={t.name}
-                  type="button"
-                  onClick={() => {
-                    setUserScrolled(false);
-                    setActiveIndex(i);
-                  }}
-                  aria-label={`Show ${t.name}`}
-                  className={`h-2 rounded-full transition-all ${
-                    i === activeIndex ? 'w-6 bg-[#DE9138]' : 'w-2 bg-[#DDD0B4]'
-                  }`}
-                />
-              ))}
+              </motion.div>
             </div>
           </div>
-
-          <div
-            ref={stripRef}
-            onTouchStart={() => setUserScrolled(true)}
-            onWheel={() => setUserScrolled(true)}
-            className="-mx-6 sm:-mx-12 px-6 sm:px-12 flex gap-6 overflow-x-auto snap-x snap-mandatory pb-4"
-            style={{ scrollbarWidth: 'none' }}
-          >
-            {TRADES.map((trade, i) => {
-              const isActive = i === activeIndex && !userScrolled;
-              return (
-                <div
-                  key={trade.name}
-                  className="shrink-0 snap-start bg-white p-[9px] pb-[30px] rounded-[2px] shadow-[5px_5px_0_rgba(38,32,25,0.07)] transition-transform duration-300 hover:!rotate-0"
-                  style={{ transform: `rotate(${isActive ? trade.rotate / 2 : trade.rotate}deg)` }}
-                >
-                  <div className="relative w-[140px] h-[128px] sm:w-[168px] sm:h-[150px] overflow-hidden">
-                    <span
-                      className="absolute -top-2 left-1/2 -translate-x-1/2 w-[52px] h-5 -rotate-3 z-10"
-                      style={{ background: 'rgba(222,145,56,0.55)' }}
-                    />
-                    <img
-                      src={trade.src}
-                      alt={`${trade.name} crew at work`}
-                      loading="lazy"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="font-[family-name:var(--font-caveat)] text-lg font-semibold text-[#6B6152] text-center mt-2.5">
-                    {trade.caption}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
+      </section>
 
-        {/* ── DIFFERENTIATOR: quote → deposit → balance → paid, one card ── */}
-        <div className="mb-20 sm:mb-24">
-          <motion.div
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ duration: 0.5 }}
-            className="max-w-xl mb-10"
-          >
-            <p className="font-[family-name:var(--font-mono)] text-xs font-semibold tracking-[0.12em] text-[#A79A83] mb-4">
-              ONE CARD, START TO FINISH
-            </p>
-            <h2 className="font-[family-name:var(--font-fraunces)] font-medium text-[26px] sm:text-[34px] leading-[1.15] text-[#262019] mb-3">
-              The card doesn&rsquo;t change. It just gets closer to paid.
-            </h2>
-            <p className="text-[#6B6152] text-[15.5px] leading-relaxed">
-              Every job lives on one card &mdash; quote to deposit to final invoice
-              &mdash; updating itself as Stripe confirms each payment.
-            </p>
-          </motion.div>
-
-          <div className="flex flex-col lg:flex-row items-stretch gap-3 lg:gap-0">
-            {CARD_STAGES.flatMap((stage, i) => {
-              const card = (
-                <motion.div
-                  key={`card-${stage.step}`}
-                  initial={{ opacity: 0, y: 14 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: '-80px' }}
-                  transition={{ duration: 0.5, delay: i * 0.08 }}
-                  className="flex-1 bg-[#FBF7EC] border border-[#DDD0B4] rounded-[4px] p-5"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="font-[family-name:var(--font-mono)] text-[11px] font-semibold text-[#A8432A]">
-                      {stage.step}
-                    </span>
-                    <span className="font-[family-name:var(--font-mono)] text-[10.5px] tracking-[0.08em] font-semibold text-[#A79A83]">
-                      {stage.label}
-                    </span>
-                  </div>
-
-                  <div className="font-[family-name:var(--font-fraunces)] text-[15px] font-medium text-[#262019] mb-0.5">
-                    {stage.job}
-                  </div>
-                  <div className="text-[12px] text-[#6B6152] mb-4 leading-snug">
-                    {stage.meta}
-                  </div>
-
-                  <div className="font-[family-name:var(--font-mono)] text-[12px] text-[#6B6152] mb-4">
-                    {stage.lines.map((line) => (
-                      <div
-                        key={line.label}
-                        className={`flex justify-between py-0.5 ${
-                          line.strong
-                            ? 'text-[#262019] font-semibold border-t border-dashed border-[#DDD0B4] mt-1 pt-2'
-                            : ''
-                        }`}
-                      >
-                        <span>{line.label}</span>
-                        <span>{line.value}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {stage.tagStyle === 'stamp' ? (
-                    <div className="inline-block font-[family-name:var(--font-mono)] text-[11px] font-semibold tracking-[0.08em] text-[#A8432A] border-2 border-[#A8432A] rounded-md px-2.5 py-1 -rotate-[4deg]">
-                      {stage.tag}
-                    </div>
-                  ) : (
-                    <div
-                      className={`inline-block text-[11px] font-semibold px-2.5 py-1 rounded-full ${
-                        stage.tagStyle === 'amber'
-                          ? 'bg-[#DE9138] text-[#262019]'
-                          : 'bg-[#ECE1C8] text-[#6B6152]'
-                      }`}
-                    >
-                      {stage.tag}
-                    </div>
-                  )}
-                </motion.div>
-              );
-
-              if (i === CARD_STAGES.length - 1) return [card];
-
-              const connector = (
-                <div
-                  key={`arrow-${stage.step}`}
-                  className="hidden lg:flex items-center justify-center w-8 shrink-0"
-                >
-                  <ChevronRight size={18} className="text-[#A79A83]" />
-                </div>
-              );
-              return [card, connector];
-            })}
-          </div>
-        </div>
-
-        {/* ── FEATURES: job-order checklist ── */}
-        <div className="rounded-[22px] bg-[#ECE1C8] p-8 sm:p-12 lg:p-14">
-          <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-start">
-            <div className="lg:col-span-5 space-y-4">
-              <h2 className="font-[family-name:var(--font-fraunces)] font-medium text-[28px] sm:text-4xl leading-[1.12] text-[#262019]">
-                Everything the truck needs. None of the paperwork.
+      {/* ── 2. DARK STATS / COLLECTIONS SECTION ── */}
+      <section className="bg-[#081524] text-white py-14 sm:py-20 px-4 sm:px-6 lg:px-8 border-y border-slate-800">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            <div className="lg:col-span-5 space-y-3 text-center sm:text-left">
+              <div className="text-xs font-bold text-[#00828A] tracking-widest uppercase">
+                Collections
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight leading-snug">
+                Chasing balances is the slow part of getting paid.
               </h2>
-              <p className="text-[#6B6152] text-[15.5px] leading-relaxed max-w-sm">
-                Run the whole job &mdash; booking to payment &mdash; from the cab,
-                the roof, or the crawl space.
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Set the deposit and payment schedule once on the estimate. Lead2Project sends each payment link and reminder itself &mdash; no more manual reminder texts.
               </p>
             </div>
 
-            <div className="lg:col-span-7 flex flex-col">
-              {FEATURES.map((feature, i) => (
-                <div
-                  key={feature.title}
-                  className={`flex gap-4 py-4 ${
-                    i !== FEATURES.length - 1 ? 'border-b border-dashed border-[#DDD0B4]' : ''
-                  }`}
-                >
-                  <div className="w-[22px] h-[22px] rounded-[5px] border-[1.5px] border-[#262019] bg-[#DE9138] flex items-center justify-center shrink-0 mt-0.5">
-                    <Check size={13} strokeWidth={3} className="text-[#262019]" />
-                  </div>
-                  <div>
-                    <div className="font-bold text-[15.5px] text-[#262019] mb-0.5">
-                      {feature.title}
-                    </div>
-                    <div className="text-sm text-[#6B6152] leading-relaxed">
-                      {feature.desc}
-                    </div>
-                  </div>
+            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="bg-[#0E2033] border border-slate-800 rounded-2xl p-6 space-y-2 shadow-sm text-center sm:text-left">
+                <div className="text-3xl sm:text-4xl font-extrabold text-white">
+                  25%
                 </div>
-              ))}
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Typical deposit collected before a single material is ordered.
+                </p>
+              </div>
+
+              <div className="bg-[#0E2033] border border-slate-800 rounded-2xl p-6 space-y-2 shadow-sm text-center sm:text-left">
+                <div className="text-3xl sm:text-4xl font-extrabold text-white">
+                  6.2 days
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Average time from final invoice sent to balance paid in full.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* ── 3. FEATURE GRID ── */}
+      <section className="py-16 sm:py-28 px-4 sm:px-6 lg:px-8 bg-[#F8FAF9]">
+        <div className="max-w-7xl mx-auto space-y-10 sm:space-y-12">
+          <div className="space-y-2 max-w-2xl text-center sm:text-left">
+            <div className="text-xs font-bold text-[#00828A] tracking-widest uppercase">
+              Everything on one job
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+              Quote, schedule, invoice, collect, and get the review.
+            </h2>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {FEATURES.map((feat) => {
+              const IconComponent = feat.icon;
+              return (
+                <div
+                  key={feat.title}
+                  className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-3 shadow-sm hover:shadow-md transition-shadow duration-200"
+                >
+                  <div
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center ${feat.color}`}
+                  >
+                    <IconComponent className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {feat.title}
+                  </h3>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {feat.desc}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    </div>
   );
 }
