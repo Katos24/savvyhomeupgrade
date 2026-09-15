@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   Lock,
   Download,
@@ -14,24 +15,25 @@ import {
   Mail,
   Users,
   HelpCircle,
-  ExternalLink,
   ChevronRight,
   ChevronDown
 } from 'lucide-react';
-import QRCodeLib from 'qrcode';
 import { can, type PlanTier } from '@/lib/permissions';
-import FaqModal from '@/components/FaqModal';
 
-import CategoriesTab from '@/app/[company]/admin/settings/tabs/CategoriesTab';
-import PaymentsTab from '@/app/[company]/admin/settings/tabs/PaymentsTab';
-import FormTab from '@/app/[company]/admin/settings/tabs/FormTab';
-import GoogleReviewsTab from '@/app/[company]/admin/settings/tabs/GoogleReviewsTab';
-import OverviewTab from '@/app/[company]/admin/settings/tabs/OverviewTab';
-import SetupTab from '@/app/[company]/admin/settings/tabs/SetupTab';
-import PipelineTab from '@/app/[company]/admin/settings/tabs/PipelineTab';
-import EmailTemplatesTab from '@/app/[company]/admin/settings/tabs/EmailTemplatesTab';
-import TeamTab from '@/app/[company]/admin/settings/tabs/TeamTab';
-import BillingTab from '@/app/[company]/admin/settings/tabs/BillingTab';
+// --- Dynamic Lazy Loading for Heavy Tab Components ---
+const CategoriesTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/CategoriesTab'));
+const PaymentsTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/PaymentsTab'));
+const FormTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/FormTab'));
+const GoogleReviewsTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/GoogleReviewsTab'));
+const OverviewTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/OverviewTab'));
+const SetupTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/SetupTab'));
+const PipelineTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/PipelineTab'));
+const EmailTemplatesTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/EmailTemplatesTab'));
+const TeamTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/TeamTab'));
+const BillingTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/BillingTab'));
+
+// Lazy load Modals
+const FaqModal = dynamic(() => import('@/components/FaqModal'));
 
 type Company = {
   id: number;
@@ -106,7 +108,7 @@ function SectionRailItem({ icon: Icon, imageUrl, label, active, locked, accentCo
   return (
     <button
       onClick={onClick}
-      className={`group relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-left ${
+      className={`group relative w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium transition-colors duration-150 text-left ${
         active 
           ? 'bg-white shadow-sm text-stone-900 font-semibold' 
           : 'text-stone-600 hover:text-stone-900 hover:bg-stone-200/50'
@@ -129,29 +131,6 @@ function SectionRailItem({ icon: Icon, imageUrl, label, active, locked, accentCo
   );
 }
 
-function SectionPill({ icon: Icon, imageUrl, label, active, locked, accentColor, onClick }: {
-  icon?: any; imageUrl?: string; label: string; active: boolean; locked?: boolean; accentColor: string; onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-full text-xs font-semibold border transition-all ${
-        active 
-          ? 'border-stone-900 bg-stone-900 text-white shadow-sm' 
-          : 'border-stone-200 bg-white text-stone-600 hover:border-stone-300'
-      }`}
-    >
-      {imageUrl ? (
-        <img src={imageUrl} className="w-3.5 h-3.5 shrink-0" alt="" />
-      ) : (
-        <Icon className="w-3.5 h-3.5 shrink-0" />
-      )}
-      {label}
-      {locked && <Lock className="w-3 h-3 text-stone-400" />}
-    </button>
-  );
-}
-
 export default function HomeClient({ company: initialCompany, currentUser }: { company: Company; currentUser?: any }) {
   const [company, setCompany] = useState(initialCompany);
   const searchParams = useSearchParams();
@@ -169,7 +148,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandSaved, setBrandSaved] = useState(false);
   const [brandError, setBrandError] = useState<string | null>(null);
-  const [logoPreview, setLogoPreview] = useState(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
+  const [logoPreview, setLogoPreview] = useState(company.logo_url ? company.logo_url : '');
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const [companyName, setCompanyName] = useState(company.name || '');
@@ -186,18 +165,25 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     if (typeof window !== 'undefined') setPublicLink(`${window.location.origin}/${company.slug}`);
   }, [company.slug]);
 
+  // Dynamic QR Code Generation (Imports lib on-demand)
   useEffect(() => {
     if (!publicLink) return;
+    let isMounted = true;
+
     const generate = async () => {
       let dark = '#0F172A', light = '#FFFFFF';
       if (qrStyle === 'brand') dark = color1;
       if (qrStyle === 'dark') { dark = '#FFFFFF'; light = '#0F172A'; }
+
       try {
+        const QRCodeLib = (await import('qrcode')).default;
         const url = await QRCodeLib.toDataURL(publicLink, { width: 1000, margin: 2, errorCorrectionLevel: 'H', color: { dark, light } });
-        setQrCodeUrl(url);
+        if (isMounted) setQrCodeUrl(url);
       } catch {}
     };
+
     generate();
+    return () => { isMounted = false; };
   }, [publicLink, qrStyle, color1]);
 
   const handleSaveBranding = async () => {
@@ -263,11 +249,11 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const reviewsLocked = !can(planTier, 'google_reviews');
   const categoriesLocked = !can(planTier, 'categories');
 
-  const handleCopy = () => {
+  const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(publicLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 1800);
-  };
+  }, [publicLink]);
 
   const downloadStyledQR = () => {
     const canvasEl = document.createElement('canvas');
@@ -306,61 +292,59 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     qrImg.src = qrCodeUrl;
   };
 
-  const checklistSteps: ChecklistStep[] = [
+  const checklistSteps: ChecklistStep[] = useMemo(() => [
     { label: 'Upload your logo', description: 'Make your booking page and emails look professional', done: !!company.logo_url, kind: 'section', section: 'overview' },
     { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, kind: 'section', section: 'form' },
     { label: 'Connect payments', description: 'So customers can actually pay you online', done: company.stripe_payment_status === 'active', kind: 'section', section: 'payments' },
     { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
-  ];
+  ], [company]);
 
   const isAdminForSections = currentUser?.role === 'owner' || currentUser?.role === 'admin';
-
-  const rawSectionGroups: { label: string; items: SectionDef[] }[] = [
-    {
-      label: 'Get set up',
-      items: [
-        { key: 'setup', label: 'Setup Guide', icon: Rocket, visible: true },
-      ],
-    },
-   {
-      label: 'Your business',
-      items: [
-        { key: 'overview', label: 'Overview', icon: LayoutGrid, visible: true },
-        { key: 'categories', label: 'Services', icon: Tags, locked: categoriesLocked, visible: true },
-        { key: 'form', label: 'Booking form', icon: FileText, visible: true },
-      ],
-    },
-    {
-      label: 'Money',
-      items: [
-        { key: 'payments', label: 'Payments', icon: CreditCard, locked: paymentsLocked, visible: true },
-        { key: 'billing', label: 'Billing', icon: CreditCard, visible: currentUser?.role === 'owner' },
-      ],
-    },
-    {
-      label: 'Running jobs',
-      items: [
-        { key: 'pipeline', label: 'Pipeline', icon: Workflow, locked: !can(planTier, 'settings_pipeline'), visible: isAdminForSections },
-        { key: 'email-templates', label: 'Emails', icon: Mail, locked: !can(planTier, 'settings_email_templates'), visible: isAdminForSections },
-        { key: 'team', label: 'Team', icon: Users, locked: !can(planTier, 'settings_team'), visible: isAdminForSections },
-      ],
-    },
-    {
-      label: 'Growth',
-      items: [
-        { key: 'reviews', label: 'Reviews', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg', locked: reviewsLocked, visible: true },
-      ],
-    },
-  ];
-
-  const sectionGroups = rawSectionGroups
-    .map((g) => ({ ...g, items: g.items.filter((s) => s.visible) }))
-    .filter((g) => g.items.length > 0);
-
-  const visibleSections = sectionGroups.flatMap((g) => g.items);
-
-  const isAdminOrOwner = currentUser?.role === 'owner' || currentUser?.role === 'admin';
   const isOwner = currentUser?.role === 'owner';
+
+  const sectionGroups = useMemo(() => {
+    const raw: { label: string; items: SectionDef[] }[] = [
+      {
+        label: 'Get set up',
+        items: [{ key: 'setup', label: 'Setup Guide', icon: Rocket, visible: true }],
+      },
+      {
+        label: 'Your business',
+        items: [
+          { key: 'overview', label: 'Overview', icon: LayoutGrid, visible: true },
+          { key: 'categories', label: 'Services', icon: Tags, locked: categoriesLocked, visible: true },
+          { key: 'form', label: 'Booking form', icon: FileText, visible: true },
+        ],
+      },
+      {
+        label: 'Money',
+        items: [
+          { key: 'payments', label: 'Payments', icon: CreditCard, locked: paymentsLocked, visible: true },
+          { key: 'billing', label: 'Billing', icon: CreditCard, visible: isOwner },
+        ],
+      },
+      {
+        label: 'Running jobs',
+        items: [
+          { key: 'pipeline', label: 'Pipeline', icon: Workflow, locked: !can(planTier, 'settings_pipeline'), visible: isAdminForSections },
+          { key: 'email-templates', label: 'Emails', icon: Mail, locked: !can(planTier, 'settings_email_templates'), visible: isAdminForSections },
+          { key: 'team', label: 'Team', icon: Users, locked: !can(planTier, 'settings_team'), visible: isAdminForSections },
+        ],
+      },
+      {
+        label: 'Growth',
+        items: [
+          { key: 'reviews', label: 'Reviews', imageUrl: 'https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg', locked: reviewsLocked, visible: true },
+        ],
+      },
+    ];
+
+    return raw
+      .map((g) => ({ ...g, items: g.items.filter((s) => s.visible) }))
+      .filter((g) => g.items.length > 0);
+  }, [categoriesLocked, paymentsLocked, isOwner, planTier, isAdminForSections, reviewsLocked]);
+
+  const visibleSections = useMemo(() => sectionGroups.flatMap((g) => g.items), [sectionGroups]);
 
   return (
     <div className="min-h-screen bg-[#faf8f5] text-stone-800 antialiased">
@@ -372,16 +356,16 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             <div className="flex items-center gap-2 text-xs font-semibold text-stone-500 uppercase tracking-wider mb-1">
               <span>Settings</span>
               <ChevronRight className="w-3 h-3" />
-<span className="text-stone-800 capitalize">
-  {visibleSections.find((s) => s.key === activeSection)?.label || activeSection}
-</span>
+              <span className="text-stone-800 capitalize">
+                {visibleSections.find((s) => s.key === activeSection)?.label || activeSection}
+              </span>
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-stone-900">Workspace Settings</h1>
           </div>
           
           <button
             onClick={() => setShowFaqModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold text-stone-600 hover:text-stone-900 hover:border-stone-300 shadow-sm transition-all"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white border border-stone-200 text-xs font-semibold text-stone-600 hover:text-stone-900 hover:border-stone-300 shadow-sm transition-colors"
             aria-label="How Lead2Project works"
           >
             <HelpCircle className="w-4 h-4 text-stone-500" />
@@ -389,30 +373,30 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           </button>
         </div>
 
-       {/* Mobile: Section Dropdown Selector */}
-<div className="block lg:hidden mb-6">
-  <div className="relative">
-    <select
-      id="mobile-section-select"
-      value={activeSection}
-      onChange={(e) => setActiveSection(e.target.value as SectionKey)}
-      className="w-full appearance-none bg-white border border-stone-200/90 rounded-2xl px-4 py-3.5 pr-10 text-sm font-semibold text-stone-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 transition-all cursor-pointer"
-    >
-      {sectionGroups.map((group) => (
-        <optgroup key={group.label} label={group.label}>
-          {group.items.map((s) => (
-            <option key={s.key} value={s.key}>
-              {s.label} {s.locked ? '🔒' : ''}
-            </option>
-          ))}
-        </optgroup>
-      ))}
-    </select>
-    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-stone-500">
-      <ChevronDown className="w-4 h-4" />
-    </div>
-  </div>
-</div>
+        {/* Mobile: Section Dropdown Selector */}
+        <div className="block lg:hidden mb-6">
+          <div className="relative">
+            <select
+              id="mobile-section-select"
+              value={activeSection}
+              onChange={(e) => setActiveSection(e.target.value as SectionKey)}
+              className="w-full appearance-none bg-white border border-stone-200/90 rounded-2xl px-4 py-3.5 pr-10 text-sm font-semibold text-stone-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-stone-900/10 focus:border-stone-400 transition-colors cursor-pointer"
+            >
+              {sectionGroups.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.items.map((s) => (
+                    <option key={s.key} value={s.key}>
+                      {s.label} {s.locked ? '🔒' : ''}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3.5 text-stone-500">
+              <ChevronDown className="w-4 h-4" />
+            </div>
+          </div>
+        </div>
 
         <div className="lg:grid lg:grid-cols-12 lg:gap-8">
           {/* Desktop: Navigation Rail */}
@@ -440,7 +424,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             ))}
           </nav>
 
-          {/* Main Workspace Area */}
+          {/* Main Workspace Area (Renders dynamically) */}
           <main className="lg:col-span-9 min-w-0">
             {activeSection === 'setup' && (
               <SetupTab checklistSteps={checklistSteps} onNavigateSection={(section) => setActiveSection(section as SectionKey)} />
@@ -480,44 +464,34 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
               />
             )}
 
-            <div style={{ display: activeSection === 'form' ? 'block' : 'none' }}>
-              <FormTab company={company} currentUser={currentUser} />
-            </div>
+            {activeSection === 'form' && <FormTab company={company} currentUser={currentUser} />}
 
-            <div style={{ display: activeSection === 'categories' ? 'block' : 'none' }}>
-              <CategoriesTab company={company} currentUser={currentUser} />
-            </div>
+            {activeSection === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
 
-            <div style={{ display: activeSection === 'payments' ? 'block' : 'none' }}>
-              {paymentsLocked ? (
+            {activeSection === 'payments' && (
+              paymentsLocked ? (
                 <LockedSection label="Payments" companySlug={company.slug} />
               ) : (
                 <PaymentsTab company={company} currentUser={currentUser} />
-              )}
-            </div>
-
-            <div style={{ display: activeSection === 'reviews' ? 'block' : 'none' }}>
-              <GoogleReviewsTab company={company} locked={reviewsLocked} />
-            </div>
-
-            {isAdminOrOwner && (
-              <>
-                <div style={{ display: activeSection === 'pipeline' ? 'block' : 'none' }}>
-                  <PipelineTab company={company} currentUser={currentUser} />
-                </div>
-                <div style={{ display: activeSection === 'email-templates' ? 'block' : 'none' }}>
-                  <EmailTemplatesTab company={company} currentUser={currentUser} />
-                </div>
-                <div style={{ display: activeSection === 'team' ? 'block' : 'none' }}>
-                  <TeamTab company={company} currentUser={currentUser} />
-                </div>
-              </>
+              )
             )}
 
-            {isOwner && (
-              <div style={{ display: activeSection === 'billing' ? 'block' : 'none' }}>
-                <BillingTab company={company} currentUser={currentUser} />
-              </div>
+            {activeSection === 'reviews' && <GoogleReviewsTab company={company} locked={reviewsLocked} />}
+
+            {isAdminForSections && activeSection === 'pipeline' && (
+              <PipelineTab company={company} currentUser={currentUser} />
+            )}
+
+            {isAdminForSections && activeSection === 'email-templates' && (
+              <EmailTemplatesTab company={company} currentUser={currentUser} />
+            )}
+
+            {isAdminForSections && activeSection === 'team' && (
+              <TeamTab company={company} currentUser={currentUser} />
+            )}
+
+            {isOwner && activeSection === 'billing' && (
+              <BillingTab company={company} currentUser={currentUser} />
             )}
           </main>
         </div>
@@ -531,7 +505,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl max-h-[90vh] overflow-y-auto border border-stone-100">
             <div className={`p-6 rounded-xl mb-5 flex items-center justify-center transition-colors duration-300 ${qrStyle === 'dark' ? 'bg-stone-900' : 'bg-stone-50 border border-stone-200/60'}`}>
               <div className="relative">
-                <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" alt="QR code" />
+                {qrCodeUrl && <img src={qrCodeUrl} className="w-44 h-44 sm:w-52 sm:h-52" alt="QR code" />}
                 {includeLogo && logoPreview && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-12 h-12 bg-white rounded-lg p-1 shadow-md border border-stone-100">
@@ -543,9 +517,9 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             </div>
             <div className="space-y-4">
               <div className="flex gap-2">
-                {['standard', 'brand', 'dark'].map(s => (
-                  <button key={s} onClick={() => setQrStyle(s as any)}
-                    className={`flex-1 py-2 rounded-lg border text-xs font-semibold capitalize transition-all ${qrStyle === s ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
+                {(['standard', 'brand', 'dark'] as const).map(s => (
+                  <button key={s} onClick={() => setQrStyle(s)}
+                    className={`flex-1 py-2 rounded-lg border text-xs font-semibold capitalize transition-colors ${qrStyle === s ? 'border-stone-900 bg-stone-900 text-white' : 'border-stone-200 text-stone-600 hover:bg-stone-50'}`}>
                     {s}
                   </button>
                 ))}
@@ -553,7 +527,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
               <div className="flex items-center justify-between p-3.5 bg-stone-50 rounded-xl border border-stone-200/60">
                 <span className="text-sm font-medium text-stone-700">Embed company logo</span>
                 <button onClick={() => setIncludeLogo(!includeLogo)} className={`w-10 h-5 rounded-full relative transition-colors ${includeLogo ? 'bg-stone-900' : 'bg-stone-300'}`}>
-                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-all ${includeLogo ? 'left-6' : 'left-1'}`} />
+                  <div className={`absolute top-1 w-3 h-3 bg-white rounded-full transition-transform ${includeLogo ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
               <div className="grid grid-cols-2 gap-3">
@@ -578,7 +552,7 @@ function LockedSection({ label, companySlug }: { label: string; companySlug: str
       </div>
       <h3 className="text-base font-semibold text-stone-900">{label} is locked</h3>
       <p className="text-xs text-stone-500 mt-1 mb-6">Upgrade your subscription to unlock {label.toLowerCase()} and additional features.</p>
-      <a href={`/${companySlug}/home?section=billing`} className="inline-flex items-center justify-center px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition-all shadow-sm">
+      <a href={`/${companySlug}/home?section=billing`} className="inline-flex items-center justify-center px-4 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-semibold transition-colors shadow-sm">
         Upgrade Plan
       </a>
     </div>

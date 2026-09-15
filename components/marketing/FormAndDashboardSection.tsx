@@ -1,37 +1,36 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  MapPin,
-  User,
-  Mail,
-  Phone,
-  FileText,
-  ChevronRight,
-  ShieldCheck,
-  CheckCircle2,
   Home,
   Flame,
   Droplet,
   Zap,
   Sun,
+  CheckCircle2,
   Send,
   Sparkles,
-  Camera,
-  RotateCcw,
-  Wifi,
-  Battery,
-  Smartphone,
-  LayoutDashboard,
+  ArrowRight,
+  Clock,
+  MapPin,
+  User,
+  ShieldCheck,
+  RefreshCw,
   type LucideIcon,
 } from 'lucide-react';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 
 import DashboardHeader from '@/components/dashboard/DashboardHeader';
 import DashboardStats from '@/components/dashboard/DashboardStats';
 import HeroDispatchCards from '@/components/marketing/HeroDispatchCards';
 import { TRADE_EXAMPLES } from '@/components/marketing/tradeExamples';
 
-const font = "'Nunito', sans-serif";
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+});
 
 const STATUS_OPTIONS = [
   { value: 'new', label: 'New Lead', color: 'green' },
@@ -41,11 +40,11 @@ const STATUS_OPTIONS = [
 ];
 
 const TOP_TRADES = [
-  { label: 'ROOFING', tradeKey: 'Roofing', icon: Home },
+  { label: 'Roofing', tradeKey: 'Roofing', icon: Home },
   { label: 'HVAC', tradeKey: 'HVAC', icon: Flame },
-  { label: 'PLUMBING', tradeKey: 'Plumbing', icon: Droplet },
-  { label: 'ELECTRICAL', tradeKey: 'Electrical', icon: Zap },
-  { label: 'SOLAR', tradeKey: 'Solar', icon: Sun },
+  { label: 'Plumbing', tradeKey: 'Plumbing', icon: Droplet },
+  { label: 'Electrical', tradeKey: 'Electrical', icon: Zap },
+  { label: 'Solar', tradeKey: 'Solar', icon: Sun },
 ] as const;
 
 const SERVICE_OPTIONS: Record<string, string[]> = {
@@ -56,469 +55,264 @@ const SERVICE_OPTIONS: Record<string, string[]> = {
   Solar: ['System Check', 'Panel Install', 'Inverter Repair', 'Battery Backup'],
 };
 
-const DEMO_CUSTOMER = 'Jennifer L.';
-const COLLISION_FALLBACKS = ['Marcus T.', 'Dana R.', 'Priya S.'];
-
-const DEMO_PREFILLS: Record<string, { service: string; notes: string; address: string }> = {
-  Roofing: { service: 'Inspection', notes: 'Missing shingles on south ridge', address: '42 Maple Ave, Brooklyn NY' },
-  HVAC: { service: 'AC Tune-Up', notes: 'Central AC blowing warm air', address: '128 Highland Rd, Austin TX' },
-  Plumbing: { service: 'Drain Cleaning', notes: 'Main bathroom drain backing up', address: '88 Ocean Blvd, Miami FL' },
-  Electrical: { service: 'Panel Upgrade', notes: 'Breaker box tripping frequently', address: '154 Pinecrest St, Denver CO' },
-  Solar: { service: 'System Check', notes: 'Inverter error light on', address: '910 Sun Valley Way, Phoenix AZ' },
-};
-
-type Theme = {
-  sectionBg: string;
-  accent: string;
-  textAccent: string;
-  cardBorder: string;
-  lightBg: string;
-  lightBorder: string;
-  icon: LucideIcon;
-};
-
-const TRADE_THEMES: Record<string, Theme> = {
-  Roofing: {
-    sectionBg: 'bg-gradient-to-br from-orange-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
-    accent: '#f97316',
-    textAccent: '#c2410c',
-    cardBorder: 'border-orange-500/20',
-    lightBg: '#fff7ed',
-    lightBorder: '#ffedd5',
-    icon: Home,
-  },
-  HVAC: {
-    sectionBg: 'bg-gradient-to-br from-sky-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
-    accent: '#0284c7',
-    textAccent: '#0369a1',
-    cardBorder: 'border-sky-500/20',
-    lightBg: '#f0f9ff',
-    lightBorder: '#e0f2fe',
-    icon: Flame,
-  },
-  Plumbing: {
-    sectionBg: 'bg-gradient-to-br from-emerald-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
-    accent: '#059669',
-    textAccent: '#047857',
-    cardBorder: 'border-emerald-500/20',
-    lightBg: '#ecfdf5',
-    lightBorder: '#d1fae5',
-    icon: Droplet,
-  },
-  Electrical: {
-    sectionBg: 'bg-gradient-to-br from-amber-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
-    accent: '#d97706',
-    textAccent: '#b45309',
-    cardBorder: 'border-amber-500/20',
-    lightBg: '#fffbeb',
-    lightBorder: '#fef3c7',
-    icon: Zap,
-  },
-  Solar: {
-    sectionBg: 'bg-gradient-to-br from-teal-50/40 via-slate-50/50 to-slate-100/80 text-slate-900',
-    accent: '#0d9488',
-    textAccent: '#0f766e',
-    cardBorder: 'border-teal-500/20',
-    lightBg: '#f0fdfa',
-    lightBorder: '#ccfbf1',
-    icon: Sun,
-  },
+const DEMO_PREFILLS: Record<string, { service: string; notes: string; address: string; name: string }> = {
+  Roofing: { name: 'Jennifer L.', service: 'Inspection', notes: 'Missing shingles on south ridge', address: '42 Maple Ave, Austin TX' },
+  HVAC: { name: 'Marcus T.', service: 'AC Tune-Up', notes: 'Central AC blowing warm air', address: '128 Highland Rd, Austin TX' },
+  Plumbing: { name: 'Dana R.', service: 'Drain Cleaning', notes: 'Main bathroom drain backing up', address: '88 Ocean Blvd, Miami FL' },
+  Electrical: { name: 'Priya S.', service: 'Panel Upgrade', notes: 'Breaker box tripping frequently', address: '154 Pinecrest St, Denver CO' },
+  Solar: { name: 'Carlos M.', service: 'System Check', notes: 'Inverter error light on panel', address: '910 Sun Valley Way, Phoenix AZ' },
 };
 
 export default function FormAndDashboardSection() {
-  const [activeExample, setActiveExample] = useState(0);
+  const [activeTradeIndex, setActiveTradeIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [extraLeads, setExtraLeads] = useState<any[]>([]);
 
-  // Mobile View Switcher: 'form' vs 'board'
-  const [mobileTab, setMobileTab] = useState<'form' | 'board'>('form');
-
-  // Device screen state inside phone
-  const [phoneScreen, setPhoneScreen] = useState<'form' | 'success'>('form');
-
-  const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [timeWindow, setTimeWindow] = useState<string>('Morning');
-  const [photoCount, setPhotoCount] = useState(1);
-
-  const current = TRADE_EXAMPLES[activeExample] || TRADE_EXAMPLES[0];
-  const theme = TRADE_THEMES[current.trade] || TRADE_THEMES.Roofing;
+  const current = TRADE_EXAMPLES[activeTradeIndex] || TRADE_EXAMPLES[0];
   const prefill = DEMO_PREFILLS[current.trade] || DEMO_PREFILLS.Roofing;
   const serviceOptions = SERVICE_OPTIONS[current.trade] || SERVICE_OPTIONS.Roofing;
-  const BackgroundTradeIcon = theme.icon;
 
-  const activeService = selectedService ?? prefill.service;
+  const [selectedService, setSelectedService] = useState<string>(prefill.service);
+  const [selectedTime, setSelectedTime] = useState<string>('Morning');
 
+  // Reset prefill when trade changes
   useEffect(() => {
     setHasSubmitted(false);
     setIsSubmitting(false);
     setExtraLeads([]);
-    setSelectedService(null);
-    setTimeWindow('Morning');
-    setPhotoCount(1);
-    setPhoneScreen('form');
-    setMobileTab('form');
-  }, [activeExample]);
+    const newPrefill = DEMO_PREFILLS[current.trade] || DEMO_PREFILLS.Roofing;
+    setSelectedService(newPrefill.service);
+    setSelectedTime('Morning');
+  }, [activeTradeIndex, current.trade]);
 
   const handleSimulatedSubmit = () => {
-    if (isSubmitting || hasSubmitted) return;
+    if (isSubmitting) return;
     setIsSubmitting(true);
 
     setTimeout(() => {
       const newLiveLead = {
-        id: `demo-live-${Date.now()}`,
-        name: DEMO_CUSTOMER,
+        id: `lead-${Date.now()}`,
+        name: prefill.name,
         phone: '(555) 382-9102',
-        email: 'jennifer@example.com',
-        category: activeService,
+        email: `${prefill.name.toLowerCase().replace(/[^a-z]/g, '')}@example.com`,
+        category: selectedService,
         address: prefill.address,
-        notes: `${prefill.notes} — prefers ${timeWindow.toLowerCase()}`,
+        notes: `${prefill.notes} (${selectedTime} preference)`,
         status: 'new',
         createdAt: 'Just now',
-        file_urls: JSON.stringify(
-          Array.from({ length: photoCount }, (_, i) => `site-photo-${i + 1}.jpg`)
-        ),
         isNew: true,
       };
 
       setExtraLeads([newLiveLead]);
       setIsSubmitting(false);
       setHasSubmitted(true);
-      setPhoneScreen('success');
-
-      // Auto-switch mobile view to the Live Dispatch Board on submit!
-      setMobileTab('board');
-    }, 700);
+    }, 600);
   };
 
   const combinedLeads = useMemo(() => {
-    const BASE_LEAD_COUNT = 3;
-    const baseLeads = current.leads.slice(0, BASE_LEAD_COUNT).map((lead, i) =>
-      lead.name?.trim().toLowerCase() === DEMO_CUSTOMER.toLowerCase()
-        ? { ...lead, name: COLLISION_FALLBACKS[i % COLLISION_FALLBACKS.length] }
-        : lead
-    );
-    return [...extraLeads, ...baseLeads];
+    return [...extraLeads, ...current.leads.slice(0, 3)];
   }, [current.leads, extraLeads]);
 
   return (
     <section
-      style={{ fontFamily: font }}
-      className={`relative py-20 sm:py-28 lg:py-36 transition-colors duration-700 ease-in-out overflow-hidden border-t border-b border-slate-200/80 ${theme.sectionBg}`}
+      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-[#F4F7F6] py-16 sm:py-24 border-t border-slate-200/80 text-slate-900 antialiased selection:bg-[#00828A]/20 selection:text-[#00828A]`}
     >
-      {/* Dynamic Background Watermark */}
-      <div className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 pointer-events-none opacity-[0.03] transition-all duration-700">
-        <BackgroundTradeIcon className="w-[450px] h-[450px] lg:w-[600px] lg:h-[600px] text-slate-900" strokeWidth={1} />
-      </div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
+        
+        {/* ── 1. SECTION HEADER ── */}
+        <div className="text-center max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-sm text-xs font-semibold text-[#00828A]">
+            <Sparkles className="w-3.5 h-3.5" />
+            Instant Client-to-Board Dispatch
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
+            From client request to live dispatch in under 5 seconds.
+          </h2>
+          <p className="text-base sm:text-lg text-slate-600 font-normal">
+            Custom brand your intake forms. When clients submit, jobs drop instantly onto your Lead2Project live board.
+          </p>
 
-      <div className="relative z-10 mx-auto max-w-7xl px-6 sm:px-8 lg:px-12">
+          {/* ── Trade Selector Pills ── */}
+          <div className="pt-4 flex justify-center">
+            <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm max-w-full overflow-x-auto no-scrollbar">
+              {TOP_TRADES.map((item) => {
+                const Icon = item.icon;
+                const tradeIndex = TRADE_EXAMPLES.findIndex(
+                  (t) => t.trade.toLowerCase() === item.tradeKey.toLowerCase()
+                );
+                const isSelected = activeTradeIndex === (tradeIndex !== -1 ? tradeIndex : 0);
 
-        {/* ── Trade Selector Bar ──────────────────────── */}
-        <div className="mb-12 sm:mb-16 flex justify-center">
-          <div className="inline-flex items-center gap-2 p-2 rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-md shadow-sm max-w-full overflow-x-auto no-scrollbar">
-            {TOP_TRADES.map((item) => {
-              const Icon = item.icon;
-              const isSelected = current.trade.toLowerCase() === item.tradeKey.toLowerCase();
-              const tradeIndex = TRADE_EXAMPLES.findIndex((t) => t.trade.toLowerCase() === item.tradeKey.toLowerCase());
-
-              return (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={() => setActiveExample(tradeIndex !== -1 ? tradeIndex : 0)}
-                  aria-pressed={isSelected}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black tracking-wider transition-all duration-200 shrink-0 ${
-                    isSelected
-                      ? 'bg-slate-900 text-white shadow-md scale-[1.02]'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isSelected ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={item.label}
+                    type="button"
+                    onClick={() => setActiveTradeIndex(tradeIndex !== -1 ? tradeIndex : 0)}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                      isSelected
+                        ? 'bg-[#00828A] text-white shadow-md shadow-[#00828A]/20'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
 
-        {/* ── MOBILE TABS TOGGLE (Visible on small screens) ──────────────────────── */}
-        <div className="flex lg:hidden justify-center mb-10">
-          <div className="bg-slate-900/95 p-1.5 rounded-2xl border border-slate-800 flex items-center gap-1.5 w-full max-w-[360px] shadow-xl">
-            <button
-              type="button"
-              onClick={() => setMobileTab('form')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                mobileTab === 'form'
-                  ? 'bg-white text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Smartphone size={15} />
-              <span>1. Mobile Form</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileTab('board')}
-              className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
-                mobileTab === 'board'
-                  ? 'bg-emerald-400 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <LayoutDashboard size={15} />
-              <span>2. Live Board</span>
-              {hasSubmitted && <span className="w-2 h-2 rounded-full bg-emerald-600 animate-ping" />}
-            </button>
-          </div>
-        </div>
-
-        {/* ── Interactive Grid: Form Column (Left) + Desktop Dashboard Column (Right) ──────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+        {/* ── 2. TWO-COLUMN INTERACTIVE WORKSPACE ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
           
-          {/* LEFT COLUMN: Header + Phone Frame Mockup */}
-          <div className={`lg:col-span-5 flex-col items-center justify-center ${mobileTab === 'form' ? 'flex' : 'hidden lg:flex'}`}>
-            
-            {/* Header above Phone Form */}
-            <div className="text-center mb-8">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 leading-tight">
-                Customize your form.
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 font-medium mt-2">
-                Brand it with your colors, services, and logo.
-              </p>
+          {/* LEFT: Clean Intake Form Card */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                1. Client Request Form
+              </span>
+              <span className="text-[11px] font-semibold text-[#00828A] bg-teal-50 border border-teal-100 px-2.5 py-0.5 rounded-md">
+                Live Embed Preview
+              </span>
             </div>
 
-            {/* Phone Shell */}
-            <div className="relative w-full max-w-[340px] sm:max-w-[370px] rounded-[48px] p-4 bg-slate-900 ring-1 ring-slate-800 shadow-[0_30px_70px_-15px_rgba(0,0,0,0.3)] transition-all">
-              
-              {/* Dynamic Notch / Island */}
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-4 bg-slate-950 rounded-full z-30 flex items-center justify-between px-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800" />
-                <div className="w-2 h-2 rounded-full bg-blue-900/40" />
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
+              {/* Form Branding Bar */}
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#00828A]/10 text-[#00828A] flex items-center justify-center font-bold text-sm">
+                    {current.trade.charAt(0)}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm text-slate-900">
+                      {current.company?.name ?? `${current.trade} Services`}
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Online Request Portal
+                    </p>
+                  </div>
+                </div>
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
               </div>
 
-              {/* Phone Screen Container */}
-              <div className="relative w-full rounded-[36px] overflow-hidden bg-slate-50 border border-slate-200/80 pt-8 pb-5 px-3.5 flex flex-col min-h-[570px] sm:min-h-[590px] shadow-inner">
-                
-                {/* Phone Status Bar */}
-                <div className="flex items-center justify-between px-2 mb-3 text-[10px] font-extrabold text-slate-800">
-                  <span>9:41</span>
-                  <div className="flex items-center gap-1.5 text-slate-700">
-                    <Wifi size={12} />
-                    <Battery size={13} />
+              {/* Form Fields */}
+              <div className="space-y-3.5 text-xs">
+                {/* Contact Prefill */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-xl">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Name</span>
+                    <span className="font-semibold text-slate-800">{prefill.name}</span>
+                  </div>
+                  <div className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-xl">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Phone</span>
+                    <span className="font-semibold text-slate-800">(555) 382-9102</span>
                   </div>
                 </div>
 
-                {/* Inside Screen Content */}
-                {phoneScreen === 'form' ? (
-                  <div className="flex-1 flex flex-col justify-between animate-in fade-in duration-300">
-                    
-                    {/* Form Header */}
-                    <div>
-                      <div
-                        className="rounded-2xl p-3 flex items-center gap-2.5 mb-3.5 shadow-sm text-white transition-colors duration-500"
-                        style={{ backgroundColor: theme.accent }}
-                      >
-                        <div className="w-9 h-9 rounded-xl bg-white p-0.5 flex items-center justify-center shrink-0 shadow-sm overflow-hidden">
-                          {current.company?.logo_url ? (
-                            <img src={current.company.logo_url} alt="Logo" className="w-full h-full object-contain" />
-                          ) : (
-                            <span className="text-sm font-black" style={{ color: theme.accent }}>
-                              {current.company?.name?.charAt(0) ?? 'P'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <h4 className="font-black text-xs sm:text-sm truncate leading-tight">
-                            {current.company?.name ?? `${current.trade} Pros`}
-                          </h4>
-                          <p className="text-[9px] font-extrabold uppercase tracking-widest text-white/80 mt-0.5">
-                            Mobile Request Form
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Compact Input Fields */}
-                      <div className="space-y-2">
-                        <div className="grid grid-cols-2 gap-1.5">
-                          <div className="bg-white p-2 rounded-xl border border-slate-200">
-                            <label className="text-[8px] font-black uppercase text-slate-400 block">Name</label>
-                            <p className="text-[11px] font-bold text-slate-800 truncate">{DEMO_CUSTOMER}</p>
-                          </div>
-                          <div className="bg-white p-2 rounded-xl border border-slate-200">
-                            <label className="text-[8px] font-black uppercase text-slate-400 block">Phone</label>
-                            <p className="text-[11px] font-bold text-slate-800 truncate">(555) 382-9102</p>
-                          </div>
-                        </div>
-
-                        {/* Interactive Service Buttons */}
-                        <div>
-                          <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">
-                            Service Needed
-                          </label>
-                          <div className="grid grid-cols-2 gap-1.5">
-                            {serviceOptions.map((opt) => {
-                              const isSelected = opt === activeService;
-                              return (
-                                <button
-                                  key={opt}
-                                  type="button"
-                                  onClick={() => setSelectedService(opt)}
-                                  className="px-2 py-1.5 rounded-lg text-[10px] font-extrabold border transition-all truncate text-left"
-                                  style={
-                                    isSelected
-                                      ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
-                                      : { backgroundColor: '#fff', borderColor: '#e2e8f0', color: '#475569' }
-                                  }
-                                >
-                                  {opt}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Preferred Time Slot */}
-                        <div>
-                          <label className="text-[8px] font-black uppercase text-slate-400 block mb-1">
-                            Preferred Time
-                          </label>
-                          <div className="grid grid-cols-3 gap-1">
-                            {['Morning', 'Afternoon', 'Flexible'].map((slot) => {
-                              const isSelected = slot === timeWindow;
-                              return (
-                                <button
-                                  key={slot}
-                                  type="button"
-                                  onClick={() => setTimeWindow(slot)}
-                                  className="py-1.5 rounded-lg text-[9px] font-bold border text-center transition-all"
-                                  style={
-                                    isSelected
-                                      ? { backgroundColor: theme.accent, color: '#fff', borderColor: 'transparent' }
-                                      : { backgroundColor: '#fff', borderColor: '#e2e8f0', color: '#475569' }
-                                  }
-                                >
-                                  {slot}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        <div className="bg-white p-2 rounded-xl border border-slate-200">
-                          <label className="text-[8px] font-black uppercase text-slate-400 block">Address</label>
-                          <p className="text-[10px] font-bold text-slate-700 truncate">{prefill.address}</p>
-                        </div>
-
-                        {/* Attachments */}
-                        <div className="bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Camera size={13} style={{ color: theme.accent }} />
-                            <span className="text-[10px] font-bold text-slate-700">{photoCount} Photo attached</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setPhotoCount((n) => Math.max(0, n - 1))}
-                              className="w-5 h-5 rounded-md border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600 hover:bg-slate-100"
-                            >
-                              -
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setPhotoCount((n) => Math.min(4, n + 1))}
-                              className="w-5 h-5 rounded-md border bg-slate-50 text-[10px] font-black flex items-center justify-center text-slate-600 hover:bg-slate-100"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Primary Mobile Action Button */}
-                    <div className="pt-3">
+                {/* Interactive Service Options */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block">
+                    Service Requested
+                  </label>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {serviceOptions.map((service) => (
                       <button
+                        key={service}
                         type="button"
-                        onClick={handleSimulatedSubmit}
-                        disabled={isSubmitting}
-                        style={{ backgroundColor: theme.textAccent }}
-                        className="w-full text-white py-3.5 rounded-xl font-black text-xs flex items-center justify-center gap-2 shadow-lg hover:brightness-110 active:scale-[0.98] transition-all"
+                        onClick={() => setSelectedService(service)}
+                        className={`px-3 py-2 rounded-xl text-[11px] font-semibold border text-left transition-all truncate ${
+                          selectedService === service
+                            ? 'bg-[#00828A] text-white border-[#00828A] shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
                       >
-                        {isSubmitting ? (
-                          <span>Sending to Board...</span>
-                        ) : (
-                          <>
-                            <span>Submit Request</span>
-                            <ChevronRight size={15} />
-                          </>
-                        )}
+                        {service}
                       </button>
-                    </div>
-
+                    ))}
                   </div>
-                ) : (
-                  /* Success Screen inside Phone */
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-4 animate-in zoom-in-95 duration-300">
-                    <div className="w-14 h-14 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4">
-                      <CheckCircle2 size={32} />
-                    </div>
-                    <h4 className="font-black text-slate-900 text-base">Lead Dispatched!</h4>
-                    <p className="text-xs font-semibold text-slate-500 mt-1.5 leading-relaxed max-w-[220px]">
-                      Your request has been delivered directly to the contractor’s live dashboard.
-                    </p>
+                </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setHasSubmitted(false);
-                        setExtraLeads([]);
-                        setPhoneScreen('form');
-                        setMobileTab('form');
-                      }}
-                      className="mt-8 flex items-center gap-2 text-xs font-black text-slate-700 bg-white border border-slate-200 px-4 py-2.5 rounded-xl hover:bg-slate-50 shadow-sm transition-all"
-                    >
-                      <RotateCcw size={14} /> Test Again
-                    </button>
+                {/* Preferred Time Window */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block">
+                    Preferred Time Window
+                  </label>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {['Morning', 'Afternoon', 'Flexible'].map((time) => (
+                      <button
+                        key={time}
+                        type="button"
+                        onClick={() => setSelectedTime(time)}
+                        className={`py-1.5 rounded-lg text-[11px] font-semibold border text-center transition-all ${
+                          selectedTime === time
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    ))}
                   </div>
-                )}
+                </div>
 
-                {/* Phone Bottom Home Bar */}
-                <div className="w-24 h-1 bg-slate-300 rounded-full mx-auto mt-4" />
+                {/* Job Location */}
+                <div className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-xl flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-[#00828A] shrink-0" />
+                  <div className="truncate">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Property Location</span>
+                    <span className="font-semibold text-slate-800 truncate block">{prefill.address}</span>
+                  </div>
+                </div>
               </div>
-            </div>
 
+              {/* Submit CTA */}
+              <button
+                type="button"
+                onClick={handleSimulatedSubmit}
+                disabled={isSubmitting}
+                className="w-full bg-[#00828A] hover:bg-[#006e75] text-white font-bold text-xs py-3.5 rounded-xl shadow-md shadow-[#00828A]/20 transition-all flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Syncing to Dispatch Board...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Submit Service Request</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
+              </button>
+
+              {hasSubmitted && (
+                <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-2 text-emerald-800 text-xs font-semibold">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>Request sent! Check the live board on the right &rarr;</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* RIGHT COLUMN: Header + Desktop Dispatch Dashboard */}
-          <div className={`lg:col-span-7 ${mobileTab === 'board' ? 'block' : 'hidden lg:block'}`}>
-            
-            {/* Header above Live Board */}
-            <div className="mb-8 text-left">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight" style={{ color: theme.textAccent }}>
-                Collect leads with zero back-and-forth messaging.
-              </h2>
-              <p className="text-sm sm:text-base text-slate-600 font-medium mt-2">
-                Job details and photos flow straight onto your live dispatch board.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-between mb-4 px-1">
-              <div className="flex items-center gap-2.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest">
-                  Live Dispatch Board
-                </h3>
+          {/* RIGHT: Live Lead2Project Dispatch Board */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  2. Live Lead2Project Board
+                </span>
               </div>
               {hasSubmitted && (
-                <span className="text-xs font-black text-emerald-600 bg-emerald-50 border border-emerald-200/80 px-3 py-1 rounded-full animate-bounce">
-                  ⚡ New lead received!
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md animate-bounce">
+                  ⚡ New lead injected!
                 </span>
               )}
             </div>
 
-            {/* Dashboard Workspace Window */}
-            <div className={`p-6 sm:p-8 rounded-3xl border bg-slate-950/95 backdrop-blur-md shadow-2xl space-y-6 transition-colors ${theme.cardBorder}`}>
+            {/* Dark Mode Dashboard Mockup */}
+            <div className="bg-[#081524] border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5 text-white">
               <DashboardHeader
                 company={current.company}
                 isDark={true}
@@ -527,14 +321,14 @@ export default function FormAndDashboardSection() {
                 onCreateLead={() => {}}
                 onLockedFeature={() => {}}
                 onRefresh={() => {}}
-                accentColor={current.color}
+                accentColor="#00828A"
               />
 
               <DashboardStats
                 globalStats={current.stats}
                 allLeads={combinedLeads}
                 isDark={true}
-                accentColor={current.color}
+                accentColor="#00828A"
               />
 
               <HeroDispatchCards

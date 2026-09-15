@@ -1,19 +1,22 @@
 'use client';
 
-import { useState, useEffect, useCallback, useTransition, useRef } from 'react';
+import { useState, useEffect, useCallback, useTransition, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, Receipt, DollarSign } from 'lucide-react';
-import Sidebar from '@/components/dashboard/Sidebar';
-import LeadModal from '@/components/dashboard/LeadModal';
-import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
-import { AiChatWidget, LockedFeatureModal } from '@/components/dashboard/DashboardModals';
+import dynamic from 'next/dynamic';
+import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, Receipt } from 'lucide-react';
 import { Toaster } from 'sonner';
-import TrialBanner from '@/components/TrialBanner';
-import PaymentRemindersWidget from '@/components/dashboard/PaymentRemindersWidget';
-import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 import { type PlanTier } from '@/lib/permissions';
 import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
+
+// --- Dynamic Imports for Heavy Modals & Widgets (Reduces Initial JS Bundle) ---
+const Sidebar = dynamic(() => import('@/components/dashboard/Sidebar'), { ssr: false });
+const LeadModal = dynamic(() => import('@/components/dashboard/LeadModal'), { ssr: false });
+const CreateLeadModal = dynamic(() => import('@/components/dashboard/CreateLeadModal'), { ssr: false });
+const AiChatWidget = dynamic(() => import('@/components/dashboard/DashboardModals').then(m => m.AiChatWidget), { ssr: false });
+const LockedFeatureModal = dynamic(() => import('@/components/dashboard/DashboardModals').then(m => m.LockedFeatureModal), { ssr: false });
+const PaymentRemindersWidget = dynamic(() => import('@/components/dashboard/PaymentRemindersWidget'), { ssr: false });
+const PaymentToastPoller = dynamic(() => import('@/components/dashboard/PaymentToastPoller'), { ssr: false });
+const TrialBanner = dynamic(() => import('@/components/TrialBanner'), { ssr: false });
 
 type Company = {
   id: number;
@@ -69,6 +72,7 @@ type DashboardStats = {
 
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'expenses' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 
+// --- Pure Utilities Hoisted Outside Component Scope ---
 const fmtMoney = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
 
@@ -90,6 +94,22 @@ const fmtShortDate = (d: string | null | undefined) => {
   if (!year || !month || !day) return null;
   return new Date(year, month - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
+
+function readableTextColor(hex: string, isDark: boolean): string {
+  const clean = hex.replace('#', '');
+  if (clean.length !== 6) return hex;
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+  const tooLight = !isDark && brightness > 200;
+  const tooDark = isDark && brightness < 55;
+  if (!tooLight && !tooDark) return hex;
+  const factor = tooLight ? 0.55 : 1.8;
+  const adjust = (c: number) => Math.min(255, Math.max(0, Math.round(c * factor)));
+  const toHex = (c: number) => c.toString(16).padStart(2, '0');
+  return `#${toHex(adjust(r))}${toHex(adjust(g))}${toHex(adjust(b))}`;
+}
 
 export default function CompanyDashboardClient({ company }: { company: Company }) {
   const router = useRouter();
@@ -167,9 +187,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   }, []);
 
   useEffect(() => {
-    fetchStats();
-    fetchCurrentUser();
-    fetchTeamMembers();
+    Promise.all([fetchStats(), fetchCurrentUser(), fetchTeamMembers()]);
   }, [fetchStats, fetchCurrentUser, fetchTeamMembers]);
 
   const handleLogout = useCallback(async () => {
@@ -177,10 +195,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     startTransition(() => router.push('/login'));
   }, [router]);
 
-  const userMeta = () => ({
+  const userMeta = useCallback(() => ({
     user_name: currentUser?.name || currentUser?.email || 'Unknown User',
     user_email: currentUser?.email || '',
-  });
+  }), [currentUser]);
 
   const updateLeadStatus = useCallback(
     async (id: number, status: string, oldStatus: string, sendReview = true) => {
@@ -209,7 +227,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         return false;
       }
     },
-    [selectedLead, currentUser, fetchStats]
+    [selectedLead, fetchStats, userMeta]
   );
 
   const addNote = useCallback(
@@ -227,7 +245,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         return false;
       }
     },
-    [currentUser]
+    [userMeta]
   );
 
   const deleteLead = useCallback(
@@ -249,7 +267,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         return false;
       }
     },
-    [currentUser, fetchStats]
+    [fetchStats, userMeta]
   );
 
   const openLead = useCallback(async (leadId: number, tab: TopTab = 'overview') => {
@@ -273,48 +291,28 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     fetchStats();
   }, [selectedLead, selectedLeadTab, openLead, fetchStats]);
 
-  const greeting = (() => {
+  // Memoized derived calculations
+  const { greeting, todayLabel } = useMemo(() => {
     const h = new Date().getHours();
-    if (h < 12) return 'Good morning';
-    if (h < 18) return 'Good afternoon';
-    return 'Good evening';
-  })();
+    let g = 'Good evening';
+    if (h < 12) g = 'Good morning';
+    else if (h < 18) g = 'Good afternoon';
 
-  const todayLabel = new Date().toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-  });
+    const label = new Date().toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+    });
+    return { greeting: g, todayLabel: label };
+  }, []);
 
-  // Brand colors are picked for buttons/backgrounds, not guaranteed
-// readable as small text on a light page — a pale or near-white brand
-// color rendered directly as text color here became nearly invisible in
-// light mode. This checks perceived brightness and darkens anything too
-// light before using it as text, while leaving darker brand colors
-// completely untouched.
-function readableTextColor(hex: string, isDark: boolean): string {
-  const clean = hex.replace('#', '');
-  if (clean.length !== 6) return hex;
-  const r = parseInt(clean.slice(0, 2), 16);
-  const g = parseInt(clean.slice(2, 4), 16);
-  const b = parseInt(clean.slice(4, 6), 16);
-  // Standard perceived-brightness formula, 0-255.
-  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  // In light mode, a bright color on a light background is the problem.
-  // In dark mode, the opposite risk exists (a very dark brand color on a
-  // near-black background) — checked the same way, just inverted.
-  const tooLight = !isDark && brightness > 200;
-  const tooDark = isDark && brightness < 55;
-  if (!tooLight && !tooDark) return hex;
-  const factor = tooLight ? 0.55 : 1.8;
-  const adjust = (c: number) => Math.min(255, Math.max(0, Math.round(tooLight ? c * factor : c * factor)));
-  const toHex = (c: number) => c.toString(16).padStart(2, '0');
-  return `#${toHex(adjust(r))}${toHex(adjust(g))}${toHex(adjust(b))}`;
-}
+  const todaysScheduleTotal = useMemo(() => {
+    if (!stats?.todays_schedule) return 0;
+    return stats.todays_schedule.reduce((s, j) => s + (parseFloat(String(j.quote_total || '0')) || 0), 0);
+  }, [stats?.todays_schedule]);
 
   const accentColor = company.email_brand_color_1 || '#2563eb';
-  const accentTextColor = readableTextColor(accentColor, isDark);
-
+  const accentTextColor = useMemo(() => readableTextColor(accentColor, isDark), [accentColor, isDark]);
 
   const bg = isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]';
   const cardBg = isDark ? 'bg-[#0f1420] border border-white/10' : 'bg-white border border-[#e7e2d8]';
@@ -325,7 +323,7 @@ function readableTextColor(hex: string, isDark: boolean): string {
   if (loading) {
     return (
       <div className={`min-h-screen flex items-center justify-center ${bg}`} role="status" aria-label="Loading dashboard">
-        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" style={{ color: accentTextColor}} />
+        <Loader2 className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" style={{ color: accentTextColor }} />
       </div>
     );
   }
@@ -334,40 +332,36 @@ function readableTextColor(hex: string, isDark: boolean): string {
     <div className={`min-h-screen relative transition-colors ${bg}`}>
       <Toaster position="top-right" richColors />
 
-      {/* Sidebar overlay */}
-      <div
-        className={`fixed inset-0 transition-all duration-300 ${sidebarOpen ? 'visible' : 'invisible pointer-events-none'}`}
-        style={{ zIndex: sidebarOpen ? 10000 : 100 }}
-        aria-hidden={!sidebarOpen}
-      >
+      {/* Sidebar overlay (Lazy Mounted) */}
+      {sidebarOpen && (
         <div
-          className={`absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 ${
-            sidebarOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={() => setSidebarOpen(false)}
-        />
-        <aside
-          className={`absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] transition-transform duration-300 ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
-          style={{ zIndex: sidebarOpen ? 10001 : 110 }}
-          aria-label="Navigation sidebar"
+          className="fixed inset-0 transition-all duration-300 z-[10000]"
+          aria-hidden={!sidebarOpen}
         >
-          <Sidebar
-            companySlug={company.slug}
-            companyName={company.name}
-            companyLogoUrl={company.logo_url}
-            currentUser={currentUser}
-            onLogout={handleLogout}
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            currentView="cards"
-            onViewChange={() => {}}
-            brandColor1={company.email_brand_color_1 || '#2563eb'}
-            brandColor2={company.email_brand_color_2 || '#4f46e5'}
+          <div
+            className="absolute inset-0 bg-black/80 backdrop-blur-sm transition-opacity duration-300 opacity-100"
+            onClick={() => setSidebarOpen(false)}
           />
-        </aside>
-      </div>
+          <aside
+            className="absolute left-0 top-0 bottom-0 w-72 max-w-[85vw] transition-transform duration-300 translate-x-0 z-[10001]"
+            aria-label="Navigation sidebar"
+          >
+            <Sidebar
+              companySlug={company.slug}
+              companyName={company.name}
+              companyLogoUrl={company.logo_url}
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              isOpen={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+              currentView="cards"
+              onViewChange={() => {}}
+              brandColor1={company.email_brand_color_1 || '#2563eb'}
+              brandColor2={company.email_brand_color_2 || '#4f46e5'}
+            />
+          </aside>
+        </div>
+      )}
 
       <div className="relative z-10">
         <TrialBanner
@@ -466,8 +460,7 @@ function readableTextColor(hex: string, isDark: boolean): string {
         {stats && (
           <>
             {/* Stat row: Leads / Estimates / Jobs / Invoices */}
-<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
               {/* Leads Card */}
               <div className={`rounded-2xl p-4 sm:p-6 ${cardBg}`}>
                 <div className="flex items-center justify-between mb-3">
@@ -526,7 +519,7 @@ function readableTextColor(hex: string, isDark: boolean): string {
                 <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
                   <div className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
                     <p className={`text-xl sm:text-2xl font-semibold ${cardText}`}>
-                      {fmtMoney(stats.todays_schedule.reduce((s, j) => s + (parseFloat(String(j.quote_total || '0')) || 0), 0))}{' '}
+                      {fmtMoney(todaysScheduleTotal)}{' '}
                       <span className={`text-xs sm:text-sm font-normal block sm:inline ${subText}`}>booked today</span>
                     </p>
                     <span className={`text-xs sm:text-sm mt-1 sm:mt-0 ${subText}`}>
@@ -719,6 +712,7 @@ function readableTextColor(hex: string, isDark: boolean): string {
         )}
       </main>
 
+      {/* Conditionally Loaded Modals */}
       {selectedLead && (
         <LeadModal
           lead={selectedLead}
@@ -739,15 +733,17 @@ function readableTextColor(hex: string, isDark: boolean): string {
         />
       )}
 
-      <CreateLeadModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onSuccess={() => fetchStats()}
-        companySlug={company.slug}
-        companyId={company.id}
-        categories={company.form_categories || []}
-        company={company}
-      />
+      {isCreateModalOpen && (
+        <CreateLeadModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => fetchStats()}
+          companySlug={company.slug}
+          companyId={company.id}
+          categories={company.form_categories || []}
+          company={company}
+        />
+      )}
 
       <AiChatWidget
         planTier={planTier}

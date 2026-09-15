@@ -804,7 +804,7 @@ export default function QuoteSection({
                   className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
                 >
                   <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                  Browse Templates
+                  Browse More
                 </button>
                 )
               )}
