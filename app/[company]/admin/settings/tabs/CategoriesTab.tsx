@@ -53,6 +53,8 @@ export default function CategoriesTab({
 
   // Tab is permanently pinned to light mode to match Setup Guide & Payments.
   const t = themeTokens(false);
+
+  console.log('CategoriesTab received tax rate:', company.default_tax_rate);
   const accentColor = company.email_brand_color_1 || '#2563eb';
 
   const [categories, setCategories] = useState<Category[]>(

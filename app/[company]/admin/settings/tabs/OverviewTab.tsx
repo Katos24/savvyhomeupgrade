@@ -20,7 +20,6 @@ import {
   CreditCard,
   Receipt,
   Trash2,
-  Percent
 } from 'lucide-react';
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -86,11 +85,12 @@ type OverviewTabProps = {
   onSaveBranding: () => void;
   qrCodeUrl: string;
   onShowQrModal: () => void;
-    publicLink: string;
+  publicLink: string;
   copied: boolean;
   onCopy: () => void;
   onNavigateSection: (section: string) => void;
-  onTaxRateSaved: (rate: number) => void;
+  taxRate: string;
+  setTaxRate: (v: string) => void;
 };
 
 function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refreshToken?: number }) {
@@ -101,9 +101,6 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
   const planTier = (company.plan_tier || 'free') as PlanTier;
   const canSendInvoices = can(planTier, 'send_invoice_email');
   const previewUrl = `/api/company/${company.slug}/preview-invoice?v=${refreshToken}`;
-
-
-  
 
   useEffect(() => {
     if (!expanded) return;
@@ -213,40 +210,15 @@ export default function OverviewTab({
   onSaveBranding,
   qrCodeUrl,
   onShowQrModal,
-    publicLink,
+  publicLink,
   copied,
   onCopy,
   onNavigateSection,
-  onTaxRateSaved,
+  taxRate,
+  setTaxRate,
 }: OverviewTabProps) {
   const [emailError, setEmailError] = useState('');
   const [invoicePreviewRefreshToken, setInvoicePreviewRefreshToken] = useState(0);
-  const [taxRate, setTaxRate] = useState<number>(company.default_tax_rate ?? 0);
-  const [editingTaxRate, setEditingTaxRate] = useState(false);
-  const [taxRateDraft, setTaxRateDraft] = useState(String(company.default_tax_rate ?? 0));
-  const [taxRateSaving, setTaxRateSaving] = useState(false);
-
-  const saveTaxRate = async () => {
-    const parsed = parseFloat(taxRateDraft);
-    if (isNaN(parsed) || parsed < 0 || parsed > 100) return;
-    setTaxRateSaving(true);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-tax-rate', data: { default_tax_rate: parsed } }),
-      });
-      const result = await res.json();
-      if (result.success) {
-        setTaxRate(parsed);
-        setEditingTaxRate(false);
-        onTaxRateSaved(parsed);
-      }
-    } catch {}
-    finally {
-      setTaxRateSaving(false);
-    }
-  };
 
   const planTier = (company.plan_tier ?? 'free') as PlanTier;
   const [digestEnabled, setDigestEnabled] = useState(company.daily_digest_enabled ?? false);
@@ -286,7 +258,6 @@ export default function OverviewTab({
     }
   };
 
-
   const handleConfirmDigestToggle = async () => {
     const newVal = !digestEnabled;
     setDigestEnabled(newVal);
@@ -324,6 +295,7 @@ export default function OverviewTab({
     setCompanyWebsite(company.website || '');
     setColor1(company.email_brand_color_1 || '#0B3C6D');
     setColor2(company.email_brand_color_2 || '#1F5F8F');
+    setTaxRate(String(company.default_tax_rate ?? 0));
     setLogoPreview(company.logo_url ? `${company.logo_url}?v=${Date.now()}` : '');
     setLogoFile(null);
   };
@@ -362,13 +334,7 @@ export default function OverviewTab({
   return (
     <div className="w-full font-sans text-slate-900 antialiased">
       <div className="w-full space-y-5 sm:space-y-8 pb-20">
-        
-               {/* Page Title — identical wrapper to SetupTab's header row.
-                   SetupTab carries no page-level padding or max-width of its
-                   own; the shared shell around every tab already handles
-                   that. This tab was adding a second layer on top of it,
-                   which is what pushed the title down and to the right
-                   compared to Setup. */}
+
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">Company Details</h1>
@@ -385,15 +351,10 @@ export default function OverviewTab({
           </div>
         )}
 
-        {/* MAIN GRID */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 items-start">
 
-          {/* LEFT COLUMN: Company Profile & Details (7 cols) */}
-                  <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="xl:col-span-7 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
 
-            {/* Header bar — same full-width treatment as SetupTab's
-                checklist header, not a bottom-border sitting inside the
-                card's own padding */}
             <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
                 <Building2 className="h-4 w-4 text-slate-700 shrink-0" /> Company Profile & Branding
@@ -430,7 +391,6 @@ export default function OverviewTab({
             </div>
 
             <div className="divide-y divide-slate-100">
-              {/* LOGO & COMPANY NAME */}
               <div className="flex flex-col gap-2.5 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                 <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Logo &amp; Name</span>
                 <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-center">
@@ -467,7 +427,6 @@ export default function OverviewTab({
                 </div>
               </div>
 
-              {/* REPLY-TO EMAIL */}
               <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                 <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Reply-To Email</span>
                 <div className="min-w-0 flex-1">
@@ -495,7 +454,6 @@ export default function OverviewTab({
                 </div>
               </div>
 
-              {/* PHONE NUMBER */}
               <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                 <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Company Phone</span>
                 <div className="min-w-0 flex-1">
@@ -516,7 +474,6 @@ export default function OverviewTab({
                 </div>
               </div>
 
-              {/* WEBSITE */}
               <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                 <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Website URL</span>
                 <div className="min-w-0 flex-1">
@@ -539,7 +496,30 @@ export default function OverviewTab({
                 </div>
               </div>
 
-              {/* BRAND COLORS */}
+              <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
+                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Sales Tax Rate</span>
+                <div className="min-w-0 flex-1">
+                  {isEditingBrand ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        max="100"
+                        value={taxRate}
+                        onChange={(e) => setTaxRate(e.target.value)}
+                        className="w-24 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs sm:text-sm font-medium text-slate-900 shadow-xs outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900"
+                      />
+                      <span className="text-xs sm:text-sm font-medium text-slate-500">%</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs sm:text-sm font-semibold text-slate-800">
+                      {taxRate}% <span className="text-slate-400 font-normal">— applied to every quote by default</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+
               <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                 <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Brand Colors</span>
                 <div className="min-w-0 flex-1">
@@ -581,92 +561,85 @@ export default function OverviewTab({
 
           </div>
 
-          {/* RIGHT COLUMN: Automations, Plan & Payment Status (5 cols) */}
           <div className="xl:col-span-5 space-y-6">
 
-            
-                        
-            {/* Card A: Automations */}
-                        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
               <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
                 <Bell className="h-4 w-4 text-slate-700 shrink-0" />
                 <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Automations & Preferences</h2>
               </div>
               <div className="divide-y divide-slate-100">
 
-              {/* 6:00 AM Daily Summary Toggle */}
-              <div className="flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-slate-50/60">
-                <div className="flex items-center gap-1.5 pr-1 min-w-0">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">6:00 AM Daily Summary</label>
-                  <div className="group relative cursor-pointer shrink-0">
-                    <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
-                    <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-48 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
-                      Sends a morning summary email with leads, active jobs, and yesterday's payments.
+                <div className="flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-slate-50/60">
+                  <div className="flex items-center gap-1.5 pr-1 min-w-0">
+                    <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">6:00 AM Daily Summary</label>
+                    <div className="group relative cursor-pointer shrink-0">
+                      <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
+                      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-48 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
+                        Sends a morning summary email with leads, active jobs, and yesterday's payments.
+                      </div>
                     </div>
                   </div>
+
+                  <div className="shrink-0 flex items-center">
+                    {can(planTier, 'daily_digest') ? (
+                      <button
+                        type="button"
+                        onClick={() => setShowDigestConfirm(true)}
+                        disabled={digestSaving}
+                        className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                          digestEnabled ? 'bg-slate-900' : 'bg-slate-200'
+                        }`}
+                      >
+                        <span
+                          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out ${
+                            digestEnabled ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateSection('billing')}
+                        className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-300 px-2 py-1 text-xs font-bold text-slate-800 hover:bg-slate-200 transition shrink-0 cursor-pointer"
+                      >
+                        <Sparkles className="h-3 w-3 text-slate-600" /> Upgrade
+                      </button>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="shrink-0 flex items-center">
-                  {can(planTier, 'daily_digest') ? (
+
+                <div className="flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-slate-50/60">
+                  <div className="flex items-center gap-1.5 pr-1 min-w-0">
+                    <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">Auto-BCC Emails</label>
+                    <div className="group relative cursor-pointer shrink-0">
+                      <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
+                      <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-48 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
+                        Sends a secret copy (BCC) of every client quote or invoice email directly to your inbox.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 flex items-center">
                     <button
                       type="button"
-                      onClick={() => setShowDigestConfirm(true)}
-                      disabled={digestSaving}
+                      onClick={handleToggleBcc}
+                      disabled={bccSaving}
                       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                        digestEnabled ? 'bg-slate-900' : 'bg-slate-200'
+                        bccEnabled ? 'bg-slate-900' : 'bg-slate-200'
                       }`}
                     >
                       <span
                         className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out ${
-                          digestEnabled ? 'translate-x-5' : 'translate-x-0'
+                          bccEnabled ? 'translate-x-5' : 'translate-x-0'
                         }`}
                       />
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => onNavigateSection('billing')}
-                      className="inline-flex items-center gap-1 rounded-md bg-slate-100 border border-slate-300 px-2 py-1 text-xs font-bold text-slate-800 hover:bg-slate-200 transition shrink-0 cursor-pointer"
-                    >
-                      <Sparkles className="h-3 w-3 text-slate-600" /> Upgrade
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Auto-BCC Emails Toggle */}
-              <div className="flex items-center justify-between gap-3 px-5 py-4 transition-colors hover:bg-slate-50/60">
-                <div className="flex items-center gap-1.5 pr-1 min-w-0">
-                  <label className="text-xs sm:text-sm font-semibold text-slate-800 truncate">Auto-BCC Emails</label>
-                  <div className="group relative cursor-pointer shrink-0">
-                    <HelpCircle className="h-4 w-4 text-slate-400 hover:text-slate-600 transition shrink-0" />
-                    <div className="pointer-events-none absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden w-48 sm:w-56 rounded-md bg-slate-900 p-2.5 text-xs text-white shadow-xl group-hover:block z-20">
-                      Sends a secret copy (BCC) of every client quote or invoice email directly to your inbox.
-                    </div>
                   </div>
                 </div>
-
-                <div className="shrink-0 flex items-center">
-                  <button
-                    type="button"
-                    onClick={handleToggleBcc}
-                    disabled={bccSaving}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      bccEnabled ? 'bg-slate-900' : 'bg-slate-200'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-xs transition-transform duration-200 ease-in-out ${
-                        bccEnabled ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
               </div>
             </div>
 
-                       {/* Card B: Plan & Payment Status Table */}
             <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
               <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
                 <CreditCard className="h-4 w-4 text-slate-700 shrink-0" />
@@ -674,7 +647,6 @@ export default function OverviewTab({
               </div>
 
               <div className="divide-y divide-slate-100">
-                {/* Plan Tier Row */}
                 <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                   <span className="text-xs font-semibold text-slate-800 sm:w-28 sm:shrink-0">Plan Tier</span>
                   <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
@@ -693,9 +665,6 @@ export default function OverviewTab({
                   </div>
                 </div>
 
-                
-
-                                {/* Payment Status Row */}
                 <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
                   <span className="text-xs font-semibold text-slate-800 sm:w-28 sm:shrink-0">Payment Status</span>
                   <div className="min-w-0 flex-1">
@@ -705,109 +674,52 @@ export default function OverviewTab({
               </div>
             </div>
 
-            {/* Card C: Tax Rate */}
-            <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-              <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Sales Tax</h2>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-xs text-slate-500 mb-3">
-                  Applied to every quote by default. Individual services can be marked tax-exempt from the Services page.
-                </p>
-                {editingTaxRate ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="0.001"
-                      min="0"
-                      max="100"
-                      value={taxRateDraft}
-                      onChange={(e) => setTaxRateDraft(e.target.value)}
-                      autoFocus
-                      className="w-20 rounded-md border border-slate-300 px-2 py-1.5 text-sm font-semibold text-slate-900 outline-none focus:border-slate-900"
-                    />
-                    <span className="text-xs font-semibold text-slate-500">%</span>
-                    <button
-                      type="button"
-                      onClick={saveTaxRate}
-                      disabled={taxRateSaving}
-                      className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-                    >
-                      {taxRateSaving ? '...' : 'Save'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingTaxRate(false);
-                        setTaxRateDraft(String(taxRate));
-                      }}
-                      className="text-xs font-semibold text-slate-500 hover:text-slate-800"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setEditingTaxRate(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50"
-                  >
-                    <Pencil className="h-3.5 w-3.5 text-slate-600" />
-                    Tax rate: {taxRate}%
-                  </button>
-                )}
-              </div>
-            </div>
-
           </div>
 
         </div>
-        
 
-        {/* FULL WIDTH: Lead Intake / Booking Link */}
-               <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
             <LinkIcon className="h-4 w-4 text-slate-700 shrink-0" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Lead Intake Link</h2>
           </div>
 
           <div className="p-4 sm:p-6 space-y-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between py-1 gap-3 sm:gap-4">
-            <code className="font-mono text-xs sm:text-sm font-semibold text-slate-800 truncate bg-slate-50 px-3.5 py-2 rounded-md border border-slate-300 flex-1 min-w-0">
-              {publicLink || `lead2project.com/${company.slug}`}
-            </code>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between py-1 gap-3 sm:gap-4">
+              <code className="font-mono text-xs sm:text-sm font-semibold text-slate-800 truncate bg-slate-50 px-3.5 py-2 rounded-md border border-slate-300 flex-1 min-w-0">
+                {publicLink || `lead2project.com/${company.slug}`}
+              </code>
 
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              <button
-                type="button"
-                onClick={onCopy}
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition cursor-pointer"
-              >
-                {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-slate-600" />}
-                {copied ? 'Copied' : 'Copy Link'}
-              </button>
-              <a
-                href={publicLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition"
-              >
-                Open <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-              <button
-                type="button"
-                onClick={onShowQrModal}
-                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white p-2 text-slate-800 shadow-xs hover:bg-slate-50 transition shrink-0 cursor-pointer"
-                title="Download QR Code"
-              >
-                <Download className="h-4 w-4 text-slate-600" />
-                         </button>
+              <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                <button
+                  type="button"
+                  onClick={onCopy}
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-xs font-semibold text-slate-800 shadow-xs hover:bg-slate-50 transition cursor-pointer"
+                >
+                  {copied ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4 text-slate-600" />}
+                  {copied ? 'Copied' : 'Copy Link'}
+                </button>
+                <a
+                  href={publicLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 transition"
+                >
+                  Open <ExternalLink className="h-3.5 w-3.5" />
+                </a>
+                <button
+                  type="button"
+                  onClick={onShowQrModal}
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white p-2 text-slate-800 shadow-xs hover:bg-slate-50 transition shrink-0 cursor-pointer"
+                  title="Download QR Code"
+                >
+                  <Download className="h-4 w-4 text-slate-600" />
+                </button>
+              </div>
             </div>
-          </div>
           </div>
         </div>
 
-        {/* Upgrade Callout */}
         {isFreePlan && (
           <SettingsUpgradeBanner
             planLabel="Basic Plan"
@@ -817,7 +729,6 @@ export default function OverviewTab({
           />
         )}
 
-        {/* Footer Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-2 sm:pt-4">
           <Link href="/" className="inline-block">
             <img
@@ -837,7 +748,6 @@ export default function OverviewTab({
 
       </div>
 
-      {/* Daily Digest Modal */}
       {showDigestConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-xs">
           <div className="w-full max-w-sm rounded-xl border border-slate-300 bg-white p-5 sm:p-6 shadow-2xl">

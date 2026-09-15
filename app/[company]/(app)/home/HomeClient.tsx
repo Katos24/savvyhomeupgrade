@@ -51,6 +51,7 @@ type Company = {
   hasRealLead: boolean;
   stripe_connect_onboarded: boolean;
   stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
+  default_tax_rate?: number | null;
 };
 
 type SectionKey =
@@ -156,9 +157,9 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const [companyPhone, setCompanyPhone] = useState(formatPhone(company.phone || ''));
   const [companyWebsite, setCompanyWebsite] = useState(company.website || '');
 
-  const [color1, setColor1] = useState(company.email_brand_color_1 || '#0B3C6D');
+    const [color1, setColor1] = useState(company.email_brand_color_1 || '#0B3C6D');
   const [color2, setColor2] = useState(company.email_brand_color_2 || '#1F5F8F');
-
+  const [taxRate, setTaxRate] = useState(String(company.default_tax_rate ?? 0));
   const accentColor = company.email_brand_color_1 || '#2563eb';
 
   useEffect(() => {
@@ -212,12 +213,21 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           data: { name: companyName, email: companyEmail, phone: companyPhone, website: normalizedWebsite },
         }),
       });
-      await fetch(`/api/company/${company.slug}/settings`, {
+           await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'update-branding',
           data: { logo_url: finalLogoUrl, email_brand_color_1: color1, email_brand_color_2: color2 },
+        }),
+      });
+      const parsedTaxRate = parseFloat(taxRate) || 0;
+      await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update-tax-rate',
+          data: { default_tax_rate: parsedTaxRate },
         }),
       });
       if (finalLogoUrl) setLogoPreview(`${finalLogoUrl}?v=${Date.now()}`);
@@ -231,6 +241,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         logo_url: finalLogoUrl ?? prev.logo_url,
         email_brand_color_1: color1,
         email_brand_color_2: color2,
+        default_tax_rate: parsedTaxRate,
       }));
          setLogoFile(null);
       setIsEditingBrand(false);
@@ -249,8 +260,12 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   // from this SAME shared object, so nothing told it anything changed —
   // hence needing a full page refresh to see the new rate reflected.
   const handleTaxRateSaved = (newRate: number) => {
+      console.log('handleTaxRateSaved called with:', newRate);
+
     setCompany((prev) => ({ ...prev, default_tax_rate: newRate }));
   };
+
+  
   const planTier = (company.plan_tier || 'free') as PlanTier;
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
@@ -464,11 +479,12 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
                 onSaveBranding={handleSaveBranding}
                 qrCodeUrl={qrCodeUrl}
                 onShowQrModal={() => setShowQrModal(true)}
-                publicLink={publicLink}
+                               publicLink={publicLink}
                 copied={copied}
                 onCopy={handleCopy}
-                              onNavigateSection={(section) => setActiveSection(section as SectionKey)}
-                onTaxRateSaved={handleTaxRateSaved}
+                onNavigateSection={(section) => setActiveSection(section as SectionKey)}
+                taxRate={taxRate}
+                setTaxRate={setTaxRate}
               />
             )}
 
