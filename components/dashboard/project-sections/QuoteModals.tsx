@@ -495,14 +495,13 @@ export default function QuoteModals({
                 <div className="flex-1 overflow-y-auto p-4 space-y-3">
                   <div className="relative shrink-0">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      autoFocus
-                      value={itemSearchQuery}
-                      onChange={(e) => setItemSearchQuery(e.target.value)}
-                      placeholder="Search saved line items..."
-                      className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm outline-none focus:border-slate-400 focus:bg-white transition"
-                    />
+                   <input
+type="text"
+value={itemSearchQuery}
+onChange={(e) => setItemSearchQuery(e.target.value)}
+placeholder="Search saved line items..."
+className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm outline-none focus:border-slate-400 focus:bg-white transition"
+/>
                   </div>
 
                   <div className="space-y-1.5">
