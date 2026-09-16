@@ -382,7 +382,7 @@ export default function BillingSummaryPanel({
     <div className="bg-white border border-[#e7e2d8] rounded-2xl overflow-hidden">
             <div className="p-3 sm:p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
         {/* LEFT COLUMN */}
-        <div className="space-y-6 min-w-0">
+               <div className="space-y-3 min-w-0">
           <div className="rounded-xl border border-[#e7e2d8] p-3 sm:p-5">
             {/* Header / Invoice Metadata */}
             <div className="flex items-center justify-between mb-1.5">
@@ -426,28 +426,9 @@ export default function BillingSummaryPanel({
               </p>
             )}
 
-            {amountDueNow > 0 && (
-              <div
-                className={`mt-4 rounded-xl border p-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 ${
-                  isClosed ? 'border-rose-200 bg-rose-50' : 'border-brand-100 bg-brand-50/60'
-                }`}
-              >
-                <p
-                  className={`text-[11px] font-bold uppercase tracking-wide ${
-                    isClosed ? 'text-rose-700' : 'text-brand-700'
-                  }`}
-                >
-                  {dueNowLabel}
-                </p>
-                <p className="text-2xl font-bold text-[#1c1917] tabular-nums">
-                  {fmt(amountDueNow)}
-                </p>
-              </div>
-            )}
+         
 
-            <div className="border-t border-[#f0ece1] my-4" />
-
-            {wasSettledThenGrew && (
+                       {wasSettledThenGrew && (
               <div className="mt-3 flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 p-2.5 text-[11px] text-blue-800">
                 <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5 text-blue-600" />
                 <span>
@@ -506,6 +487,8 @@ export default function BillingSummaryPanel({
                     </span>
                   </div>
                 )}
+
+                            <div className="border-t border-[#f0ece1] my-4" />
 
                 {/* TWO-BOX GRID — stacked on mobile, side by side from sm
                     up. A single box (no-deposit jobs) just fills the
