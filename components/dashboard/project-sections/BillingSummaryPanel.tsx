@@ -380,10 +380,10 @@ export default function BillingSummaryPanel({
 
   return (
     <div className="bg-white border border-[#e7e2d8] rounded-2xl overflow-hidden">
-      <div className="p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
+            <div className="p-3 sm:p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
         {/* LEFT COLUMN */}
         <div className="space-y-6 min-w-0">
-          <div className="rounded-xl border border-[#e7e2d8] p-5">
+          <div className="rounded-xl border border-[#e7e2d8] p-3 sm:p-5">
             {/* Header / Invoice Metadata */}
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-[11px] font-medium uppercase tracking-wide text-[#a8a29e]">
