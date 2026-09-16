@@ -939,28 +939,13 @@ export default function QuoteSection({
               toggle instead of being permanently expanded. Actions now
               lives in the top bar next to Save — see the note up there
               for why. */}
-          <div className="border border-slate-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-3 flex-wrap">
-              <button
-                onClick={() => setShowBreakdown((v) => !v)}
-                className="flex items-center gap-2 py-1 cursor-pointer"
-              >
-                <span className="text-xs font-medium text-slate-500">Total</span>
-                <span className="text-lg font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 text-slate-400 transition-transform ${showBreakdown ? 'rotate-180' : ''}`}
-                />
-              </button>
+                   <div className="border border-slate-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 flex-wrap">
+              <span className="text-xs font-medium text-slate-500">Total</span>
+              <span className="text-lg font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
             </div>
 
-            <AnimatePresence>
-              {showBreakdown && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden border-t border-slate-100"
-                >
+            <div className="border-t border-slate-100">
                   <div className="px-4 py-3 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                     <div>
                       <p className="text-xs text-slate-500 mb-0.5">Subtotal</p>
@@ -1019,10 +1004,8 @@ export default function QuoteSection({
                         {taxRate > 0 ? fmt(taxAmount) : '—'}
                       </p>
                     </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                                  </div>
+              </div>
           </div>
         </div>
 

@@ -265,12 +265,61 @@ export default function CategoriesTab({
     markDirty();
   };
 
-    const handleSetTaxOverride = (index: number, rate: number | null) => {
+    const handleSetTaxOverride = async (index: number, rate: number | null) => {
     setCategories((prev) =>
       prev.map((c, i) => (i === index ? { ...c, tax_rate_override: rate } : c))
     );
     setUseDefaults(false);
     markDirty();
+
+    // Pushes the new rate into this category's OWN existing template
+    // right away, independent of the global rate ever changing — same
+    // normalization math as applyDefaultToAllTemplates, just scoped to
+    // one template instead of all of them. Without this, setting an
+    // override here did nothing to an already-saved template until
+    // either it was manually reopened and resaved, or the global rate
+    // happened to change too (which triggers its own full sync).
+    const categoryValue = categories[index]?.value;
+    const existingTemplate = quoteTemplates.find((qt) => qt.category === categoryValue);
+    if (!existingTemplate) return;
+
+    const effectiveRate = rate ?? taxRate;
+    const normalizedItems = existingTemplate.items.map((item: any, i: number) => {
+      const qty = clean(item.quantity ?? item.qty ?? 1) || 1;
+      const price = clean(item.unitPrice ?? item.unit_price ?? item.unitCost ?? item.unit_cost ?? 0);
+      return {
+        id: item.id || `item_${Date.now() + i}`,
+        description: String(item.description || item.label || ''),
+        quantity: qty,
+        unitPrice: price,
+        amount: Math.round(qty * price * 100) / 100,
+      };
+    });
+    const subtotal = normalizedItems.reduce((s, i) => s + i.amount, 0);
+    const nextTotal = Math.round((subtotal + subtotal * (effectiveRate / 100)) * 100) / 100;
+    const updatedTemplate = {
+      ...existingTemplate,
+      items: normalizedItems,
+      tax_rate: effectiveRate,
+      total: nextTotal,
+    };
+
+    try {
+      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update', template: updatedTemplate }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setQuoteTemplates(data.templates || []);
+      }
+    } catch (err) {
+      console.error('Failed to sync tax override to existing template:', err);
+      // Non-fatal — the override itself is already saved on the
+      // category above; worst case, this one template needs a manual
+      // resave to pick up the new rate.
+    }
   };
 
   const handleSave = async () => {
