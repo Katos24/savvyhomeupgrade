@@ -249,8 +249,8 @@ export default function SchedulingSection({
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto w-full space-y-4">
+   return (
+    <div className="max-w-4xl mx-auto w-full space-y-4 pb-24 lg:pb-0">
       {/* SEND EMAIL MODAL */}
       <SendEmailModal
         open={showEmailModal}
@@ -641,11 +641,54 @@ export default function SchedulingSection({
         )}
       </AnimatePresence>
 
-      {/* PROMINENT STICKY SAVE BAR — viewport-fixed, not tucked into a
+          {/* PROMINENT STICKY SAVE BAR — viewport-fixed, not tucked into a
           shared header row. Only appears while something's actually
-          unsaved, so it can't be missed on either desktop or mobile, and
-          doesn't require scrolling back up to find it. Safe-area padding
-          on the bottom for phones with a home indicator. */}
+          unsaved, so it can't be missed on mobile after scrolling past
+          the action buttons, Job Hours, or Sent Email History — without
+          this, saving required scrolling all the way back up to the
+          header. Desktop keeps just the header button, since nothing on
+          this page is tall enough there to scroll the header out of
+          view.
+
+          BOTTOM OFFSET: stacked above the app's bottom mobile nav bar,
+          not underneath it — the single number below (currently a guess
+          at 64px) is the one place to adjust if it doesn't line up
+          exactly against the real nav bar's height once checked on a
+          real phone. If the bottom nav is actually hidden while a job's
+          detail view is open, change this back to bottom-0. */}
+      <AnimatePresence>
+        {isDirty && (
+          <motion.div
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            className="lg:hidden fixed left-0 right-0 z-40 bg-white border-t border-[#e7e2d8] shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-4 pt-3"
+            style={{
+              bottom: '64px', // ← adjust to match your actual bottom nav height
+              paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
+            }}
+          >
+            <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
+              <p className="flex items-center gap-2 text-sm font-semibold text-[#1c1917]">
+                <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
+                Unsaved changes
+              </p>
+              <motion.button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                animate={!saving ? { scale: [1, 1.035, 1] } : { scale: 1 }}
+                transition={!saving ? { duration: 1.8, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.15 }}
+                className="flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold bg-brand-700 hover:bg-brand-800 text-white shadow-md shadow-brand-700/30 active:scale-95 transition-colors min-h-[44px]"
+              >
+                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                {saving ? 'Saving...' : 'Save changes'}
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
