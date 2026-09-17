@@ -621,15 +621,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             </div>
           </div>
 
-          <div className="flex items-start gap-3 border-t border-blue-100 bg-blue-50/60 p-4 text-xs font-medium text-blue-950">
-            <Zap className="h-4 w-4 shrink-0 text-blue-600 mt-0.5" />
-            <div className="space-y-1">
-              <p className="font-bold text-blue-900">How Lead Capture Works</p>
-              <p className="text-blue-800/90 leading-relaxed">
-                When a customer completes the <span className="font-bold">Required Intake Fields</span> (Step 1) and taps submit, their request <span className="font-bold underline decoration-blue-300">lands on your dashboard immediately as a new lead</span>! If they proceed to complete any optional fields, site photos, or custom questions, those details will automatically update on their existing lead ticket.
-              </p>
-            </div>
-          </div>
+         
         </div>
 
         <AnimatePresence>
@@ -722,6 +714,16 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             )}
           </div>
 
+ <div className="flex items-start gap-3 border-t border-blue-100 bg-blue-50/60 p-4 text-xs font-medium text-blue-950">
+            <Zap className="h-4 w-4 shrink-0 text-blue-600 mt-0.5" />
+            <div className="space-y-1">
+              <p className="font-bold text-blue-900">How Lead Capture Works</p>
+              <p className="text-blue-800/90 leading-relaxed">
+                When a customer completes the <span className="font-bold">Required Intake Fields</span> (Step 1) and taps submit, their request <span className="font-bold underline decoration-blue-300">lands on your dashboard immediately as a new lead</span>! If they proceed to complete any optional fields, site photos, or custom questions, those details will automatically update on their existing lead ticket.
+              </p>
+            </div>
+          </div>
+
           {/* Pricing Notice */}
           <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
@@ -796,6 +798,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           )}
         </AnimatePresence>
     </div>
+
+    
 
       {/* Slide-out Mobile & Desktop Live Preview Drawer */}
       <AnimatePresence>

@@ -475,7 +475,7 @@ export default function OverviewTab({
               </div>
 
               <div className="flex flex-col gap-2 px-5 py-4 transition-colors hover:bg-slate-50/60 sm:flex-row sm:items-center">
-                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Website URL</span>
+                <span className="text-xs font-semibold text-slate-800 sm:w-44 sm:shrink-0">Company Website</span>
                 <div className="min-w-0 flex-1">
                   {isEditingBrand ? (
                     <input

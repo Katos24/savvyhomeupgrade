@@ -37,18 +37,25 @@ export default function TrialBanner({
   // Scheduled cancellation — show over anything else
   if (cancelAtPeriodEnd && subscriptionCancelAt) {
     const until = new Date(subscriptionCancelAt).toLocaleDateString('en-US', {
-      month: 'short', day: 'numeric', year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
     });
     return (
-      <div className="bg-amber-500/10 border-b border-amber-500/20 text-amber-300">
+      <div className="bg-amber-50 border-b border-amber-200/80 text-amber-900 dark:bg-amber-950/40 dark:border-amber-900/50 dark:text-amber-200">
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              {planLabel} subscription cancelled — full access until <strong className="text-amber-200 ml-1">{until}</strong>
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+              <span>
+                {planLabel} subscription cancelled — full access until{' '}
+                <strong className="text-amber-950 dark:text-amber-100 font-semibold">{until}</strong>
+              </span>
             </div>
-            <button onClick={go}
-              className="bg-amber-500/20 border border-amber-500/30 text-amber-200 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-amber-500/30 transition">
+            <button
+              onClick={go}
+              className="bg-amber-100 border border-amber-300 text-amber-900 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-amber-200 dark:bg-amber-900/50 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-800/60 transition cursor-pointer"
+            >
               Reactivate
             </button>
           </div>
@@ -65,15 +72,17 @@ export default function TrialBanner({
   // Expired
   if (daysLeft <= 0) {
     return (
-      <div className="bg-red-600 border-b border-red-700 text-white">
+      <div className="bg-red-50 border-b border-red-200/80 text-red-900 dark:bg-red-950/40 dark:border-red-900/50 dark:text-red-200">
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-              <XCircle className="w-4 h-4 flex-shrink-0" />
-              {planLabel} trial expired — subscribe to continue
+              <XCircle className="w-4 h-4 flex-shrink-0 text-red-600 dark:text-red-400" />
+              <span>{planLabel} trial expired — subscribe to continue</span>
             </div>
-            <button onClick={go}
-              className="bg-white text-red-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-red-50 transition">
+            <button
+              onClick={go}
+              className="bg-red-600 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-600 transition cursor-pointer"
+            >
               Manage Billing
             </button>
           </div>
@@ -85,15 +94,21 @@ export default function TrialBanner({
   // Ending soon
   if (daysLeft <= 3) {
     return (
-      <div className="bg-orange-500 border-b border-orange-600 text-white">
+      <div className="bg-orange-50 border-b border-orange-200/80 text-orange-900 dark:bg-orange-950/40 dark:border-orange-900/50 dark:text-orange-200">
         <div className="max-w-7xl mx-auto px-4 py-2">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-              <Clock className="w-4 h-4 flex-shrink-0" />
-              {planLabel} trial ends in <strong className="mx-1">{daysLeft}</strong> day{daysLeft !== 1 ? 's' : ''}
+              <Clock className="w-4 h-4 flex-shrink-0 text-orange-600 dark:text-orange-400" />
+              <span>
+                {planLabel} trial ends in{' '}
+                <strong className="font-semibold text-orange-950 dark:text-orange-100 mx-0.5">{daysLeft}</strong> day
+                {daysLeft !== 1 ? 's' : ''}
+              </span>
             </div>
-            <button onClick={go}
-              className="bg-white text-orange-600 font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-orange-50 transition">
+            <button
+              onClick={go}
+              className="bg-orange-600 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-orange-700 dark:bg-orange-600 dark:hover:bg-orange-500 transition cursor-pointer"
+            >
               Subscribe Now
             </button>
           </div>
@@ -104,15 +119,20 @@ export default function TrialBanner({
 
   // Normal trial
   return (
-    <div className="bg-blue-600 border-b border-blue-700 text-white">
-            <div className="max-w-7xl mx-auto px-4 py-2">
+    <div className="bg-blue-50 border-b border-blue-200/80 text-blue-900 dark:bg-blue-950/40 dark:border-blue-900/50 dark:text-blue-200">
+      <div className="max-w-7xl mx-auto px-4 py-2">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-            <Sparkles className="w-4 h-4 flex-shrink-0" />
-            {planLabel} Trial — <strong className="mx-1">{daysLeft}</strong> days left
+            <Sparkles className="w-4 h-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
+            <span>
+              {planLabel} Trial —{' '}
+              <strong className="font-semibold text-blue-950 dark:text-blue-100 mx-0.5">{daysLeft}</strong> days left
+            </span>
           </div>
-          <button onClick={go}
-            className="bg-white/20 border border-white/30 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-white hover:text-blue-600 transition">
+          <button
+            onClick={go}
+            className="bg-blue-600 text-white font-semibold px-3 py-1 rounded text-xs whitespace-nowrap hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 transition cursor-pointer"
+          >
             Manage Billing
           </button>
         </div>
