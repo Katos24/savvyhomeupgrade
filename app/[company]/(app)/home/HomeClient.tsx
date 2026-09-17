@@ -21,7 +21,6 @@ import {
 import { can, type PlanTier } from '@/lib/permissions';
 
 // --- Dynamic Lazy Loading for Heavy Tab Components ---
-const CategoriesTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/CategoriesTab'));
 const PaymentsTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/PaymentsTab'));
 const FormTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/FormTab'));
 const GoogleReviewsTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/GoogleReviewsTab'));
@@ -385,11 +384,10 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         label: 'Get set up',
         items: [{ key: 'setup', label: 'Setup Guide', icon: Rocket, visible: true }],
       },
-      {
+          {
         label: 'Your business',
         items: [
           { key: 'overview', label: 'Overview', icon: LayoutGrid, visible: true },
-          { key: 'categories', label: 'Services', icon: Tags, locked: categoriesLocked, visible: true },
           { key: 'form', label: 'Booking form', icon: FileText, visible: true },
         ],
       },
@@ -545,7 +543,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
 
             {activeSection === 'form' && <FormTab company={company} currentUser={currentUser} />}
 
-            {activeSection === 'categories' && <CategoriesTab company={company} currentUser={currentUser} />}
+           
 
             {activeSection === 'payments' && (
               paymentsLocked ? (
@@ -557,16 +555,24 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
 
             {activeSection === 'reviews' && <GoogleReviewsTab company={company} locked={reviewsLocked} />}
 
-            {isAdminForSections && activeSection === 'pipeline' && (
-              <PipelineTab company={company} currentUser={currentUser} />
+                        {isAdminForSections && activeSection === 'pipeline' && (
+              !can(planTier, 'settings_pipeline') ? (
+                <LockedSection label="Pipeline" companySlug={company.slug} />
+              ) : (
+                <PipelineTab company={company} currentUser={currentUser} />
+              )
             )}
 
             {isAdminForSections && activeSection === 'email-templates' && (
               <EmailTemplatesTab company={company} currentUser={currentUser} />
             )}
 
-            {isAdminForSections && activeSection === 'team' && (
-              <TeamTab company={company} currentUser={currentUser} />
+                        {isAdminForSections && activeSection === 'team' && (
+              !can(planTier, 'settings_team') ? (
+                <LockedSection label="Team" companySlug={company.slug} />
+              ) : (
+                <TeamTab company={company} currentUser={currentUser} />
+              )
             )}
 
             {isOwner && activeSection === 'billing' && (

@@ -12,7 +12,10 @@ import {
   Loader2,
   CheckSquare,
   DollarSign,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useRef } from 'react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
 import {
@@ -48,13 +51,29 @@ export default function CategoriesTab({
   company: any;
   currentUser?: any;
 }) {
-  const defaultCategories =
+    const defaultCategories =
     CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
 
-  // Tab is permanently pinned to light mode to match Setup Guide & Payments.
-  const t = themeTokens(false);
+  // Real, live theme now that this is its own top-level page — same
+  // localStorage key and hydration-safe pattern Dashboard and
+  // CompanyShell already use, so toggling here matches everywhere else
+  // instead of this page alone staying permanently pinned to light.
+  const [isDark, setIsDark] = useState<boolean>(true);
+  const skipFirstThemeWrite = useRef(true);
+  useEffect(() => {
+    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+  }, []);
+  useEffect(() => {
+    if (skipFirstThemeWrite.current) {
+      skipFirstThemeWrite.current = false;
+      return;
+    }
+    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+    window.dispatchEvent(new Event('theme-changed'));
 
-  console.log('CategoriesTab received tax rate:', company.default_tax_rate);
+  }, [isDark]);
+  const t = themeTokens(isDark);
+
   const accentColor = company.email_brand_color_1 || '#2563eb';
 
   const [categories, setCategories] = useState<Category[]>(
@@ -350,8 +369,8 @@ export default function CategoriesTab({
     }
   };
 
-  if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
-    return <CategoriesLockedSection companySlug={company.slug} isDark={false} />;
+    if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
+    return <CategoriesLockedSection companySlug={company.slug} isDark={isDark} />;
   }
 
   const activeModalCategory =
@@ -366,16 +385,38 @@ export default function CategoriesTab({
     quoteTemplates.some((qt) => qt.category === c.value)
   ).length;
 
-  return (
+    return (
     <>
-      <div className={`w-full ${t.bg} transition-colors`}>
-        <div className="w-full space-y-6 sm:space-y-8 pb-24">
-          {/* Header */}
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900">Services</h1>
-            <p className="mt-0.5 text-xs font-medium text-slate-500">
-              What customers can request, how it&apos;s priced, and what you ask them.
-            </p>
+      <div className={`min-h-screen ${t.bg} transition-colors`}>
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 space-y-6 sm:space-y-8 pb-24">
+                    {/* Header */}
+          <div className="flex items-start justify-between gap-4">
+                        <div>
+              <h1 className={`text-xl font-bold tracking-tight ${t.heading}`}>Services</h1>
+              <p className={`mt-0.5 text-xs font-medium ${t.subText}`}>
+                What customers can request, how it&apos;s priced, and what you ask them.
+              </p>
+            </div>
+
+                          <div className="flex shrink-0 items-center gap-2">
+              <button
+                onClick={() => setIsDark((v) => !v)}
+                className={`rounded-xl border p-2.5 transition-colors ${
+                  isDark ? 'border-white/10 bg-white/5 text-slate-300' : 'border-[#e7e2d8] bg-white text-[#57534e]'
+                }`}
+                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              </button>
+              <a
+                href={`/${company.slug}/home?section=form`}
+                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold shadow-xs transition ${
+                  isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                Booking Form Settings →
+              </a>
+            </div>
           </div>
 
           {/* Stat Row */}
@@ -467,13 +508,13 @@ export default function CategoriesTab({
                     >
                       Add
                     </button>
-                    <button
+                                       <button
                       onClick={() => {
                         setShowAddForm(false);
                         setNewCatLabel('');
                         setNewCatError('');
                       }}
-                      className={`flex-1 rounded-xl border ${t.border} px-4 py-2.5 text-sm font-semibold ${t.cardText} transition hover:bg-slate-100 sm:flex-none`}
+                      className={`flex-1 rounded-xl border ${t.border} px-4 py-2.5 text-sm font-semibold ${t.cardText} transition ${t.hoverBg} sm:flex-none`}
                     >
                       Cancel
                     </button>
@@ -502,10 +543,10 @@ export default function CategoriesTab({
                             <button
                               key={dt}
                               onClick={() => setDepositTypeDraft(dt)}
-                              className={`px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                                                           className={`px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
                                 depositTypeDraft === dt
                                   ? 'bg-blue-600 text-white'
-                                  : `${t.cardText} hover:bg-slate-100`
+                                  : `${t.cardText} ${t.hoverBg}`
                               }`}
                             >
                               {dt === 'percent' ? '%' : '$'}
@@ -558,9 +599,9 @@ export default function CategoriesTab({
                       </div>
                     </div>
                   ) : (
-                    <button
+                                       <button
                       onClick={() => setEditingDepositDefault(true)}
-                      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border ${t.border} px-4 py-2.5 text-xs font-semibold ${t.cardText} transition hover:bg-slate-50 sm:w-auto sm:justify-start`}
+                      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border ${t.border} px-4 py-2.5 text-xs font-semibold ${t.cardText} transition ${t.hoverBg} sm:w-auto sm:justify-start`}
                     >
                       <HandCoins className={`h-3.5 w-3.5 ${t.subText}`} />
                       {depositType
@@ -602,7 +643,7 @@ export default function CategoriesTab({
                 quoteTemplate={quoteTemplates.find((qt) => qt.category === cat.value)}
                 questions={customQuestions.filter((q) => q.category === cat.value)}
                 expanded={expandedService === cat.value}
-                isDark={false}
+                               isDark={isDark}
                 accentColor={accentColor}
                 onToggleExpand={() =>
                   setExpandedService(expandedService === cat.value ? null : cat.value)
@@ -654,8 +695,8 @@ export default function CategoriesTab({
           companySlug={company.slug}
           category={activeModalCategory}
           categoryIndex={activeModal.categoryIndex}
-          allCategories={categories}
-          isDark={false}
+                    allCategories={categories}
+          isDark={isDark}
           onClose={() => setActiveModal(null)}
           onSaved={(updated) => {
             setCategories(updated);
@@ -671,8 +712,8 @@ export default function CategoriesTab({
           existingTemplate={quoteTemplates.find((qt) => qt.category === activeModal.categoryValue)}
           taxRate={taxRate}
           depositType={depositType}
-          depositValue={depositValue}
-          isDark={false}
+                    depositValue={depositValue}
+          isDark={isDark}
           onClose={() => setActiveModal(null)}
           onSaved={setQuoteTemplates}
         />
@@ -682,21 +723,21 @@ export default function CategoriesTab({
         <CategoriesQuestionsModal
           companySlug={company.slug}
           category={activeModalCategory}
-          allQuestions={customQuestions}
-          isDark={false}
+                    allQuestions={customQuestions}
+          isDark={isDark}
           onClose={() => setActiveModal(null)}
           onSaved={setCustomQuestions}
         />
       )}
 
       {showQuotePreview && (
-        <QuoteSheetPreviewModal onClose={() => setShowQuotePreview(false)} isDark={false} />
-      )}
+        <QuoteSheetPreviewModal onClose={() => setShowQuotePreview(false)} isDark={isDark} />
+              )}
 
       {deleteConfirm && (
         <DeleteServiceConfirmModal
-          label={deleteConfirm.label}
-          isDark={false}
+                    label={deleteConfirm.label}
+          isDark={isDark}
           onCancel={() => setDeleteConfirm(null)}
           onConfirm={confirmDeleteCategory}
         />

@@ -46,13 +46,21 @@ export default function CompanyShell({
     // wrapper's own background/mobile bar showing the stale theme until
     // a hard refresh. Keying on pathname makes it re-check on every
     // actual navigation, matching how someone really moves through the app.
-    const onStorage = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+        const onStorage = () => setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
     onStorage();
     window.addEventListener('storage', onStorage);
     window.addEventListener('focus', onStorage);
+    // FIXED: 'storage' only fires in OTHER tabs, 'focus' only on regaining
+    // window focus — neither fires when a page's own toggle (e.g.
+    // CategoriesTab's) flips the theme in THIS same tab. This shell's
+    // full-page background then stayed stuck on whatever it read at
+    // load, showing as a stray light-colored border around any page
+    // narrower than full-bleed. A same-tab custom event closes that gap.
+    window.addEventListener('theme-changed', onStorage);
     return () => {
       window.removeEventListener('storage', onStorage);
       window.removeEventListener('focus', onStorage);
+      window.removeEventListener('theme-changed', onStorage);
     };
   }, [pathname]);
   // Home has its own dense sub-navigation rail — running the full-width

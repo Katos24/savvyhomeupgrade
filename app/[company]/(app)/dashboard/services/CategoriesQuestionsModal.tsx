@@ -6,6 +6,14 @@ import { Plus, X, Trash2, Edit2, AlertCircle, HelpCircle } from 'lucide-react';
 import type { Category, CustomQuestion } from './CategoriesTaskEditorModal';
 import { themeTokens } from './CategoriesTaskEditorModal';
 
+type QuestionType = 'text' | 'select' | 'checkbox';
+
+const QUESTION_TYPES: { val: QuestionType; label: string }[] = [
+  { val: 'text', label: 'Text Input' },
+  { val: 'select', label: 'Dropdown' },
+  { val: 'checkbox', label: 'Yes/No' },
+];
+
 type Props = {
   companySlug: string;
   category: Category;
@@ -14,6 +22,41 @@ type Props = {
   onClose: () => void;
   onSaved: (updatedQuestions: CustomQuestion[]) => void;
 };
+
+type QuestionItemProps = {
+  question: CustomQuestion;
+  t: ReturnType<typeof themeTokens>;
+  onEdit: (q: CustomQuestion) => void;
+  onRemove: (id: string) => void;
+};
+
+const QuestionItem = ({ question, t, onEdit, onRemove }: QuestionItemProps) => (
+  <div className={`flex items-center gap-3 rounded-xl border ${t.border} px-4 py-2.5`}>
+    <HelpCircle className={`h-4 w-4 shrink-0 ${t.subText}`} />
+    <div className="min-w-0 flex-1">
+      <p className={`truncate text-xs font-semibold ${t.cardText}`}>{question.label}</p>
+      <p className={`mt-0.5 text-[11px] ${t.subText}`}>
+        {question.type === 'text' && 'Text Response'}
+        {question.type === 'checkbox' && 'Yes / No Choice'}
+        {question.type === 'select' && `Dropdown (${question.options?.length || 0} options)`}
+      </p>
+    </div>
+    <button
+      onClick={() => onEdit(question)}
+      aria-label={`Edit ${question.label}`}
+      className={`rounded-lg border ${t.border} p-1.5 ${t.subText} transition hover:bg-white/5`}
+    >
+      <Edit2 className="h-3.5 w-3.5" />
+    </button>
+    <button
+      onClick={() => onRemove(question.id)}
+      aria-label={`Delete ${question.label}`}
+      className={`rounded-lg border ${t.border} p-1.5 text-rose-500 transition hover:bg-rose-500/10`}
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+    </button>
+  </div>
+);
 
 export default function CategoriesQuestionsModal({
   companySlug,
@@ -26,7 +69,7 @@ export default function CategoriesQuestionsModal({
   const t = themeTokens(isDark);
   const [questions, setQuestions] = useState<CustomQuestion[]>(allQuestions);
   const [newQLabel, setNewQLabel] = useState('');
-  const [newQType, setNewQType] = useState<'text' | 'select' | 'checkbox'>('text');
+  const [newQType, setNewQType] = useState<QuestionType>('text');
   const [newQOptions, setNewQOptions] = useState<string[]>([]);
   const [newQOptionDraft, setNewQOptionDraft] = useState('');
   const [editingQId, setEditingQId] = useState<string | null>(null);
@@ -54,16 +97,26 @@ export default function CategoriesQuestionsModal({
     setQuestionLabelError('');
   };
 
+  const addOption = () => {
+    const trimmed = newQOptionDraft.trim();
+    if (trimmed) {
+      setNewQOptions((prev) => [...prev, trimmed]);
+      setNewQOptionDraft('');
+    }
+  };
+
   const addOrUpdate = () => {
-    if (!newQLabel.trim()) {
+    const trimmedLabel = newQLabel.trim();
+    if (!trimmedLabel) {
       setQuestionLabelError('Enter a question.');
       return;
     }
+
     if (editingQId) {
       setQuestions((prev) =>
         prev.map((q) =>
           q.id === editingQId
-            ? { ...q, label: newQLabel.trim(), type: newQType, options: newQType === 'select' ? newQOptions : [] }
+            ? { ...q, label: trimmedLabel, type: newQType, options: newQType === 'select' ? newQOptions : [] }
             : q
         )
       );
@@ -72,7 +125,7 @@ export default function CategoriesQuestionsModal({
         ...prev,
         {
           id: `q_${Date.now()}`,
-          label: newQLabel.trim(),
+          label: trimmedLabel,
           type: newQType,
           required: false,
           options: newQType === 'select' ? newQOptions : [],
@@ -128,7 +181,7 @@ export default function CategoriesQuestionsModal({
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           <div className="flex items-start gap-2.5 rounded-xl border border-blue-500/20 bg-blue-500/5 px-3.5 py-2.5 text-xs font-medium leading-relaxed text-blue-500">
-            <HelpCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+            <HelpCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               These only appear on the booking form when a customer selects{' '}
               <span className="font-semibold">{category.label}</span> as their service.
@@ -157,17 +210,13 @@ export default function CategoriesQuestionsModal({
             </div>
 
             <div className="grid grid-cols-3 gap-2">
-              {[
-                { val: 'text', label: 'Text Input' },
-                { val: 'select', label: 'Dropdown' },
-                { val: 'checkbox', label: 'Yes/No' },
-              ].map((opt) => (
+              {QUESTION_TYPES.map((opt) => (
                 <button
                   key={opt.val}
                   type="button"
-                  onClick={() => setNewQType(opt.val as any)}
+                  onClick={() => setNewQType(opt.val)}
                   className={`rounded-lg border py-2.5 text-xs font-semibold transition ${
-                    newQType === opt.val ? 'border-blue-600 bg-blue-600 text-white' : `${t.border} ${t.cardText} hover:bg-white/5`
+                    newQType === opt.val ? 'border-blue-600 bg-blue-600 text-white' : `${t.border}${t.cardText} hover:bg-white/5`
                   }`}
                 >
                   {opt.label}
@@ -191,6 +240,7 @@ export default function CategoriesQuestionsModal({
                         <span className={`text-xs font-medium ${t.cardText}`}>{opt}</span>
                         <button
                           onClick={() => setNewQOptions((prev) => prev.filter((_, idx) => idx !== i))}
+                          aria-label={`Remove ${opt}`}
                           className={`${t.subText} transition hover:text-rose-500`}
                         >
                           <X className="h-3.5 w-3.5" />
@@ -207,21 +257,15 @@ export default function CategoriesQuestionsModal({
                     placeholder="Add option..."
                     className={`flex-1 rounded-lg border ${t.border} bg-transparent px-3 py-1.5 text-xs font-medium outline-none ${t.cardText}`}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' && newQOptionDraft) {
+                      if (e.key === 'Enter') {
                         e.preventDefault();
-                        setNewQOptions((prev) => [...prev, newQOptionDraft]);
-                        setNewQOptionDraft('');
+                        addOption();
                       }
                     }}
                   />
                   <button
                     type="button"
-                    onClick={() => {
-                      if (newQOptionDraft) {
-                        setNewQOptions((prev) => [...prev, newQOptionDraft]);
-                        setNewQOptionDraft('');
-                      }
-                    }}
+                    onClick={addOption}
                     aria-label="Add option"
                     className={`shrink-0 rounded-lg border ${t.border} p-2.5 ${t.subText} transition hover:bg-white/5`}
                   >
@@ -259,26 +303,13 @@ export default function CategoriesQuestionsModal({
               <p className={`py-4 text-center text-xs font-medium ${t.subText}`}>No custom questions for this service yet.</p>
             ) : (
               questionsForThisService.map((q) => (
-                <div key={q.id} className={`flex items-center gap-3 rounded-xl border ${t.border} px-4 py-2.5`}>
-                  <HelpCircle className={`h-4 w-4 shrink-0 ${t.subText}`} />
-                  <div className="min-w-0 flex-1">
-                    <p className={`truncate text-xs font-semibold ${t.cardText}`}>{q.label}</p>
-                    <p className={`mt-0.5 text-[11px] ${t.subText}`}>
-                      {q.type === 'text' && 'Text Response'}
-                      {q.type === 'checkbox' && 'Yes / No Choice'}
-                      {q.type === 'select' && `Dropdown (${q.options?.length || 0} options)`}
-                    </p>
-                  </div>
-                  <button onClick={() => startEdit(q)} className={`rounded-lg border ${t.border} p-1.5 ${t.subText} transition hover:bg-white/5`}>
-                    <Edit2 className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={() => removeQuestion(q.id)}
-                    className={`rounded-lg border ${t.border} p-1.5 text-rose-500 transition hover:bg-rose-500/10`}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
+                <QuestionItem
+                  key={q.id}
+                  question={q}
+                  t={t}
+                  onEdit={startEdit}
+                  onRemove={removeQuestion}
+                />
               ))
             )}
           </div>

@@ -133,7 +133,14 @@ export default function CreateLeadModal({
   const accentTextColor = isAccentDark ? '#ffffff' : '#000000';
 
   const fieldConfig = company?.form_field_config || {};
-  const customQuestions: any[] = company?.custom_questions || [];
+    // FOUND BUG: was every custom question from every service, regardless
+  // of which category was selected — the public form filters correctly
+  // per category, this internal modal never did. Recomputes on every
+  // render as formData.category changes, since it's a plain derived
+  // value, not memoized against a stale category.
+  const customQuestions: any[] = (company?.custom_questions || []).filter(
+    (q: any) => q.category === formData.category
+  );
 
   const showAddress = fieldConfig?.address?.enabled ?? false;
   const showDate = fieldConfig?.preferred_date?.enabled ?? false;
@@ -461,29 +468,39 @@ export default function CreateLeadModal({
                 </div>
               </div>
 
-              {/* Category */}
+                            {/* Category — pills, matching the Yes/No custom-question
+                  buttons further down this same file, since this modal
+                  is explicitly "Quick Add" and every other choice here is
+                  already one tap, not a native dropdown requiring two
+                  actions (open, then pick). */}
               <div className="space-y-1.5 group">
                 <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 transition-colors ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Category
+                  Service
                 </label>
-                <div className="relative">
-                  <Tag className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 pointer-events-none transition-colors ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                  <select 
-                    value={formData.category} 
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className={`${inputClass} pl-12 pr-10 appearance-none cursor-pointer focus:ring-2 focus:ring-offset-0 focus:border-transparent`}
-                    style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
-                  >
-                    <option value="" disabled className={isDark ? 'bg-slate-900 text-white/40' : 'bg-white text-slate-400'}>
-                      Select Category
-                    </option>
-                    {categories.map((cat: any, i: number) => {
-                      const val = typeof cat === 'object' ? cat.value : cat;
-                      const label = typeof cat === 'object' ? cat.label : cat;
-                      return <option key={`${val}-${i}`} value={val} className={isDark ? 'bg-[#0A0C14]' : 'bg-white'}>{label}</option>;
-                    })}
-                  </select>
-                  <ChevronDown className={`absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat: any, i: number) => {
+                    const val = typeof cat === 'object' ? cat.value : cat;
+                    const label = typeof cat === 'object' ? cat.label : cat;
+                    const selected = formData.category === val;
+                    return (
+                      <button
+                        key={`${val}-${i}`}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, category: val })}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-sm font-semibold transition-all duration-200 ${
+                          selected
+                            ? 'border-transparent shadow-sm'
+                            : isDark
+                            ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                            : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                        }`}
+                        style={selected ? { backgroundColor: accentColor, color: accentTextColor } : undefined}
+                      >
+                        <Tag className="w-3.5 h-3.5" />
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 

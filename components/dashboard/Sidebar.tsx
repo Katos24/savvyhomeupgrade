@@ -7,7 +7,7 @@ import {
   LayoutGrid, Calendar, LogOut, X,
   User, Users as UsersIcon,
   ChevronRight, ChevronsLeft, ChevronsRight, Sparkles,
-  DollarSign, Settings, ListChecks
+  DollarSign, Settings, ListChecks, Wrench
 } from 'lucide-react';
 
 type SidebarProps = {
@@ -60,7 +60,8 @@ export default function Sidebar({
     { href: `/${companySlug}/leads`,                icon: ListChecks, label: 'Leads',      exactMatch: false, color: '#38bdf8' },
     { href: `/${companySlug}/dashboard/calendar`,   icon: Calendar,   label: 'Calendar',   exactMatch: false, color: '#34d399' },
     { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false, color: '#fbbf24' },
-    { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
+       { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
+    { href: `/${companySlug}/dashboard/services`,   icon: Wrench,     label: 'Services',   exactMatch: false, color: '#f59e0b' },
   ];
 
   useEffect(() => {

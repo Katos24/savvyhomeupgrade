@@ -481,7 +481,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               {/* Leads Card */}
               <div className={`rounded-2xl p-4 sm:p-6 ${cardBg}`}>
                 <div className="flex items-center justify-between mb-3">
-                  <p className={`text-base sm:text-lg font-medium ${cardText}`}>Leads</p>
+                  <p className={`text-base sm:text-lg font-medium ${cardText}`}>New</p>
                   <button
                     onClick={handleOpenCreateModal}
                     className="inline-flex items-center gap-1 text-xs font-bold text-white bg-[#1c1917] rounded-full px-3 py-1.5 hover:opacity-90 transition min-h-[32px]"

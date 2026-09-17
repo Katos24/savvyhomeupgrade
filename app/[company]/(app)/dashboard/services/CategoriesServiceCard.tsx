@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, ElementType } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Trash2, CheckSquare, DollarSign, HandCoins, HelpCircle, ChevronDown, ArrowRight } from 'lucide-react';
 import type { Category, QuoteTemplate, CustomQuestion } from './CategoriesTaskEditorModal';
@@ -18,10 +18,47 @@ type Props = {
   onDelete: () => void;
   onOpenTasks: () => void;
   onOpenPricing: () => void;
-    onOpenQuestions: () => void;
+  onOpenQuestions: () => void;
   onSetTaxOverride: (rate: number | null) => void;
   taxRate: number;
 };
+
+type StatusItemProps = {
+  icon: ElementType;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  accentColor: string;
+  t: ReturnType<typeof themeTokens>;
+};
+
+const StatusItem = ({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+  accentColor,
+  t,
+}: StatusItemProps) => (
+  <button
+    onClick={(e) => {
+      e.stopPropagation();
+      onClick();
+    }}
+    className={`group/item flex items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors ${t.hoverBg}`}
+  >
+    <div
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors"
+      style={active ? { backgroundColor: `${accentColor}1a`, color: accentColor } : {}}
+    >
+      <Icon className={`h-3.5 w-3.5 ${active ? '' : t.subText}`} />
+    </div>
+    <div className="min-w-0">
+      <p className={`text-xs font-semibold ${t.cardText}`}>{label}</p>
+    </div>
+    <ArrowRight className={`ml-auto h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover/item:opacity-100 ${t.subText}`} />
+  </button>
+);
 
 export default function CategoriesServiceCard({
   category,
@@ -34,7 +71,7 @@ export default function CategoriesServiceCard({
   onDelete,
   onOpenTasks,
   onOpenPricing,
-   onOpenQuestions,
+  onOpenQuestions,
   onSetTaxOverride,
   taxRate,
 }: Props) {
@@ -43,45 +80,11 @@ export default function CategoriesServiceCard({
   const [rateDraft, setRateDraft] = useState(
     category.tax_rate_override != null ? String(category.tax_rate_override) : ''
   );
+  
   const hasOverride = category.tax_rate_override != null;
   const taskCount = category.task_templates?.length || 0;
   const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate.deposit_value ?? 0) > 0;
   const questionCount = questions.length;
-
-  // One quiet, consistent way to show "is this configured" — a small
-  // dot instead of a differently-colored badge per category. Configured
-  // things use the company's own accent color; unconfigured things stay
-  // muted. Replaces the previous blue/emerald/amber/rose badge rainbow.
-  const StatusItem = ({
-    icon: Icon,
-    label,
-    active,
-    onClick,
-  }: {
-    icon: any;
-    label: string;
-    active: boolean;
-    onClick: () => void;
-  }) => (
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick();
-      }}
-      className={`group/item flex items-center gap-2 rounded-xl px-3 py-2 text-left transition-colors ${t.hoverBg}`}
-    >
-      <div
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors"
-        style={active ? { backgroundColor: `${accentColor}1a`, color: accentColor } : {}}
-      >
-        <Icon className={`h-3.5 w-3.5 ${active ? '' : t.subText}`} />
-      </div>
-      <div className="min-w-0">
-        <p className={`text-xs font-semibold ${t.cardText}`}>{label}</p>
-      </div>
-      <ArrowRight className={`ml-auto h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover/item:opacity-100 ${t.subText}`} />
-    </button>
-  );
 
   return (
     <motion.div
@@ -142,22 +145,33 @@ export default function CategoriesServiceCard({
             className="overflow-hidden"
           >
             <div className={`mt-4 grid grid-cols-1 gap-1 border-t pt-3 sm:grid-cols-3 ${t.border}`}>
-              <StatusItem icon={CheckSquare} label={taskCount > 0 ? `${taskCount} tasks` : 'No tasks'} active={taskCount > 0} onClick={onOpenTasks} />
+              <StatusItem
+                icon={CheckSquare}
+                label={taskCount > 0 ? `${taskCount} tasks` : 'No tasks'}
+                active={taskCount > 0}
+                onClick={onOpenTasks}
+                accentColor={accentColor}
+                t={t}
+              />
               <StatusItem
                 icon={DollarSign}
                 label={quoteTemplate ? `${quoteTemplate.items.length} line items` : 'No pricing'}
                 active={!!quoteTemplate}
                 onClick={onOpenPricing}
+                accentColor={accentColor}
+                t={t}
               />
               <StatusItem
                 icon={HelpCircle}
                 label={questionCount > 0 ? `${questionCount} questions` : 'No questions'}
                 active={questionCount > 0}
                 onClick={onOpenQuestions}
+                accentColor={accentColor}
+                t={t}
               />
             </div>
 
-                       <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-3 text-xs ${t.border} ${t.subText}`}>
+            <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t pt-3 text-xs ${t.border} ${t.subText}`}>
               {quoteTemplate && (
                 <span>
                   Total: <span className={`font-semibold ${t.cardText}`}>{fmt(quoteTemplate.total)}</span>
@@ -169,7 +183,7 @@ export default function CategoriesServiceCard({
                   {depositLabel(quoteTemplate!.deposit_type, quoteTemplate!.deposit_value)}
                 </span>
               )}
-                           {editingRate ? (
+              {editingRate ? (
                 <div className="ml-auto flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                   <input
                     type="number"
