@@ -50,8 +50,9 @@ type Company = {
   hasRealLead: boolean;
   stripe_connect_onboarded: boolean;
   stripe_payment_status: 'active' | 'restricted' | 'pending' | null;
-  default_tax_rate?: number | null;
+    default_tax_rate?: number | null;
   form_categories?: any[];
+  hasServicePricing?: boolean;
 };
 
 type SectionKey =
@@ -368,8 +369,9 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     qrImg.src = qrCodeUrl;
   };
 
-  const checklistSteps: ChecklistStep[] = useMemo(() => [
+   const checklistSteps: ChecklistStep[] = useMemo(() => [
     { label: 'Upload your logo', description: 'Make your booking page and emails look professional', done: !!company.logo_url, kind: 'section', section: 'overview' },
+    { label: 'Set up a service with pricing', description: 'Build your first pricing template so quotes are one click', done: !!company.hasServicePricing, kind: 'link', href: `/${company.slug}/dashboard/services` },
     { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, kind: 'section', section: 'form' },
     { label: 'Connect payments', description: 'So customers can actually pay you online', done: company.stripe_payment_status === 'active', kind: 'section', section: 'payments' },
     { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
@@ -473,9 +475,15 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
           </div>
         </div>
 
-        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
-          {/* Desktop: Navigation Rail */}
-          <nav className="hidden lg:block lg:col-span-3 space-y-6 pr-2">
+                <div className="lg:flex lg:gap-8">
+          {/* Desktop: Navigation Rail — fixed width instead of a grid
+              fraction. lg:col-span-3 meant this was always exactly 25%
+              of the content width regardless of screen size, which on a
+              wide monitor left far more empty space next to each short
+              label ("Overview", "Team") than the text actually needed.
+              A fixed width matches how the main app Sidebar.tsx already
+              behaves. */}
+          <nav className="hidden lg:block lg:w-56 lg:shrink-0 space-y-6">
             {sectionGroups.map((group) => (
               <div key={group.label} className="space-y-1">
                 <p className="text-[11px] font-bold text-stone-500 uppercase tracking-wider px-3 mb-2">
@@ -499,8 +507,8 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
             ))}
           </nav>
 
-          {/* Main Workspace Area (Renders dynamically) */}
-          <main className="lg:col-span-9 min-w-0">
+                   {/* Main Workspace Area (Renders dynamically) */}
+          <main className="flex-1 min-w-0">
             {activeSection === 'setup' && (
               <SetupTab checklistSteps={checklistSteps} onNavigateSection={(section) => setActiveSection(section as SectionKey)} />
             )}

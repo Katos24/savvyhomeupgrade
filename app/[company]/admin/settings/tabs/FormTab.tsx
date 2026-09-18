@@ -1,64 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AlertCircle,
-  Check,
-  Edit2,
-  X,
-  ChevronDown,
-  Eye,
-  Plus,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Clock,
-  HelpCircle,
-  Image as ImageIcon,
-  Megaphone,
-  Lock,
-  Link2,
-  Truck,
-  Trash2,
-  Tag,
-  ArrowUpRight,
-  Sparkles,
-  Zap,
+  AlertCircle, Check, Edit2, X, ChevronDown, Eye, User, Mail, Phone,
+  MapPin, Calendar, Clock, ImageIcon, Megaphone, Lock, Link2, Truck,
+  Tag, ArrowUpRight, Sparkles, Zap,
 } from 'lucide-react';
-import { can, type PlanTier } from '@/lib/permissions';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
-
-type CustomQuestion = {
-  id: string;
-  label: string;
-  type: 'text' | 'select' | 'checkbox';
-  required: boolean;
-  options?: string[];
-};
-
-type Category = { emoji?: string; label: string; value: string };
-type FieldConfigItem = { enabled: boolean; required?: boolean };
-
-type FieldConfig = {
-  address: FieldConfigItem & { required: boolean };
-  preferred_date: FieldConfigItem;
-  preferred_time: FieldConfigItem;
-  lead_source: FieldConfigItem;
-  file_upload: FieldConfigItem;
-};
-
-const DEFAULT_FIELD_CONFIG: FieldConfig = {
-  address: { enabled: true, required: false },
-  preferred_date: { enabled: true },
-  preferred_time: { enabled: true },
-  lead_source: { enabled: true },
-  file_upload: { enabled: false },
-};
-
-const REQUIRED_PLAN = { label: 'Basic', price: '$49.99/mo' };
+import { useFormTabLogic, REQUIRED_PLAN, type Category } from './useFormTabLogic';
 
 /* ═══════════════ Brand Marks ═══════════════ */
 
@@ -287,151 +236,28 @@ function ControlRow({
 /* ═══════════════ Main Component ═══════════════ */
 
 export default function FormTab({ company, currentUser }: { company: any; currentUser: any }) {
-  const planTier = (company.plan_tier ?? 'basic') as PlanTier;
-  const canUsePhotoUpload = can(planTier, 'customer_video_upload');
-  const canUseCustomQuestions = can(planTier, 'custom_form_questions');
-
-  const [loading, setLoading] = useState(false);
-  const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
-  const [ctaSuccessMessage] = useState(company.cta_success_message || '');
-  const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(company.custom_questions || []);
-
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-
-  const existingConfig = company.form_field_config;
-  const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
-    const base = existingConfig
-      ? {
-          address: {
-            enabled: existingConfig.address?.enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
-            required: existingConfig.address?.required ?? DEFAULT_FIELD_CONFIG.address.required,
-          },
-          preferred_date: { enabled: existingConfig.preferred_date?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_date.enabled },
-          preferred_time: { enabled: existingConfig.preferred_time?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_time.enabled },
-          lead_source: { enabled: existingConfig.lead_source?.enabled ?? DEFAULT_FIELD_CONFIG.lead_source.enabled },
-          file_upload: { enabled: existingConfig.file_upload?.enabled ?? DEFAULT_FIELD_CONFIG.file_upload.enabled },
-        }
-      : {
-          address: {
-            enabled: company.address_enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
-            required: company.address_required ?? DEFAULT_FIELD_CONFIG.address.required,
-          },
-          preferred_date: { enabled: DEFAULT_FIELD_CONFIG.preferred_date.enabled },
-          preferred_time: { enabled: DEFAULT_FIELD_CONFIG.preferred_time.enabled },
-          lead_source: { enabled: DEFAULT_FIELD_CONFIG.lead_source.enabled },
-          file_upload: { enabled: DEFAULT_FIELD_CONFIG.file_upload.enabled },
-        };
-    if (!canUsePhotoUpload) base.file_upload = { enabled: false };
-    return base;
-  });
-
-  const [showAddQuestion, setShowAddQuestion] = useState(false);
-  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
-  const [newQuestion, setNewQuestion] = useState<CustomQuestion>({ id: '', label: '', type: 'text', required: false, options: [] });
-  const [newOption, setNewOption] = useState('');
-  const [linkCopied, setLinkCopied] = useState(false);
-  const [publicUrl, setPublicUrl] = useState(`https://lead2project.com/${company.slug}`);
-
-  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify({ fieldConfig, customQuestions }));
-  const isDirty = JSON.stringify({ fieldConfig, customQuestions }) !== savedSnapshot;
-
-  useEffect(() => {
-    function handleBeforeUnload(e: BeforeUnloadEvent) {
-      if (isDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    }
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
-
-  useEffect(() => {
-    setPublicUrl(`${window.location.origin}/${company.slug}`);
-  }, [company.slug]);
-
-  const categories: Category[] = company.form_categories?.length > 0
-    ? company.form_categories
-    : [{ label: 'General', value: 'general' }];
-
-  const brandColor1 = company.email_brand_color_1 || '#0B3C6D';
-  const brandColor2 = company.email_brand_color_2 || '#1F5F8F';
-
-  const getCtaHeading = () => {
-    if (company.cta_heading) return company.cta_heading;
-    switch (company.business_type) {
-      case 'restaurant': return 'Order Your Custom Meal';
-      case 'salon': return 'Book Your Appointment';
-      case 'photography': return 'Request a Photo Session';
-      default: return 'Submit Your Request';
-    }
-  };
-
-  const toggleField = (field: keyof FieldConfig) =>
-    setFieldConfig((prev) => ({ ...prev, [field]: { ...prev[field], enabled: !prev[field].enabled } }));
-
-  // Preferred Date and Preferred Time aren't really two independent optional
-  // fields — a time slot picker only makes sense once a date is selected, so
-  // they're presented (and toggled) as one combined field now. Both keys are
-  // kept in the underlying config and save payload in lockstep, since other
-  // code (the public booking form, the settings API) may already read them
-  // as separate fields and I haven't seen those files to know for sure.
-  const togglePreferredDateTime = () =>
-    setFieldConfig((prev) => {
-      const next = !prev.preferred_date.enabled;
-      return { ...prev, preferred_date: { enabled: next }, preferred_time: { enabled: next } };
-    });
-
-  const handleSaveAll = async () => {
-    setLoading(true);
-    setStatus({ type: null, message: '' });
-
-    const payload = {
-      action: 'update-form',
-      data: {
-        cta: { cta_success_message: ctaSuccessMessage },
-        questions: canUseCustomQuestions ? customQuestions : [],
-        field_config: {
-          ...fieldConfig,
-          file_upload: { enabled: canUsePhotoUpload ? fieldConfig.file_upload.enabled : false },
-        },
-      },
-    };
-
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const result = await res.json();
-      if (!result.success) throw new Error(result.error || 'Failed to update settings');
-      setStatus({ type: 'success', message: 'Form settings saved!' });
-      setSavedSnapshot(JSON.stringify({ fieldConfig, customQuestions }));
-      setTimeout(() => setStatus({ type: null, message: '' }), 3000);
-    } catch (err) {
-      setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Something went wrong — please try again.' });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addOrUpdateQuestion = () => {
-    if (!newQuestion.label.trim()) return setStatus({ type: 'error', message: 'Label is required' });
-    if (editingQuestionId) {
-      setCustomQuestions(customQuestions.map((q) => (q.id === editingQuestionId ? { ...newQuestion, required: false } : q)));
-    } else {
-      setCustomQuestions([...customQuestions, { ...newQuestion, id: `q_${Date.now()}`, required: false }]);
-    }
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setNewQuestion({ id: '', label: '', type: 'text', required: false, options: [] });
-    setNewOption('');
-    setShowAddQuestion(false);
-    setEditingQuestionId(null);
-  };
+  const {
+    canUsePhotoUpload,
+    canUseCustomQuestions,
+    loading,
+    status,
+    customQuestions,
+    isPreviewOpen,
+    setIsPreviewOpen,
+    fieldConfig,
+    linkCopied,
+    setLinkCopied,
+    publicUrl,
+    isDirty,
+    categories,
+    brandColor1,
+    brandColor2,
+    getCtaHeading,
+    toggleField,
+    togglePreferredDateTime,
+    handleSaveAll,
+    enabledCount,
+  } = useFormTabLogic(company);
 
   /* ── Phone Previews ── */
   const RequiredPhone = (
@@ -449,7 +275,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         </PhoneField>
         <PhoneField label="Service Needed">
           <div className="flex flex-wrap gap-1.5">
-            {categories.map((cat, i) => (
+            {categories.map((cat: Category, i: number) => (
               <span
                 key={i}
                 className={`rounded-md border px-2 py-0.5 text-[11px] font-bold ${
@@ -476,13 +302,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
       </div>
     </PhoneFrame>
   );
-
-  const enabledCount =
-    Number(fieldConfig.address.enabled) +
-    Number(fieldConfig.preferred_date.enabled) + // covers date & time together now
-    Number(fieldConfig.lead_source.enabled) +
-    Number(fieldConfig.file_upload.enabled) +
-    (canUseCustomQuestions ? customQuestions.length : 0);
 
   const OptionalPhone = (
     <PhoneFrame>
@@ -570,11 +389,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           />
         )}
 
-        {/* Page Title — no header buttons. Preview now lives with the
-            fields it previews (below), and Save only appears, via the
-            floating bar, when there's actually something to save. Two
-            persistent buttons plus a third floating one was the
-            confusing part. */}
         <div className="flex flex-col gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900">Booking Form Editor</h1>
@@ -584,8 +398,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
-        {/* Your link + how it works — one box instead of two, and the
-            URL now gets its own full-width line instead of truncating */}
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xs">
           <div className="space-y-3 p-4">
             <div className="flex items-center gap-2">
@@ -620,8 +432,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               </span>
             </div>
           </div>
-
-         
         </div>
 
         <AnimatePresence>
@@ -642,14 +452,8 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           )}
         </AnimatePresence>
 
-        {/* Form Configuration Settings */}
         <div className="space-y-6 pt-2">
 
-          {/* ONE table for every field, required or optional — required
-              rows show a plain "Required" label instead of a toggle;
-              optional rows carry the toggle switch. The distinction is
-              carried by each row's own control, not by two separate
-              heavy card sections. */}
           <div className="rounded-xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
             <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4">
               <div>
@@ -714,7 +518,7 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             )}
           </div>
 
- <div className="flex items-start gap-3 border-t border-blue-100 bg-blue-50/60 p-4 text-xs font-medium text-blue-950">
+          <div className="flex items-start gap-3 border-t border-blue-100 bg-blue-50/60 p-4 text-xs font-medium text-blue-950">
             <Zap className="h-4 w-4 shrink-0 text-blue-600 mt-0.5" />
             <div className="space-y-1">
               <p className="font-bold text-blue-900">How Lead Capture Works</p>
@@ -724,7 +528,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
             </div>
           </div>
 
-          {/* Pricing Notice */}
           <div className="flex items-start gap-3 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
               <Tag className="h-4 w-4" />
@@ -740,7 +543,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
-        {/* Links & Distribution Locations */}
         <div className="bg-white rounded-xl border border-slate-200/80 p-6 lg:p-8 shadow-xs">
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
             Where to Publish Your Link
@@ -771,7 +573,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
           </div>
         </div>
 
-        {/* Floating Save Toolbar */}
         <AnimatePresence>
           {isDirty && (
             <motion.div
@@ -799,13 +600,9 @@ export default function FormTab({ company, currentUser }: { company: any; curren
         </AnimatePresence>
     </div>
 
-    
-
-      {/* Slide-out Mobile & Desktop Live Preview Drawer */}
       <AnimatePresence>
         {isPreviewOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -814,7 +611,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
               className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs"
             />
 
-            {/* Slide Drawer Panel */}
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
@@ -836,9 +632,6 @@ export default function FormTab({ company, currentUser }: { company: any; curren
                 </button>
               </div>
 
-              {/* Drawer Body — both steps shown together as a scrollable
-                  list instead of a tab switcher. Seeing both phones at
-                  once is clearer than flipping between them. */}
               <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6">
                 <div className="mx-auto flex max-w-xs flex-col gap-8">
                   <div>

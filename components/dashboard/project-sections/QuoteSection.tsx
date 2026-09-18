@@ -623,7 +623,7 @@ export default function QuoteSection({
                       // while allTemplates is simply still empty because
                       // the fetch hasn't resolved yet.
                       <a
-                        href={`/${companySlug}/home?section=categories`}
+                        href={`/${companySlug}/dashboard/services`}
                         className="text-left p-4 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 transition cursor-pointer block"
                       >
                         <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">

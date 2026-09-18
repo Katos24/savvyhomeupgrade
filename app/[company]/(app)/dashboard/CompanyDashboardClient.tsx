@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useTransition, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, Receipt } from 'lucide-react';
+import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, Receipt, X, Zap } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { type PlanTier } from '@/lib/permissions';
 import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
@@ -39,12 +39,13 @@ type Company = {
   subscription_status?: string;
   trial_ends_at?: string | null;
   plan_tier?: string;
-  onboarding_completed?: boolean;
+   onboarding_completed?: boolean;
   onboarding_steps?: Record<string, boolean>;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
+    stripe_connect_onboarded?: boolean;
+  stripe_payment_status?: string | null;
 };
-
 type DashboardStats = {
   leads: { new_this_week: number };
   estimates: { open: number; accepted: number };
@@ -116,6 +117,86 @@ function readableTextColor(hex: string, isDark: boolean): string {
   const adjust = (c: number) => Math.min(255, Math.max(0, Math.round(c * factor)));
   const toHex = (c: number) => c.toString(16).padStart(2, '0');
   return `#${toHex(adjust(r))}${toHex(adjust(g))}${toHex(adjust(b))}`;
+}
+
+// ---------------------------------------------------------------------------
+// Connect Stripe Card — only renders when Stripe genuinely isn't active
+// yet. Dismissible per-company via localStorage (a "remind me later," not
+// a permanent hide — it comes back if they revisit after dismissing but
+// still haven't connected). Once stripe_payment_status actually becomes
+// 'active', this card is gone for good regardless of dismiss state,
+// since there's nothing left to guide them toward.
+// ---------------------------------------------------------------------------
+
+function ConnectStripeCard({
+  companySlug,
+  isDark,
+  isConnected,
+}: {
+  companySlug: string;
+  isDark: boolean;
+  isConnected: boolean;
+}) {
+  const router = useRouter();
+  const dismissKey = `stripe-card-dismissed-${companySlug}`;
+  const [dismissed, setDismissed] = useState(true); // default hidden until mount-check below, avoids a flash
+
+  useEffect(() => {
+    setDismissed(localStorage.getItem(dismissKey) === 'true');
+  }, [dismissKey]);
+
+  if (isConnected || dismissed) return null;
+
+  return (
+    <div
+      className={`mb-6 sm:mb-8 rounded-2xl border overflow-hidden ${
+        isDark ? 'border-[#635BFF]/30 bg-[#635BFF]/[0.08]' : 'border-[#635BFF]/20 bg-[#635BFF]/[0.05]'
+      }`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4 sm:py-5">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Stripe wordmark, inline SVG — same technique as the brand
+              marks already used in FormTab.tsx and PaymentsTab.tsx this
+              session, no external image request. */}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#635BFF]">
+            <svg viewBox="0 0 32 32" className="h-5 w-5" fill="none">
+              <path d="M14.5 11.4c0-1 .8-1.4 2.1-1.4 1.9 0 4.3.6 6.2 1.6V6.1c-2.1-.8-4.1-1.2-6.2-1.2-5.1 0-8.5 2.7-8.5 7.1 0 6.9 9.6 5.8 9.6 8.8 0 1.2-1 1.6-2.5 1.6-2.1 0-4.8-.9-6.9-2v5.6c2.3 1 4.7 1.5 6.9 1.5 5.2 0 8.8-2.6 8.8-7.1-.1-7.4-9.5-6.1-9.5-9z" fill="#fff" />
+            </svg>
+          </div>
+          <div className="min-w-0">
+            <p className={`flex items-center gap-1.5 text-sm font-bold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>
+              <Zap className="h-3.5 w-3.5 text-[#635BFF]" />
+              Connect Stripe to automate payments
+            </p>
+            <p className={`mt-0.5 text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-[#78716c]'}`}>
+              Let customers pay online with a card — your ledger updates the moment they do, no manual recording.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+          <button
+            type="button"
+                        onClick={() => router.push(`/${companySlug}/home#payments`)}
+            className="inline-flex items-center gap-1.5 rounded-xl bg-[#635BFF] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#534ae6]"
+          >
+            Connect Stripe <ArrowRight className="h-3.5 w-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              localStorage.setItem(dismissKey, 'true');
+              setDismissed(true);
+            }}
+            aria-label="Dismiss"
+            className={`p-2 rounded-lg transition-colors ${isDark ? 'text-slate-500 hover:bg-white/10' : 'text-slate-400 hover:bg-slate-100'}`}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -461,6 +542,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </div>
           </div>
         </div>
+
+               <ConnectStripeCard
+          companySlug={company.slug}
+          isDark={isDark}
+          isConnected={!!company.stripe_connect_onboarded && company.stripe_payment_status === 'active'}
+        />
 
         {loadError && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">

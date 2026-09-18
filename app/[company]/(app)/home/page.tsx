@@ -46,11 +46,20 @@ async function getHomeData(slug: string) {
 
   // Signup seeds a sample lead with origin = 'sample' so the dashboard
   // isn't empty — that shouldn't count as "you've gotten a real lead."
-  const leadRows = await sql`
+    const leadRows = await sql`
     SELECT COUNT(*) as count FROM leads
     WHERE company_id = ${c.id} AND deleted = false AND (origin IS NULL OR origin != 'sample')
   `;
   const hasRealLead = parseInt(leadRows[0]?.count || '0') > 0;
+
+  // Same table the Services page itself reads from — a company "has
+  // service pricing" the moment even one quote template exists,
+  // regardless of which category it belongs to.
+  const templateRows = await sql`
+    SELECT COUNT(*) as count FROM quote_templates
+    WHERE company_id = ${c.id}
+  `;
+  const hasServicePricing = parseInt(templateRows[0]?.count || '0') > 0;
 
   return {
     ...c,
@@ -58,6 +67,7 @@ async function getHomeData(slug: string) {
     custom_questions: c.custom_questions || [],
     categoriesCustomized,
     hasRealLead,
+    hasServicePricing,
   };
 }
 

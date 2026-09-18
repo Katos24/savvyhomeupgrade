@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   CalendarDays, LayoutGrid, ArrowLeft, Filter, User, Clock,
-  Briefcase, List, Sun, X, MapPin, Search, Plus
+  Briefcase, List, Sun, Moon, X, MapPin, Search, Plus
 } from 'lucide-react';
 import { DEFAULT_STATUSES } from '@/lib/formCategories';
 import AddJobToDayModal from './AddJobToDayModal';
@@ -93,6 +93,25 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
   const [drawerDay, setDrawerDay] = useState<string | null>(null);
   const [showAddJobModal, setShowAddJobModal] = useState(false);
 
+  // Same localStorage key + hydration-safe pattern already used on
+  // Dashboard, Services, and Customers — one source of truth passed down
+  // as a prop to every memoized sub-component below, rather than each
+  // one independently reading localStorage (which is exactly the kind
+  // of split-state bug that caused the Services white-border issue
+  // earlier this session).
+  const [isDark, setIsDark] = useState<boolean>(true);
+  useEffect(() => {
+    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+  }, []);
+  const toggleTheme = useCallback(() => {
+    setIsDark((prev) => {
+      const next = !prev;
+      localStorage.setItem('dashboard-theme', next ? 'dark' : 'light');
+      window.dispatchEvent(new Event('theme-changed'));
+      return next;
+    });
+  }, []);
+
   const safeStatusOptions = useMemo(() => 
     statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES,
   [statusOptions]);
@@ -162,27 +181,31 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
 
   if (loading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-[#F2EDE4]">
+      <div className={`flex h-screen w-full items-center justify-center transition-colors ${isDark ? 'bg-[#0b0f17]' : 'bg-[#F2EDE4]'}`}>
         <div className="text-center space-y-4">
           <div className="w-10 h-10 border-4 border-[#1a6645] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Loading Schedule</p>
+          <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Loading Schedule</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#F2EDE4] text-[#0F1F3D] pb-20 select-none">
+    <div className={`min-h-screen w-full pb-20 select-none transition-colors ${isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-[#F2EDE4] text-[#0F1F3D]'}`}>
 
       {/* STICKY HEADER */}
-      <nav className="sticky top-0 z-20 bg-[#F2EDE4]/95 backdrop-blur-md border-b border-[#D1C9BD]/60 px-3 sm:px-6 py-2.5 sm:py-4 transition-all">
+      <nav className={`sticky top-0 z-20 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 sm:py-4 transition-all ${
+        isDark ? 'bg-[#0b0f17]/95 border-white/10' : 'bg-[#F2EDE4]/95 border-[#D1C9BD]/60'
+      }`}>
         <div className="w-full flex items-center justify-between gap-2 max-w-7xl mx-auto">
 
           {/* Left Side Header */}
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => window.history.back()}
-              className="shrink-0 p-2 bg-white rounded-xl shadow-xs border border-[#D1C9BD] hover:scale-105 active:scale-95 transition-transform"
+              className={`shrink-0 p-2 rounded-xl shadow-xs border hover:scale-105 active:scale-95 transition-transform ${
+                isDark ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-white border-[#D1C9BD]'
+              }`}
               aria-label="Back"
             >
               <ArrowLeft size={16} />
@@ -192,18 +215,32 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 <CalendarIcon className="text-[#1a6645] shrink-0" size={18} />
                 <span className="truncate">Schedule</span>
               </h1>
-              <p className="hidden sm:block text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+              <p className={`hidden sm:block text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                 {filteredEvents.length} Jobs
               </p>
             </div>
           </div>
 
-          {/* Responsive View Switcher */}
-          <div className="flex items-center gap-0.5 bg-white p-1 rounded-2xl border border-[#D1C9BD] shadow-inner shrink-0">
-            <ViewTab active={view === 'month'} onClick={() => setView('month')} icon={CalendarDays} shortLabel="M" fullLabel="Month" />
-            <ViewTab active={view === 'week'} onClick={() => setView('week')} icon={LayoutGrid} shortLabel="W" fullLabel="Week" />
-            <ViewTab active={view === 'day'} onClick={() => setView('day')} icon={Sun} shortLabel="D" fullLabel="Day" />
-            <ViewTab active={view === 'agenda'} onClick={() => setView('agenda')} icon={List} shortLabel="List" fullLabel="Agenda" />
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={toggleTheme}
+              className={`p-2 rounded-xl border shadow-xs transition-colors ${
+                isDark ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white border-[#D1C9BD] text-slate-600 hover:bg-slate-50'
+              }`}
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDark ? <Sun size={14} /> : <Moon size={14} />}
+            </button>
+
+            {/* Responsive View Switcher */}
+            <div className={`flex items-center gap-0.5 p-1 rounded-2xl border shadow-inner ${
+              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
+            }`}>
+              <ViewTab active={view === 'month'} onClick={() => setView('month')} icon={CalendarDays} shortLabel="M" fullLabel="Month" isDark={isDark} />
+              <ViewTab active={view === 'week'} onClick={() => setView('week')} icon={LayoutGrid} shortLabel="W" fullLabel="Week" isDark={isDark} />
+              <ViewTab active={view === 'day'} onClick={() => setView('day')} icon={Sun} shortLabel="D" fullLabel="Day" isDark={isDark} />
+              <ViewTab active={view === 'agenda'} onClick={() => setView('agenda')} icon={List} shortLabel="List" fullLabel="Agenda" isDark={isDark} />
+            </div>
           </div>
         </div>
       </nav>
@@ -214,9 +251,11 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between">
 
           {/* Date Navigator */}
-          <div className="flex items-center justify-between bg-white px-3 py-2 rounded-2xl shadow-xs border border-[#D1C9BD]">
+          <div className={`flex items-center justify-between px-3 py-2 rounded-2xl shadow-xs border ${
+            isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
+          }`}>
             <div className="flex items-center gap-1">
-              <button onClick={() => handleNav(-1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Previous">
+              <button onClick={() => handleNav(-1)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`} aria-label="Previous">
                 <ChevronLeft size={16} />
               </button>
               <button
@@ -225,7 +264,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
               >
                 Today
               </button>
-              <button onClick={() => handleNav(1)} className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Next">
+              <button onClick={() => handleNav(1)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`} aria-label="Next">
                 <ChevronRight size={16} />
               </button>
             </div>
@@ -239,32 +278,36 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
 
           {/* Search & Filter Controls */}
           <div className="flex items-center gap-2">
-            <div className="flex-1 flex items-center gap-1.5 bg-white px-3 py-2 rounded-2xl shadow-xs border border-[#D1C9BD]">
-              <Search size={13} className="text-slate-400 shrink-0" />
+            <div className={`flex-1 flex items-center gap-1.5 px-3 py-2 rounded-2xl shadow-xs border ${
+              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
+            }`}>
+              <Search size={13} className={`shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
               <input
                 type="text"
                 placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full text-[11px] font-bold bg-transparent outline-none placeholder:text-slate-400"
+                className={`w-full text-[11px] font-bold bg-transparent outline-none ${isDark ? 'text-slate-100 placeholder:text-slate-500' : 'placeholder:text-slate-400'}`}
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className="text-slate-400 hover:text-slate-600">
+                <button onClick={() => setSearchTerm('')} className={isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}>
                   <X size={12} />
                 </button>
               )}
             </div>
 
-            <div className="flex items-center gap-1 bg-white px-2.5 py-2 rounded-2xl shadow-xs border border-[#D1C9BD] shrink-0">
+            <div className={`flex items-center gap-1 px-2.5 py-2 rounded-2xl shadow-xs border shrink-0 ${
+              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
+            }`}>
               <Filter size={12} className="text-[#1a6645] shrink-0" />
               <select
                 value={filterAssignee}
                 onChange={(e) => setFilterAssignee(e.target.value)}
-                className="text-[10px] font-black uppercase outline-none bg-transparent cursor-pointer max-w-[90px] sm:max-w-none truncate"
+                className={`text-[10px] font-black uppercase outline-none bg-transparent cursor-pointer max-w-[90px] sm:max-w-none truncate ${isDark ? 'text-slate-200' : ''}`}
               >
-                <option value="all">Assignee</option>
+                <option value="all" className={isDark ? 'bg-[#0b0f17]' : ''}>Assignee</option>
                 {assignees.map((a: any) => (
-                  <option key={a} value={a}>{a}</option>
+                  <option key={a} value={a} className={isDark ? 'bg-[#0b0f17]' : ''}>{a}</option>
                 ))}
               </select>
             </div>
@@ -274,9 +317,11 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
         {/* STATUS LEGEND */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1">
           {safeStatusOptions.map((s: any) => (
-            <div key={s.value} className="flex items-center gap-1.5 bg-white/70 px-2.5 py-1 rounded-full border border-[#D1C9BD]/40 shrink-0 shadow-2xs">
+            <div key={s.value} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shrink-0 shadow-2xs ${
+              isDark ? 'bg-white/5 border-white/10' : 'bg-white/70 border-[#D1C9BD]/40'
+            }`}>
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: resolveStatusColor(s.color) }} />
-              <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-wider text-slate-600">{s.label}</span>
+              <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -297,6 +342,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 onSelect={onSelectLead}
                 onOpenDrawer={setDrawerDay}
                 getStatus={getStatusConfig}
+                isDark={isDark}
               />
             )}
             {view === 'week' && (
@@ -307,6 +353,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 getStatus={getStatusConfig}
                 onScheduleJob={onScheduleJob}
                 companySlug={companySlug}
+                isDark={isDark}
               />
             )}
             {view === 'day' && (
@@ -315,6 +362,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 eventsByDay={eventsByDay}
                 onSelect={onSelectLead}
                 getStatus={getStatusConfig}
+                isDark={isDark}
               />
             )}
             {view === 'agenda' && (
@@ -322,6 +370,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 events={filteredEvents}
                 onSelect={onSelectLead}
                 getStatus={getStatusConfig}
+                isDark={isDark}
               />
             )}
           </motion.div>
@@ -344,14 +393,18 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
-              className="relative w-full max-w-sm bg-[#faf9f5] h-full shadow-2xl z-10 flex flex-col border-l border-[#D1C9BD]"
+              className={`relative w-full max-w-sm h-full shadow-2xl z-10 flex flex-col border-l ${
+                isDark ? 'bg-[#0b0f17] border-white/10' : 'bg-[#faf9f5] border-[#D1C9BD]'
+              }`}
             >
-              <div className="p-4 border-b border-[#D1C9BD] bg-white flex items-center justify-between gap-2">
+              <div className={`p-4 border-b flex items-center justify-between gap-2 ${
+                isDark ? 'border-white/10 bg-white/5' : 'border-[#D1C9BD] bg-white'
+              }`}>
                 <div className="min-w-0">
-                  <h3 className="text-base font-black uppercase tracking-tight text-[#0F1F3D] truncate">
+                  <h3 className={`text-base font-black uppercase tracking-tight truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
                     {new Date(`${drawerDay}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
                   </h3>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                  <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                     {activeDrawerEvents.length} Scheduled Job{activeDrawerEvents.length === 1 ? '' : 's'}
                   </p>
                 </div>
@@ -364,7 +417,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                       <Plus size={13} /> Add job
                     </button>
                   )}
-                  <button onClick={() => setDrawerDay(null)} className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500">
+                  <button onClick={() => setDrawerDay(null)} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-white/10 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
                     <X size={18} />
                   </button>
                 </div>
@@ -372,13 +425,13 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
 
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
                 {activeDrawerEvents.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400">
+                  <div className={`py-12 text-center ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
                     <Briefcase size={28} className="mx-auto mb-2 opacity-40" />
                     <p className="text-xs font-bold uppercase tracking-wider">No jobs on this day</p>
                   </div>
                 ) : (
                   activeDrawerEvents.map((job: Lead) => (
-                    <JobCard key={job.id} job={job} onSelect={onSelectLead} getStatus={getStatusConfig} />
+                    <JobCard key={job.id} job={job} onSelect={onSelectLead} getStatus={getStatusConfig} isDark={isDark} />
                   ))
                 )}
               </div>
@@ -407,12 +460,14 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
 
 // ── MEMOIZED SUB-COMPONENTS ──
 
-const ViewTab = memo(function ViewTab({ active, onClick, icon: Icon, shortLabel, fullLabel }: any) {
+const ViewTab = memo(function ViewTab({ active, onClick, icon: Icon, shortLabel, fullLabel, isDark }: any) {
   return (
     <button
       onClick={onClick}
       className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${
-        active ? 'bg-[#0F1F3D] text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
+        active
+          ? 'bg-[#0F1F3D] text-white shadow-xs'
+          : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'
       }`}
     >
       <Icon size={12} />
@@ -425,11 +480,13 @@ const ViewTab = memo(function ViewTab({ active, onClick, icon: Icon, shortLabel,
 const JobCard = memo(function JobCard({ 
   job, 
   onSelect, 
-  getStatus 
+  getStatus,
+  isDark,
 }: { 
   job: Lead; 
   onSelect: (lead: Lead) => void; 
   getStatus: (status: string) => any; 
+  isDark: boolean;
 }) {
   const statusConfig = getStatus(job.job_status || job.status || '');
   const color = resolveStatusColor(statusConfig?.color);
@@ -438,7 +495,9 @@ const JobCard = memo(function JobCard({
   return (
     <button
       onClick={() => onSelect(job)}
-      className="w-full text-left p-3.5 bg-white rounded-xl border border-[#D1C9BD]/70 shadow-2xs hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group"
+      className={`w-full text-left p-3.5 rounded-xl border shadow-2xs hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group ${
+        isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]/70'
+      }`}
     >
       <div className="flex items-center justify-between gap-1 mb-1.5">
         <span
@@ -448,20 +507,20 @@ const JobCard = memo(function JobCard({
           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
           {statusConfig?.label || 'Scheduled'}
         </span>
-        <span className="text-[9px] font-black text-slate-600 flex items-center gap-1 shrink-0">
+        <span className={`text-[9px] font-black flex items-center gap-1 shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
           <Clock size={10} className="text-[#1a6645]" /> {time}
         </span>
       </div>
-      <h4 className="text-xs sm:text-sm font-black text-[#0F1F3D] group-hover:text-[#1a6645] truncate">
+      <h4 className={`text-xs sm:text-sm font-black group-hover:text-[#1a6645] truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
         {job.name}
       </h4>
       {job.category && (
-        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 capitalize truncate">
+        <p className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 capitalize truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
           {job.category.replace(/_/g, ' ')}
         </p>
       )}
       {(job.assigned_to || job.address_line_1) && (
-        <div className="mt-2 pt-2 border-t border-slate-100 flex flex-wrap gap-x-3 gap-y-1 text-[9px] text-slate-500">
+        <div className={`mt-2 pt-2 border-t flex flex-wrap gap-x-3 gap-y-1 text-[9px] ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-100 text-slate-500'}`}>
           {job.assigned_to && (
             <span className="flex items-center gap-1 truncate">
               <User size={10} className="text-[#1a6645]" /> {job.assigned_to}
@@ -478,7 +537,7 @@ const JobCard = memo(function JobCard({
   );
 });
 
-const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus }: any) {
+const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus, isDark }: any) {
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -494,17 +553,17 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
   const todayStr = dayKey(new Date());
 
   return (
-    <div className="bg-white rounded-2xl border border-[#D1C9BD] shadow-md overflow-hidden">
-      <div className="grid grid-cols-7 border-b border-[#D1C9BD]/40 bg-[#faf9f5]">
+    <div className={`rounded-2xl border shadow-md overflow-hidden ${isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-[#D1C9BD]'}`}>
+      <div className={`grid grid-cols-7 border-b ${isDark ? 'border-white/10 bg-white/5' : 'border-[#D1C9BD]/40 bg-[#faf9f5]'}`}>
         {DAY_LABELS_DESKTOP.map((d, i) => (
-          <div key={d} className="py-2.5 text-center text-[9px] sm:text-[10px] font-black text-slate-500 uppercase">
+          <div key={d} className={`py-2.5 text-center text-[9px] sm:text-[10px] font-black uppercase ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
             <span className="sm:hidden">{DAY_LABELS_MOBILE[i]}</span>
             <span className="hidden sm:inline">{d}</span>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 divide-x divide-y divide-[#D1C9BD]/20">
+      <div className={`grid grid-cols-7 divide-x divide-y ${isDark ? 'divide-white/10' : 'divide-[#D1C9BD]/20'}`}>
         {cells.map((day, i) => {
           const isNull = !day;
           const cellDate = day ? new Date(year, month, day) : null;
@@ -517,21 +576,23 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
               key={i}
               onClick={() => dStr && onOpenDrawer(dStr)}
               className={`min-h-[68px] sm:min-h-[124px] p-1.5 sm:p-2 transition-all flex flex-col justify-between ${
-                isNull 
-                  ? 'bg-slate-50/30' 
+                isNull
+                  ? isDark ? 'bg-white/[0.02]' : 'bg-slate-50/30'
+                  : isDark
+                  ? 'bg-transparent hover:bg-white/5 hover:shadow-[inset_0_0_0_1px_rgba(26,102,69,0.25)] cursor-pointer'
                   : 'bg-white hover:bg-slate-50/80 hover:shadow-[inset_0_0_0_1px_rgba(26,102,69,0.15)] cursor-pointer'
-              } ${isToday ? 'bg-emerald-50/40' : ''}`}
+              } ${isToday ? (isDark ? 'bg-emerald-500/10' : 'bg-emerald-50/40') : ''}`}
             >
               {!isNull && (
                 <div>
                   <div className="flex items-center justify-between">
                     <span className={`text-[9px] sm:text-[10px] font-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded ${
-                      isToday ? 'bg-[#1a6645] text-white shadow-xs' : 'text-slate-500'
+                      isToday ? 'bg-[#1a6645] text-white shadow-xs' : isDark ? 'text-slate-400' : 'text-slate-500'
                     }`}>
                       {day}
                     </span>
                     {dayEvents.length > 0 && (
-                      <span className="text-[8px] font-black text-[#1a6645] bg-emerald-100/80 px-1 rounded-full">
+                      <span className={`text-[8px] font-black text-[#1a6645] px-1 rounded-full ${isDark ? 'bg-emerald-500/15' : 'bg-emerald-100/80'}`}>
                         {dayEvents.length}
                       </span>
                     )}
@@ -557,7 +618,7 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
                       );
                     })}
                     {dayEvents.length > 3 && (
-                      <p className="text-[7px] font-black text-slate-400 pl-0.5">+{dayEvents.length - 3} more</p>
+                      <p className={`text-[7px] font-black pl-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>+{dayEvents.length - 3} more</p>
                     )}
                   </div>
 
@@ -571,7 +632,7 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
                       />
                     ))}
                     {dayEvents.length > 3 && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDark ? 'bg-slate-500' : 'bg-slate-400'}`} />
                     )}
                   </div>
                 </div>
@@ -584,7 +645,7 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
   );
 });
 
-const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus, onScheduleJob, companySlug }: any) {
+const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus, onScheduleJob, companySlug, isDark }: any) {
   const weekDays = useMemo(() => {
     const start = new Date(currentDate);
     start.setDate(currentDate.getDate() - currentDate.getDay());
@@ -610,25 +671,27 @@ const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, 
             key={i}
             className={`rounded-xl border transition-all overflow-hidden flex flex-col ${
               isToday
-                ? 'border-[#1a6645] bg-white shadow-sm ring-1 ring-[#1a6645]'
-                : 'border-[#D1C9BD] bg-white/80'
+                ? isDark ? 'border-[#1a6645] bg-white/5 shadow-sm ring-1 ring-[#1a6645]' : 'border-[#1a6645] bg-white shadow-sm ring-1 ring-[#1a6645]'
+                : isDark ? 'border-white/10 bg-white/[0.02]' : 'border-[#D1C9BD] bg-white/80'
             }`}
           >
             <div className={`px-3 py-1.5 flex lg:flex-col lg:items-start items-center justify-between gap-1 ${
-              isToday ? 'bg-[#1a6645] text-white' : 'bg-[#faf9f5] border-b border-[#D1C9BD]/40 text-[#0F1F3D]'
+              isToday
+                ? 'bg-[#1a6645] text-white'
+                : isDark ? 'bg-white/5 border-b border-white/10 text-slate-200' : 'bg-[#faf9f5] border-b border-[#D1C9BD]/40 text-[#0F1F3D]'
             }`}>
               <span className="text-[11px] font-black uppercase tracking-wider">
                 {d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}
               </span>
               <div className="flex items-center gap-1.5">
-                <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-white/80' : 'text-slate-500'}`}>
+                <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-white/80' : isDark ? 'text-slate-500' : 'text-slate-500'}`}>
                   {dayEvents.length} Job{dayEvents.length === 1 ? '' : 's'}
                 </span>
                 {onScheduleJob && (
                   <button
                     onClick={(e) => { e.stopPropagation(); setAddJobDay(dStr); }}
                     className={`p-0.5 rounded transition-colors ${
-                      isToday ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-[#1a6645] hover:bg-emerald-100'
+                      isToday ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-[#1a6645] hover:bg-emerald-500/15'
                     }`}
                     aria-label="Add job to this day"
                   >
@@ -640,7 +703,7 @@ const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, 
 
             <div className="p-2 space-y-1.5 flex-1">
               {dayEvents.length === 0 ? (
-                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-wider text-center py-2 lg:py-4">
+                <p className={`text-[8px] font-bold uppercase tracking-wider text-center py-2 lg:py-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
                   No Jobs
                 </p>
               ) : (
@@ -651,15 +714,17 @@ const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, 
                     <button
                       key={job.id}
                       onClick={() => onSelect(job)}
-                      className="w-full text-left p-2.5 rounded-lg bg-white border border-[#D1C9BD]/60 hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 shadow-2xs group"
+                      className={`w-full text-left p-2.5 rounded-lg border hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 shadow-2xs group ${
+                        isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]/60'
+                      }`}
                     >
                       <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <span className="text-[8px] font-black uppercase text-slate-500">
+                        <span className={`text-[8px] font-black uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                           {formatTime12h(job.scheduled_time)}
                         </span>
                         <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                       </div>
-                      <p className="text-[11px] font-black text-[#0F1F3D] group-hover:text-[#1a6645] truncate">
+                      <p className={`text-[11px] font-black group-hover:text-[#1a6645] truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
                         {job.name}
                       </p>
                     </button>
@@ -688,32 +753,32 @@ const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, 
   );
 });
 
-const DayDetailView = memo(function DayDetailView({ currentDate, eventsByDay, onSelect, getStatus }: any) {
+const DayDetailView = memo(function DayDetailView({ currentDate, eventsByDay, onSelect, getStatus, isDark }: any) {
   const dStr = dayKey(currentDate);
   const dayEvents = eventsByDay[dStr] || [];
 
   return (
-    <div className="bg-white rounded-2xl border border-[#D1C9BD] p-4 sm:p-5 shadow-md">
-      <div className="mb-4 pb-3 border-b border-slate-100 flex items-center justify-between">
+    <div className={`rounded-2xl border p-4 sm:p-5 shadow-md ${isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-[#D1C9BD]'}`}>
+      <div className={`mb-4 pb-3 border-b flex items-center justify-between ${isDark ? 'border-white/10' : 'border-slate-100'}`}>
         <div>
-          <h3 className="text-base sm:text-lg font-black uppercase tracking-tight text-[#0F1F3D]">
+          <h3 className={`text-base sm:text-lg font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
             {currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
           </h3>
-          <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+          <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
             {dayEvents.length} Scheduled Jobs
           </p>
         </div>
       </div>
 
       {dayEvents.length === 0 ? (
-        <div className="py-12 text-center text-slate-400">
+        <div className={`py-12 text-center ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
           <CalendarIcon size={32} className="mx-auto mb-2 opacity-30" />
           <p className="text-xs font-black uppercase tracking-widest">No jobs scheduled for today</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
           {dayEvents.map((job: Lead) => (
-            <JobCard key={job.id} job={job} onSelect={onSelect} getStatus={getStatus} />
+            <JobCard key={job.id} job={job} onSelect={onSelect} getStatus={getStatus} isDark={isDark} />
           ))}
         </div>
       )}
@@ -721,7 +786,7 @@ const DayDetailView = memo(function DayDetailView({ currentDate, eventsByDay, on
   );
 });
 
-const AgendaListView = memo(function AgendaListView({ events, onSelect, getStatus }: any) {
+const AgendaListView = memo(function AgendaListView({ events, onSelect, getStatus, isDark }: any) {
   const upcomingEvents = useMemo(() => {
     const todayStr = dayKey(new Date());
     
@@ -738,13 +803,13 @@ const AgendaListView = memo(function AgendaListView({ events, onSelect, getStatu
   }, [events]);
 
   return (
-    <div className="bg-white rounded-2xl border border-[#D1C9BD] p-3 sm:p-5 shadow-md">
-      <h3 className="text-xs font-black uppercase tracking-widest text-[#0F1F3D] mb-3">
+    <div className={`rounded-2xl border p-3 sm:p-5 shadow-md ${isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-[#D1C9BD]'}`}>
+      <h3 className={`text-xs font-black uppercase tracking-widest mb-3 ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
         Upcoming Agenda ({upcomingEvents.length})
       </h3>
 
       {upcomingEvents.length === 0 ? (
-        <div className="py-12 text-center text-slate-400">
+        <div className={`py-12 text-center ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
           <List size={32} className="mx-auto mb-2 opacity-30" />
           <p className="text-xs font-black uppercase tracking-widest">No upcoming scheduled jobs</p>
         </div>
@@ -761,7 +826,9 @@ const AgendaListView = memo(function AgendaListView({ events, onSelect, getStatu
               <div
                 key={job.id}
                 onClick={() => onSelect(job)}
-                className="flex items-center justify-between gap-2 p-3 rounded-xl border border-[#D1C9BD]/60 bg-[#faf9f5] hover:bg-white hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer"
+                className={`flex items-center justify-between gap-2 p-3 rounded-xl border hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ${
+                  isDark ? 'bg-white/5 border-white/10 hover:bg-white/[0.07]' : 'bg-[#faf9f5] border-[#D1C9BD]/60 hover:bg-white'
+                }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="px-2 py-1 bg-[#0F1F3D] text-[#faf9f5] rounded-lg text-center shrink-0 min-w-[55px]">
@@ -769,8 +836,8 @@ const AgendaListView = memo(function AgendaListView({ events, onSelect, getStatu
                     <span className="text-[8px] text-slate-300 font-medium block">{formatTime12h(job.scheduled_time)}</span>
                   </div>
                   <div className="truncate">
-                    <h4 className="text-xs font-black text-[#0F1F3D] truncate">{job.name}</h4>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                    <h4 className={`text-xs font-black truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>{job.name}</h4>
+                    <p className={`text-[9px] font-bold uppercase tracking-wider truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                       {job.category?.replace(/_/g, ' ') || 'Service'}
                     </p>
                   </div>

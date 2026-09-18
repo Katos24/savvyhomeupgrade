@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { ChevronDown, Mail, MapPin, Briefcase, ArrowRight, User, Phone, Search, CalendarDays } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ChevronDown, Mail, MapPin, Briefcase, ArrowRight, User, Phone, Search, CalendarDays, Sun, Moon } from 'lucide-react';
 
 interface Project {
   id: number;
@@ -42,12 +42,35 @@ const formatPhoneNumber = (value: string) => {
 export default function CustomerListClient({
   projects = [],
   companySlug,
+  accentColor,
 }: {
   projects?: Project[];
   companySlug: string;
+  accentColor?: string;
 }) {
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Same localStorage key and hydration-safe pattern already used on
+  // Dashboard, Financials, and Services — default matches server render
+  // (dark), corrected after mount from the real stored value.
+  const [isDark, setIsDark] = useState<boolean>(true);
+  useEffect(() => {
+    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+  }, []);
+  const skipFirstThemeWrite = useMemo(() => ({ current: true }), []);
+  useEffect(() => {
+    if (skipFirstThemeWrite.current) {
+      skipFirstThemeWrite.current = false;
+      return;
+    }
+    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+    // Same-tab notification for CompanyShell's own background, which
+    // only re-checks localStorage on 'storage'/'focus' events — neither
+    // fires for a same-tab toggle like this one. Confirmed necessary
+    // and fixed the identical gap on Services earlier this session.
+    window.dispatchEvent(new Event('theme-changed'));
+  }, [isDark]);
 
   const groupedCustomers = useMemo(() => {
     const groups: Record<string, CustomerGroup> = {};
@@ -79,12 +102,12 @@ export default function CustomerListClient({
 
   if (!projects || projects.length === 0) {
     return (
-      <div className="min-h-screen bg-[#faf9f5] flex flex-col items-center justify-center text-center px-4">
-        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-5 border border-[#e7e2d8]">
-          <User className="w-7 h-7 text-[#a8a29e]" />
+      <div className={`min-h-screen flex flex-col items-center justify-center text-center px-4 transition-colors ${isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'}`}>
+        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-5 border ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#e7e2d8]'}`}>
+          <User className={`w-7 h-7 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`} />
         </div>
-        <h2 className="text-xl font-semibold text-[#1c1917]">Your customer directory</h2>
-        <p className="text-[#78716c] max-w-[300px] mt-2 text-sm leading-relaxed">
+        <h2 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>Your customer directory</h2>
+        <p className={`max-w-[300px] mt-2 text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-[#78716c]'}`}>
           When you convert leads into projects, customers automatically appear here with their full job history.
         </p>
       </div>
@@ -92,46 +115,61 @@ export default function CustomerListClient({
   }
 
   return (
-    <div className="min-h-screen bg-[#faf9f5]">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <div className={`min-h-screen transition-colors ${isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'}`}>
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-[#1c1917]">Customers</h1>
-          <p className="text-xs text-[#a8a29e] mt-1">{groupedCustomers.length} total</p>
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>Customers</h1>
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>{groupedCustomers.length} total</p>
+          </div>
+          <button
+            onClick={() => setIsDark((v) => !v)}
+            className={`shrink-0 rounded-xl border p-2.5 transition-colors ${
+              isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-[#e7e2d8] bg-white text-[#57534e] hover:bg-[#f5f1e8]'
+            }`}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+          </button>
         </div>
 
         {/* Stats strip */}
-        <div className="flex rounded-2xl border border-[#e7e2d8] bg-white overflow-hidden mb-6">
+        <div className={`flex rounded-2xl border overflow-hidden mb-6 ${isDark ? 'border-white/10 bg-[#0f1420]' : 'border-[#e7e2d8] bg-white'}`}>
           {[
             { label: 'Total revenue', value: formatCurrency(totalRevenueAllCustomers), sub: 'Lifetime' },
             { label: 'Customers', value: String(groupedCustomers.length), sub: `${projects.length} job${projects.length === 1 ? '' : 's'} total` },
             { label: 'Unpaid', value: String(unpaidCount), sub: unpaidCount > 0 ? 'Job(s) outstanding' : 'Nothing owed', dot: unpaidCount > 0 },
           ].map((s, i) => (
-            <div key={s.label} className={`flex-1 px-5 py-4 min-w-0 ${i > 0 ? 'border-l border-[#e7e2d8]' : ''}`}>
+            <div key={s.label} className={`flex-1 px-5 py-4 min-w-0 ${i > 0 ? (isDark ? 'border-l border-white/10' : 'border-l border-[#e7e2d8]') : ''}`}>
               <div className="flex items-center gap-1.5 mb-1">
-                {s.dot && <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-600" />}
-                <p className="text-sm font-medium text-[#292524] truncate">{s.label}</p>
+                {s.dot && <span className="w-1.5 h-1.5 rounded-full shrink-0 bg-amber-500" />}
+                <p className={`text-sm font-medium truncate ${isDark ? 'text-slate-300' : 'text-[#292524]'}`}>{s.label}</p>
               </div>
-              <p className="text-2xl font-semibold text-[#1c1917] tracking-tight truncate">{s.value}</p>
-              <p className="text-xs text-[#a8a29e] mt-1 truncate">{s.sub}</p>
+              <p className={`text-2xl font-semibold tracking-tight truncate ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>{s.value}</p>
+              <p className={`text-xs mt-1 truncate ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>{s.sub}</p>
             </div>
           ))}
         </div>
 
         {/* Search */}
         <div className="relative mb-4">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a8a29e]" />
+          <Search className={`absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`} />
           <input
             type="text"
             placeholder="Search name, email, or phone..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-white border border-[#e7e2d8] rounded-full py-3 pl-11 pr-4 text-sm placeholder:text-[#a8a29e] outline-none focus:border-[#1c1917] transition-colors"
+            className={`w-full rounded-full py-3 pl-11 pr-4 text-sm outline-none transition-colors border ${
+              isDark
+                ? 'bg-white/5 border-white/10 text-white placeholder:text-slate-500 focus:border-white/30'
+                : 'bg-white border-[#e7e2d8] placeholder:text-[#a8a29e] focus:border-[#1c1917]'
+            }`}
           />
         </div>
 
         {/* Customer list */}
-        <div className="rounded-2xl border border-[#e7e2d8] bg-white overflow-hidden">
+        <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-white/10 bg-[#0f1420]' : 'border-[#e7e2d8] bg-white'}`}>
           {groupedCustomers.map((customer, idx) => {
             const isExpanded = expandedEmail === customer.email;
             const jobCount = customer.projects.length;
@@ -139,30 +177,32 @@ export default function CustomerListClient({
             const formattedPhone = formatPhoneNumber(customer.phone);
 
             return (
-              <div key={customer.email} className={idx > 0 ? 'border-t border-[#e7e2d8]' : ''}>
+              <div key={customer.email} className={idx > 0 ? (isDark ? 'border-t border-white/10' : 'border-t border-[#e7e2d8]') : ''}>
                 <button
                   onClick={() => setExpandedEmail(isExpanded ? null : customer.email)}
-                  className="w-full p-4 sm:p-5 flex items-center gap-4 text-left hover:bg-[#faf9f5] transition-colors"
+                  className={`w-full p-4 sm:p-5 flex items-center gap-4 text-left transition-colors ${isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]'}`}
                 >
-                  <div className="w-11 h-11 rounded-xl bg-[#f5f1e8] text-[#1c1917] flex items-center justify-center font-semibold text-sm shrink-0 border border-[#e7e2d8]">
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-sm shrink-0 border ${
+                    isDark ? 'bg-white/5 text-white border-white/10' : 'bg-[#f5f1e8] text-[#1c1917] border-[#e7e2d8]'
+                  }`}>
                     {customer.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-[#1c1917] text-sm truncate">{customer.name}</h3>
-                    <p className="text-xs text-[#78716c] truncate mt-0.5">
+                    <h3 className={`font-semibold text-sm truncate ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>{customer.name}</h3>
+                    <p className={`text-xs truncate mt-0.5 ${isDark ? 'text-slate-400' : 'text-[#78716c]'}`}>
                       {customer.email !== 'no-email@provided.com' ? customer.email : 'No email provided'}
                       {formattedPhone ? ` • ${formattedPhone}` : ''}
                     </p>
                     <div className="flex items-center gap-3 mt-1.5">
-                      <span className="flex items-center gap-1 text-xs text-[#a8a29e]">
+                      <span className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>
                         <Briefcase className="w-3 h-3" /> {jobCount} {jobCount === 1 ? 'job' : 'jobs'}
                       </span>
                       {totalRevenue > 0 && (
-                        <span className="text-xs font-medium text-emerald-700">{formatCurrency(totalRevenue)}</span>
+                        <span className="text-xs font-medium text-emerald-500">{formatCurrency(totalRevenue)}</span>
                       )}
                     </div>
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-[#a8a29e] shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''} ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`} />
                 </button>
 
                 {isExpanded && (
@@ -170,7 +210,9 @@ export default function CustomerListClient({
                     <div className="grid grid-cols-2 gap-2 mb-4">
                       <a
                         href={`mailto:${customer.email}`}
-                        className="flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#1c1917] text-white text-xs font-medium hover:bg-[#292524] transition-colors"
+                        className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                          isDark ? 'bg-white text-[#0b0f17] hover:bg-slate-200' : 'bg-[#1c1917] text-white hover:bg-[#292524]'
+                        }`}
                       >
                         <Mail className="w-3.5 h-3.5" /> Email
                       </a>
@@ -178,62 +220,66 @@ export default function CustomerListClient({
                         href={customer.phone ? `tel:${customer.phone}` : undefined}
                         className={`flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs font-medium transition-colors ${
                           customer.phone
-                            ? 'bg-[#292524] text-white hover:bg-[#1c1917]'
-                            : 'bg-[#f5f1e8] text-[#a8a29e] pointer-events-none'
+                            ? isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-[#292524] text-white hover:bg-[#1c1917]'
+                            : isDark ? 'bg-white/5 text-slate-600 pointer-events-none' : 'bg-[#f5f1e8] text-[#a8a29e] pointer-events-none'
                         }`}
                       >
                         <Phone className="w-3.5 h-3.5" /> Call
                       </a>
                     </div>
 
-                    <div className="flex flex-col gap-1.5 mb-4 text-xs text-[#78716c]">
+                    <div className={`flex flex-col gap-1.5 mb-4 text-xs ${isDark ? 'text-slate-400' : 'text-[#78716c]'}`}>
                       <div className="flex items-center gap-1.5">
-                        <Mail className="w-3.5 h-3.5 text-[#d6d3d1]" />
+                        <Mail className={`w-3.5 h-3.5 ${isDark ? 'text-slate-600' : 'text-[#d6d3d1]'}`} />
                         {customer.email !== 'no-email@provided.com' ? customer.email : 'No email provided'}
                       </div>
                       {formattedPhone && (
                         <div className="flex items-center gap-1.5">
-                          <Phone className="w-3.5 h-3.5 text-[#d6d3d1]" />
+                          <Phone className={`w-3.5 h-3.5 ${isDark ? 'text-slate-600' : 'text-[#d6d3d1]'}`} />
                           {formattedPhone}
                         </div>
                       )}
                       <div className="flex items-center gap-1.5">
-                        <CalendarDays className="w-3.5 h-3.5 text-[#d6d3d1]" />
+                        <CalendarDays className={`w-3.5 h-3.5 ${isDark ? 'text-slate-600' : 'text-[#d6d3d1]'}`} />
                         Customer since {new Date(customer.projects[customer.projects.length - 1].updated_at).getFullYear()}
                       </div>
                     </div>
 
-                    <p className="text-[11px] font-mono font-medium text-[#a8a29e] uppercase tracking-wider mb-2">Project history</p>
+                    <p className={`text-[11px] font-mono font-medium uppercase tracking-wider mb-2 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>Project history</p>
                     <div className="space-y-1.5">
                       {customer.projects.map((project) => (
                         <a
                           key={project.id}
                           href={`/${companySlug}/dashboard?lead=${project.lead_id}`}
-                          className="flex items-center gap-3 p-3 bg-[#faf9f5] border border-[#e7e2d8] rounded-xl hover:border-[#d6d3d1] transition-colors group"
+                          className={`flex items-center gap-3 p-3 border rounded-xl transition-colors group ${
+                            isDark ? 'bg-white/5 border-white/10 hover:border-white/20' : 'bg-[#faf9f5] border-[#e7e2d8] hover:border-[#d6d3d1]'
+                          }`}
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-semibold text-[#292524] capitalize">
+                              <span className={`text-xs font-semibold capitalize ${isDark ? 'text-slate-200' : 'text-[#292524]'}`}>
                                 {project.category?.replace(/_/g, ' ') || 'General service'}
                               </span>
                               <span
                                 className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                                  project.status === 'completed' ? 'bg-emerald-100 text-emerald-700' : 'bg-[#e7e2d8] text-[#78716c]'
+                                  project.status === 'completed'
+                                    ? isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                                    : isDark ? 'bg-white/10 text-slate-400' : 'bg-[#e7e2d8] text-[#78716c]'
                                 }`}
                               >
                                 {project.status || 'Active'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-[#a8a29e]">
+                            <div className={`flex items-center gap-1.5 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>
                               <MapPin className="w-3 h-3 shrink-0" />
                               <p className="text-xs truncate">{project.service_address || 'Address not listed'}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2 shrink-0">
                             {project.quote_total ? (
-                              <span className="text-xs font-semibold text-[#1c1917]">{formatCurrency(Number(project.quote_total))}</span>
+                              <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>{formatCurrency(Number(project.quote_total))}</span>
                             ) : null}
-                            <ArrowRight className="w-3.5 h-3.5 text-[#d6d3d1] group-hover:text-[#78716c] transition-colors" />
+                            <ArrowRight className={`w-3.5 h-3.5 transition-colors ${isDark ? 'text-slate-600 group-hover:text-slate-400' : 'text-[#d6d3d1] group-hover:text-[#78716c]'}`} />
                           </div>
                         </a>
                       ))}
@@ -246,10 +292,13 @@ export default function CustomerListClient({
         </div>
 
         {groupedCustomers.length === 0 && searchTerm && (
-          <div className="text-center py-16 bg-white rounded-2xl border border-dashed border-[#e7e2d8] mt-4">
-            <p className="text-[#1c1917] font-medium text-sm">No matches found</p>
-            <p className="text-[#a8a29e] text-xs mt-1">Try a different name or phone number</p>
-            <button onClick={() => setSearchTerm('')} className="mt-3 text-xs font-medium text-[#1c1917] underline hover:text-[#78716c] transition-colors">
+          <div className={`text-center py-16 rounded-2xl border border-dashed mt-4 ${isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#e7e2d8]'}`}>
+            <p className={`font-medium text-sm ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>No matches found</p>
+            <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>Try a different name or phone number</p>
+            <button
+              onClick={() => setSearchTerm('')}
+              className={`mt-3 text-xs font-medium underline transition-colors ${isDark ? 'text-white hover:text-slate-300' : 'text-[#1c1917] hover:text-[#78716c]'}`}
+            >
               Show all customers
             </button>
           </div>
