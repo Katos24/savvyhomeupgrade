@@ -1,7 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, X, Trash2, AlertCircle, Percent, HandCoins, Receipt, Tag } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  Plus,
+  X,
+  Trash2,
+  AlertCircle,
+  Percent,
+  HandCoins,
+  Receipt,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import {
   type Category,
   type QuoteTemplate,
@@ -62,6 +73,9 @@ export default function CategoriesPricingModal({
   const [lineItemError, setLineItemError] = useState('');
   const [quoteSaving, setQuoteSaving] = useState(false);
   const [quoteError, setQuoteError] = useState('');
+
+  // Accordion state - closed by default
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
 
   const addLineItem = () => {
     if (!newDesc.trim()) {
@@ -197,7 +211,7 @@ export default function CategoriesPricingModal({
           <div className={`hidden grid-cols-[1fr_120px_80px_100px_40px] items-center border-b ${t.border} px-6 py-2.5 text-[10px] font-semibold uppercase tracking-wider ${t.subText} sm:grid`}>
             <span>Description</span>
             <span className="text-right">Unit Price</span>
-            <span className="text-right">Qty</span>
+            <span className="text-center">Qty</span>
             <span className="text-right">Amount</span>
             <span></span>
           </div>
@@ -229,12 +243,12 @@ export default function CategoriesPricingModal({
                     />
                   </div>
 
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center">
                     <input
                       type="number"
                       value={item.quantity || ''}
                       onChange={(e) => updateLineItem(item.id, 'quantity', e.target.value)}
-                      className={`w-full rounded-lg border ${t.border} bg-transparent py-1.5 text-center text-xs font-semibold outline-none focus:border-emerald-500/50 sm:border-none sm:text-right ${noSpinners} ${t.cardText}`}
+                      className={`w-full rounded-lg border ${t.border} bg-transparent px-3 py-1.5 text-center text-xs font-semibold outline-none focus:border-emerald-500/50 ${noSpinners} ${t.cardText}`}
                     />
                   </div>
 
@@ -270,7 +284,7 @@ export default function CategoriesPricingModal({
                 />
               </div>
 
-              <div className="grid grid-cols-[1fr_60px_40px] gap-2 sm:contents">
+              <div className="grid grid-cols-[1fr_65px_40px] gap-2 sm:contents">
                 <div className={`flex items-center rounded-lg border ${t.border} px-2.5 py-1.5 focus-within:border-emerald-500/50`}>
                   <span className="mr-1 text-xs text-emerald-500">$</span>
                   <input
@@ -285,12 +299,12 @@ export default function CategoriesPricingModal({
                   />
                 </div>
 
-                <div>
+                <div className="flex items-center justify-center">
                   <input
                     type="number"
                     value={newQty}
                     onChange={(e) => setNewQty(e.target.value)}
-                    className={`w-full rounded-lg border ${t.border} bg-transparent py-1.5 text-center text-xs font-semibold outline-none focus:border-emerald-500/50 sm:text-right ${noSpinners} ${t.cardText}`}
+                    className={`w-full rounded-lg border ${t.border} bg-transparent px-3 py-1.5 text-center text-xs font-semibold outline-none focus:border-emerald-500/50 ${noSpinners} ${t.cardText}`}
                   />
                 </div>
 
@@ -321,50 +335,77 @@ export default function CategoriesPricingModal({
             )}
           </div>
 
-          {/* Financial Summary Box */}
+          {/* Financial Summary Accordion */}
           <div className="p-6">
-            <div className={`rounded-xl border ${t.border} ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50/50'} p-4 space-y-3`}>
-              <div className="space-y-1.5 text-xs font-medium">
-                <div className={`flex items-center justify-between ${t.subText}`}>
-                  <span>Subtotal</span>
-                  <span className={`font-semibold ${t.cardText}`}>{fmt(subtotal)}</span>
+            <div className={`overflow-hidden rounded-xl border ${t.border} ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50/50'}`}>
+              
+              {/* Accordion Trigger Header */}
+              <button
+                type="button"
+                onClick={() => setIsSummaryExpanded((prev) => !prev)}
+                className={`flex w-full items-center justify-between p-4 transition ${t.hoverBg}`}
+              >
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-500">
+                  <span>Total Estimate:</span>
+                  <span className="text-base font-extrabold">{fmt(total)}</span>
                 </div>
-                {effectiveTaxRate > 0 && (
-                  <div className={`flex items-center justify-between ${t.subText}`}>
-                    <span className="flex items-center gap-1">
-                      <Percent className="h-3 w-3 text-emerald-500" /> Tax ({effectiveTaxRate}%)
-                      {category.tax_rate_override != null && <span className="text-[10px] text-amber-500">(custom)</span>}
-                    </span>
-                    <span className={`font-semibold ${t.cardText}`}>{fmt(taxAmount)}</span>
-                  </div>
+                <div className={`flex items-center gap-1.5 text-xs font-medium ${t.subText}`}>
+                  <span>{isSummaryExpanded ? 'Hide Details' : 'View Breakdown'}</span>
+                  {isSummaryExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
+              </button>
+
+              {/* Collapsible Content */}
+              <AnimatePresence initial={false}>
+                {isSummaryExpanded && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <div className={`border-t ${t.border} p-4 space-y-3`}>
+                      <div className="space-y-1.5 text-xs font-medium">
+                        <div className={`flex items-center justify-between ${t.subText}`}>
+                          <span>Subtotal</span>
+                          <span className={`font-semibold ${t.cardText}`}>{fmt(subtotal)}</span>
+                        </div>
+                        {effectiveTaxRate > 0 && (
+                          <div className={`flex items-center justify-between ${t.subText}`}>
+                            <span className="flex items-center gap-1">
+                              <Percent className="h-3 w-3 text-emerald-500" /> Tax ({effectiveTaxRate}%)
+                              {category.tax_rate_override != null && <span className="text-[10px] text-amber-500">(custom)</span>}
+                            </span>
+                            <span className={`font-semibold ${t.cardText}`}>{fmt(taxAmount)}</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Deposit Ribbon */}
+                      <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border ${t.border} bg-transparent px-3 py-2 text-xs ${t.subText}`}>
+                        <span className="flex items-center gap-1.5">
+                          <HandCoins className="h-3.5 w-3.5 text-amber-500" />
+                          Deposit Required: <span className={`font-semibold ${t.cardText}`}>{depositLabel(depositType, depositValue)}</span>
+                        </span>
+                        {deposit > 0 && (
+                          <span className="sm:ml-auto">
+                            Due at signing: <span className="font-semibold text-amber-500">{fmt(deposit)}</span>
+                            {' '}· Balance: <span className={`font-semibold ${t.cardText}`}>{fmt(balance)}</span>
+                          </span>
+                        )}
+                      </div>
+
+                      {depositType === 'fixed' && depositValue > total && total > 0 && (
+                        <p className="flex items-center gap-1.5 text-[11px] font-medium text-amber-500">
+                          <AlertCircle className="h-3 w-3 shrink-0" />
+                          Fixed deposit exceeds the total estimate and will be capped at {fmt(total)}.
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
                 )}
-              </div>
+              </AnimatePresence>
 
-              <div className={`flex items-center justify-between border-t pt-2.5 ${t.border}`}>
-                <span className={`text-xs font-bold uppercase tracking-wider ${t.cardText}`}>Total Estimate</span>
-                <span className="text-lg font-bold text-emerald-500">{fmt(total)}</span>
-              </div>
-
-              {/* Deposit Ribbon */}
-              <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border ${t.border} bg-transparent px-3 py-2 text-xs ${t.subText}`}>
-                <span className="flex items-center gap-1.5">
-                  <HandCoins className="h-3.5 w-3.5 text-amber-500" />
-                  Deposit Required: <span className={`font-semibold ${t.cardText}`}>{depositLabel(depositType, depositValue)}</span>
-                </span>
-                {deposit > 0 && (
-                  <span className="sm:ml-auto">
-                    Due at signing: <span className="font-semibold text-amber-500">{fmt(deposit)}</span>
-                    {' '}· Balance: <span className={`font-semibold ${t.cardText}`}>{fmt(balance)}</span>
-                  </span>
-                )}
-              </div>
-
-              {depositType === 'fixed' && depositValue > total && total > 0 && (
-                <p className="flex items-center gap-1.5 text-[11px] font-medium text-amber-500">
-                  <AlertCircle className="h-3 w-3 shrink-0" />
-                  Fixed deposit exceeds the total estimate and will be capped at {fmt(total)}.
-                </p>
-              )}
             </div>
           </div>
         </div>

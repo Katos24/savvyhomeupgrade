@@ -513,7 +513,7 @@ leftColumnY -= (yBeforeNotes - y);
     leftColumnY -= (yBeforeTerms - y);
   }
 
-  // ── QR CODE ──
+    // ── QR CODE ──
   if (data.paymentLinkUrl && !isPaidInFull) {
         try {
       const QRCode = await import('qrcode');
@@ -533,7 +533,14 @@ leftColumnY -= (yBeforeNotes - y);
       page.drawRectangle({ x: qrX - 8, y: qrY - 8, width: qrSize + 140, height: qrSize + 24, color: lightGray });
       page.drawImage(qrImage, { x: qrX, y: qrY, width: qrSize, height: qrSize });
 
-      page.drawText('Scan QR to Pay', {
+      // Named by method, not generic — "Venmo" is meaningfully different
+      // from "Stripe/Card" to someone about to scan this.
+      const PAYMENT_TYPE_LABELS: Record<string, string> = {
+        stripe: 'Card', venmo: 'Venmo', zelle: 'Zelle', cashapp: 'Cash App', paypal: 'PayPal', other: 'Online',
+      };
+      const methodLabel = data.paymentLinkType ? (PAYMENT_TYPE_LABELS[data.paymentLinkType] || 'Online') : 'Online';
+
+      page.drawText(`Scan to Pay with ${methodLabel}`, {
         x: qrX + qrSize + 10, y: qrY + 48, size: 10, font: fontBold, color: black,
       });
       page.drawText(fmt(amountDueNow), {

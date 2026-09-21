@@ -485,19 +485,29 @@ function InvoiceTermsCard({ company }: { company: any }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6">
+    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6 lg:sticky lg:top-6">
       <p className="text-sm font-bold text-slate-900">Standard Payment Terms</p>
-      <p className="mt-0.5 text-xs text-slate-500">Appears on every PDF invoice you send.</p>
+      <p className="mt-0.5 text-xs text-slate-500">Printed as fine print on every PDF invoice — not shown in the email itself.</p>
 
       <textarea
         value={terms}
         onChange={(e) => setTerms(e.target.value)}
-        rows={3}
+        rows={5}
         placeholder="e.g. Net 15 days. A 1.5% monthly late fee applies to overdue balances. All work is warrantied for 12 months."
         className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
       />
 
-      <div className="mt-3 flex items-center justify-end">
+      {!terms && (
+        <div className="mt-3 rounded-lg bg-slate-50 border border-slate-100 p-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1">Common example</p>
+          <p className="text-[11px] leading-relaxed text-slate-500">
+            &ldquo;Payment due within 15 days of invoice date. A 1.5% monthly late fee applies to balances
+            over 30 days past due. All labor is warrantied for 12 months from completion.&rdquo;
+          </p>
+        </div>
+      )}
+
+      <div className="mt-4 flex items-center justify-end">
         <button
           type="button"
           onClick={handleSave}
@@ -513,9 +523,10 @@ function InvoiceTermsCard({ company }: { company: any }) {
   );
 }
 
+
 function InvoicePreviewCard({ company }: { company: any }) {
-  const [activeTab, setActiveTab] = useState<'email' | 'invoice'>('email');
-  const [expandedInvoice, setExpandedInvoice] = useState(false);
+  const [emailVariant, setEmailVariant] = useState<'deposit' | 'invoice'>('invoice');
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const stripeActive = !!company.stripe_connect_onboarded && company.stripe_payment_status === 'active';
   const hasManualLink = !!company.payment_link_url;
@@ -530,123 +541,172 @@ function InvoicePreviewCard({ company }: { company: any }) {
   };
 
   const effectiveType = stripeActive ? 'stripe' : hasManualLink ? company.payment_link_type || 'other' : null;
-  const payLabel = effectiveType ? paymentMethodLabels[effectiveType] || 'Pay Now' : null;
+  const payVerb = effectiveType ? paymentMethodLabels[effectiveType] || 'Pay Now' : null;
   const accent = company.email_brand_color_1 || '#4F46E5';
   const companyName = company.name || 'Your Business Name';
-  const previewUrl = `/api/company/${company.slug}/preview-invoice`;
+  const previewUrl = `/api/company/${company.slug}/preview-invoice${emailVariant === 'deposit' ? '?variant=deposit' : ''}`;
+
+  // Two genuinely different, real emails your customers actually
+  // receive — matching the exact distinction already built in
+  // BillingModals.tsx's Send modal ("Send Deposit Request" vs "Send
+  // Invoice"). Not two copies of the same content with a different
+  // label — the deposit variant reflects that a balance remains due
+  // later, since that's real, accurate information a customer sees.
+  const variants = {
+    deposit: {
+      subject: `Deposit Request — Invoice ${SAMPLE_INVOICE_NUMBER} from ${companyName}`,
+      heading: `Hi ${SAMPLE_CUSTOMER_NAME},`,
+      body: `A deposit is due to get your job on the schedule. Your deposit is `,
+      amount: 155.0,
+      payLabel: payVerb ? payVerb.replace('Pay', 'Pay Deposit') : null,
+      footNote: `The remaining balance of $${(SAMPLE_TOTAL - 155.0).toFixed(2)} will be invoiced once the job is complete.`,
+    },
+    invoice: {
+      subject: `Invoice ${SAMPLE_INVOICE_NUMBER} from ${companyName}`,
+      heading: `Hi ${SAMPLE_CUSTOMER_NAME},`,
+      body: `Your invoice is ready. You can review details or pay securely online below. Your total due is `,
+      amount: SAMPLE_TOTAL,
+      payLabel: payVerb,
+      footNote: null,
+    },
+  };
+  const v = variants[emailVariant];
 
   return (
     <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
         <div>
           <p className="text-sm font-bold text-slate-900">Preview</p>
-          <p className="text-xs text-slate-500">Exactly what customers see.</p>
+          <p className="text-xs text-slate-500 mt-0.5">Exactly what customers see, for either kind of email you send.</p>
         </div>
-        <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/60">
-          <button
-            type="button"
-            onClick={() => setActiveTab('email')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-              activeTab === 'email' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Mail className="h-3.5 w-3.5" /> Email
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('invoice')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all ${
-              activeTab === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <FileText className="h-3.5 w-3.5" /> Invoice PDF
-          </button>
+        <button
+          type="button"
+          onClick={() => setShowPdfModal(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition"
+        >
+          <FileText className="h-3.5 w-3.5 text-slate-500" />
+          View Invoice PDF
+        </button>
+      </div>
+
+            {/* Segmented toggle — not a tab bar, since these two aren't
+          alternate views of the SAME thing, they're two real, different
+          emails a customer might receive depending on where a job is. */}
+      <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/60 mb-3">
+        <button
+          type="button"
+          onClick={() => setEmailVariant('deposit')}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+            emailVariant === 'deposit' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Deposit Request Email
+        </button>
+        <button
+          type="button"
+          onClick={() => setEmailVariant('invoice')}
+          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
+            emailVariant === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          Full Invoice Email
+        </button>
+      </div>
+
+      {/* Concrete, real difference — not just relabeled toggle buttons.
+          Names exactly what changes between the two, so someone doesn't
+          have to compare the mockups line-by-line to understand it. */}
+      <div className="mb-5 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3.5 py-2.5">
+        <p className="text-[11px] leading-relaxed text-indigo-900">
+          {emailVariant === 'deposit' ? (
+            <>
+              <span className="font-bold">Deposit emails</span> charge only a portion now — the sample
+              below shows 25% due today, with the remaining balance invoiced once the job&rsquo;s complete.
+            </>
+          ) : (
+            <>
+              <span className="font-bold">Full invoice emails</span> charge the entire total in one
+              payment, with nothing held back for later.
+            </>
+          )}
+        </p>
+      </div>
+
+      {/* Full-width, native card treatment — no more floating centered
+          island. Browser-chrome header kept, since it's a genuinely
+          clear "this is what an email looks like" signal, just sized
+          to actually fill the space instead of sitting in a void. */}
+      <div className="w-full overflow-hidden rounded-xl border border-slate-200/80 bg-white">
+        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3.5">
+          <div className="flex gap-1.5 shrink-0">
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+            <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+          </div>
+          <p className="min-w-0 flex-1 truncate text-xs font-medium text-slate-500">
+            {companyName} &lt;{company.email || 'billing@yourbusiness.com'}&gt;
+          </p>
+        </div>
+
+        <div className="border-b border-slate-100 px-6 py-3.5 bg-slate-50/30">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subject</p>
+          <p className="mt-0.5 text-sm font-bold text-slate-900">{v.subject}</p>
+        </div>
+
+        <div className="p-6 sm:p-10">
+          <div className="mb-7">
+            {company.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={company.logo_url} alt={companyName} className="h-8 w-auto object-contain" />
+            ) : (
+              <span className="text-base font-black tracking-tight text-slate-900">{companyName}</span>
+            )}
+          </div>
+
+          <p className="text-base font-bold text-slate-900">{v.heading}</p>
+          <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
+            {v.body}
+            <span className="font-semibold text-slate-900">${v.amount.toFixed(2)}</span>.
+          </p>
+
+          <div className="mt-7 space-y-2.5 max-w-md">
+            {v.payLabel ? (
+              <div className="rounded-xl py-3.5 text-center text-sm font-bold text-white shadow-sm" style={{ backgroundColor: accent }}>
+                {v.payLabel} — ${v.amount.toFixed(2)}
+              </div>
+            ) : (
+              <div className="rounded-xl bg-amber-50 py-3.5 text-center text-sm font-bold text-amber-800">
+                Manual Collection — No Online Link
+              </div>
+            )}
+            <div className="rounded-xl border border-slate-200 py-3.5 text-center text-sm font-bold text-slate-700">
+              Download Attached PDF
+            </div>
+          </div>
+
+          {v.footNote && (
+            <p className="mt-4 text-xs text-slate-500 leading-relaxed">{v.footNote}</p>
+          )}
+
+          <div className="mt-7 flex items-center gap-1.5 text-xs text-slate-400">
+            <Calendar className="h-3.5 w-3.5" />
+            Due on <span className="font-semibold text-slate-600">{SAMPLE_DUE_DATE}</span>
+          </div>
         </div>
       </div>
 
-      {activeTab === 'email' && (
-        <div className="mx-auto mt-4 w-full max-w-xl overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
-          <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
-            <div className="flex gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-              <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
-            </div>
-            <p className="min-w-0 flex-1 truncate text-[11px] font-medium text-slate-500">
-              {companyName} &lt;{company.email || 'billing@yourbusiness.com'}&gt;
-            </p>
-          </div>
+      <p className="mt-3 text-[11px] text-slate-400">
+        Your payment terms appear on the actual invoice PDF, not in the email itself — click{' '}
+        <button type="button" onClick={() => setShowPdfModal(true)} className="font-semibold text-slate-600 underline hover:text-slate-800">
+          View Invoice PDF
+        </button>{' '}
+        above to see them.
+      </p>
 
-          <div className="border-b border-slate-100 px-6 py-3 bg-slate-50/30">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subject</p>
-            <p className="mt-0.5 truncate text-xs font-bold text-slate-900">
-              Invoice {SAMPLE_INVOICE_NUMBER} from {companyName}
-            </p>
-          </div>
-
-          <div className="p-6 sm:p-8">
-            <div className="mb-6">
-              {company.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={company.logo_url} alt={companyName} className="h-8 w-auto object-contain" />
-              ) : (
-                <span className="text-sm font-black tracking-tight text-slate-900">{companyName}</span>
-              )}
-            </div>
-
-            <p className="text-sm font-bold text-slate-900">Hello {SAMPLE_CUSTOMER_NAME},</p>
-            <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600">
-              Your invoice <span className="font-semibold text-slate-900">{SAMPLE_INVOICE_NUMBER}</span> for{' '}
-              <span className="font-semibold text-slate-900">${SAMPLE_TOTAL.toFixed(2)}</span> is ready. You can review details or pay securely online below.
-            </p>
-
-            <div className="mt-6 space-y-2.5">
-              {payLabel ? (
-                <div
-                  className="rounded-xl py-3 text-center text-xs font-bold text-white shadow-sm"
-                  style={{ backgroundColor: accent }}
-                >
-                  {payLabel} — ${SAMPLE_TOTAL.toFixed(2)}
-                </div>
-              ) : (
-                <div className="rounded-xl bg-amber-50 py-3 text-center text-xs font-bold text-amber-800">
-                  Manual Collection — No Online Link
-                </div>
-              )}
-              <div className="rounded-xl border border-slate-200 py-3 text-center text-xs font-bold text-slate-700">
-                Download Attached PDF
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
-              <Calendar className="h-3.5 w-3.5" />
-              Due on <span className="font-semibold text-slate-600">{SAMPLE_DUE_DATE}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'invoice' && (
-        <div className="mt-4 overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50 p-3">
-          <div className="mb-3 flex items-center justify-end">
-            <button
-              type="button"
-              onClick={() => setExpandedInvoice(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50"
-            >
-              Full Screen <Eye className="h-3.5 w-3.5" />
-            </button>
-          </div>
-          <div className="mx-auto h-[420px] w-full max-w-2xl overflow-hidden rounded-lg border border-slate-200/80 bg-white">
-            <iframe src={previewUrl} title="Sample invoice preview" className="h-full w-full border-0 pointer-events-none" />
-          </div>
-        </div>
-      )}
-
-      {expandedInvoice && (
+      {showPdfModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
-          onClick={() => setExpandedInvoice(false)}
+          onClick={() => setShowPdfModal(false)}
         >
           <div
             className="relative flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
@@ -654,11 +714,11 @@ function InvoicePreviewCard({ company }: { company: any }) {
           >
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
               <span className="text-sm font-bold text-slate-900">Invoice Preview</span>
-              <button type="button" onClick={() => setExpandedInvoice(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+              <button type="button" onClick={() => setShowPdfModal(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <iframe src={previewUrl} title="Full preview" className="h-full w-full border-0" />
+            <iframe src={previewUrl} title="Full invoice preview" className="h-full w-full border-0" />
           </div>
         </div>
       )}
@@ -692,9 +752,9 @@ export default function PaymentsTab({ company, currentUser }: { company: any; cu
           <PaymentOptionsPanel />
         </div>
 
-        <section>
+               <section>
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">Invoice Presentation</p>
-          <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr] lg:items-start">
             <InvoiceTermsCard company={company} />
             <InvoicePreviewCard company={company} />
           </div>
