@@ -20,6 +20,7 @@ import {
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
 import QuoteModals from './QuoteModals';
 import { getDepositAmount } from '@/lib/billing';
+import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type QuoteSectionProps = {
@@ -42,15 +43,6 @@ const formatCategoryLabel = (value?: string) =>
 const noSpinners =
   '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
-// Module-level, not component state — persists across every lead opened
-// in this browser session (not a full page reload), since templates are
-// company-wide, not per-lead. Without this, switching between leads
-// re-triggered the exact same fetch every single time, which is what
-// made the empty-state template cards feel like they were popping in
-// late — there was no skeleton AND no cache, so the cards just silently
-// didn't exist until the request happened to resolve.
-const templatesCache = new Map<string, any[]>();
-
 export default function QuoteSection({
   lead,
   currentUser,
@@ -70,8 +62,11 @@ export default function QuoteSection({
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-  const [categoryTemplate, setCategoryTemplate] = useState<any | null>(null);
-  const [allTemplates, setAllTemplates] = useState<any[]>([]);
+   const { data: allTemplates = [], isLoading: templatesLoading } = useQuoteTemplates(companySlug);
+  const categoryTemplate = useMemo(
+    () => (lead?.category ? allTemplates.find((t: any) => t.category === lead.category) : null),
+    [allTemplates, lead?.category]
+  );
   const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
@@ -84,7 +79,6 @@ export default function QuoteSection({
   // the desktop table — tracked at the row level (not per-input) so moving
   // focus between description/price/qty within the same row doesn't flicker.
   const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
-  const [templatesLoading, setTemplatesLoading] = useState(true);
   // Send/Accept/Clear now live in one Actions menu instead of separate
   // buttons scattered around the card — was causing Save and Send to sit
   // next to each other and get mixed up.
@@ -129,39 +123,7 @@ export default function QuoteSection({
     if (!/^[0-9]$/.test(e.key)) e.preventDefault();
   };
 
-  useEffect(() => {
-    if (!companySlug) return;
-    // Cache paints instantly if present — not a substitute for a real
-    // fetch, just removes the blank/loading moment on every lead after
-    // the first one this session.
-    const cached = templatesCache.get(companySlug);
-    if (cached) {
-      setAllTemplates(cached);
-      const match = lead?.category ? cached.find((t: any) => t.category === lead.category) : null;
-      setCategoryTemplate(match || null);
-      setTemplatesLoading(false);
-    } else {
-      setTemplatesLoading(true);
-    }
-    // Always fetches fresh regardless of cache hit — a template edited in
-    // Settings a moment ago shouldn't stay stale here for the rest of
-    // the session.
-    fetch(`/api/company/${companySlug}/quote-templates`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.success) {
-          const templates = data.templates || [];
-          templatesCache.set(companySlug, templates);
-          setAllTemplates(templates);
-          const match = lead?.category
-            ? templates.find((t: any) => t.category === lead.category)
-            : null;
-          setCategoryTemplate(match || null);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setTemplatesLoading(false));
-  }, [lead?.category, companySlug]);
+  
 
   useEffect(() => {
     if (isDirty) return;

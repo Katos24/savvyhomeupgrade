@@ -145,9 +145,17 @@ export default function InvoicesList({
           return dir * (a.customer_name || '').localeCompare(b.customer_name || '');
         case 'amount':
           return dir * (a._owed - b._owed);
-        case 'due': {
-          const at = a.payment_due_date ? new Date(a.payment_due_date).getTime() : null;
-          const bt = b.payment_due_date ? new Date(b.payment_due_date).getTime() : null;
+               case 'due': {
+          // Same phase-aware pattern the 'sent' case right below already
+          // uses — a deposit-phase row's real due date lives in
+          // deposit_due_date, not payment_due_date (that's the balance
+          // phase's own field). Reading payment_due_date unconditionally
+          // was the actual bug: a deposit row's due date silently came
+          // back blank, or worse, showed the balance's unrelated date.
+          const aDue = a._billingPhase === 'deposit' ? a.deposit_due_date : a.payment_due_date;
+          const bDue = b._billingPhase === 'deposit' ? b.deposit_due_date : b.payment_due_date;
+          const at = aDue ? new Date(aDue).getTime() : null;
+          const bt = bDue ? new Date(bDue).getTime() : null;
           if (at === null && bt === null) return 0;
           if (at === null) return 1;
           if (bt === null) return -1;
@@ -241,6 +249,10 @@ export default function InvoicesList({
   };
 
   const phaseLabel = (p: any) => (p._billingPhase === 'deposit' ? 'Deposit' : p._billingPhase === 'balance' ? 'Balance' : null);
+
+  // Same phase-aware selection as the sort fix above — the display side
+  // of the identical bug.
+  const dueDateFor = (p: any) => (p._billingPhase === 'deposit' ? p.deposit_due_date : p.payment_due_date);
 
   return (
     <div>
@@ -340,8 +352,11 @@ export default function InvoicesList({
                     )}
                   </div>
 
-                  <div className={`flex items-center justify-between text-[12px] ${labelText}`}>
-                    <span>Due <span className={`tabular-nums ${isDark ? 'text-slate-300' : 'text-stone-700'}`}>{fmtDate(p.payment_due_date)}</span></span>
+                                    <div className={`flex items-center justify-between text-[12px] ${labelText}`}>
+                    <span>
+                      {phase ? `${phase} Due` : 'Due'}{' '}
+                      <span className={`tabular-nums ${isDark ? 'text-slate-300' : 'text-stone-700'}`}>{fmtDate(dueDateFor(p))}</span>
+                    </span>
                     <span>Sent <span className={`tabular-nums ${isDark ? 'text-slate-300' : 'text-stone-700'}`}>{fmtDate(p.invoice_sent_at)}</span></span>
                   </div>
 
@@ -391,7 +406,10 @@ export default function InvoicesList({
                       </p>
                     )}
                   </div>
-                  <div className={`text-[12px] tabular-nums ${labelText}`}>{fmtDate(p.payment_due_date)}</div>
+                                   <div>
+                    <div className={`text-[12px] tabular-nums ${labelText}`}>{fmtDate(dueDateFor(p))}</div>
+                    {phase && <div className={`text-[10px] uppercase tracking-wide ${labelText}`}>{phase}</div>}
+                  </div>
                   <div className={`text-[12px] tabular-nums ${labelText}`}>{fmtDate(p.invoice_sent_at)}</div>
                   <div className="flex justify-end">
                     {canRemind && (

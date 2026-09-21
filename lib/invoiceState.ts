@@ -17,9 +17,19 @@ export const BUCKETS = [
   { key: '0', label: 'Not yet due', color: 'bg-teal-600' },
 ];
 
+// FOUND while fixing the Due-date display bug — same root cause, third
+// occurrence. This only ever read payment_due_date (the balance phase's
+// field), so a deposit-phase job's overdue status was computed against
+// the wrong date (or null, since the balance due date genuinely doesn't
+// exist yet during the deposit phase). A deposit sitting unpaid past its
+// real due date would silently never show as overdue — no badge, no
+// aging bucket, nothing. Needs the phase to know which field is actually
+// "the" due date right now, same as the fix already applied to
+// InvoicesList.tsx and InvoiceDetailDrawer.tsx.
 export function daysOverdue(p: any): number | null {
-  if (!p.payment_due_date) return null;
-  const due = new Date(p.payment_due_date);
+  const dueField = p._billingPhase === 'deposit' ? p.deposit_due_date : p.payment_due_date;
+  if (!dueField) return null;
+  const due = new Date(dueField);
   if (isNaN(due.getTime())) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -144,16 +154,16 @@ export function deriveInvoiceRow(p: any) {
     ? !!p.inv_sent_at
     : !!p.invoice_sent_at;
 
-  const derived = {
+   const derived = {
     ...p,
     _total: total,
     _collected: collected,
     _owed: owed,
-    _overdue: daysOverdue(p),
-    _bucket: bucketFor(p),
-    _invoiced: invoiced,
-    _remindedToday: !!remindedToday,
     _billingPhase: billingPhase,
+    _overdue: daysOverdue({ ...p, _billingPhase: billingPhase }),
+    _bucket: bucketFor({ ...p, _billingPhase: billingPhase }),
+    _invoiced: invoiced,
+       _remindedToday: !!remindedToday,
     // True when money's been collected toward the CURRENT phase but that
     // phase's invoice was never actually sent — e.g. a cash payment
     // recorded before any invoice went out, or a deposit paid with the

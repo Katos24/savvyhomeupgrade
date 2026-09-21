@@ -20,9 +20,7 @@ import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
 import {
   type Category,
-  type QuoteTemplate,
   type CustomQuestion,
-  type DepositType,
   fmt,
   depositLabel,
   spring,
@@ -33,6 +31,9 @@ import {
   QuoteSheetPreviewModal,
   DeleteServiceConfirmModal,
 } from './CategoriesTaskEditorModal';
+import { type QuoteTemplate, type DepositType } from '@/hooks/useQuoteTemplates';
+import { useQueryClient } from '@tanstack/react-query';
+import { useQuoteTemplates, useQuoteTemplateMutation } from '@/hooks/useQuoteTemplates';
 import CategoriesServiceCard from './CategoriesServiceCard';
 import CategoriesTaskEditorModal from './CategoriesTaskEditorModal';
 import CategoriesPricingModal from './CategoriesPricingModal';
@@ -72,6 +73,7 @@ export default function CategoriesTab({
 
   const t = themeTokens(isDark);
   const accentColor = company.email_brand_color_1 || '#2563eb';
+  const queryClient = useQueryClient();
 
   const [categories, setCategories] = useState<Category[]>(
     company.form_categories?.length > 0 ? company.form_categories : defaultCategories
@@ -91,8 +93,8 @@ export default function CategoriesTab({
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
-  const [quoteTemplates, setQuoteTemplates] = useState<QuoteTemplate[]>([]);
-  const [, setQuotesLoading] = useState(true);
+   const { data: quoteTemplates = [] } = useQuoteTemplates(company.slug);
+  const { mutateAsync: mutateTemplates } = useQuoteTemplateMutation(company.slug);
 
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(() => {
     const raw = company.custom_questions || [];
@@ -121,15 +123,6 @@ export default function CategoriesTab({
   const [applyTarget, setApplyTarget] = useState<'tax' | 'deposit' | null>(null);
   const [applyingToAll, setApplyingToAll] = useState(false);
 
-  useEffect(() => {
-    fetch(`/api/company/${company.slug}/quote-templates`)
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success) setQuoteTemplates(d.templates || []);
-      })
-      .catch(() => {})
-      .finally(() => setQuotesLoading(false));
-  }, [company.slug]);
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -226,23 +219,13 @@ export default function CategoriesTab({
         };
       });
 
-      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-many', templates: updatedTemplates }),
-      });
-      const data = await res.json().catch(() => ({}));
+           const data = await mutateTemplates({ action: 'update-many', templates: updatedTemplates });
 
-      if (!res.ok || !data.success) {
-        setSaveError(data.error || 'Could not apply the change. Try again.');
-        return;
-      }
       if (data.updated !== data.requested) {
         setSaveError(
           `Only ${data.updated} of ${data.requested} templates updated. Refresh and try again.`
         );
       }
-      setQuoteTemplates(data.templates || updatedTemplates);
       setApplyTarget(null);
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
@@ -308,16 +291,8 @@ export default function CategoriesTab({
       total: nextTotal,
     };
 
-    try {
-      const res = await fetch(`/api/company/${company.slug}/quote-templates`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update', template: updatedTemplate }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setQuoteTemplates(data.templates || []);
-      }
+       try {
+      await mutateTemplates({ action: 'update', template: updatedTemplate });
     } catch (err) {
       console.error('Failed to sync tax override to existing template:', err);
     }
@@ -728,8 +703,8 @@ export default function CategoriesTab({
           depositValue={depositValue}
           isDark={isDark}
           onClose={() => setActiveModal(null)}
-          onSaved={setQuoteTemplates}
-        />
+          onSaved={(templates) => queryClient.setQueryData(['quoteTemplates', company.slug], templates)}
+                  />
       )}
 
       {activeModal?.type === 'questions' && activeModalCategory && (

@@ -36,6 +36,7 @@ interface InvoiceDetailDrawerProps {
     payment_method?: string;
     invoice_sent_at?: string | null;
     payment_due_date?: string | null;
+    deposit_due_date?: string | null;
     quote_data?: string;
     // Added — phase-aware fields deriveInvoiceRow already computes,
     // plus deposit_paid_at and paid_at (project columns, already
@@ -212,12 +213,16 @@ export default function InvoiceDetailDrawer({
               </div>
             )}
 
-            <div className="flex items-center justify-between text-xs text-stone-600">
+                       <div className="flex items-center justify-between text-xs text-stone-600">
               <div className="flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-stone-400 shrink-0" />
-                <span className="text-stone-500">Due Date</span>
+                <span className="text-stone-500">
+                  {project._billingPhase === 'deposit' ? 'Deposit Due Date' : project._billingPhase === 'balance' ? 'Balance Due Date' : 'Due Date'}
+                </span>
               </div>
-              <span className="font-medium text-stone-800">{fmtDateLong(project.payment_due_date)}</span>
+              <span className="font-medium text-stone-800">
+                {fmtDateLong(project._billingPhase === 'deposit' ? project.deposit_due_date : project.payment_due_date)}
+              </span>
             </div>
 
             {project.customer_email && (

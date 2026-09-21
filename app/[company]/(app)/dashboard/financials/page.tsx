@@ -69,8 +69,9 @@ export default async function FinancialsPage({
       p.payment_method,
       l.name as customer_name,
       l.id as lead_id,
-      i.deposit_sent_at as inv_deposit_sent_at,
-      i.sent_at as inv_sent_at
+            i.deposit_sent_at as inv_deposit_sent_at,
+      i.sent_at as inv_sent_at,
+      i.deposit_due_date
     FROM projects p
     JOIN leads l ON p.lead_id = l.id
     LEFT JOIN invoices i ON i.project_id = p.id
