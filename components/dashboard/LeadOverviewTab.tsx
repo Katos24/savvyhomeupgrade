@@ -4,9 +4,10 @@ import { useState, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   Mail, Phone, MessageSquare, Navigation, Edit2,
-  Calendar, Clock, Image, Lock, History, UserCircle,
+  Calendar, Clock, Image as ImageIcon, Lock, History, UserCircle,
   MessageCircle, NotebookPen, ChevronDown, ChevronUp,
-  Sparkles, MapPin, Tag
+  Sparkles, MapPin, Tag, Check, X, FileText, AlertCircle,
+  Layers, HelpCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButton';
@@ -65,6 +66,17 @@ export default function LeadOverviewTab({
       ? lead.file_urls.map((f: any) => typeof f === 'string' ? f : f?.url || f?.path || '').filter(Boolean)
       : [],
     [lead.file_urls]);
+
+  // Safely parse custom answers whether stringified or raw object
+  const customAnswersObj = useMemo(() => {
+    if (!lead.custom_answers) return {};
+    if (typeof lead.custom_answers === 'string') {
+      try { return JSON.parse(lead.custom_answers); } catch { return {}; }
+    }
+    return lead.custom_answers;
+  }, [lead.custom_answers]);
+
+  const customAnswerEntries = useMemo(() => Object.entries(customAnswersObj), [customAnswersObj]);
 
   const formatPhoneNumber = (value: string): string => {
     const phoneNumber = value.replace(/\D/g, '').slice(0, 10);
@@ -164,11 +176,59 @@ export default function LeadOverviewTab({
   };
 
   const actionButtons = [
-    { icon: <Mail className="w-3.5 h-3.5" />, label: 'Email', action: () => window.location.href = `mailto:${lead.email}`, color: '#3b82f6' },
-    { icon: <Phone className="w-3.5 h-3.5" />, label: 'Call', action: () => window.location.href = `tel:${lead.phone}`, color: '#22c55e' },
-    { icon: <MessageSquare className="w-3.5 h-3.5" />, label: 'Text', action: () => window.location.href = `sms:${lead.phone}`, color: '#a855f7' },
-    ...(fullAddress ? [{ icon: <Navigation className="w-3.5 h-3.5" />, label: 'Directions', action: () => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'), color: '#ef4444' }] : []),
+    { icon: <Mail className="w-3.5 h-3.5" />, label: 'Email', action: () => window.location.href = `mailto:${lead.email}`, color: 'text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200' },
+    { icon: <Phone className="w-3.5 h-3.5" />, label: 'Call', action: () => window.location.href = `tel:${lead.phone}`, color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
+    { icon: <MessageSquare className="w-3.5 h-3.5" />, label: 'Text', action: () => window.location.href = `sms:${lead.phone}`, color: 'text-purple-600 bg-purple-50 hover:bg-purple-100 border-purple-200' },
+    ...(fullAddress ? [{ icon: <Navigation className="w-3.5 h-3.5" />, label: 'Directions', action: () => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'), color: 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200' }] : []),
   ];
+
+  // Helper function to dynamically format custom question responses nicely
+  const renderAnswerValue = (answer: any) => {
+    if (answer === null || answer === undefined || answer === '') {
+      return <span className="text-gray-400 italic text-xs">Not specified</span>;
+    }
+
+    if (typeof answer === 'boolean') {
+      return answer ? (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+          <Check className="w-3 h-3 text-emerald-600" /> Yes
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
+          <X className="w-3 h-3 text-gray-400" /> No
+        </span>
+      );
+    }
+
+    if (Array.isArray(answer)) {
+      if (answer.length === 0) return <span className="text-gray-400 italic text-xs">None selected</span>;
+      return (
+        <div className="flex flex-wrap gap-1.5 mt-1">
+          {answer.map((item, idx) => (
+            <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50/80 text-blue-700 border border-blue-100 shadow-2xs">
+              <Tag className="w-2.5 h-2.5 text-blue-500" /> {String(item)}
+            </span>
+          ))}
+        </div>
+      );
+    }
+
+    const strAnswer = String(answer);
+
+    if (strAnswer.length > 50) {
+      return (
+        <p className="text-xs text-gray-800 bg-white/80 p-2.5 rounded-lg border border-gray-200/80 leading-relaxed mt-1 font-normal shadow-2xs">
+          {strAnswer}
+        </p>
+      );
+    }
+
+    return (
+      <span className="text-xs font-semibold text-gray-900 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs inline-block">
+        {strAnswer}
+      </span>
+    );
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
@@ -184,11 +244,14 @@ export default function LeadOverviewTab({
       {!isProject && can(planTier, 'convert_to_project') && (
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4"
-          style={{ background: '#0f172a' }}
+          className="rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 border border-slate-800 shadow-md"
+          style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
         >
           <div>
-            <p className="text-sm font-semibold text-white">Ready to start this job?</p>
+            <p className="text-sm font-semibold text-white flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              Ready to start this job?
+            </p>
             <p className="text-xs mt-0.5 text-slate-300">Convert to a project to unlock scheduling, quotes, and tasks.</p>
           </div>
           <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
@@ -196,26 +259,26 @@ export default function LeadOverviewTab({
       )}
 
       {/* SLIM COLLAPSIBLE CLIENT BAR */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden transition-all">
+      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden transition-all">
         <div className="p-3.5 sm:p-4 flex items-center justify-between gap-3 bg-white">
           
           {/* Left: Quick Client Summary */}
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold text-sm">
+            <div className="w-10 h-10 rounded-xl bg-blue-50/80 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 font-bold text-sm shadow-2xs">
               {lead.name ? lead.name.charAt(0).toUpperCase() : <UserCircle className="w-5 h-5" />}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-bold text-gray-900 truncate">{lead.name || 'Unnamed Client'}</span>
                 {lead.category && (
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-md text-[11px] font-medium shrink-0">
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100/80 rounded-md text-[11px] font-semibold shrink-0">
                     {formatCategory(lead.category)}
                   </span>
                 )}
                 {relatedLeads.length > 0 && (
                   <button
                     onClick={onShowHistory}
-                    className="flex items-center gap-1 px-1.5 py-0.5 text-[11px] font-medium bg-amber-50 text-amber-700 border border-amber-200/60 rounded-md hover:bg-amber-100 transition"
+                    className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md hover:bg-amber-100/80 transition"
                   >
                     <History className="w-3 h-3 text-amber-500" />
                     {relatedLeads.length} past job{relatedLeads.length > 1 ? 's' : ''}
@@ -235,17 +298,17 @@ export default function LeadOverviewTab({
                 <button
                   key={btn.label}
                   onClick={btn.action}
-                  className="p-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 transition"
+                  className={`p-2 rounded-xl border transition-all ${btn.color}`}
                   title={btn.label}
                 >
-                  <span style={{ color: btn.color }}>{btn.icon}</span>
+                  {btn.icon}
                 </button>
               ))}
             </div>
 
             <button
               onClick={() => setShowClientDetails(!showClientDetails)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-semibold text-gray-700 transition"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200/80 text-xs font-semibold text-gray-700 transition"
             >
               <span>{showClientDetails ? 'Hide Info' : 'Client Info'}</span>
               {showClientDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -365,7 +428,7 @@ export default function LeadOverviewTab({
                           onClick={btn.action}
                           className="flex-1 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 flex items-center justify-center gap-1"
                         >
-                          <span style={{ color: btn.color }}>{btn.icon}</span>
+                          {btn.icon}
                           {btn.label}
                         </button>
                       ))}
@@ -384,38 +447,38 @@ export default function LeadOverviewTab({
         </AnimatePresence>
       </div>
 
-      {/* HERO SECTION: CUSTOMER REQUEST (FULL WIDTH & EASY TO READ) */}
+      {/* HERO SECTION: CUSTOMER REQUEST */}
       <motion.div
         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden"
+        className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden"
       >
         <div className="px-5 py-3.5 border-b border-gray-100 bg-emerald-50/30 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center">
+            <span className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center shadow-2xs">
               <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
             </span>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-900">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-950">
               Customer Request
             </h3>
           </div>
 
           {(lead.preferred_date || lead.preferred_time) && (
-            <div className="flex items-center gap-2 text-xs text-blue-700 font-medium bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
+            <div className="flex items-center gap-2 text-xs text-blue-700 font-semibold bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 shadow-2xs">
               <Calendar className="w-3.5 h-3.5 text-blue-500" />
               <span>
-                {lead.preferred_date && (() => { const d = new Date(lead.preferred_date); return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
+                {lead.preferred_date && (() => { const d = new Date(lead.preferred_date); return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
                 {lead.preferred_time && ` @ ${lead.preferred_time}`}
               </span>
             </div>
           )}
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="p-5 space-y-6">
           {/* Main Message Box */}
           <div>
             <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Message</span>
-            <div className="p-4 bg-gray-50/80 rounded-xl border border-gray-100 text-sm text-gray-800 leading-relaxed font-normal whitespace-pre-line">
-              {lead.description || <span className="text-gray-400 italic">No message submitted by customer.</span>}
+            <div className="p-4 bg-gray-50/80 rounded-xl border-l-4 border-l-emerald-500 border border-gray-200/60 text-sm text-gray-800 leading-relaxed font-normal whitespace-pre-line shadow-2xs">
+              {lead.description || <span className="text-gray-400 italic">No description provided by customer.</span>}
             </div>
           </div>
 
@@ -423,7 +486,7 @@ export default function LeadOverviewTab({
           {customerPhotos.length > 0 && (
             <div>
               <div className="flex items-center gap-1.5 mb-2.5">
-                <Image className="w-3.5 h-3.5 text-blue-500" />
+                <ImageIcon className="w-3.5 h-3.5 text-blue-500" />
                 <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                   Submitted Photos ({customerPhotos.length})
                 </span>
@@ -432,38 +495,73 @@ export default function LeadOverviewTab({
                 {customerPhotos.map((url: string, i: number) => (
                   <motion.button key={i} whileTap={{ scale: 0.95 }}
                     onClick={() => setLightbox({ photos: customerPhotos, index: i })}
-                    className="w-16 h-16 sm:w-20 sm:h-20 overflow-hidden border border-gray-200 hover:border-blue-500 transition rounded-xl shadow-xs">
-                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover hover:scale-105 transition duration-200" />
+                    className="w-16 h-16 sm:w-20 sm:h-20 overflow-hidden border border-gray-200 hover:border-blue-500 transition rounded-xl shadow-2xs group relative">
+                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                      <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
+                    </div>
                   </motion.button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Custom Answers */}
-          {lead.custom_answers && Object.keys(lead.custom_answers).length > 0 && (
-            <div className="pt-2 border-t border-gray-100">
-              <button onClick={() => setShowCustomQuestions(!showCustomQuestions)}
-                className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1 hover:text-blue-600 transition mb-3">
-                <span>Additional Details ({Object.keys(lead.custom_answers).length})</span>
-                {showCustomQuestions ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+          {/* ENHANCED ADDITIONAL DETAILS (CUSTOM ANSWERS) */}
+          {customAnswerEntries.length > 0 && (
+            <div className="pt-4 border-t border-gray-100">
+              <button 
+                onClick={() => setShowCustomQuestions(!showCustomQuestions)}
+                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 transition border border-slate-200/60 group"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
+                    <Sparkles className="w-3 h-3 text-blue-600" />
+                  </span>
+                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                    Additional Details ({customAnswerEntries.length})
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-xs font-semibold text-slate-500 group-hover:text-slate-800 transition">
+                  <span>{showCustomQuestions ? 'Collapse' : 'Expand'}</span>
+                  {showCustomQuestions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
               </button>
               
               <AnimatePresence>
                 {showCustomQuestions && (
-                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-hidden">
-                    {Object.entries(lead.custom_answers).map(([qId, answer]: [string, any]) => {
-                      const qDef = (company?.custom_questions || []).find((q: any) => q.id === qId);
-                      return (
-                        <div key={qId} className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between text-xs gap-2">
-                          <span className="text-gray-500 font-medium truncate">{qDef?.label || qId}</span>
-                          <span className="text-gray-900 font-bold shrink-0">
-                            {typeof answer === 'boolean' ? (answer ? 'Yes' : 'No') : answer || '—'}
-                          </span>
-                        </div>
-                      );
-                    })}
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }} 
+                    animate={{ height: 'auto', opacity: 1 }} 
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
+                      {customAnswerEntries.map(([qId, answer]: [string, any]) => {
+                        const qDef = (company?.custom_questions || []).find((q: any) => q.id === qId);
+                        const label = qDef?.label || qId.replace(/_/g, ' ');
+                        const isLongText = typeof answer === 'string' && answer.length > 50;
+
+                        return (
+                          <div 
+                            key={qId} 
+                            className={`p-3.5 rounded-xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50/50 shadow-2xs flex flex-col justify-between gap-1.5 transition hover:border-gray-300 ${
+                              isLongText ? 'sm:col-span-2' : ''
+                            }`}
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <span className="text-xs font-semibold text-gray-600 capitalize leading-snug">
+                                {label}
+                              </span>
+                            </div>
+                            
+                            <div className="mt-0.5">
+                              {renderAnswerValue(answer)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -476,19 +574,19 @@ export default function LeadOverviewTab({
       {isProject && (
         <motion.div
           initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-gray-200/80 shadow-sm overflow-hidden"
+          className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden"
         >
           <div className="px-5 py-3 border-b border-gray-100 bg-amber-50/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center">
+              <span className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center shadow-2xs">
                 <Lock className="w-3.5 h-3.5 text-amber-600" />
               </span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-950">
                 Internal Notes (Team Only)
               </h3>
             </div>
             {lead.project_internal_notes && !isEditingNotes && (
-              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-semibold text-blue-600 hover:text-blue-700">
+              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition">
                 Edit Notes
               </button>
             )}
@@ -500,10 +598,10 @@ export default function LeadOverviewTab({
                 <div className="space-y-2">
                   <textarea value={internalNotesText} onChange={e => setInternalNotesText(e.target.value)}
                     rows={4} placeholder="Add private notes for your team..."
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs resize-none focus:outline-none focus:border-blue-400 bg-white" />
+                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs resize-none focus:outline-none focus:border-blue-400 bg-white shadow-2xs" />
                   <div className="flex gap-2">
                     <button onClick={handleSaveInternalNotes} disabled={saving}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition">
+                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition shadow-2xs">
                       {saving ? 'Saving...' : 'Save Notes'}
                     </button>
                     <button onClick={() => { setIsEditingNotes(false); setInternalNotesText(lead.project_internal_notes || ''); }}
@@ -513,7 +611,7 @@ export default function LeadOverviewTab({
                   </div>
                 </div>
               ) : lead.project_internal_notes ? (
-                <div className="p-3.5 bg-amber-50/40 rounded-xl border border-amber-100 text-xs text-gray-800 leading-relaxed font-normal whitespace-pre-line">
+                <div className="p-3.5 bg-amber-50/40 rounded-xl border border-amber-200/60 text-xs text-gray-800 leading-relaxed font-normal whitespace-pre-line shadow-2xs">
                   {lead.project_internal_notes}
                 </div>
               ) : (
@@ -534,9 +632,12 @@ export default function LeadOverviewTab({
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[200] flex items-center justify-center p-4">
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Update quote too?</h3>
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+                <Layers className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Update quote template?</h3>
               <p className="text-xs text-gray-500 leading-relaxed mb-5">
-                <span className="font-semibold text-gray-800">{pendingCategoryChange?.newLabel}</span> has a pricing template. Replace your current quote items with it?
+                <span className="font-semibold text-gray-800">{pendingCategoryChange?.newLabel}</span> has a preset pricing template. Replace current quote items with this template?
               </p>
               <div className="grid grid-cols-2 gap-2.5">
                 <button onClick={async () => { setPendingCategoryChange(null); await executeSaveDetails(null); }}
@@ -548,7 +649,7 @@ export default function LeadOverviewTab({
                     setPendingCategoryChange(null);
                     await executeSaveDetails(items);
                   }}
-                  className="py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition text-xs">
+                  className="py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition text-xs shadow-2xs">
                   Use template
                 </button>
               </div>

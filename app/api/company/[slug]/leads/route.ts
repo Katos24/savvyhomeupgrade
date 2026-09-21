@@ -187,10 +187,16 @@ export async function GET(request: Request, { params }: Props) {
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (
+                   AND (
             ${payment} = ''
             OR (${payment} = 'awaiting' AND p.invoice_sent_at IS NOT NULL AND p.payment_status IS DISTINCT FROM 'paid')
-            OR (${payment} != 'awaiting' AND p.payment_status = ${payment})
+            -- "Unpaid" means "still owes money" to whoever clicks that
+            -- filter button — not the literal single status string
+            -- 'unpaid'. A partially-paid lead still owes a balance and
+            -- belongs in this filter too; previously the strict
+            -- payment_status = 'unpaid' equality silently excluded it.
+            OR (${payment} = 'unpaid' AND p.payment_status IN ('unpaid', 'partial'))
+            OR (${payment} NOT IN ('awaiting', 'unpaid') AND p.payment_status = ${payment})
           )
           AND (
             ${assignee} = '' OR
@@ -265,10 +271,11 @@ export async function GET(request: Request, { params }: Props) {
             OR LOWER(REPLACE(l.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
             OR LOWER(REPLACE(p.category, ' ', '_')) = LOWER(REPLACE(${category}, ' ', '_'))
           )
-          AND (
+                 AND (
   ${payment} = ''
   OR (${payment} = 'awaiting' AND p.invoice_sent_at IS NOT NULL AND p.payment_status IS DISTINCT FROM 'paid')
-  OR (${payment} != 'awaiting' AND p.payment_status = ${payment})
+  OR (${payment} = 'unpaid' AND p.payment_status IN ('unpaid', 'partial'))
+  OR (${payment} NOT IN ('awaiting', 'unpaid') AND p.payment_status = ${payment})
 )
           AND (
             ${assignee} = '' OR

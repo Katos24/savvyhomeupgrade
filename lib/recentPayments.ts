@@ -14,6 +14,7 @@ export type RecentPaymentRow = {
   paid_on: string;
   customer_name: string;
   payment_status?: string | null;
+  lead_id: number;
 };
 
 /**
@@ -37,11 +38,11 @@ export async function getRecentPayments(
   limit = 6,
   includePaymentStatus = false
 ): Promise<RecentPaymentRow[]> {
-  if (includePaymentStatus) {
+   if (includePaymentStatus) {
     return sql`
       SELECT
         pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,
-        l.name as customer_name, pr.payment_status
+        l.name as customer_name, pr.payment_status, l.id as lead_id
       FROM payments pay
       JOIN projects pr ON pay.project_id = pr.id
       JOIN leads l ON pr.lead_id = l.id
@@ -54,7 +55,7 @@ export async function getRecentPayments(
   return sql`
     SELECT
       pay.id, pay.amount, pay.kind, pay.method, pay.paid_on,
-      l.name as customer_name
+      l.name as customer_name, l.id as lead_id
     FROM payments pay
     JOIN projects pr ON pay.project_id = pr.id
     JOIN leads l ON pr.lead_id = l.id

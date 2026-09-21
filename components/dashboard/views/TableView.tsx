@@ -88,9 +88,31 @@ export default function TableView({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
 
-   const getStatusConfig = (val: string) => statusOptions.find((s: any) => s.value === val) || statusOptions[0];
+    const getStatusConfig = (val: string) => statusOptions.find((s: any) => s.value === val) || statusOptions[0];
   const getHex = (color: string) => STATUS_COLORS[color] || '#3b82f6';
   const getTextHex = (color: string) => STATUS_TEXT_COLORS[color] || '#374151';
+
+  // Same colored-pill language as the Status column above — reusing an
+  // existing visual pattern instead of inventing a new one for this
+  // column. Three real, distinct states instead of one flat number:
+  // unpaid still owes the full quote, partial owes what's left after a
+  // deposit or partial payment, paid needs no further action.
+  const getPaymentDisplay = (lead: any) => {
+    const quoteTotal = parseFloat(lead.quote_total || 0);
+    const paidAmount = parseFloat(lead.payment_amount || 0);
+    if (!quoteTotal && !paidAmount) return null;
+
+    if (lead.payment_status === 'paid' || (quoteTotal > 0 && paidAmount >= quoteTotal)) {
+      return { label: 'Paid', hex: '#22c55e', textHex: '#15803d', primary: formatCurrency(paidAmount || quoteTotal), secondary: null };
+    }
+    if (paidAmount > 0 && quoteTotal > paidAmount) {
+      return { label: 'Partial', hex: '#f97316', textHex: '#c2410c', primary: formatCurrency(paidAmount), secondary: `${formatCurrency(quoteTotal - paidAmount)} left` };
+    }
+    if (quoteTotal > 0) {
+      return { label: 'Unpaid', hex: '#ef4444', textHex: '#b91c1c', primary: formatCurrency(quoteTotal), secondary: 'due' };
+    }
+    return null;
+  };
 
    const handleSort = (key: string) => onSortChange(key);
 
@@ -327,18 +349,34 @@ export default function TableView({
                         {statusConfig.label}
                       </span>
                     </td>
-                    <td className={`${cell} text-sm`}>
-                      {lead.quote_total ? <span className="font-semibold text-[#1c1917]">{formatCurrency(lead.quote_total)}</span> : <span className="text-[#d6d3d1]">—</span>}
-                    </td>
-                    <td className={`${cell} text-sm`}>
-                      {lead.payment_amount ? (
-                        <div>
-                          <span className="font-semibold text-[#1c1917]">{formatCurrency(lead.payment_amount)}</span>
-                          {lead.payment_status && <span className="text-xs text-[#a8a29e] capitalize ml-1.5">{lead.payment_status}</span>}
-                        </div>
-                      ) : lead.payment_status === 'unpaid' && lead.quote_total ? (
-                        <span className="text-xs font-medium text-amber-700">{formatCurrency(lead.quote_total)} due</span>
+                                        <td className={`${cell} text-sm`}>
+                      {lead.quote_total ? (
+                        <span className={`font-semibold ${getPaymentDisplay(lead)?.label === 'Paid' ? 'text-emerald-600' : 'text-[#1c1917]'}`}>
+                          {formatCurrency(lead.quote_total)}
+                        </span>
                       ) : <span className="text-[#d6d3d1]">—</span>}
+                    </td>
+                    
+                                      <td className={cell}>
+                      {(() => {
+                        const p = getPaymentDisplay(lead);
+                        if (!p) return <span className="text-[#d6d3d1]">—</span>;
+                        return (
+                          <div className="space-y-1">
+                            <span
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                              style={{ backgroundColor: `${p.hex}18`, color: p.textHex }}
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.hex }} />
+                              {p.label}
+                            </span>
+                            <div className="text-xs text-[#57534e]">
+                              <span className="font-semibold text-[#1c1917]">{p.primary}</span>
+                              {p.secondary && <span className="ml-1 text-[#a8a29e]">{p.secondary}</span>}
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </td>
                     <td className={`${cell} text-sm`}>
                       {lead.scheduled_date ? (
@@ -540,16 +578,34 @@ export default function TableView({
                       {statusConfig.label}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm">
-                    {lead.quote_total ? <span className="font-bold text-emerald-500">{formatCurrency(lead.quote_total)}</span> : <span className={t.textEmpty}>—</span>}
-                  </td>
-                  <td className="px-4 py-3 text-sm">
-                    {lead.payment_amount ? (
-                      <div>
-                        <span className="font-bold text-sky-500">{formatCurrency(lead.payment_amount)}</span>
-                        {lead.payment_status && <span className={`text-xs ${t.textMuted} capitalize ml-1.5`}>{lead.payment_status}</span>}
-                      </div>
+                                    <td className="px-4 py-3 text-sm">
+                    {lead.quote_total ? (
+                      <span className={`font-bold ${getPaymentDisplay(lead)?.label === 'Paid' ? 'text-emerald-500' : t.textPrimary}`}>
+                        {formatCurrency(lead.quote_total)}
+                      </span>
                     ) : <span className={t.textEmpty}>—</span>}
+                  </td>
+
+                                   <td className="px-4 py-3">
+                    {(() => {
+                      const p = getPaymentDisplay(lead);
+                      if (!p) return <span className={t.textEmpty}>—</span>;
+                      return (
+                        <div className="space-y-1">
+                          <span
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
+                            style={{ backgroundColor: `${p.hex}26`, color: p.hex }}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.hex }} />
+                            {p.label}
+                          </span>
+                          <div className={`text-xs ${t.textPrimary}`}>
+                            <span className="font-bold">{p.primary}</span>
+                            {p.secondary && <span className={`ml-1 ${t.textMuted}`}>{p.secondary}</span>}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-sm">
                     {lead.scheduled_date ? (

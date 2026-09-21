@@ -19,6 +19,8 @@ import DashboardExportModal from '@/components/dashboard/DashboardExportModal';
 import DashboardLeadsSection from '@/components/dashboard/DashboardLeadsSection';
 import { DEFAULT_STATUSES } from '@/lib/formCategories';
 import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -107,10 +109,23 @@ export default function LeadsClient({ company }: { company: Company }) {
   });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isDark, setIsDark] = useState<boolean>(() => {
-    if (typeof window === 'undefined') return true;
-    return localStorage.getItem('dashboard-theme') !== 'light';
-  });
+   // FIXED: reading localStorage inside the useState initializer ran
+  // differently on server vs. client — window is undefined server-side
+  // (always defaulting true/dark), but the client read the REAL stored
+  // value immediately. If that real value was 'light', the very first
+  // client render disagreed with what the server already sent, which is
+  // a hydration mismatch — and React recovers from a mismatch by fully
+  // discarding and re-rendering the affected tree, which is very
+  // plausibly why fetchLeads/fetchCurrentUser/fetchTeamMembers appeared
+  // to fire twice: not a real double-fetch bug, but this component
+  // being forced through a full remount to recover. Same fix already
+  // applied correctly in CompanyShell.tsx earlier this session — always
+  // match the server's default first, correct from localStorage after
+  // mount.
+  const [isDark, setIsDark] = useState<boolean>(true);
+  useEffect(() => {
+    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+  }, []);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -134,9 +149,11 @@ export default function LeadsClient({ company }: { company: Company }) {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [showExportModal, setShowExportModal] = useState(false);
 
-  // User / team
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
+   // User / team — now sourced from the shared React Query cache instead
+  // of a local fetch, so this page shares data with CompanyDashboardClient
+  // rather than each independently re-fetching the same thing.
+  const { data: currentUser } = useCurrentUser();
+  const { data: teamMembers } = useTeamMembers(company.slug);
 
   // Tour
   const [tourActive, setTourActive] = useState(false);
@@ -221,29 +238,8 @@ export default function LeadsClient({ company }: { company: Company }) {
   }
   }, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir]);
 
-  const fetchCurrentUser = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (data.success) setCurrentUser(data.user);
-    } catch (e) { console.error('fetchCurrentUser:', e); }
-  }, []);
-
-  const fetchTeamMembers = useCallback(async () => {
-    try {
-      const res = await fetch('/api/team/members');
-      const data = await res.json();
-      if (data.success) {
-        const assigneeList = (data.allAssignees || []).map((name: string) => ({ id: name, name }));
-        setTeamMembers(assigneeList);
-      }
-    } catch (e) { console.error('fetchTeamMembers:', e); }
-  }, []);
-
-  useEffect(() => {
+    useEffect(() => {
     fetchLeads(1);
-    fetchCurrentUser();
-    fetchTeamMembers();
   }, []);
 
   useEffect(() => {
@@ -687,8 +683,8 @@ export default function LeadsClient({ company }: { company: Company }) {
           isDark={isDark}
           planTier={planTier}
           statusOptions={statusOptions}
-          teamMembers={teamMembers}
-          company={company}
+          teamMembers={teamMembers || []}
+                    company={company}
           hasActiveFilters={hasActiveFilters}
           clearFilters={clearFilters}
           onSelectLead={openLead}
@@ -718,8 +714,8 @@ export default function LeadsClient({ company }: { company: Company }) {
           currentUser={currentUser} statusOptions={statusOptions}
           categories={company.form_categories || []} company={company}
           companySlug={company.slug}
-          teamMembers={teamMembers}
-        />
+          teamMembers={teamMembers || []}
+                  />
       )}
 
       <CreateLeadModal

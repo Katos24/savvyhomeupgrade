@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, DM_Sans, Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
 import UnhandledRejectionLogger from "@/components/UnhandledRejectionLogger";
+import QueryProvider from "@/app/QueryProvider";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -72,9 +73,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" data-scroll-behavior="smooth">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${fraunces.variable} ${inter.variable} antialiased`}>
+           <body className={`${geistSans.variable} ${geistMono.variable} ${dmSans.variable} ${fraunces.variable} ${inter.variable} antialiased`}>
         <UnhandledRejectionLogger />
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-4TG9X39EQ5"
           strategy="afterInteractive"

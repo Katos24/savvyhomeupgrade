@@ -7,6 +7,9 @@ import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, Receipt, X, Zap } fro
 import { Toaster } from 'sonner';
 import { type PlanTier } from '@/lib/permissions';
 import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 
 // --- Dynamic Imports for Heavy Modals & Widgets (Reduces Initial JS Bundle) ---
 const Sidebar = dynamic(() => import('@/components/dashboard/Sidebar'), { ssr: false });
@@ -46,7 +49,7 @@ type Company = {
     stripe_connect_onboarded?: boolean;
   stripe_payment_status?: string | null;
 };
-type DashboardStats = {
+export type DashboardStats = {
   leads: { new_this_week: number };
   estimates: { open: number; accepted: number };
   jobs: { active: number; active_value: number };
@@ -64,7 +67,7 @@ type DashboardStats = {
   revenue_this_month: number;
   expenses_this_month?: number;
   ready_to_invoice: { count: number; value: number };
-  recent_payments: Array<{
+   recent_payments: Array<{
     id: number;
     amount: string | number;
     kind: string;
@@ -72,6 +75,7 @@ type DashboardStats = {
     paid_on: string;
     customer_name: string;
     payment_status: string | null;
+    lead_id: number;
   }>;
 };
 
@@ -207,11 +211,14 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const router = useRouter();
   const [, startTransition] = useTransition();
 
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
+   const {
+    data: stats,
+    isLoading: loading,
+    error: statsError,
+    refetch: fetchStats,
+  } = useDashboardStats(company.slug);
+  const loadError = statsError ? 'Could not load dashboard. Check your connection and try again.' : '';
+    const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -219,7 +226,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const [selectedLeadTab, setSelectedLeadTab] = useState<TopTab>('overview');
   const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
-  const [teamMembers, setTeamMembers] = useState<any[]>([]);
 
   const [isDark, setIsDark] = useState<boolean>(true);
   const skipFirstWrite = useRef(true);
@@ -238,49 +244,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/company/${company.slug}/dashboard-stats`, { cache: 'no-store' });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || 'Failed to load');
-      if (!data.leads) throw new Error('Dashboard data is incomplete');
-      setStats(data);
-      setLoadError('');
-    } catch (e) {
-      console.error('Failed to fetch dashboard stats:', e);
-      setLoadError('Could not load dashboard. Check your connection and try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [company.slug]);
 
-  const fetchCurrentUser = useCallback(async () => {
-    try {
-      const res = await fetch('/api/auth/me');
-      const data = await res.json();
-      if (data.success) setCurrentUser(data.user);
-    } catch (e) {
-      console.error('fetchCurrentUser:', e);
-    }
-  }, []);
 
-  const fetchTeamMembers = useCallback(async () => {
-    try {
-      const res = await fetch('/api/team/members');
-      const data = await res.json();
-      if (data.success) {
-        const assigneeList = (data.allAssignees || []).map((name: string) => ({ id: name, name }));
-        setTeamMembers(assigneeList);
-      }
-    } catch (e) {
-      console.error('fetchTeamMembers:', e);
-    }
-  }, []);
-
-  useEffect(() => {
-    Promise.all([fetchStats(), fetchCurrentUser(), fetchTeamMembers()]);
-  }, [fetchStats, fetchCurrentUser, fetchTeamMembers]);
+   const { data: currentUser } = useCurrentUser();
+  const { data: teamMembers } = useTeamMembers(company.slug);
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -552,8 +519,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         {loadError && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <span>{loadError}</span>
-            <button
-              onClick={fetchStats}
+                       <button
+              onClick={() => fetchStats()}
               className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-1.5 rounded-lg w-full sm:w-auto text-center"
             >
               Retry
@@ -767,9 +734,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         const isRefundRelated =
                           p.payment_status === 'refunded' || p.payment_status === 'partially_refunded';
                         return (
-                          <button
+                                                   <button
                             key={p.id}
-                            onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
+                            onClick={() => openLead(p.lead_id)}
                             className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 text-left transition ${
                               isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5]'
                             }`}

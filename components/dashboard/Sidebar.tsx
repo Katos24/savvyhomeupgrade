@@ -2,7 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
 import {
   LayoutGrid, Calendar, LogOut, X,
   User, Users as UsersIcon,
@@ -26,6 +27,7 @@ type SidebarProps = {
   onToggleCollapse?: () => void;
 };
 
+
 export default function Sidebar({
   companySlug,
   companyName,
@@ -39,7 +41,24 @@ export default function Sidebar({
   collapsed = false,
   onToggleCollapse,
 }: SidebarProps) {
-  const pathname = usePathname();
+   const pathname = usePathname();
+
+  // Real cause of the tooltip being invisible: <nav> below has
+  // overflow-y-auto, and per the CSS spec, that forces overflow-x to
+  // also compute as "auto" — clipping the tooltip since it's positioned
+  // outside nav's own width. Rendering it here, at the <aside> level
+  // (no overflow set), sidesteps that clipping entirely. Position is
+  // tracked via a plain ref + getBoundingClientRect on hover, since a
+  // CSS-only group-hover tooltip can't escape its scrolling ancestor.
+  const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number } | null>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  const showTooltip = (e: React.MouseEvent, label: string) => {
+    if (!collapsed) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setHoveredTooltip({ label, top: rect.top + rect.height / 2 });
+  };
+  const hideTooltip = () => setHoveredTooltip(null);
 
   const isActive = (path: string, exactMatch = false) => {
     if (exactMatch) return pathname === path;
@@ -159,22 +178,23 @@ export default function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 overflow-y-auto py-4 space-y-1.5 ${collapsed ? 'px-2' : 'px-3'}`}>
+        <nav ref={navRef} className={`flex-1 overflow-y-auto py-4 space-y-1.5 ${collapsed ? 'px-2' : 'px-3'}`}>
           {!collapsed && (
             <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] px-3 mb-2">Navigation</p>
           )}
 
-          {navItems.map((item) => {
+                  {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href, item.exactMatch);
             const itemColor = item.color || brandColor1;
 
             return (
-              <Link
+                           <Link
                 key={item.href}
                 href={item.href}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center rounded-xl font-semibold text-sm transition-all relative ${
+                onMouseEnter={(e) => showTooltip(e, item.label)}
+                onMouseLeave={hideTooltip}
+                className={`relative flex items-center rounded-xl font-semibold text-sm transition-all ${
                   collapsed ? 'justify-center py-3' : 'gap-3 px-3 py-2.5'
                 } ${active ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}`}
                 style={
@@ -210,14 +230,17 @@ export default function Sidebar({
                     )}
                   </>
                 )}
+
+             
               </Link>
             );
           })}
 
-          <Link
+                   <Link
             href={homeHref}
-            title={collapsed ? 'Settings' : undefined}
-            className={`flex items-center rounded-xl font-semibold text-sm transition-all relative ${
+            onMouseEnter={(e) => showTooltip(e, 'Settings')}
+            onMouseLeave={hideTooltip}
+            className={`relative flex items-center rounded-xl font-semibold text-sm transition-all ${
               collapsed ? 'justify-center py-3' : 'gap-3 px-3 py-2.5'
             } ${homeActive ? 'text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800/40'}`}
             style={
@@ -235,15 +258,30 @@ export default function Sidebar({
                 style={{ backgroundColor: brandColor1 }}
               />
             )}
-            <Settings className="w-4 h-4 shrink-0" style={{ color: homeActive ? brandColor1 : undefined }} />
+                      <Settings className="w-4 h-4 shrink-0" style={{ color: homeActive ? brandColor1 : undefined }} />
             {!collapsed && (
               <>
                 <span className="flex-1">Settings</span>
                 {homeActive && <ChevronRight className="w-3.5 h-3.5" style={{ color: brandColor1 }} />}
               </>
             )}
+          
           </Link>
-        </nav>
+                </nav>
+
+        {/* Rendered here, outside <nav>'s clipping overflow context —
+            fixed positioning means this floats above everything,
+            correctly placed via the hovered item's real screen
+            coordinates rather than CSS-relative positioning. */}
+        {hoveredTooltip && (
+                   <div
+            className="pointer-events-none fixed z-50 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
+            style={{ left: 'calc(72px + 12px)', top: hoveredTooltip.top }}
+          >
+            {hoveredTooltip.label}
+            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
+          </div>
+        )}
 
         {/* User Footer */}
         <div className={`shrink-0 border-t border-slate-800/60 ${collapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
