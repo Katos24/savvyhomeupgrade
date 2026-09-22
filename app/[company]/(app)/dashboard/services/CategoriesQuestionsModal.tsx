@@ -355,10 +355,10 @@ export default function CategoriesQuestionsModal({
                           key={typeObj.val}
                           type="button"
                           onClick={() => setNewQType(typeObj.val)}
-                          className={`flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition ${
+                                                    className={`flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition ${
                             isSelected
                               ? 'border-blue-600 bg-blue-600/10 text-blue-600 ring-1 ring-blue-600'
-                              : `${t.border}${t.cardText} hover:bg-white/5`
+                              : `${t.border} ${t.cardText} hover:bg-white/5`
                           }`}
                         >
                           <div className="flex w-full items-center justify-between">

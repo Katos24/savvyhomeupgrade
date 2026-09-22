@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, Loader2, Receipt } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { ChevronDown, Import, Loader2, Receipt } from 'lucide-react';
 import { safeJSONParse } from '@/lib/utils';
+import ExpensesOverlay from './ExpensesOverlay';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
@@ -36,28 +38,35 @@ export default function FinancialsExpenses({
   company: any;
   withMoney: any[];
 }) {
-  const [expenses, setExpenses] = useState<Expense[]>([]);
+    const router = useRouter();
+    const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [openId, setOpenId] = useState<number | null>(null);
+  // Separate from openId (which toggles the inline accordion) — this
+  // opens the real overlay so someone can actually add/edit an expense
+  // from Financials, which this tab previously had no way to do at all.
+  const [expensesOverlayLeadId, setExpensesOverlayLeadId] = useState<number | null>(null);
+
+  // Extracted from the old inline useEffect fetch into a real, callable
+  // function — needed so the overlay's onClose can trigger a refetch,
+  // same pattern ExpensesSection.tsx itself already uses for its own load.
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/company/${company.slug}/expenses`);
+      const data = await res.json();
+      if (data.success) setExpenses(data.expenses);
+    } catch {
+      // Left empty on failure — the accordion still renders with income
+      // data and $0 expenses per job rather than blocking the whole tab.
+    } finally {
+      setLoading(false);
+    }
+  }, [company.slug]);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(`/api/company/${company.slug}/expenses`);
-        const data = await res.json();
-        if (!cancelled && data.success) setExpenses(data.expenses);
-      } catch {
-        // Left empty on failure — the accordion still renders with income
-        // data and $0 expenses per job rather than blocking the whole tab.
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [company.slug]);
+    load();
+  }, [load]);
 
   // Expenses grouped by project — a Map, not an object, since project ids
   // are numeric and this avoids any string-coercion key surprises.
@@ -190,8 +199,19 @@ export default function FinancialsExpenses({
                         </div>
                       )}
                     </div>
-                    <div>
-                      <p className={`text-[11px] font-semibold uppercase tracking-wide mb-2 ${labelText}`}>Expenses</p>
+                                       <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className={`text-[11px] font-semibold uppercase tracking-wide ${labelText}`}>Expenses</p>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setExpensesOverlayLeadId(job.lead_id);
+                          }}
+                          className={`text-[11px] font-semibold underline ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-700 hover:text-emerald-800'}`}
+                        >
+                          Add / Edit
+                        </button>
+                      </div>
                       {jobExpenses.length === 0 ? (
                         <p className={`text-xs ${subText}`}>No expenses logged for this job.</p>
                       ) : (
@@ -213,7 +233,24 @@ export default function FinancialsExpenses({
               </div>
             );
           })}
-        </div>
+               </div>
+      )}
+
+      {expensesOverlayLeadId && (
+        <ExpensesOverlay
+          leadId={expensesOverlayLeadId}
+          companySlug={company.slug}
+          onClose={() => {
+            setExpensesOverlayLeadId(null);
+            // Same reasoning as BillingOverlay's onClose — this tab's own
+            // `expenses` state refetches on load, but the accordion's
+            // `withMoney`/income totals come from the parent Financials
+            // page, which needs a real refresh to reflect a newly added
+            // or edited expense.
+            load();
+            router.refresh();
+          }}
+        />
       )}
     </div>
   );

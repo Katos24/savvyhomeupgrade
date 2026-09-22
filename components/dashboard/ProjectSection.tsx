@@ -265,9 +265,10 @@ export default function ProjectSection({
             </div>
           )}
 
-          {financialsTab === 'quote' && (
+                   {financialsTab === 'quote' && (
             <QuoteSection
               lead={lead}
+              company={company}
               currentUser={currentUser}
               onRefresh={onRefresh}
               hasProject={hasProject}

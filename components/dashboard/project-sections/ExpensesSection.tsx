@@ -332,7 +332,7 @@ export default function ExpensesSection({
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   placeholder="Shingles & underlayment"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -357,8 +357,7 @@ export default function ExpensesSection({
                       value={form.unit_price}
                       onChange={(e) => setForm((f) => ({ ...f, unit_price: e.target.value }))}
                       placeholder="0.00"
-                      className="w-full rounded-lg border border-gray-200 pl-6 pr-3 py-2 text-sm outline-none focus:border-emerald-500"
-                    />
+                      className="w-full rounded-lg border border-gray-200 pl-6 pr-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"                    />
                   </div>
                 </div>
               </div>
@@ -369,7 +368,7 @@ export default function ExpensesSection({
                   value={form.vendor}
                   onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))}
                   placeholder="Home Depot"
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
                 />
               </div>
 
@@ -379,7 +378,7 @@ export default function ExpensesSection({
                   type="date"
                   value={form.expense_date}
                   onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
                 />
               </div>
 

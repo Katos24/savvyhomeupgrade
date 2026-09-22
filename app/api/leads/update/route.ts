@@ -448,13 +448,13 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         const companyId = companyRow[0]?.company_id;
         const { bufferMinutes: defaultBufferMinutes } = getSchedulingConfig(companyRow[0]?.business_type);
 
-        const sameDay = await sql`
+                const sameDay = await sql`
           SELECT id, assigned_to, additional_assignees, scheduled_time, scheduled_end_time
           FROM projects
           WHERE company_id = ${companyId}
             AND id != ${projectId}
             AND scheduled_date::date = ${scheduled_date}::date
-            AND status != 'cancelled'
+            AND status NOT IN ('cancelled', 'completed')
         `;
 
         const toMinutes = (t: string) => {

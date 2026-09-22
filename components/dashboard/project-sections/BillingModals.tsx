@@ -417,7 +417,7 @@ export default function BillingModals({
                     value={dueDate || ''}
                     disabled={sending}
                     onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg text-xs font-medium outline-none focus:bg-white focus:border-brand-700"
+                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg text-xs font-medium text-[#1c1917] outline-none focus:bg-white focus:border-brand-700"
                   />
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {[
@@ -1063,7 +1063,7 @@ export default function BillingModals({
                   value={dueDateDraft || ''}
                   disabled={savingDueDate}
                   onChange={(e) => setDueDateDraft(e.target.value)}
-                  className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold outline-none focus:border-brand-700"
+                  className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold text-[#1c1917] outline-none focus:border-brand-700"
                 />
                 <div className="flex flex-wrap gap-1.5">
                   {[

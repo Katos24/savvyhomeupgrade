@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Search, ChevronDown, ChevronUp, BellRing, Loader2, X } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import InvoiceDetailDrawer from './InvoiceDetailDrawer';
 import type { InvoiceState } from './FinancialsClient';
 import BillingOverlay from './BillingOverlay';
@@ -95,6 +96,7 @@ export default function InvoicesList({
   onSearchChange: (value: string) => void;
   isDark?: boolean;
 }) {
+   const router = useRouter();
   const [sortKey, setSortKey] = useState<SortKey | null>(null);
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selected, setSelected] = useState<any | null>(null);
@@ -488,11 +490,20 @@ export default function InvoicesList({
         />
       )}
 
-      {billingLeadId && (
+           {billingLeadId && (
         <BillingOverlay
           leadId={billingLeadId}
           company={company}
-          onClose={() => setBillingLeadId(null)}
+          onClose={() => {
+            setBillingLeadId(null);
+            // The overlay's own lead refreshes correctly on save (confirmed
+            // working), but Financials' list is a completely separate data
+            // source (withMoney, fetched once by the parent page) with no
+            // connection to what happens inside the overlay's modal.
+            // Nothing previously told the list to refetch after closing —
+            // this is what actually causes the "need a full reload" symptom.
+            router.refresh();
+          }}
         />
       )}
 

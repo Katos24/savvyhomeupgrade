@@ -518,8 +518,8 @@ export default function CategoriesTab({
                           className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                             depositTypeDraft === dt
                               ? 'bg-blue-600 text-white'
-                              : `${t.cardText}${t.hoverBg}`
-                          }`}
+                              : `${t.cardText} ${t.hoverBg}`
+                                                      }`}
                         >
                           {dt === 'percent' ? '%' : '$'}
                         </button>

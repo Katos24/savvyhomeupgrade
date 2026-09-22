@@ -205,7 +205,7 @@ export default function CategoriesServiceCard({
             className={`ml-auto flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors ${
               hasOverride
                 ? isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700'
-                : `${t.hoverBg}${t.subText}`
+                : `${t.hoverBg} ${t.subText}`
             }`}
             title="Click to set a custom tax rate for this service, or leave it using the company default"
           >
