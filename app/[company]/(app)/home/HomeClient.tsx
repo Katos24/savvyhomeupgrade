@@ -22,7 +22,7 @@ import { can, type PlanTier } from '@/lib/permissions';
 
 // --- Dynamic Lazy Loading for Heavy Tab Components ---
 const PaymentsTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/PaymentsTab'));
-const FormTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/FormTab'));
+const BookingFormConfig = dynamic(() => import('@/app/[company]/(app)/dashboard/services/BookingFormConfig'));
 const GoogleReviewsTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/GoogleReviewsTab'));
 const OverviewTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/OverviewTab'));
 const SetupTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/SetupTab'));
@@ -56,7 +56,7 @@ type Company = {
 };
 
 type SectionKey =
-  | 'setup' | 'overview' | 'form' | 'categories' | 'payments'
+  | 'setup' | 'overview' | 'categories' | 'payments'
   | 'reviews' | 'pipeline' | 'email-templates' | 'team' | 'billing';
 
 type ChecklistStep =
@@ -372,7 +372,6 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
    const checklistSteps: ChecklistStep[] = useMemo(() => [
     { label: 'Upload your logo', description: 'Make your booking page and emails look professional', done: !!company.logo_url, kind: 'section', section: 'overview' },
     { label: 'Set up a service with pricing', description: 'Build your first pricing template so quotes are one click', done: !!company.hasServicePricing, kind: 'link', href: `/${company.slug}/dashboard/services` },
-    { label: 'Customize your booking form', description: 'Add questions specific to your business', done: (company.custom_questions?.length ?? 0) > 0, kind: 'section', section: 'form' },
     { label: 'Connect payments', description: 'So customers can actually pay you online', done: company.stripe_payment_status === 'active', kind: 'section', section: 'payments' },
     { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
   ], [company]);
@@ -390,7 +389,6 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         label: 'Your business',
         items: [
           { key: 'overview', label: 'Overview', icon: LayoutGrid, visible: true },
-          { key: 'form', label: 'Booking form', icon: FileText, visible: true },
         ],
       },
       {
@@ -549,7 +547,6 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
               />
             )}
 
-            {activeSection === 'form' && <FormTab company={company} currentUser={currentUser} />}
 
            
 

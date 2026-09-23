@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '@/lib/auth';
 import { sendQuoteToCustomer, sendScheduleConfirmation, sendInvoiceToCustomer } from '@/lib/email';
 import { can, type PlanTier } from '@/lib/permissions';
 import { formatPhone } from '@/lib/emailTemplates';
@@ -25,9 +26,9 @@ if (!publicActions.includes(body.action)) {
   if (!token) {
     return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
   }
-  let decoded: any;
+   let decoded: any;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    decoded = jwt.verify(token, getJwtSecret());
   } catch {
     return NextResponse.json({ success: false, error: 'Invalid token' }, { status: 401 });
   }
@@ -384,8 +385,8 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
     }
 
     // ==================== UPDATE INTERNAL NOTES ====================
-    if (action === 'update_internal_notes') {
-      const projects = await sql`
+else if (action === 'update_internal_notes') {
+        const projects = await sql`
         SELECT id FROM projects WHERE lead_id = ${id}
       `;
 
@@ -599,23 +600,7 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
         }
       }
 
-            if (dep && !dep.deposit_type && parseFloat(dep.collected || '0') === 0 && dep.category) {
-        const tpl = await sql`
-          SELECT deposit_type, deposit_value
-          FROM quote_templates
-          WHERE company_id = ${dep.company_id} AND category = ${dep.category}
-          LIMIT 1
-        `;
-        const t = tpl[0];
-        if (t?.deposit_type && Number(t.deposit_value) > 0) {
-          await sql`
-            UPDATE projects
-            SET deposit_type = ${t.deposit_type},
-                deposit_value = ${Number(t.deposit_value)}
-            WHERE id = ${projectId}
-          `;
-        }
-      }
+      
 
       // Guards against accidentally dropping the quote total below what's
       // already been collected. Anything above what's collected is fine —
@@ -670,9 +655,16 @@ await sql`
   )
 `;
 
-      const quoteEntry = {
+            const quoteEntry = {
         type: 'quote_created',
-        text: `Quote created - Total: $${quote_total}`,
+        // FIXED: quote_total was interpolated raw — floating-point math
+        // across multiple line items can leave trailing digits like
+        // .45215 (same root cause flagged elsewhere in this file for the
+        // collected-amount comparison). toLocaleString formats it as a
+        // real currency string: comma-separated thousands, exactly two
+        // decimal places, regardless of what precision the raw number
+        // happened to carry.
+        text: `Quote created - Total: $${parseFloat(quote_total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
         user_name: user_name,
         user_email: user_email,
         timestamp: new Date().toISOString()

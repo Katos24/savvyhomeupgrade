@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '@/lib/auth';
 import { getCollectionKind, getDepositAmount } from '@/lib/billing';
 
 const VALID_METHODS = ['cash', 'check', 'credit_card', 'zelle', 'venmo', 'paypal', 'stripe', 'other'];
@@ -25,9 +26,9 @@ async function authorize(slug: string, requireWriteRole: boolean): Promise<AuthR
     return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  let decoded: any;
+   let decoded: any;
   try {
-decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    decoded = jwt.verify(token, getJwtSecret());
   } catch {
     return { error: NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 }) };
   }
@@ -102,6 +103,42 @@ LIMIT 1
   `;
   return rows[0] || null;
 }
+
+
+/**
+ * Same shape as addActivityToProject in leads/update/route.ts — appends
+ * one entry to projects.notes. Kept as its own local copy since this
+ * route uses adminDb rather than a direct neon() connection and the
+ * other file's helper is a local closure, not exported. Payment record
+ * and reversal previously wrote no activity trail at all — a job could
+ * show "Paid" with zero record of when or how that happened outside
+ * the payments table itself.
+ */
+async function addActivityToProject(projectId: number, activityEntry: any) {
+  const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
+  let existingNotes = [];
+  try {
+    const rawNotes = project[0]?.notes;
+    if (!rawNotes) {
+      existingNotes = [];
+    } else if (typeof rawNotes === 'string') {
+      existingNotes = JSON.parse(rawNotes);
+    } else if (Array.isArray(rawNotes)) {
+      existingNotes = rawNotes;
+    } else {
+      existingNotes = [];
+    }
+  } catch {
+    existingNotes = [];
+  }
+  existingNotes.push(activityEntry);
+  await sql`
+    UPDATE projects
+    SET notes = ${JSON.stringify(existingNotes)}, updated_at = NOW()
+    WHERE id = ${projectId}
+  `;
+}
+
 
 /* ═══════════════ GET — list payments for a project ═══════════════ */
 
@@ -309,6 +346,14 @@ export async function POST(
         `;
       }
 
+            await addActivityToProject(original.project_id, {
+        type: 'payment_reversed',
+        text: `Payment of ${fmtAmount(requestedAmount)} reversed${note ? `: ${note}` : ''}`,
+        user_name: auth.user.name || auth.user.email || 'Unknown',
+        user_email: auth.user.email || '',
+        timestamp: new Date().toISOString(),
+      });
+
       return NextResponse.json({
         success: true,
         message: 'Payment reversed',
@@ -417,11 +462,19 @@ export async function POST(
 )
     `;
 
-    // payments_sync_project has already updated projects.payment_amount and
+       // payments_sync_project has already updated projects.payment_amount and
     // payment_status, so re-read rather than computing here.
     const refreshed = await loadProject(projectId, auth.company.id);
     const payments = await loadPayments(projectId, auth.company.id);
     const collected = payments.reduce((s, p) => s + p.amount, 0);
+
+    await addActivityToProject(projectId, {
+      type: 'payment_recorded',
+      text: `${resolvedKind === 'deposit' ? 'Deposit' : 'Balance'} payment of ${fmtAmount(amount)} recorded (${method})`,
+      user_name: auth.user.name || auth.user.email || 'Unknown',
+      user_email: auth.user.email || '',
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({
       success: true,

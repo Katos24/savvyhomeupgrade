@@ -121,11 +121,15 @@ export default function LeadModal({
     setIsUpdatingStatus(true);
     setSelectedStatus(newStatus);
     try {
-      const success = await onUpdateStatus(lead.id, newStatus, oldStatus, sendReview);
+            const success = await onUpdateStatus(lead.id, newStatus, oldStatus, sendReview);
       if (success) {
-        const oldLabel = getStatusConfig(oldStatus)?.label || oldStatus;
-        const newLabel = getStatusConfig(newStatus)?.label || newStatus;
-        await onAddNote(lead.id, `Status changed from "${oldLabel}" to "${newLabel}"`);
+        // FIXED: this used to also call onAddNote with a second,
+        // differently-worded status-change entry — onUpdateStatus already
+        // triggers leads/update/route.ts's update_status action, which
+        // writes the correct structured { type: 'status_change',
+        // old_status, new_status } entry on its own. This call was pure
+        // duplication, producing two entries for one status change with
+        // two different text formats.
         toast.success('Status updated!');
         await onRefresh();
       } else {

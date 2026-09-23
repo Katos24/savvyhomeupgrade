@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '@/lib/auth';
+
 
 // Plain array checked here, not a DB constraint — same pattern
 // payments.method already uses. Expense categories are far more likely
@@ -29,9 +31,9 @@ async function authorize(slug: string, requireWriteRole: boolean): Promise<AuthR
     return { error: NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 }) };
   }
 
-  let decoded: any;
+    let decoded: any;
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    decoded = jwt.verify(token, getJwtSecret());
   } catch {
     return { error: NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 }) };
   }

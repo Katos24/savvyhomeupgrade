@@ -24,6 +24,8 @@ import {
 import Link from 'next/link';
 import { can, type PlanTier } from '@/lib/permissions';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
+import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+import { Wrench, ArrowRight } from 'lucide-react';
 
 function getStripeState(company: any): 'active' | 'pending' | 'restricted' | 'none' {
   if (!company?.stripe_connect_onboarded) return 'none';
@@ -180,7 +182,70 @@ function BrandInvoicePreview({ company, refreshToken = 0 }: { company: any; refr
           </div>
         </div>
       )}
-    </>
+     </>
+  );
+}
+
+// Lets a brand-new user see, right on the page they land on after
+// signing up, exactly what's already configured (or not) for pricing —
+// "oh, I have Roofing as a service, but no deposit set yet, I can go
+// add that." Reuses useQuoteTemplates, the same shared cache built
+// for Services and QuoteSection earlier — no new fetch pattern, just
+// another consumer of the same data.
+function ServicesSummaryCard({ company }: { company: any }) {
+  const { data: templates = [] } = useQuoteTemplates(company.slug);
+  const categories: { value: string; label: string }[] = company.form_categories || [];
+
+  const depositLabel = (template: any) => {
+    if (!template?.deposit_type || !template?.deposit_value) return null;
+    return template.deposit_type === 'percent' ? `${template.deposit_value}%` : `$${template.deposit_value}`;
+  };
+
+  if (categories.length === 0) return null;
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <div className="flex items-center justify-between border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+          <Wrench className="h-4 w-4 text-slate-700 shrink-0" /> Your Services
+        </h2>
+        <a
+          href={`/${company.slug}/dashboard/services`}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold text-slate-800 shadow-xs transition hover:bg-slate-50 hover:text-slate-900 shrink-0"
+        >
+          Add More / Revise <ArrowRight className="h-3.5 w-3.5" />
+        </a>
+      </div>
+
+      <div className="divide-y divide-slate-100">
+        {categories.map((cat) => {
+          const template = templates.find((t: any) => t.category === cat.value);
+          const deposit = depositLabel(template);
+          return (
+            <div
+              key={cat.value}
+              className="flex items-center justify-between px-5 py-3 transition-colors hover:bg-slate-50/60"
+            >
+              <span className="text-sm font-semibold text-slate-800">{cat.label}</span>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs font-medium ${template ? 'text-slate-600' : 'text-amber-600'}`}>
+                  {template ? 'Pricing set' : 'No pricing yet'}
+                </span>
+                <span
+                  className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-semibold ${
+                    deposit
+                      ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      : 'bg-amber-50 text-amber-800 border border-amber-200'
+                  }`}
+                >
+                  {deposit ? `${deposit} deposit` : 'No deposit'}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -676,14 +741,15 @@ export default function OverviewTab({
 
           </div>
 
-        </div>
+               </div>
+
+        <ServicesSummaryCard company={company} />
 
         <div className="bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
           <div className="flex items-center gap-2 border-b border-slate-200/80 bg-slate-50/80 px-5 py-3.5">
             <LinkIcon className="h-4 w-4 text-slate-700 shrink-0" />
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Lead Intake Link</h2>
           </div>
-
           <div className="p-4 sm:p-6 space-y-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between py-1 gap-3 sm:gap-4">
               <code className="font-mono text-xs sm:text-sm font-semibold text-slate-800 truncate bg-slate-50 px-3.5 py-2 rounded-md border border-slate-300 flex-1 min-w-0">

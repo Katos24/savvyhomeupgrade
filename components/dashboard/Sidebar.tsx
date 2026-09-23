@@ -80,7 +80,7 @@ export default function Sidebar({
     { href: `/${companySlug}/dashboard/calendar`,   icon: Calendar,   label: 'Calendar',   exactMatch: false, color: '#34d399' },
     { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false, color: '#fbbf24' },
        { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false, color: '#10b981' },
-    { href: `/${companySlug}/dashboard/services`,   icon: Wrench,     label: 'Services',   exactMatch: false, color: '#f59e0b' },
+    { href: `/${companySlug}/dashboard/services`,   icon: Wrench,     label: 'Services & Form',   exactMatch: false, color: '#f59e0b' },
   ];
 
   useEffect(() => {

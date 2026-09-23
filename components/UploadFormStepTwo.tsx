@@ -256,25 +256,34 @@ const inputRef = useRef<HTMLInputElement | null>(null);
     </div>
   </>
 )}
+
           {/* Date + Time */}
+
+
+          {/* Date + Time — stacked full-width, not a 2-col grid. Time
+              always forced itself to col-span-2 anyway (it needs room for
+              a row of slot buttons), which left Date alone in column 1
+              with an empty, wasted column 2 beside it — squeezing the
+              date input to half-width for no real reason on every screen
+              size, mobile included. */}
           {(showDate || showTime) && (
-            <div className={`grid gap-4 ${showDate && showTime ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className="space-y-4">
               {showDate && (
                 <div className="min-w-0 overflow-hidden">
                   <label className={labelClass}>Preferred Date</label>
-                 <input
-  type="date"
-  autoComplete="off"
-  value={formData.preferred_date}
-  onChange={e => onChange('preferred_date', e.target.value)}
-  className={`${inputClass} mt-2`}
-  style={{ colorScheme: 'light' }}
-  disabled={disabled}
-/>
+                  <input
+                    type="date"
+                    autoComplete="off"
+                    value={formData.preferred_date}
+                    onChange={e => onChange('preferred_date', e.target.value)}
+                    className={`${inputClass} mt-2`}
+                    style={{ colorScheme: 'light' }}
+                    disabled={disabled}
+                  />
                 </div>
               )}
-             {showTime && (
-                <div className={showDate && showTime ? 'col-span-2' : ''}>
+              {showTime && (
+                <div>
                   <label className={labelClass}>Preferred Time</label>
                   {!formData.preferred_date ? (
                     <p className="mt-2 text-sm font-medium text-gray-400">Pick a date first to see open times.</p>
@@ -302,13 +311,13 @@ const inputRef = useRef<HTMLInputElement | null>(null);
                           </button>
                         );
                       })}
-                   </div>
+                    </div>
                   )}
                 </div>
               )}
 
               {showEndTime && formData.preferred_time && (
-                <div className={showDate && showTime ? 'col-span-2' : ''}>
+                <div>
                   <label className={labelClass}>Preferred End Time</label>
                   {endSlotsLoading ? (
                     <p className="mt-2 text-sm font-medium text-gray-400">Checking availability...</p>
@@ -341,6 +350,7 @@ const inputRef = useRef<HTMLInputElement | null>(null);
             </div>
           )}
 
+ 
           {/* Custom Questions */}
           {customQuestions.length > 0 && (
             <div className="border-t pt-4 space-y-5">

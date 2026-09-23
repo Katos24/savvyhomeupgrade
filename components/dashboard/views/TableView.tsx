@@ -82,11 +82,31 @@ export default function TableView({
   // different from the rest of the app's current light theme.
   const t = getTheme(isDark);
 
-  const [editMode, setEditMode] = useState(false);
+   const [editMode, setEditMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  // Which row's status popover is currently open — null means none.
+  // Reuses onBulkUpdate with a single-item array rather than adding a
+  // new prop, since a one-lead status change is just the bulk-update
+  // path with one id in it.
+  const [statusPickerFor, setStatusPickerFor] = useState<number | null>(null);
+  const [updatingStatusFor, setUpdatingStatusFor] = useState<number | null>(null);
+
+  const handleInlineStatusChange = async (leadId: number, status: string) => {
+    if (!onBulkUpdate) return;
+    setUpdatingStatusFor(leadId);
+    try {
+      await onBulkUpdate([leadId], { status });
+      toast.success('Status updated');
+    } catch {
+      toast.error('Could not update status');
+    } finally {
+      setUpdatingStatusFor(null);
+      setStatusPickerFor(null);
+    }
+  };
 
     const getStatusConfig = (val: string) => statusOptions.find((s: any) => s.value === val) || statusOptions[0];
   const getHex = (color: string) => STATUS_COLORS[color] || '#3b82f6';
@@ -161,9 +181,10 @@ export default function TableView({
   // hairline borders, monospace-flavored uppercase labels, pill badges,
   // no shadow/blur doing the work of "looking premium." ──
   if (!isDark) {
-      const headerCell = 'px-4 py-3 text-left text-[11px] font-mono font-medium text-[#57534e] hover:text-[#1c1917] uppercase tracking-wider select-none transition-colors';
-    const cell = 'px-4 py-3.5';
-
+         const headerCell = 'px-4 py-3 lg:py-4 text-left text-[11px] font-mono font-medium text-[#57534e] hover:text-[#1c1917] uppercase tracking-wider select-none transition-colors';
+    // Thicker on desktop only (lg:) — mobile keeps its original tighter
+    // padding, since screen space is already scarce there.
+    const cell = 'px-4 py-3.5 lg:py-5';
     return (
       <div className="bg-white">
         {/* Toolbar */}
@@ -291,13 +312,13 @@ export default function TableView({
         <div className="overflow-x-auto">
                     <table className="w-full min-w-[640px]" style={{ borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="border-b border-[#e7e2d8]">
+                            <tr className="border-b border-[#e7e2d8]">
                 {editMode && <th className="px-4 py-3 w-8" />}
-                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('name')}>
-                  Client<SortIcon k="name" />
-                </th>
                 <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('status')}>
                   Status<SortIcon k="status" />
+                </th>
+                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('name')}>
+                  Client<SortIcon k="name" />
                 </th>
                 <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('quote_total')}>
                   Quote<SortIcon k="quote_total" />
@@ -333,21 +354,47 @@ export default function TableView({
                           className="w-4 h-4 rounded text-[#1c1917] focus:ring-[#1c1917]" />
                       </td>
                     )}
+                                       <td className={`${cell} relative`}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStatusPickerFor(statusPickerFor === lead.id ? null : lead.id);
+                        }}
+                        disabled={updatingStatusFor === lead.id}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium hover:opacity-80 transition disabled:opacity-50 cursor-pointer"
+                        style={{ backgroundColor: `${statusHex}18`, color: statusTextHex }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
+                        {updatingStatusFor === lead.id ? 'Updating…' : statusConfig.label}
+                        <ChevronDown className="w-3 h-3 opacity-60" />
+                      </button>
+                      {statusPickerFor === lead.id && (
+                        <>
+                          <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setStatusPickerFor(null); }} />
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute left-0 top-full mt-1 w-48 bg-white border border-[#e7e2d8] rounded-xl shadow-lg z-30 overflow-hidden max-h-56 overflow-y-auto"
+                          >
+                            {statusOptions.map((s: any) => (
+                              <button
+                                key={s.value}
+                                onClick={() => handleInlineStatusChange(lead.id, s.value)}
+                                className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors flex items-center gap-2"
+                              >
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
+                                {s.label}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </td>
                     <td className={cell}>
                       <div className="text-sm font-semibold text-[#1c1917]">{lead.name}</div>
                       <div className="text-xs text-[#a8a29e] mt-0.5">
                         {lead.category ? formatCategory(lead.category) : '—'}
                         {lead.phone && ` · ${formatPhone(lead.phone)}`}
                       </div>
-                    </td>
-                    <td className={cell}>
-                                          <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                        style={{ backgroundColor: `${statusHex}18`, color: statusTextHex }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
-                        {statusConfig.label}
-                      </span>
                     </td>
                                         <td className={`${cell} text-sm`}>
                       {lead.quote_total ? (
@@ -356,7 +403,7 @@ export default function TableView({
                         </span>
                       ) : <span className="text-[#d6d3d1]">—</span>}
                     </td>
-                    
+                  
                                       <td className={cell}>
                       {(() => {
                         const p = getPaymentDisplay(lead);
@@ -532,13 +579,13 @@ export default function TableView({
       <div className="overflow-x-auto">
         <table className="w-full min-w-[640px]" style={{ borderCollapse: 'collapse' }}>
           <thead className={t.tableHeadBg}>
-            <tr className={`border-b ${t.tableBorderCol}`}>
+                        <tr className={`border-b ${t.tableBorderCol}`}>
               {editMode && <th className="px-4 py-3 w-8" />}
-              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('name')}>Client<SortIcon k="name" /></th>
-              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('status')}>Status<SortIcon k="status" /></th>
-              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('quote_total')}>Quote<SortIcon k="quote_total" /></th>
-              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('payment_amount')}>Payment<SortIcon k="payment_amount" /></th>
-              <th className={`px-4 py-3 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('scheduled_date')}>Scheduled<SortIcon k="scheduled_date" /></th>
+              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('status')}>Status<SortIcon k="status" /></th>
+              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('name')}>Client<SortIcon k="name" /></th>
+              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('quote_total')}>Quote<SortIcon k="quote_total" /></th>
+                           <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('payment_amount')}>Payment<SortIcon k="payment_amount" /></th>
+              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('scheduled_date')}>Scheduled<SortIcon k="scheduled_date" /></th>
               <th className="w-8" />
             </tr>
           </thead>
@@ -562,23 +609,49 @@ export default function TableView({
                         className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
                     </td>
                   )}
-                  <td className="px-4 py-3">
+                                  <td className="px-4 py-3 lg:py-5 relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setStatusPickerFor(statusPickerFor === lead.id ? null : lead.id);
+                      }}
+                      disabled={updatingStatusFor === lead.id}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium hover:opacity-80 transition disabled:opacity-50 cursor-pointer"
+                      style={{ backgroundColor: `${statusHex}26`, color: statusHex }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
+                      {updatingStatusFor === lead.id ? 'Updating…' : statusConfig.label}
+                      <ChevronDown className="w-3 h-3 opacity-60" />
+                    </button>
+                    {statusPickerFor === lead.id && (
+                      <>
+                        <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setStatusPickerFor(null); }} />
+                        <div
+                          onClick={(e) => e.stopPropagation()}
+                          className={`absolute left-0 top-full mt-1 w-48 ${t.dropdownBg} border ${t.dropdownBorder} shadow-2xl z-30 overflow-hidden max-h-56 overflow-y-auto`}
+                        >
+                          {statusOptions.map((s: any) => (
+                            <button
+                              key={s.value}
+                              onClick={() => handleInlineStatusChange(lead.id, s.value)}
+                              className={`w-full text-left px-3 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition flex items-center gap-2`}
+                            >
+                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 lg:py-5">
                     <div className={`text-sm font-semibold ${t.textPrimary}`}>{lead.name}</div>
                     <div className={`text-xs ${t.textMuted} mt-0.5`}>
                       {lead.category ? formatCategory(lead.category) : '—'}
                       {lead.phone && ` · ${formatPhone(lead.phone)}`}
                     </div>
                   </td>
-                                    <td className="px-4 py-3">
-                    <span
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                      style={{ backgroundColor: `${statusHex}26`, color: statusHex }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
-                      {statusConfig.label}
-                    </span>
-                  </td>
-                                    <td className="px-4 py-3 text-sm">
+                                   <td className="px-4 py-3 lg:py-5 text-sm">
                     {lead.quote_total ? (
                       <span className={`font-bold ${getPaymentDisplay(lead)?.label === 'Paid' ? 'text-emerald-500' : t.textPrimary}`}>
                         {formatCurrency(lead.quote_total)}
@@ -586,7 +659,7 @@ export default function TableView({
                     ) : <span className={t.textEmpty}>—</span>}
                   </td>
 
-                                   <td className="px-4 py-3">
+                                    <td className="px-4 py-3 lg:py-5">
                     {(() => {
                       const p = getPaymentDisplay(lead);
                       if (!p) return <span className={t.textEmpty}>—</span>;
@@ -607,7 +680,7 @@ export default function TableView({
                       );
                     })()}
                   </td>
-                  <td className="px-4 py-3 text-sm">
+                                    <td className="px-4 py-3 lg:py-5 text-sm">
                     {lead.scheduled_date ? (
                       <div>
                         <div className={t.textPrimary}>

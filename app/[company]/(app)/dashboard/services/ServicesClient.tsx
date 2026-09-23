@@ -1,6 +1,6 @@
 'use client';
 
-import CategoriesTab from './CategoriesTab';
+import ServicesFormLanding from './ServicesFormLanding';
 
 export default function ServicesClient({
   company,
@@ -9,5 +9,5 @@ export default function ServicesClient({
   company: any;
   currentUser?: any;
 }) {
-  return <CategoriesTab company={company} currentUser={currentUser} />;
+  return <ServicesFormLanding company={company} currentUser={currentUser} />;
 }

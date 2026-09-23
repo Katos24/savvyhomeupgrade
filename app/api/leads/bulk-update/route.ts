@@ -37,6 +37,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
 
+        // A single-lead status change routed through this bulk endpoint
+    // (Table view's inline status picker calls this with one id) gets
+    // the same structured old→new activity entry the main single-lead
+    // path uses. Must capture the prior status BEFORE the update loop
+    // below runs — reading it afterward would return the already-new
+    // value, producing a meaningless old === new "change."
+    const isSingleLeadStatusOnly =
+      leadIds.length === 1 && Object.keys(updates).length === 1 && updates.status !== undefined;
+
+    let singleLeadOldStatus: string | null = null;
+    if (isSingleLeadStatusOnly) {
+      const priorRows = await sql`SELECT status FROM leads WHERE id = ${leadIds[0]}`;
+      singleLeadOldStatus = priorRows[0]?.status || null;
+    }
+
     // ── Update leads ─────────────────────────────────────────
     let updatedCount = 0;
     for (const leadId of leadIds) {
@@ -66,22 +81,43 @@ export async function POST(request: Request) {
       }
     }
 
-    // ── Activity log ─────────────────────────────────────────
-    const updateTexts = Object.entries(updates)
-      .map(([key, value]) => `${key}: ${value}`)
+       // ── Activity log ─────────────────────────────────────────
+    // FIXED: was "Bulk update - status: quoted" — a third, inconsistent
+    // wording pattern alongside the single-lead status-change formats.
+    // No meaningful "old status" exists here since a bulk selection can
+    // start from different statuses per lead, so this doesn't try to
+    // fake an old → new arrow — it reads as a plain, clean statement of
+    // what changed, matching the tone of every other activity entry
+    // without pretending to be a single-lead status change.
+    const updateLabel = Object.entries(updates)
+      .map(([key, value]) => {
+        if (key === 'status') return `status updated to "${value}"`;
+        if (key === 'category') return `category updated to "${value}"`;
+        if (key === 'assigned_to') return `assigned to ${value}`;
+        return `${key}: ${value}`;
+      })
       .join(', ');
 
-    for (const leadId of leadIds) {
+      for (const leadId of leadIds) {
       const leadCheck = await sql`SELECT project_id FROM leads WHERE id = ${leadId}`;
       const projectId = leadCheck[0]?.project_id;
 
-      const noteEntry = {
-        type: 'bulk_update',
-        text: `Bulk update - ${updateTexts}`,
-        user_name: user_name || 'System',
-        user_email: user_email || '',
-        timestamp: new Date().toISOString(),
-      };
+      const noteEntry = isSingleLeadStatusOnly
+        ? {
+            type: 'status_change',
+            old_status: singleLeadOldStatus,
+            new_status: updates.status,
+            user_name: user_name || 'System',
+            user_email: user_email || '',
+            timestamp: new Date().toISOString(),
+          }
+        : {
+            type: 'bulk_update',
+            text: updateLabel.charAt(0).toUpperCase() + updateLabel.slice(1),
+            user_name: user_name || 'System',
+            user_email: user_email || '',
+            timestamp: new Date().toISOString(),
+          };
 
       if (projectId) {
         const project = await sql`SELECT notes FROM projects WHERE id = ${projectId}`;
