@@ -576,8 +576,8 @@ else if (action === 'update_internal_notes') {
       // overrode 50% to 30% in Billing would lose it on the next quote edit.
       // Consequence: changing a category template later doesn't propagate to
       // existing jobs. Same rule tax rates already follow.
-      const depositCheck = await sql`
-        SELECT category, deposit_type, COALESCE(payment_amount, 0) AS collected, company_id
+           const depositCheck = await sql`
+        SELECT category, deposit_type, quote_tax_rate, COALESCE(payment_amount, 0) AS collected, company_id
         FROM projects WHERE id = ${projectId} LIMIT 1
       `;
       const dep = depositCheck[0];
@@ -600,6 +600,56 @@ else if (action === 'update_internal_notes') {
         }
       }
 
+          // FIXED: real bug — a comment right here claimed "tax rates already
+      // follow" the same auto-fill-from-template rule as deposits, but no
+      // code actually did it. Two real fallback tiers exist for tax,
+      // mirroring how deposit already has both a per-category template
+      // value AND a company-wide default (companies.default_tax_rate) —
+      // this only ever checked the per-category tier. On a from-scratch
+      // quote with no category-specific tax_rate saved, the company-wide
+      // default_tax_rate is the actual intended fallback. Also: the MAIN
+      // update a few lines below writes quote_tax_rate on every save
+      // using whatever the frontend sent (0, from scratch) — writing the
+      // resolved rate here alone would get clobbered by that later write
+      // in the same request, so this computes effectiveTaxRate up front
+      // and the main update uses THIS value instead of the raw one.
+      // FIXED: quote_tax_rate arrives as a STRING from the frontend
+      // (React state initialized from a Postgres NUMERIC column, which
+      // the neon driver returns as a string like "0.000" to avoid
+      // float precision loss). "0.000" ?? 0 stays "0.000" — the ??
+      // operator only falls back on null/undefined, never on a
+      // non-empty string. Then !effectiveTaxRate on "0.000" evaluates
+      // to false, because ANY non-empty string is truthy in JS — even
+      // "0.000". That silently failed the whole fallback condition
+      // below, so this block never ran at all. parseFloat converts it
+      // to a real number first, so a genuine zero is actually falsy.
+      let effectiveTaxRate = parseFloat(quote_tax_rate) || 0;
+            if (dep && !parseFloat(dep.quote_tax_rate || '0') && parseFloat(dep.collected || '0') === 0 && !effectiveTaxRate) {
+        // Tier 1 — this category's own saved rate, if it has one.
+        let resolvedRate = 0;
+        if (dep.category) {
+          const taxTpl = await sql`
+            SELECT tax_rate
+            FROM quote_templates
+            WHERE company_id = ${dep.company_id} AND category = ${dep.category}
+            LIMIT 1
+          `;
+          resolvedRate = Number(taxTpl[0]?.tax_rate) || 0;
+        }
+               // Tier 2 — company-wide default, only if the category had none.
+        if (resolvedRate <= 0) {
+          const companyTax = await sql`
+            SELECT default_tax_rate
+            FROM companies
+            WHERE id = ${dep.company_id}
+            LIMIT 1
+          `;
+          resolvedRate = Number(companyTax[0]?.default_tax_rate) || 0;
+        }
+        if (resolvedRate > 0) {
+          effectiveTaxRate = resolvedRate;
+        }
+      }
       
 
       // Guards against accidentally dropping the quote total below what's
@@ -629,7 +679,6 @@ else if (action === 'update_internal_notes') {
         );
       }
 
-console.log('save_quote tax rate received:', quote_tax_rate, typeof quote_tax_rate);
 
    // Get current payment amount before updating
 await sql`
@@ -638,11 +687,10 @@ await sql`
   SET
     quote_data     = ${JSON.stringify(quote_data)},
     quote_total    = ${quote_total},
-    quote_tax_rate = ${quote_tax_rate ?? 0},
+    quote_tax_rate = ${effectiveTaxRate},
     updated_at     = NOW()
   WHERE id = ${projectId}
 `;
-
 // quote_total changed, so payment_status may be stale. Nudge the trigger
 // instead of writing the column here — sync_project_payment_totals owns it,
 // and the old manual write clobbered the 'refunded' states the trigger

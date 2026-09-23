@@ -361,15 +361,7 @@ export default function CategoriesTab({
               >
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </button>
-              <a
-                href={`/${company.slug}/home?section=form`}
-                className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${
-                  isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <span>Booking Form Settings</span>
-                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-              </a>
+            
             </div>
           </div>
 

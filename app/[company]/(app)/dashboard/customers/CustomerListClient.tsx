@@ -1,7 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { ChevronDown, Mail, MapPin, Briefcase, ArrowRight, User, Phone, Search, CalendarDays, Sun, Moon } from 'lucide-react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useTeamMembers } from '@/hooks/useTeamMembers';
+
+const LeadModal = dynamic(() => import('@/components/dashboard/LeadModal'), { ssr: false });
 
 interface Project {
   id: number;
@@ -42,14 +47,112 @@ const formatPhoneNumber = (value: string) => {
 export default function CustomerListClient({
   projects = [],
   companySlug,
+  company, // NEW — full company object, needed by LeadModal (status_options, form_categories, etc.)
   accentColor,
 }: {
   projects?: Project[];
   companySlug: string;
+  company: any;
   accentColor?: string;
 }) {
   const [expandedEmail, setExpandedEmail] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const { data: currentUser } = useCurrentUser();
+  const { data: teamMembers } = useTeamMembers(companySlug);
+
+  // Same lead-modal pattern as CompanyDashboardClient's openLead — fetches
+  // the full lead by id and opens it in-place, instead of this page
+  // previously navigating away to /dashboard?lead=X entirely.
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+const [selectedLeadTab] = useState<'overview'>('overview');
+  const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
+  const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
+
+  const userMeta = useCallback(() => ({
+    user_name: currentUser?.name || currentUser?.email || 'Unknown User',
+    user_email: currentUser?.email || '',
+  }), [currentUser]);
+
+    const openLead = useCallback(async (leadId: number) => {
+    try {
+      const res = await fetch(`/api/leads/${leadId}`, { cache: 'no-store' });
+      const data = await res.json();
+      if (data.success && data.lead) {
+        setSelectedLead(data.lead);
+        setSelectedLeadPayments(data.payments || []);
+        setSelectedLeadActivity(data.activity || []);
+      }
+    } catch (e) {
+      console.error('openLead:', e);
+    }
+  }, []);
+
+  const refreshModalLead = useCallback(async () => {
+    if (!selectedLead) return;
+    await openLead(selectedLead.id);
+  }, [selectedLead, openLead]);
+
+  const updateLeadStatus = useCallback(
+    async (id: number, status: string, oldStatus: string, sendReview = true) => {
+      try {
+        const res = await fetch('/api/leads/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id, status, action: 'update_status', old_status: oldStatus,
+            send_review_request: sendReview, ...userMeta(),
+          }),
+        });
+        const result = await res.json();
+        if (res.ok && result.success) {
+          if (selectedLead?.id === id) setSelectedLead((prev: any) => ({ ...prev, status }));
+          return true;
+        }
+        return false;
+      } catch (e) {
+        console.error('updateLeadStatus:', e);
+        return false;
+      }
+    },
+    [selectedLead, userMeta]
+  );
+
+  const addNote = useCallback(
+    async (id: number, noteText: string) => {
+      try {
+        const res = await fetch('/api/leads/update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, notes: noteText, action: 'add_note', ...userMeta() }),
+        });
+        const result = await res.json();
+        return res.ok && result.success;
+      } catch (e) {
+        console.error('addNote:', e);
+        return false;
+      }
+    },
+    [userMeta]
+  );
+
+  const deleteLead = useCallback(
+    async (id: number) => {
+      try {
+        const res = await fetch('/api/leads/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, ...userMeta() }),
+        });
+        const result = await res.json();
+        return res.ok && result.success;
+      } catch (e) {
+        console.error('deleteLead:', e);
+        return false;
+      }
+    },
+    [userMeta]
+  );
 
   // Same localStorage key and hydration-safe pattern already used on
   // Dashboard, Financials, and Services — default matches server render
@@ -65,10 +168,6 @@ export default function CustomerListClient({
       return;
     }
     localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
-    // Same-tab notification for CompanyShell's own background, which
-    // only re-checks localStorage on 'storage'/'focus' events — neither
-    // fires for a same-tab toggle like this one. Confirmed necessary
-    // and fixed the identical gap on Services earlier this session.
     window.dispatchEvent(new Event('theme-changed'));
   }, [isDark]);
 
@@ -248,10 +347,10 @@ export default function CustomerListClient({
                     <p className={`text-[11px] font-mono font-medium uppercase tracking-wider mb-2 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>Project history</p>
                     <div className="space-y-1.5">
                       {customer.projects.map((project) => (
-                        <a
+                        <button
                           key={project.id}
-                          href={`/${companySlug}/dashboard?lead=${project.lead_id}`}
-                          className={`flex items-center gap-3 p-3 border rounded-xl transition-colors group ${
+                          onClick={() => openLead(project.lead_id)}
+                          className={`w-full flex items-center gap-3 p-3 border rounded-xl transition-colors group text-left ${
                             isDark ? 'bg-white/5 border-white/10 hover:border-white/20' : 'bg-[#faf9f5] border-[#e7e2d8] hover:border-[#d6d3d1]'
                           }`}
                         >
@@ -281,7 +380,7 @@ export default function CustomerListClient({
                             ) : null}
                             <ArrowRight className={`w-3.5 h-3.5 transition-colors ${isDark ? 'text-slate-600 group-hover:text-slate-400' : 'text-[#d6d3d1] group-hover:text-[#78716c]'}`} />
                           </div>
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -304,6 +403,26 @@ export default function CustomerListClient({
           </div>
         )}
       </div>
+
+      {selectedLead && (
+        <LeadModal
+          lead={selectedLead}
+          initialTab={selectedLeadTab}
+          onClose={() => setSelectedLead(null)}
+          onUpdateStatus={updateLeadStatus}
+          onAddNote={addNote}
+          onDeleteLead={deleteLead}
+          onRefresh={refreshModalLead}
+          payments={selectedLeadPayments}
+          activity={selectedLeadActivity}
+          currentUser={currentUser}
+          statusOptions={company?.status_options || []}
+          categories={company?.form_categories || []}
+          company={company}
+          companySlug={companySlug}
+          teamMembers={teamMembers}
+        />
+      )}
     </div>
   );
 }

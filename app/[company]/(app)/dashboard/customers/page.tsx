@@ -29,7 +29,10 @@ export default async function CustomerListPage({
 
   const sql = neon(process.env.DATABASE_URL!);
   const companies = await sql`
-    SELECT id, email_brand_color_1 FROM companies WHERE slug = ${companySlug} LIMIT 1
+    SELECT id, name, slug, logo_url, phone, website, email,
+           email_brand_color_1, email_brand_color_2,
+           status_options, form_categories, plan_tier
+    FROM companies WHERE slug = ${companySlug} LIMIT 1
   `;
   if (companies.length === 0) notFound();
 
@@ -39,6 +42,7 @@ export default async function CustomerListPage({
     <CustomerListClient
       projects={projects as any}
       companySlug={companySlug}
+      company={companies[0]}
       accentColor={companies[0].email_brand_color_1 || '#2563eb'}
     />
   );

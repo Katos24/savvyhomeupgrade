@@ -916,7 +916,6 @@ export default function OutboxClient({ company, projects, outboxEmails = [], tot
           </div>
         )}
       </main>
-
       {/* Fullscreen Email Preview Modal */}
       {previewHtml && (
         <div
@@ -924,7 +923,7 @@ export default function OutboxClient({ company, projects, outboxEmails = [], tot
           onClick={() => setPreviewHtml(null)}
         >
           <div
-            className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden"
+            className="relative w-full max-w-3xl h-[90vh] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
@@ -939,11 +938,13 @@ export default function OutboxClient({ company, projects, outboxEmails = [], tot
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 bg-slate-100 dark:bg-slate-950">
-              <div className="bg-white rounded-xl p-6 shadow-sm text-slate-900">
-                <style>{`.email-preview-body * { max-width: 100% !important; box-sizing: border-box !important; } .email-preview-body table { width: 100% !important; table-layout: fixed !important; } .email-preview-body img { height: auto !important; }`}</style>
-                <div className="email-preview-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-              </div>
+            <div className="flex-1 overflow-hidden bg-slate-100 dark:bg-slate-950">
+              <iframe
+                title="Email preview"
+                srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;}*{user-select:none!important;}</style>`}
+                className="h-full w-full border-0 bg-white"
+                sandbox=""
+              />
             </div>
           </div>
         </div>
