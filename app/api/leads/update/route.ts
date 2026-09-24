@@ -1036,7 +1036,7 @@ const emailResult = await sendScheduleConfirmation({
 
         await addActivityToProject(id, scheduleEntry);
 
-        // Keep existing schedule_emails log
+        // Keep existing schedule_emails logg
         await sql`
           UPDATE projects 
           SET schedule_emails = COALESCE(schedule_emails, '[]'::jsonb) || ${JSON.stringify([{
