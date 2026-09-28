@@ -445,36 +445,7 @@ export default function OutboxClient({ company, projects, outboxEmails = [], tot
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
       
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 h-16 border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-4 sm:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <a 
-            href={`/${company.slug}/dashboard`} 
-            className="p-2 rounded-lg text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            title="Back to dashboard"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </a>
-          <div className="h-5 w-[1px] bg-slate-200 dark:bg-slate-800" />
-          <div>
-            <h1 className="text-base font-semibold text-slate-900 dark:text-white">Outbox</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{company.name}</p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsDark(v => !v)}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
-          >
-            {isDark ? '☀️ Light Mode' : '🌙 Dark Mode'}
-          </button>
-          <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-medium text-emerald-700 dark:text-emerald-400 hidden sm:inline">Connected</span>
-          </div>
-        </div>
-      </header>
+    
 
       {/* Main Workspace */}
       <main className="max-w-7xl mx-auto px-4 sm:px-8 py-8 space-y-8">

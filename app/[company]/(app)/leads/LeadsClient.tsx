@@ -84,8 +84,16 @@ const isColorDark = (hex: string) => {
 // Main Component
 // ---------------------------------------------------------------------------
 
-export default function LeadsClient({ company }: { company: Company }) {
-  const router = useRouter();
+export default function LeadsClient({
+  company,
+  initialStatus = 'all',
+  initialPayment = 'all',
+}: {
+  company: Company;
+  initialStatus?: string;
+  initialPayment?: string;
+}) {
+    const router = useRouter();
   const [, startTransition] = useTransition();
   const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
 
@@ -130,19 +138,13 @@ export default function LeadsClient({ company }: { company: Company }) {
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'all';
-    return new URLSearchParams(window.location.search).get('status') || 'all';
-  });
+    const [filterStatus, setFilterStatus] = useState<string>(initialStatus);
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all');
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterAssignee, setFilterAssignee] = useState('all');
   
   // Explicitly typed to string to support "awaiting_deposit" & custom filters
-  const [filterPayment, setFilterPayment] = useState<string>(() => {
-    if (typeof window === 'undefined') return 'all';
-    return new URLSearchParams(window.location.search).get('payment') || 'all';
-  });
+   const [filterPayment, setFilterPayment] = useState<string>(initialPayment);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [sortKey, setSortKey] = useState<string | null>(null);

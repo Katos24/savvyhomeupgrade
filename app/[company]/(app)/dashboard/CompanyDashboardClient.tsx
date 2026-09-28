@@ -10,6 +10,7 @@ import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
+import { DEFAULT_STATUSES } from '@/lib/formCategories';
 
 // --- Dynamic Imports for Heavy Modals & Widgets (Reduces Initial JS Bundle) ---
 const Sidebar = dynamic(() => import('@/components/dashboard/Sidebar'), { ssr: false });
@@ -50,6 +51,8 @@ type Company = {
   stripe_payment_status?: string | null;
 };
 
+// Kept in sync by hand with the copy in hooks/useDashboardStats.ts
+// (that copy is the one TypeScript actually checks `stats` against).
 export type DashboardStats = {
   leads: { new_this_week: number };
   estimates: { open: number; accepted: number };
@@ -67,6 +70,7 @@ export type DashboardStats = {
   }>;
   revenue_this_month: number;
   expenses_this_month?: number;
+  status_counts?: Record<string, number>;
   ready_to_invoice: { count: number; value: number };
   recent_payments: Array<{
     id: number;
@@ -192,6 +196,91 @@ function ConnectStripeCard({
             <X className="h-4 w-4" />
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Pipeline breakdown — one row per status in the company's pipeline order,
+// horizontal bar scaled to the largest stage. Each row links to Leads
+// filtered by that status. Counts come from dashboard-stats (all leads,
+// not just page 1).
+// ---------------------------------------------------------------------------
+
+type StatusOption = string | { value: string; label?: string; color?: string };
+
+function StatusBreakdown({
+  statusOptions,
+  counts,
+  companySlug,
+  accentColor,
+  isDark,
+  cardBg,
+  cardText,
+  subText,
+}: {
+  statusOptions: StatusOption[];
+  counts: Record<string, number>;
+  companySlug: string;
+  accentColor: string;
+  isDark: boolean;
+  cardBg: string;
+  cardText: string;
+  subText: string;
+}) {
+  const router = useRouter();
+
+  const rows = statusOptions.map((opt) => {
+    const value = typeof opt === 'string' ? opt : opt.value;
+    const label = typeof opt === 'string' ? formatCategoryLabel(opt) : opt.label || formatCategoryLabel(opt.value);
+    const color = typeof opt === 'string' ? undefined : opt.color;
+    return { value, label, color, count: counts[value] || 0 };
+  });
+
+  // Leads whose status isn't in the company's current list (renamed/removed stages)
+  const known = new Set(rows.map((r) => r.value));
+  const otherCount = Object.entries(counts)
+    .filter(([k]) => !known.has(k))
+    .reduce((s, [, n]) => s + n, 0);
+  if (otherCount > 0) rows.push({ value: '', label: 'Other', color: undefined, count: otherCount });
+
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  const total = rows.reduce((s, r) => s + r.count, 0);
+
+  return (
+    <div className="mb-6 sm:mb-8">
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className={`text-base sm:text-lg font-semibold ${cardText}`}>Pipeline</h2>
+        <span className={`text-xs sm:text-sm ${subText}`}>
+          {total} lead{total === 1 ? '' : 's'}
+        </span>
+      </div>
+      <div className={`rounded-2xl p-2 sm:p-3 ${cardBg}`}>
+        {rows.map((r) => (
+          <button
+            key={r.value || 'other'}
+            onClick={() => r.value && router.push(`/${companySlug}/leads?status=${encodeURIComponent(r.value)}`)}
+            disabled={!r.value}
+            className={`w-full grid grid-cols-[96px_1fr_36px] sm:grid-cols-[140px_1fr_44px] items-center gap-3 px-2 sm:px-3 py-2 rounded-lg text-left transition ${
+              r.value ? (isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]') : 'cursor-default'
+            }`}
+          >
+            <span className={`text-xs sm:text-sm font-medium truncate ${r.count ? cardText : subText}`}>{r.label}</span>
+            <div className={`h-2.5 sm:h-3 rounded-full overflow-hidden ${isDark ? 'bg-white/5' : 'bg-[#f1ede4]'}`}>
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{
+                  width: r.count ? `max(6px, ${(r.count / max) * 100}%)` : '0%',
+                  background: r.color || accentColor,
+                }}
+              />
+            </div>
+            <span className={`text-xs sm:text-sm font-semibold tabular-nums text-right ${r.count ? cardText : subText}`}>
+              {r.count}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -405,37 +494,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     );
   }
 
-  // The four numbers worth glancing at. Each one is a shortcut into Leads
-  // or Financials, so the strip doubles as navigation.
-  const statItems = stats
-    ? [
-        {
-          label: 'Open estimates',
-          value: String(stats.estimates.open),
-          sub: `${stats.estimates.accepted} accepted`,
-          href: `/${company.slug}/leads?status=quoted`,
-        },
-        {
-          label: 'Active jobs',
-          value: String(stats.jobs.active),
-          sub: `${fmtMoney(stats.jobs.active_value)} booked`,
-          href: `/${company.slug}/leads`,
-        },
-        {
-          label: 'Awaiting payment',
-          value: String(stats.invoices.awaiting_payment),
-          sub: stats.invoices.past_due > 0 ? `${stats.invoices.past_due} past due` : 'None past due',
-          href: `/${company.slug}/dashboard/financials`,
-        },
-        {
-          label: 'Ready to invoice',
-          value: String(stats.ready_to_invoice.count),
-          sub: fmtMoney(stats.ready_to_invoice.value),
-          href: `/${company.slug}/leads?status=completed`,
-        },
-      ]
-    : [];
-
   return (
     <div className={`min-h-screen relative transition-colors ${bg}`}>
       <Toaster position="top-right" richColors />
@@ -579,27 +637,17 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
         {stats && (
           <>
-            {/* Stat strip — one bordered panel, 2x2 on mobile, 4 across on desktop */}
-            <div className={`grid grid-cols-2 lg:grid-cols-4 rounded-2xl overflow-hidden mb-6 sm:mb-8 ${cardBg}`}>
-              {statItems.map((s, i) => (
-                <button
-                  key={s.label}
-                  onClick={() => router.push(s.href)}
-                  className={`text-left px-4 sm:px-5 py-4 sm:py-5 transition ${
-                    isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5]'
-                  } ${i % 2 === 1 ? `border-l ${divider}` : ''} ${
-                    i >= 2 ? `border-t ${divider}` : ''
-                  } ${
-                    // On desktop everything sits in one row: rebuild the borders
-                    i > 0 ? `lg:border-l ${divider}` : 'lg:border-l-0'
-                  } lg:border-t-0`}
-                >
-                  <p className={`text-xs font-medium ${subText}`}>{s.label}</p>
-                  <p className={`mt-1 text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>{s.value}</p>
-                  <p className={`mt-0.5 text-xs ${subText}`}>{s.sub}</p>
-                </button>
-              ))}
-            </div>
+            {/* Pipeline — lead count per status, replaces the old 4-box stat strip */}
+            <StatusBreakdown
+              statusOptions={company.status_options?.length ? company.status_options : DEFAULT_STATUSES}
+              counts={stats.status_counts || {}}
+              companySlug={company.slug}
+              accentColor={accentTextColor}
+              isDark={isDark}
+              cardBg={cardBg}
+              cardText={cardText}
+              subText={subText}
+            />
 
             {/* Today's Schedule + Financials */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
@@ -653,7 +701,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 </div>
               </div>
 
-              {/* Financials — one entry point instead of four separate cards */}
+              {/* Financials — revenue plus the money signals moved here from the old stat strip */}
               <div className="min-w-0">
                 <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Financials</h2>
                 <button
@@ -664,6 +712,26 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
                     {fmtMoney(stats.revenue_this_month)}
                   </p>
+
+                  <div className={`mt-4 pt-4 border-t space-y-2 ${divider}`}>
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className={subText}>Awaiting payment</span>
+                      <span className={`font-semibold tabular-nums ${cardText}`}>{stats.invoices.awaiting_payment}</span>
+                    </div>
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className={subText}>Past due</span>
+                      <span className={`font-semibold tabular-nums ${stats.invoices.past_due > 0 ? 'text-rose-500' : cardText}`}>
+                        {stats.invoices.past_due}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs sm:text-sm">
+                      <span className={subText}>Ready to invoice</span>
+                      <span className={`font-semibold tabular-nums ${cardText}`}>
+                        {stats.ready_to_invoice.count} · {fmtMoney(stats.ready_to_invoice.value)}
+                      </span>
+                    </div>
+                  </div>
+
                   <span className={`mt-4 inline-flex items-center gap-1 text-xs sm:text-sm font-semibold ${cardText}`}>
                     See financials <ArrowRight className="w-3.5 h-3.5" />
                   </span>

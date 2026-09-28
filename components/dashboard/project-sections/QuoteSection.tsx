@@ -769,17 +769,7 @@ export default function QuoteSection({
                 </button>
                 )
               )}
-                           <button
-                onClick={() => setShowAI((v) => !v)}
-                className={`shrink-0 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                  showAI
-                    ? 'bg-slate-900 text-white shadow-sm'
-                    : 'bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300'
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-                AI Draft Generator
-              </button>
+            
             </div>
             )}
 

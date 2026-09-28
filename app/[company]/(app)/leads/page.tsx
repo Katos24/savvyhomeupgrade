@@ -99,10 +99,15 @@ async function verifyAuth(companySlug: string): Promise<void> {
 
 export default async function LeadsPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ company: string }>;
+  searchParams: Promise<{ status?: string | string[]; payment?: string | string[] }>;
 }) {
   const { company: companySlug } = await params;
+  const { status, payment } = await searchParams;
+  const initialStatus = typeof status === 'string' && status ? status : 'all';
+  const initialPayment = typeof payment === 'string' && payment ? payment : 'all';
 
   await verifyAuth(companySlug);
 
@@ -130,5 +135,5 @@ export default async function LeadsPage({
     redirect(`/${companySlug}/admin/settings#billing`);
   }
 
-  return <LeadsClient company={company} />;
+  return <LeadsClient company={company} initialStatus={initialStatus} initialPayment={initialPayment} />;
 }

@@ -9,6 +9,34 @@ type Props = { params: Promise<{ slug: string }> };
 
 const sql = neon(process.env.DATABASE_URL!);
 
+// Falls back to UTC (the old behavior) if the tz param is missing or invalid.
+function resolveTimeZone(tz: string | null): string {
+  if (!tz) return 'UTC';
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz });
+    return tz;
+  } catch {
+    return 'UTC';
+  }
+}
+
+// Calendar boundaries as YYYY-MM-DD strings in the given time zone.
+// Week starts Sunday, matching the previous behavior.
+function localCalendar(tz: string) {
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(new Date()); // en-CA formats as YYYY-MM-DD
+  const [y, m, d] = todayStr.split('-').map(Number);
+  const today = new Date(Date.UTC(y, m - 1, d));
+  const weekStart = new Date(today);
+  weekStart.setUTCDate(today.getUTCDate() - today.getUTCDay());
+  return {
+    todayStr,
+    weekStartStr: weekStart.toISOString().slice(0, 10),
+    monthStartStr: `${y}-${String(m).padStart(2, '0')}-01`,
+  };
+}
+
 // Every number here is a genuine query against fields already used
 // elsewhere in this app (quote_sent_at/quote_accepted_at from the leads
 // route, the payments table from the Stripe work, scheduled_date/time from
@@ -48,20 +76,19 @@ export async function GET(request: Request, { params }: Props) {
     }
     const companyId = companies[0].id;
 
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    weekStart.setHours(0, 0, 0, 0);
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-    const todayDateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    // "Today / this week / this month" in the viewer's time zone, not the
+    // server's (UTC on Vercel), so the schedule doesn't flip to tomorrow at 8pm ET.
+    const tz = resolveTimeZone(new URL(request.url).searchParams.get('tz'));
+    const { todayStr: todayDateStr, weekStartStr, monthStartStr } = localCalendar(tz);
 
     // ── Leads: new this week ──
+    // Local Sunday midnight converted to the correct instant in time.
     const leadsPromise = sql`
       SELECT COUNT(*) as new_this_week
       FROM leads
       WHERE company_id = ${companyId}
         AND deleted = false
-        AND created_at >= ${weekStart.toISOString()}
+        AND created_at >= (${weekStartStr}::date::timestamp AT TIME ZONE ${tz})
     `;
 
     // ── Estimates: open (sent, no accept/decline yet) vs. accepted ──
@@ -87,11 +114,13 @@ export async function GET(request: Request, { params }: Props) {
     `;
 
     // ── Invoices: awaiting payment / draft / past due ──
+    // Past due = due date is before the viewer's local today (was compared
+    // against NOW() in UTC, which flipped a day early in the evening).
     const invoicesPromise = sql`
       SELECT
         COUNT(*) FILTER (WHERE p.invoice_sent_at IS NOT NULL AND (p.payment_status IS DISTINCT FROM 'paid')) as awaiting_payment,
         COUNT(*) FILTER (WHERE p.invoice_number IS NOT NULL AND p.invoice_sent_at IS NULL) as draft_invoices,
-        COUNT(*) FILTER (WHERE p.payment_due_date IS NOT NULL AND p.payment_due_date < NOW() AND (p.payment_status IS DISTINCT FROM 'paid')) as past_due
+        COUNT(*) FILTER (WHERE p.payment_due_date IS NOT NULL AND p.payment_due_date::date < ${todayDateStr}::date AND (p.payment_status IS DISTINCT FROM 'paid')) as past_due
       FROM projects p
       JOIN leads l ON p.lead_id = l.id
       WHERE l.company_id = ${companyId}
@@ -120,7 +149,7 @@ export async function GET(request: Request, { params }: Props) {
       SELECT COALESCE(SUM(amount), 0) as revenue_this_month
       FROM payments
       WHERE company_id = ${companyId}
-        AND paid_on >= ${monthStart.toISOString().split('T')[0]}
+        AND paid_on >= ${monthStartStr}
     `;
 
     // ── Expenses this month: from the expenses ledger. Was missing
@@ -133,7 +162,7 @@ export async function GET(request: Request, { params }: Props) {
       FROM expenses
       WHERE company_id = ${companyId}
         AND deleted = false
-        AND expense_date >= ${monthStart.toISOString().split('T')[0]}
+        AND expense_date >= ${monthStartStr}
     `;
 
     // ── Ready to Invoice: completed jobs with no invoice sent yet ──
@@ -151,6 +180,18 @@ export async function GET(request: Request, { params }: Props) {
         AND p.quote_total::numeric > 0
     `;
 
+    // ── Pipeline: lead count per status, for the dashboard bar chart ──
+    // Uses leads.status (the pipeline stage the contractor manages),
+    // not projects.status (job state). Nulls grouped as '' so they
+    // land in the chart's "Other" row instead of a literal "null" key.
+    const statusCountsPromise = sql`
+      SELECT COALESCE(status, '') as status, COUNT(*)::int as count
+      FROM leads
+      WHERE company_id = ${companyId}
+        AND deleted = false
+      GROUP BY COALESCE(status, '')
+    `;
+
     // Recent payments — now sourced from the shared lib/recentPayments.ts
     // function instead of its own inline copy of this query. That
     // duplication (same query independently written in this file and in
@@ -161,9 +202,11 @@ export async function GET(request: Request, { params }: Props) {
     const [
       leadsResult, estimatesResult, jobsResult, invoicesResult,
       schedule, revenueResult, expensesResult, readyResult, recentPayments,
+      statusCountsResult,
     ] = await Promise.all([
       leadsPromise, estimatesPromise, jobsPromise, invoicesPromise,
       schedulePromise, revenuePromise, expensesPromise, readyToInvoicePromise, recentPaymentsPromise,
+      statusCountsPromise,
     ]);
 
     return NextResponse.json({
@@ -192,6 +235,9 @@ export async function GET(request: Request, { params }: Props) {
         value: parseFloat(readyResult[0]?.ready_value || '0'),
       },
       recent_payments: recentPayments,
+      status_counts: Object.fromEntries(
+        statusCountsResult.map((r: any) => [r.status, Number(r.count)])
+      ),
     });
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);

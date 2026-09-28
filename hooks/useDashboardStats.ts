@@ -24,6 +24,7 @@ export type DashboardStats = {
   }>;
   revenue_this_month: number;
   expenses_this_month?: number;
+  status_counts?: Record<string, number>;
   ready_to_invoice: { count: number; value: number };
   recent_payments: Array<{
     id: number;
@@ -38,7 +39,13 @@ export type DashboardStats = {
 };
 
 async function fetchDashboardStats(companySlug: string): Promise<DashboardStats> {
-  const res = await fetch(`/api/company/${companySlug}/dashboard-stats`, { cache: 'no-store' });
+  // Send the browser's time zone so the API computes "today / this week /
+  // this month" in the viewer's local time, not the server's (UTC on Vercel).
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const res = await fetch(
+    `/api/company/${companySlug}/dashboard-stats?tz=${encodeURIComponent(tz)}`,
+    { cache: 'no-store' }
+  );
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Failed to load');
