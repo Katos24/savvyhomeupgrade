@@ -33,28 +33,28 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
   const formLogic = useFormTabLogic(company);
   const activeCategoriesCount = Array.isArray(formLogic.categories) ? formLogic.categories.length : 0;
 
-  const backBar = (max: string, icon: React.ReactNode, label: string) => (
-    <div className={`sticky top-0 z-40 border-b ${t.border} ${isDark ? 'bg-[#0b0f17]/80' : 'bg-white/80'} backdrop-blur-md`}>
-      <div className={`mx-auto ${max} px-4 py-3 sm:px-6 flex items-center justify-between`}>
-        <button
-          onClick={() => setView('landing')}
-          className={`inline-flex items-center gap-2 text-xs font-bold ${t.subText} px-3 py-1.5 rounded-lg border ${t.border} transition-all`}
-        >
-          <ChevronLeft className="h-4 w-4" /> Back
-        </button>
-        <span className={`text-xs font-bold ${t.cardText} flex items-center gap-1.5`}>
-          {icon} {label}
-        </span>
-      </div>
+   const backBar = (max: string, _icon: React.ReactNode, _label: string) => (
+    <div className={`mx-auto ${max} px-4 pt-5 sm:px-6`}>
+      <button
+        onClick={() => setView('landing')}
+        className={`inline-flex items-center gap-1.5 text-xs font-bold ${t.subText} hover:opacity-80 transition`}
+      >
+        <ChevronLeft className="h-4 w-4" /> Back
+      </button>
     </div>
   );
 
   if (view === 'services') {
     return (
       <div className={`min-h-screen ${t.bg} transition-colors`}>
-        {backBar('max-w-7xl', <Tag className="w-3.5 h-3.5 text-blue-500" />, 'Services')}
-        <CategoriesTab company={company} currentUser={currentUser} />
-      </div>
+        {backBar('max-w-5xl', <Tag className="w-3.5 h-3.5 text-blue-500" />, 'Services')}
+                <CategoriesTab
+          company={company}
+          currentUser={currentUser}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark((v) => !v)}
+        />
+              </div>
     );
   }
 

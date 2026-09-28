@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Plus,
@@ -48,28 +48,18 @@ type ActiveModal =
 export default function CategoriesTab({
   company,
   currentUser,
+  isDark,
+  onToggleTheme,
 }: {
   company: any;
   currentUser?: any;
+  isDark: boolean;
+  onToggleTheme: () => void;
 }) {
   const defaultCategories =
     CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
 
-  const [isDark, setIsDark] = useState<boolean>(true);
-  const skipFirstThemeWrite = useRef(true);
-
-  useEffect(() => {
-    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
-  }, []);
-
-  useEffect(() => {
-    if (skipFirstThemeWrite.current) {
-      skipFirstThemeWrite.current = false;
-      return;
-    }
-    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
-    window.dispatchEvent(new Event('theme-changed'));
-  }, [isDark]);
+ 
 
   const t = themeTokens(isDark);
   const accentColor = company.email_brand_color_1 || '#2563eb';
@@ -339,9 +329,9 @@ export default function CategoriesTab({
 
   return (
     <>
-      <div className={`min-h-screen ${t.bg} transition-colors`}>
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 space-y-6 sm:space-y-8 pb-24">
-          
+            <div className="transition-colors">
+        <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 space-y-6 sm:space-y-8 pb-24">
+                    
           {/* ── Page Header ── */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -353,7 +343,7 @@ export default function CategoriesTab({
 
             <div className="flex shrink-0 items-center gap-2">
               <button
-                onClick={() => setIsDark((v) => !v)}
+                onClick={onToggleTheme}
                 className={`rounded-xl border p-2.5 transition-colors ${
                   isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-[#e7e2d8] bg-white text-[#57534e] hover:bg-slate-50'
                 }`}

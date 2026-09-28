@@ -231,7 +231,7 @@ export default function BookingFormConfig({
 
   return (
     <>
-      <div className="mx-auto max-w-5xl px-4 pb-16 sm:px-6 space-y-6">
+      <div className="mx-auto max-w-5xl px-4 pt-4 pb-16 sm:px-6 space-y-6">
         {company.plan_tier === 'free' && (
           <SettingsUpgradeBanner planLabel={REQUIRED_PLAN.label} price={REQUIRED_PLAN.price} message="Your booking form is live. Upgrade to add custom branding, photo uploads, and custom questions." companySlug={company.slug} />
         )}
