@@ -478,8 +478,8 @@ export default function QuoteSection({
               onClick={handleManualSave}
               disabled={!hasProject || saving || hasIncompleteItems}
               title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
-              className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                isDirty
+              className={`${quoteData.length === 0 ? 'hidden ' : ''}inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                                isDirty
                   ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                   : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
@@ -562,94 +562,66 @@ export default function QuoteSection({
                 text-only empty table row, and a separate stack of mobile
                 buttons — none of which agreed on which options existed or
                 what happened by default. */}
-            {quoteData.length === 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {templatesLoading ? (
-                  // Reserves the exact layout space the real cards below
-                  // take up, instead of them silently not existing and
-                  // then popping in once the fetch resolves — that pop-in
-                  // was the actual source of the "glitchy" feeling.
-                  <>
-                    <div className="h-[104px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
-                    <div className="h-[104px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
-                  </>
-                ) : (
-                  <>
-                    {categoryTemplate && (
-                      <button
-                        onClick={handleLoadTemplate}
-                        className="text-left p-4 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <p className="text-sm font-bold text-indigo-950">
-                          Load {formatCategoryLabel(lead?.category || categoryTemplate.category)} Template
-                        </p>
-                        <p className="text-xs text-indigo-700 mt-1">
-                          {categoryTemplate.items?.length || 0} standard line items with default pricing
-                        </p>
-                      </button>
-                    )}
+       {quoteData.length === 0 && (
+  <div className="space-y-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {templatesLoading ? (
+        <div className="h-[104px] md:h-[150px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
+      ) : allTemplates.length > 0 ? (
+        <button
+          onClick={() => setShowTemplateBrowser(true)}
+          className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer"
+        >
+          <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0">
+            <FileText className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-indigo-950">Choose a Template</p>
+            <p className="text-xs text-indigo-700 mt-1">
+              {categoryTemplate
+                ? `${formatCategoryLabel(lead?.category)} template suggested`
+                : `Pick from ${allTemplates.length} saved template${allTemplates.length === 1 ? '' : 's'}`}
+            </p>
+          </div>
+        </button>
+      ) : (
+        <a
+          href={`/${companySlug}/dashboard/services`}
+          className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 transition cursor-pointer block"
+        >
+          <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0">
+            <FileText className="w-4 h-4" />
+          </div>
+          <div>
+            <p className="text-sm font-bold text-indigo-950">Set Up Pricing Templates</p>
+            <p className="text-xs text-indigo-700 mt-1">Save reusable pricing so future quotes take seconds</p>
+          </div>
+        </a>
+      )}
 
-                    {allTemplates.length > 0 ? (
-                      <button
-                        onClick={() => setShowTemplateBrowser(true)}
-                        className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center mb-3">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <p className="text-sm font-bold text-slate-900">Browse Templates</p>
-                        <p className="text-xs text-slate-500 mt-1">
-                          Pick from {allTemplates.length} saved template{allTemplates.length === 1 ? '' : 's'}
-                        </p>
-                      </button>
-                    ) : (
-                      // Genuinely zero templates exist anywhere — only
-                      // shown once loading is confirmed complete, not
-                      // while allTemplates is simply still empty because
-                      // the fetch hasn't resolved yet.
-                      <a
-                        href={`/${companySlug}/dashboard/services`}
-                        className="text-left p-4 rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 transition cursor-pointer block"
-                      >
-                        <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3">
-                          <FileText className="w-4 h-4" />
-                        </div>
-                        <p className="text-sm font-bold text-indigo-950">Set Up Pricing Templates</p>
-                        <p className="text-xs text-indigo-700 mt-1">
-                          Save reusable pricing for your services so future quotes take seconds
-                        </p>
-                      </a>
-                    )}
-                  </>
-                )}
+      <button
+        onClick={handleAddRow}
+        className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition cursor-pointer"
+      >
+        <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center mb-3 md:mb-0">
+          <Plus className="w-4 h-4" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-slate-900">Create from Scratch</p>
+          <p className="text-xs text-slate-500 mt-1">Add line items one at a time</p>
+        </div>
+      </button>
+    </div>
 
-                <button
-                  onClick={() => setShowAI(true)}
-                  className="text-left p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-900">Generate with AI</p>
-                  <p className="text-xs text-slate-500 mt-1">Draft line items from the job description and photos</p>
-                </button>
-
-                <button
-                  onClick={handleAddRowMobile}
-                  className="text-left p-4 rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition cursor-pointer"
-                >
-                  <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center mb-3">
-                    <Plus className="w-4 h-4" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-900">Start from Scratch</p>
-                  <p className="text-xs text-slate-500 mt-1">Add line items one at a time</p>
-                </button>
-              </div>
-            )}
-
+    <button
+      onClick={() => setShowAI(true)}
+      className="inline-flex items-center gap-1.5 px-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+    >
+      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+      Or generate a draft with AI
+    </button>
+  </div>
+)}
             {/* Desktop — real table, one header row, full column labels */}
 {quoteData.length > 0 && (
   <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden font-sans antialiased">
@@ -963,8 +935,9 @@ export default function QuoteSection({
             </AnimatePresence>
           </div>
 
-                       {/* Plain, read-only summary — not a card, since
-              Subtotal/Total are pure arithmetic, not decisions. Sits
+          {quoteData.length > 0 && (
+          <>
+          {/* Plain, read-only summary — not a card, since              Subtotal/Total are pure arithmetic, not decisions. Sits
               directly above the two real decision cards below it (Tax,
               Deposit), keeping the math visible without giving it the
               same visual weight as an actual choice someone has to make.
@@ -1071,10 +1044,12 @@ export default function QuoteSection({
                   <p className="text-xs text-slate-500 tabular-nums">{fmt(depositAmount)}</p>
                 </>
               ) : (
-                <p className="text-sm font-semibold text-amber-700">Not set</p>
+                             <p className="text-sm font-semibold text-amber-700">Not set</p>
               )}
             </button>
           </div>
+          </>
+          )}
         </div>
 
 
