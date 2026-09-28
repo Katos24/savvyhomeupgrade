@@ -315,8 +315,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
 
           </div>
 
-          {/* Workflow Architecture Diagram */}
-          <HowItWorksDiagram t={t} isDark={isDark} />
+      
 
           {/* Live Link vs Test Sandbox Row */}
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">

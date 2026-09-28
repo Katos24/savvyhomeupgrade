@@ -67,8 +67,8 @@ export default function DesktopSidebarNav({
   if (tabs.length <= 1) return null;
 
   return (
-    <div className="hidden sm:flex w-[196px] flex-shrink-0 flex-col gap-0.5 border-r border-gray-100 bg-white py-3 px-2 overflow-y-auto">
-      {tabs.map(tab => {
+<div className="hidden sm:flex w-[148px] flex-shrink-0 flex-col gap-0.5 border-r border-gray-100 bg-white py-3 px-2 overflow-y-auto">
+        {tabs.map(tab => {
         const Icon = ICONS[tab.id];
         const isActive = activeTab === tab.id;
         return (

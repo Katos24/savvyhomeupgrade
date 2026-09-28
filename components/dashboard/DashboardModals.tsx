@@ -141,7 +141,13 @@ export function AiChatWidget({
         body: JSON.stringify({
           lead_id: null, customer_name: null, description: message,
           company_name: company.name, company_slug: company.slug, chat_mode: true,
-          chat_history: updated.slice(-6),
+// FIXED: was only sending the last 6 messages of the current
+// conversation on every turn — a chat that went 10+ messages deep
+// silently lost context on everything earlier. 20 is still bounded
+// (not unlimited — a very long conversation would eventually need real
+// summarization, not just a bigger slice), but covers realistic
+// back-and-forth sessions correctly.
+chat_history: updated.slice(-20),
           all_leads_summary: {
             summary: {
               total_leads: allLeads.length,

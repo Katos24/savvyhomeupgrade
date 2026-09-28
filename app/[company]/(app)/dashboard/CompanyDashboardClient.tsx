@@ -220,9 +220,29 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const loadError = statsError ? 'Could not load dashboard. Check your connection and try again.' : '';
     const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
+
+  // FIXED: AiChatWidget was hardcoded allLeads={[]} here, so every AI
+  // question on Dashboard had zero real lead data to work with — same
+  // endpoint LeadsClient.tsx already uses for its own allLeads. Only
+  // page 1 is fetched (not the full paginated history a company might
+  // have) — enough to stop the widget being empty, not a claim this
+  // covers every lead ever created. True full-history AI coverage needs
+  // the AI backend querying the database directly per-question, not a
+  // bigger fixed slice fetched up front — tracked separately.
+  const [dashboardLeads, setDashboardLeads] = useState<any[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/company/${company.slug}/leads?page=1`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setDashboardLeads((data.leads || []).filter((l: any) => !l.deleted));
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [company.slug]);
   const [selectedLeadTab, setSelectedLeadTab] = useState<TopTab>('overview');
   const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
   const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
@@ -816,9 +836,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         />
       )}
 
-      <AiChatWidget
+            <AiChatWidget
         planTier={planTier}
-        allLeads={[]}
+        allLeads={dashboardLeads}
         company={company}
         isVisible={!selectedLead && !isCreateModalOpen}
         onLockedFeature={setLockedDashboardModal}
