@@ -1,17 +1,14 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
   Camera, FileText, UploadCloud, File, FileCode,
-  FileSpreadsheet, Download, Plus, Loader2,
-} from 'lucide-react';
-import PhotoUpload from '../PhotoUpload';
-
-import {
+  FileSpreadsheet, Download, Plus, Loader2, Trash2,
   X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
-import { useEffect } from 'react';
+import PhotoUpload from '../PhotoUpload';
+import { looksLikeHeic, normalizeImageFile } from '@/lib/convertHeic';
 
 function Lightbox({
   photos,
@@ -177,6 +174,21 @@ function Lightbox({
   );
 }
 
+// ─── Delete button (always visible on phones, hover-reveal on desktop) ───────
+
+function DeleteButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Delete"
+      className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-lg bg-white/90 border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 shadow-sm transition sm:opacity-0 sm:group-hover/item:opacity-100"
+    >
+      <Trash2 className="w-3.5 h-3.5" />
+    </button>
+  );
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function isImageFile(f: any): boolean {
@@ -217,6 +229,12 @@ type MediaSectionProps = {
   hasProject: boolean;
 };
 
+type PendingDelete = {
+  kind: 'photo' | 'doc' | 'customer';
+  url: string;
+  label: string;
+};
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function MediaSection({ lead, currentUser, onRefresh, hasProject }: MediaSectionProps) {
@@ -226,6 +244,8 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
   const [docType, setDocType] = useState<'document' | 'receipt' | 'permit' | 'contract'>('document');
   const [lightbox, setLightbox] = useState<{ photos: string[]; index: number; label?: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const parseJson = (val: any) => {
     if (!val) return [];
@@ -259,15 +279,25 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
   const photoCount = beforePhotos.length + afterPhotos.length;
   const documents = parseJson(lead?.documents);
   const allDocs = [...documents, ...customerDocs];
-  
 
   const MAX_SIZE = 15 * 1024 * 1024;
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+        const rawFiles = e.target.files;
+    if (!rawFiles || rawFiles.length === 0) return;
 
-    for (const file of Array.from(files)) {
+    const files: File[] = [];
+    try {
+      if (Array.from(rawFiles).some(looksLikeHeic)) toast.info('Converting iPhone photos…');
+      for (const raw of Array.from(rawFiles)) files.push(await normalizeImageFile(raw));
+    } catch (err) {
+      console.error('HEIC conversion error:', err);
+      toast.error("Couldn't convert that photo. Try exporting it as JPG.");
+      if (inputRef.current) inputRef.current.value = '';
+      return;
+    }
+
+    for (const file of files) {
       if (file.size > MAX_SIZE) {
         toast.error(`${file.name} exceeds 15MB limit.`);
         if (inputRef.current) inputRef.current.value = '';
@@ -281,16 +311,16 @@ export default function MediaSection({ lead, currentUser, onRefresh, hasProject 
     try {
       const formData = new FormData();
       formData.append('leadId', lead.id.toString());
-formData.append('docType', docType);
+      formData.append('docType', docType);
       formData.append('uploadType', 'document');
       formData.append('userName', currentUser?.name || currentUser?.email || 'System');
-      Array.from(files).forEach(file => formData.append('documents', file));
-
+      files.forEach(file => formData.append('documents', file));
+      
       const interval = setInterval(() => {
         setUploadProgress((p) => (p >= 90 ? p : p + 5));
       }, 300);
 
-const res = await fetch(`/api/leads/upload-photos`, {
+      const res = await fetch(`/api/leads/upload-photos`, {
         method: 'POST',
         body: formData,
       });
@@ -310,6 +340,34 @@ const res = await fetch(`/api/leads/upload-photos`, {
       setUploading(false);
       setUploadProgress(0);
       if (inputRef.current) inputRef.current.value = '';
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
+    try {
+      const payload =
+        pendingDelete.kind === 'photo' ? { photoUrl: pendingDelete.url }
+        : pendingDelete.kind === 'doc' ? { docUrl: pendingDelete.url }
+        : { customerFileUrl: pendingDelete.url };
+      const res = await fetch(`/api/leads/${lead.id}/delete-media`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payload, user_name: currentUser?.name || currentUser?.email || 'User' }),
+      });
+      const result = await res.json().catch(() => null);
+      if (res.ok && result?.success) {
+        toast.success('Deleted');
+        setPendingDelete(null);
+        await onRefresh();
+      } else {
+        toast.error(result?.error || 'Could not delete');
+      }
+    } catch {
+      toast.error('Network error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -394,25 +452,25 @@ const res = await fetch(`/api/leads/upload-photos`, {
                 className="hidden"
                 id="doc-upload"
               />
-             <div className="flex items-center gap-2">
-  <select
-    value={docType}
-    onChange={e => setDocType(e.target.value as typeof docType)}
-    className="text-[10px] font-bold uppercase tracking-widest border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-600 cursor-pointer"
-  >
-    <option value="document">Document</option>
-    <option value="receipt">Receipt</option>
-    <option value="permit">Permit</option>
-    <option value="contract">Contract</option>
-  </select>
-  <label
-    htmlFor="doc-upload"
-    className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 shadow-md cursor-pointer transition-all active:scale-95"
-  >
-    {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-    {uploading ? 'Uploading' : 'Add'}
-  </label>
-</div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={docType}
+                  onChange={e => setDocType(e.target.value as typeof docType)}
+                  className="text-[10px] font-bold uppercase tracking-widest border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-600 cursor-pointer"
+                >
+                  <option value="document">Document</option>
+                  <option value="receipt">Receipt</option>
+                  <option value="permit">Permit</option>
+                  <option value="contract">Contract</option>
+                </select>
+                <label
+                  htmlFor="doc-upload"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest bg-blue-600 text-white hover:bg-blue-700 shadow-md cursor-pointer transition-all active:scale-95"
+                >
+                  {uploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                  {uploading ? 'Uploading' : 'Add'}
+                </label>
+              </div>
             </div>
           )}
         </div>
@@ -439,17 +497,19 @@ const res = await fetch(`/api/leads/upload-photos`, {
                   </p>
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {customerPhotos.map((url: string, i: number) => (
-                      <button
-                        key={i}
-                        onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
-                        className="group aspect-square rounded-xl overflow-hidden border border-slate-100 hover:border-pink-300 hover:shadow-md transition-all"
-                      >
-                        <img
-                          src={url}
-                          alt={`Customer photo ${i + 1}`}
-                          className="w-full h-full object-cover group-hover:opacity-90 transition"
-                        />
-                      </button>
+                      <div key={i} className="relative group/item aspect-square">
+                        <button
+                          onClick={() => setLightbox({ photos: customerPhotos, index: i, label: 'Customer Photos' })}
+                          className="group w-full h-full rounded-xl overflow-hidden border border-slate-100 hover:border-pink-300 hover:shadow-md transition-all"
+                        >
+                          <img
+                            src={url}
+                            alt={`Customer photo ${i + 1}`}
+                            className="w-full h-full object-cover group-hover:opacity-90 transition"
+                          />
+                        </button>
+                        <DeleteButton onClick={() => setPendingDelete({ kind: 'customer', url, label: 'This photo' })} />
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -481,13 +541,14 @@ const res = await fetch(`/api/leads/upload-photos`, {
                 </div>
               )}
 
-              <PhotoUpload
+                           <PhotoUpload
                 leadId={lead.id}
                 currentUser={currentUser}
                 onUploadComplete={onRefresh}
                 beforePhotos={beforePhotos}
                 afterPhotos={afterPhotos}
                 hasProject={hasProject}
+                onDeletePhoto={(url: string) => setPendingDelete({ kind: 'photo', url, label: 'This photo' })}
               />
             </div>
           ) : (
@@ -503,28 +564,30 @@ const res = await fetch(`/api/leads/upload-photos`, {
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {customerDocs.map((doc: any, i: number) => (
-                          <a
-                            key={`cust-${i}`}
-                            href={doc.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                          >
-                            <div className="flex items-center gap-4 min-w-0 flex-1">
-                              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
-                                {getDocIcon(doc.name)}
+                          <div key={`cust-${i}`} className="relative group/item">
+                            <DeleteButton onClick={() => setPendingDelete({ kind: 'customer', url: doc.url, label: doc.name })} />
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                            >
+                              <div className="flex items-center gap-4 min-w-0 flex-1">
+                                <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
+                                  {getDocIcon(doc.name)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-black text-slate-800 truncate pr-8">
+                                    {doc.name}
+                                  </p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
+                                    Submitted by customer
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-black text-slate-800 truncate pr-4">
-                                  {doc.name}
-                                </p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
-                                  Submitted by customer
-                                </p>
-                              </div>
-                            </div>
-                            <Download className="w-4 h-4 text-slate-300 shrink-0" />
-                          </a>
+                              <Download className="w-4 h-4 text-slate-300 shrink-0" />
+                            </a>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -541,31 +604,36 @@ const res = await fetch(`/api/leads/upload-photos`, {
                       )}
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {documents.map((doc: any, i: number) => (
-                          <a
-                            key={`team-${i}`}
-                            href={doc.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
-                          >
-                            <div className="flex items-center gap-4 min-w-0 flex-1">
-                              <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
-                                {getDocIcon(doc.name)}
+                          <div key={`team-${i}`} className="relative group/item">
+                            <DeleteButton onClick={() => setPendingDelete({ kind: 'doc', url: doc.url, label: doc.name })} />
+                            <a
+                              href={doc.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="group flex items-center justify-between p-4 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+                            >
+                              <div className="flex items-center gap-4 min-w-0 flex-1">
+                                <div className="w-12 h-12 rounded-xl bg-slate-50 flex items-center justify-center group-hover:bg-blue-50 transition-colors shrink-0">
+                                  {getDocIcon(doc.name)}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-black text-slate-800 truncate pr-8">
+                                    {doc.name}
+                                  </p>
+                                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
+                                    {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedBy}
+                                  </p>
+                                  <p
+                                    className="text-[10px] font-bold uppercase tracking-tight mt-0.5"
+                                    style={{ color: doc.type === 'receipt' ? '#f59e0b' : doc.type === 'permit' ? '#10b981' : doc.type === 'contract' ? '#6366f1' : '#94a3b8' }}
+                                  >
+                                    {doc.type || 'document'}
+                                  </p>
+                                </div>
                               </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-black text-slate-800 truncate pr-4">
-                                  {doc.name}
-                                </p>
-                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1">
-  {new Date(doc.uploadedAt).toLocaleDateString()} · {doc.uploadedBy}
-</p>
-<p className="text-[10px] font-bold uppercase tracking-tight mt-0.5" style={{color: doc.type === 'receipt' ? '#f59e0b' : doc.type === 'permit' ? '#10b981' : doc.type === 'contract' ? '#6366f1' : '#94a3b8'}}>
-  {doc.type || 'document'}
-</p>
-                              </div>
-                            </div>
-                            <Download className="w-4 h-4 text-slate-300 shrink-0" />
-                          </a>
+                              <Download className="w-4 h-4 text-slate-300 shrink-0" />
+                            </a>
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -590,6 +658,36 @@ const res = await fetch(`/api/leads/upload-photos`, {
           )}
         </div>
       </div>
+
+      {pendingDelete && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !deleting && setPendingDelete(null)}
+        >
+          <div className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-slate-900">Delete this file?</h3>
+            <p className="mt-1.5 text-xs text-slate-500 break-words">
+              {pendingDelete.label} will be permanently removed. This can&apos;t be undone.
+            </p>
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => setPendingDelete(null)}
+                disabled={deleting}
+                className="flex-1 rounded-xl border border-slate-200 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="flex-1 rounded-xl bg-rose-600 py-2.5 text-xs font-semibold text-white hover:bg-rose-700 disabled:opacity-60"
+              >
+                {deleting ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

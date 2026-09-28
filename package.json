@@ -21,6 +21,7 @@
     "dotenv": "^17.2.3",
     "framer-motion": "^12.38.0",
     "heic-convert": "^2.1.0",
+    "heic-to": "^1.5.2",
     "jsonwebtoken": "^9.0.2",
     "jspdf": "^4.1.0",
     "lucide-react": "^0.563.0",

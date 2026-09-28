@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { toast } from 'sonner';
+import { looksLikeHeic, normalizeImageFile, safeFileName } from '@/lib/convertHeic';
 import {
   Camera, Plus, Loader2, Image as ImageIcon,
-  X, ChevronLeft, ChevronRight, Download, UploadCloud,
+  X, ChevronLeft, ChevronRight, Download, UploadCloud, Trash2,
 } from 'lucide-react';
 
 type Photo = string | { url: string; thumbnail: string };
@@ -15,8 +16,9 @@ type PhotoUploadProps = {
   onUploadComplete: () => Promise<void>;
   beforePhotos?: Photo[];
   afterPhotos?: Photo[];
-  hasProject: boolean;
+    hasProject: boolean;
   customerPhotos?: string[];
+  onDeletePhoto?: (url: string) => void;
 };
 
 function Lightbox({
@@ -272,8 +274,9 @@ export default function PhotoUpload({
   currentUser,
   onUploadComplete,
   beforePhotos = [],
-  hasProject,
+    hasProject,
   customerPhotos = [],
+  onDeletePhoto,
 }: PhotoUploadProps) {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -291,57 +294,94 @@ export default function PhotoUpload({
   const getThumb = (photo: Photo) => typeof photo === 'string' ? photo : (photo.thumbnail || photo.url);
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+     const rawFiles = e.target.files;
+    if (!rawFiles || rawFiles.length === 0) return;
 
-    for (const file of Array.from(files)) {
-      if (file.size > MAX_PHOTO_SIZE) {
-        toast.error(`${file.name} is too large (Max 10MB)`);
-        return;
-      }
-    }
-
-    const previewUrls = Array.from(files).map(f => URL.createObjectURL(f));
-    setLocalPhotos(prev => [...prev, ...previewUrls]);
+    const resetInput = () => {
+      if (photoInputRef.current) photoInputRef.current.value = '';
+    };
 
     setUploadingPhotos(true);
     setUploadProgress(0);
 
+    // Convert HEIC → JPEG one at a time (in parallel can run out of memory on phones)
+    const files: File[] = [];
     try {
-      const formData = new FormData();
-      formData.append('leadId', leadId.toString());
-      formData.append('photoType', 'before');
-      formData.append('uploadType', 'photo');
-      formData.append('userName', currentUser?.name || currentUser?.email || 'User');
-      Array.from(files).forEach(file => formData.append('photos', file));
+      if (Array.from(rawFiles).some(looksLikeHeic)) {
+        toast.info('Converting iPhone photos…');
+      }
+      for (const raw of Array.from(rawFiles)) {
+        files.push(await normalizeImageFile(raw));
+      }
+    } catch (err) {
+      console.error('HEIC conversion error:', err);
+      toast.error("Couldn't convert that photo. Try exporting it as JPG and uploading again.");
+      setUploadingPhotos(false);
+      resetInput();
+      return;
+    }
 
-      const interval = setInterval(() => {
-        setUploadProgress(prev => (prev >= 95 ? prev : prev + 5));
-      }, 200);
+    // Size check runs AFTER conversion, since the JPEG may be larger than the HEIC
+    for (const file of files) {
+      if (file.size > MAX_PHOTO_SIZE) {
+        toast.error(`${file.name} is too large (Max 10MB)`);
+        setUploadingPhotos(false);
+        resetInput();
+        return;
+      }
+    }
 
-      const response = await fetch('/api/leads/upload-photos', {
-        method: 'POST',
-        body: formData,
-      });
+       const previewUrls = files.map(f => URL.createObjectURL(f));
+    setLocalPhotos(prev => [...prev, ...previewUrls]);
 
-      clearInterval(interval);
-      const result = await response.json();
+    let succeeded = 0;
+    const failed: string[] = [];
 
-      if (response.ok && result.success) {
-        toast.success(`Uploaded ${files.length} photo${files.length > 1 ? 's' : ''}`);
+    try {
+      // One request per photo, in order: keeps each request small,
+      // lets a batch partially succeed, and pinpoints the failing file
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formData = new FormData();
+        formData.append('leadId', leadId.toString());
+        formData.append('photoType', 'before');
+        formData.append('uploadType', 'photo');
+        formData.append('userName', currentUser?.name || currentUser?.email || 'User');
+        formData.append('photos', file, safeFileName(file.name));
+
+        try {
+          const response = await fetch('/api/leads/upload-photos', {
+            method: 'POST',
+            body: formData,
+          });
+          const result = await response.json().catch(() => null);
+          if (response.ok && result?.success) {
+            succeeded++;
+          } else {
+            failed.push(file.name);
+            console.error('Upload failed:', file.name, file.type, file.size, response.status, result);
+          }
+        } catch (err) {
+          failed.push(file.name);
+          console.error('Upload error:', file.name, err);
+        }
+
+        setUploadProgress(Math.round(((i + 1) / files.length) * 100));
+      }
+
+      if (succeeded > 0) {
+        toast.success(`Uploaded ${succeeded} photo${succeeded > 1 ? 's' : ''}`);
         await onUploadComplete();
       } else {
         setLocalPhotos(beforePhotos);
-        toast.error(result.error || 'Failed to upload photos');
       }
-    } catch (error) {
-      console.error('Photo upload error:', error);
-      setLocalPhotos(beforePhotos);
-      toast.error('Failed to upload photos');
+      if (failed.length > 0) {
+        toast.error(`${failed.length} failed: ${failed.join(', ')}`);
+      }
     } finally {
       setUploadingPhotos(false);
       setUploadProgress(0);
-      if (photoInputRef.current) photoInputRef.current.value = '';
+      resetInput();
     }
   };
 
@@ -419,24 +459,44 @@ export default function PhotoUpload({
         {/* Photo Grid */}
         {localPhotos.length > 0 ? (
           <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-            {localPhotos.map((photo, index) => (
-              <button
-                key={index}
-                onClick={() => setLightbox({ photos: projectPhotoUrls, index, label: 'Project Gallery' })}
-                className="group relative aspect-square rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all"
-              >
-                <img
-                  src={getThumb(photo)}
-                  alt="Project site"
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <div className="bg-white/90 rounded-full p-1.5">
-                    <ImageIcon className="w-4 h-4 text-slate-700" />
-                  </div>
+                        {localPhotos.map((photo, index) => {
+              const url = getUrl(photo);
+              const isPending = url.startsWith('blob:');
+              return (
+                <div key={index} className="relative group/item aspect-square">
+                  <button
+                    onClick={() => setLightbox({ photos: projectPhotoUrls, index, label: 'Project Gallery' })}
+                    className="group relative w-full h-full rounded-xl overflow-hidden bg-slate-100 border border-slate-200 hover:border-blue-300 hover:shadow-md transition-all"
+                  >
+                    <img
+                      src={getThumb(photo)}
+                      alt="Project site"
+                      className={`w-full h-full object-cover transition-transform duration-500 group-hover:scale-110 ${isPending ? 'opacity-50' : ''}`}
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="bg-white/90 rounded-full p-1.5">
+                        <ImageIcon className="w-4 h-4 text-slate-700" />
+                      </div>
+                    </div>
+                  </button>
+
+                  {onDeletePhoto && !isPending && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeletePhoto(url);
+                      }}
+                      title="Delete photo"
+                      aria-label="Delete photo"
+                      className="absolute top-1.5 right-1.5 z-10 p-1.5 rounded-full bg-white/95 text-red-600 shadow-md border border-slate-200 hover:bg-red-600 hover:text-white transition-all opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 focus:opacity-100"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
                 </div>
-              </button>
-            ))}
+              );
+            })}
           </div>
         ) : (
           /* Empty State */
@@ -450,7 +510,7 @@ export default function PhotoUpload({
             <div className="text-center space-y-1">
               <p className="text-sm font-black text-slate-700 uppercase tracking-widest">Upload Project Photos</p>
               <p className="text-xs text-slate-400 font-medium">Track progress and keep the job organized</p>
-              <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tight mt-2">JPG, PNG · Max 10MB</p>
+              <p className="text-[10px] text-slate-300 font-bold uppercase tracking-tight mt-2">JPG, PNG, HEIC · Max 10MB</p>
             </div>
             <div className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black uppercase tracking-widest shadow-md group-hover:bg-blue-700 transition-all">
               <Camera className="w-4 h-4" />
@@ -464,7 +524,7 @@ export default function PhotoUpload({
           <input
             ref={photoInputRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif"
             multiple
             onChange={handlePhotoUpload}
             disabled={uploadingPhotos}

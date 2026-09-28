@@ -12,7 +12,8 @@ async function generateThumbnail(file: File): Promise<Buffer> {
   const buffer = Buffer.from(await file.arrayBuffer());
   
   // Create 300x300 thumbnail (good balance of quality and size)
-  const thumbnail = await sharp(buffer)
+    const thumbnail = await sharp(buffer)
+    .rotate() // apply EXIF orientation so phone photos aren't sideways
     .resize(300, 300, {
       fit: 'cover',
       position: 'center'
@@ -28,7 +29,8 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     const token = cookieStore.get('auth-token')?.value;
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    try { jwt.verify(token, process.env.JWT_SECRET!); }
+       let decoded: { companyId: number };
+    try { decoded = jwt.verify(token, process.env.JWT_SECRET!) as { companyId: number }; }
     catch { return NextResponse.json({ error: 'Unauthorized' }, { status: 401 }); }
     const formData = await request.formData();
     const leadId = formData.get('leadId') as string;
@@ -44,8 +46,9 @@ export async function POST(request: NextRequest) {
 
     // 🔥 Check if lead has a project
     const leadCheck = await sql`
-      SELECT project_id FROM leads WHERE id = ${leadId}
-    `;
+      SELECT project_id FROM leads
+      WHERE id = ${leadId} AND company_id = ${decoded.companyId}
+          `;
 
     if (!leadCheck || leadCheck.length === 0) {
       return NextResponse.json(
@@ -76,26 +79,32 @@ export async function POST(request: NextRequest) {
       }
 
       const uploadedPhotos: { url: string; thumbnail: string }[] = [];
-
       for (const photo of photos) {
+        const safeName = photo.name.replace(/[^\w.-]+/g, '_');
         // 🔥 Upload full-size photo
         const fullBlob = await put(
-          `leads/${leadId}/photos/${photoType}/${Date.now()}-${photo.name}`,
+          `leads/${leadId}/photos/${photoType}/${safeName}`,
           photo,
-          { access: 'public' }
+          { access: 'public', addRandomSuffix: true }
         );
 
-        // 🔥 Generate and upload thumbnail
-        const thumbnailBuffer = await generateThumbnail(photo);
-        const thumbnailBlob = await put(
-          `leads/${leadId}/photos/${photoType}/thumb-${Date.now()}-${photo.name}`,
-          thumbnailBuffer,
-          { access: 'public', contentType: 'image/jpeg' }
-        );
+              // 🔥 Generate and upload thumbnail; fall back to the full image if it fails
+        let thumbnailUrl = fullBlob.url;
+        try {
+          const thumbnailBuffer = await generateThumbnail(photo);
+          const thumbnailBlob = await put(
+                       `leads/${leadId}/photos/${photoType}/thumb-${safeName}`,
+            thumbnailBuffer,
+            { access: 'public', contentType: 'image/jpeg', addRandomSuffix: true }
+          );
+          thumbnailUrl = thumbnailBlob.url;
+        } catch (err) {
+          console.error('Thumbnail generation failed, using full image:', photo.name, err);
+        }
 
         uploadedPhotos.push({
           url: fullBlob.url,
-          thumbnail: thumbnailBlob.url
+          thumbnail: thumbnailUrl
         });
       }
 
