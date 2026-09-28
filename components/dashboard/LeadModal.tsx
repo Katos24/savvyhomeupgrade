@@ -361,7 +361,7 @@ export default function LeadModal({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
                 transition={{ duration: 0.18 }}
-                className="p-5 sm:p-7 space-y-6"
+className="p-3 sm:p-7 space-y-6"
               >
                 {/* Overview */}
                 {activeTab === 'overview' && (

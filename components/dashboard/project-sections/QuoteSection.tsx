@@ -553,7 +553,7 @@ export default function QuoteSection({
                 that fixed allocation was the actual cause of the table
                 feeling squished, not the table's own column widths. Summary
                 now renders as a compact bar below the table instead. */}
-        <div className="p-4 sm:p-5 lg:p-6 space-y-5">
+<div className="p-3.5 sm:p-5 lg:p-6 space-y-5">
 
                     {/* TABLE & LINE ITEMS */}
           <div className="space-y-3 min-w-0">
@@ -971,35 +971,36 @@ export default function QuoteSection({
               Save sits right next to Total — the number someone's about
               to lock in and the action to lock it in, in one glance,
               rather than two separate rows competing for attention. */}
-          <div className="flex items-center justify-between px-1 py-1 gap-3">
-            <span className="text-xs text-slate-500">
-              Subtotal <span className="font-semibold text-slate-700 tabular-nums">{fmt(subtotal)}</span>
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-500">
-                Total <span className="text-base font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
-              </span>
-              <button
-                onClick={handleManualSave}
-                disabled={!hasProject || saving || hasIncompleteItems}
-                title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                  isDirty
-                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                {saving ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : isDirty ? (
-                  <Save className="w-3.5 h-3.5" />
-                ) : (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                )}
-                {isDirty ? 'Save Changes' : 'Saved'}
-              </button>
-            </div>
-          </div>
+          <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+  <div className="flex items-baseline justify-between sm:block">
+    <span className="text-xs text-slate-500">Subtotal</span>
+    <span className="text-xs font-semibold text-slate-700 tabular-nums sm:ml-1">{fmt(subtotal)}</span>
+  </div>
+  <div className="flex items-center justify-between sm:justify-end gap-3">
+    <span className="text-sm text-slate-500">
+      Total <span className="text-lg font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
+    </span>
+    <button
+      onClick={handleManualSave}
+      disabled={!hasProject || saving || hasIncompleteItems}
+      title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
+      className={`hidden md:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+        isDirty
+          ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+          : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+      }`}
+    >
+      {saving ? (
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+      ) : isDirty ? (
+        <Save className="w-3.5 h-3.5" />
+      ) : (
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+      )}
+      {isDirty ? 'Save Changes' : 'Saved'}
+    </button>
+  </div>
+</div>
 
           {/* TAX + DEPOSIT — two real decision cards, equal weight,
               always visible. Each clearly shows configured vs. not-set
@@ -1076,51 +1077,6 @@ export default function QuoteSection({
           </div>
         </div>
 
-               {/* BOTTOM SAVE — plain, in-flow, not sticky, on every screen
-            size. A second copy of the top Save button, reachable after
-            scrolling. Send Estimate lives in the Actions menu now, so this
-            only needs to handle the one job: saving. */}
-                {/* Sticky on mobile only — desktop already has an always-visible
-            Save button in the top action bar, so a second fixed bar
-            there would be redundant. On mobile, someone can be several
-            items deep and meaningfully scrolled away from that header.
-
-            BOTTOM OFFSET: same consideration as Schedule's version — if
-            there's a bottom mobile nav bar still visible on this screen,
-            adjust the bottom value below to sit above it rather than
-            underneath it. */}
-               <AnimatePresence>
-          {!editingItem && isDirty && (
-            <motion.div
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="md:hidden fixed left-0 right-0 z-40 bg-white border-t border-slate-200 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] px-4 pt-3"
-              style={{
-                bottom: '64px', // ← adjust to match your actual bottom nav height, or 0 if none is visible here
-                paddingBottom: 'calc(env(safe-area-inset-bottom) + 12px)',
-              }}
-            >
-              <div className="flex items-center justify-between gap-3 max-w-4xl mx-auto">
-                <p className="flex items-center gap-2 text-sm font-semibold text-slate-900">
-                  <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
-                  Unsaved changes
-                </p>
-                <button
-                  onClick={handleManualSave}
-                  disabled={!hasProject || saving || hasIncompleteItems}
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/30 active:scale-95 transition disabled:opacity-50 min-h-[44px]"
-                >
-                  {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-       
 
         {/* BOTTOM SHEET ITEM EDITOR (Mobile) */}
         <AnimatePresence>
