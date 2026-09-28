@@ -20,6 +20,8 @@ import {
 import {
   DEFAULT_STATUSES,
   STAGE_TRIGGERS,
+  LOCKED_STAGES,
+  stageColorHex,
   type StatusOption,
 } from '@/lib/formCategories';
 
@@ -32,9 +34,11 @@ const COLOR_OPTIONS = [
   { value: 'yellow', label: 'Amber', hex: '#d97706' },
   { value: 'orange', label: 'Coral', hex: '#ea580c' },
   { value: 'red', label: 'Rose', hex: '#e11d48' },
-  { value: 'gray', label: 'Zinc', hex: '#27272a' },
+    { value: 'gray', label: 'Zinc', hex: '#27272a' },
+  { value: 'pink', label: 'Pink', hex: '#db2777' },
+  { value: 'indigo', label: 'Indigo', hex: '#4f46e5' },
+  { value: 'purple', label: 'Purple', hex: '#9333ea' },
 ];
-
 export default function PipelineTab({
   company,
 }: {
@@ -78,8 +82,10 @@ export default function PipelineTab({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
 
-  const getColorHex = (name: string) =>
-    COLOR_OPTIONS.find((c) => c.value === name)?.hex || '#475569';
+    const getColorHex = (name: string) => stageColorHex(name) || '#475569';
+
+  // Stages with automations attached can be renamed/recolored but not deleted.
+  const isRemovable = (s: StatusOption) => !LOCKED_STAGES.includes(s.value);
 
   const isLockedStage = (s: StatusOption) =>
     s.value === 'new' || s.value === 'completed';
@@ -111,8 +117,8 @@ export default function PipelineTab({
     });
   };
 
-  const handleRemoveStatus = (index: number) => {
-    if (isLockedStage(statuses[index])) return;
+   const handleRemoveStatus = (index: number) => {
+    if (isLockedStage(statuses[index]) || !isRemovable(statuses[index])) return;
     setDeleteConfirm({ index, label: statuses[index].label });
   };
 
@@ -491,10 +497,10 @@ export default function PipelineTab({
                           ? 'text-slate-500 bg-slate-100 border-slate-200'
                           : 'text-amber-800 bg-amber-50 border-amber-200'
                       }`}>
-                        {locked ? 'Fixed' : 'Custom'}
-                      </span>
+                        {locked ? 'Fixed' : isRemovable(status) ? 'Custom' : 'Automated'}
+                                              </span>
 
-                      {!locked && (
+                                           {!locked && isRemovable(status) && (
                         <button
                           type="button"
                           onClick={() => handleRemoveStatus(index)}

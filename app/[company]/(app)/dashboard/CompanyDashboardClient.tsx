@@ -10,7 +10,7 @@ import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
-import { DEFAULT_STATUSES } from '@/lib/formCategories';
+import { DEFAULT_STATUSES, stageColorHex } from '@/lib/formCategories';
 
 // --- Dynamic Imports for Heavy Modals & Widgets (Reduces Initial JS Bundle) ---
 const Sidebar = dynamic(() => import('@/components/dashboard/Sidebar'), { ssr: false });
@@ -210,6 +210,23 @@ function ConnectStripeCard({
 
 type StatusOption = string | { value: string; label?: string; color?: string };
 
+// Same palette as Settings → PipelineTab's COLOR_OPTIONS. Stage colors are
+// stored as names ('slate', 'blue', ...), not hex, so they must be mapped.
+// Keep in sync with PipelineTab until both import one shared map.
+const STAGE_COLOR_HEX: Record<string, string> = {
+  slate: '#475569',
+  blue: '#0284c7',
+  teal: '#0d9488',
+  green: '#059669',
+  yellow: '#d97706',
+  orange: '#ea580c',
+  red: '#e11d48',
+  gray: '#27272a',
+};
+
+const stageHex = (color?: string) =>
+  color ? STAGE_COLOR_HEX[color] || (color.startsWith('#') ? color : undefined) : undefined;
+
 function StatusBreakdown({
   statusOptions,
   counts,
@@ -272,8 +289,8 @@ function StatusBreakdown({
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: r.count ? `max(6px, ${(r.count / max) * 100}%)` : '0%',
-                  background: r.color || accentColor,
-                }}
+                  background: stageColorHex(r.color) || accentColor,
+                                                }}
               />
             </div>
             <span className={`text-xs sm:text-sm font-semibold tabular-nums text-right ${r.count ? cardText : subText}`}>

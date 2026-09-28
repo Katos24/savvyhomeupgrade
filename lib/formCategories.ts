@@ -205,3 +205,22 @@ export const DESCRIPTION_PLACEHOLDERS: Record<string, string> = {
   general: "e.g. Describe what you need done...",
   other: "e.g. Describe what you need done...",
 };
+
+/** Hex for every stage color name in use. Single source for Settings and the dashboard.
+    Stage colors are stored as names, not hex. */
+export const STAGE_COLOR_HEX: Record<string, string> = {
+  slate: '#475569',
+  gray: '#27272a',
+  pink: '#db2777',
+  red: '#e11d48',
+  orange: '#ea580c',
+  yellow: '#d97706',
+  green: '#059669',
+  teal: '#0d9488',
+  blue: '#0284c7',
+  indigo: '#4f46e5',
+  purple: '#9333ea',
+};
+
+export const stageColorHex = (color?: string | null): string | undefined =>
+  color ? STAGE_COLOR_HEX[color] || (color.startsWith('#') ? color : undefined) : undefined;
