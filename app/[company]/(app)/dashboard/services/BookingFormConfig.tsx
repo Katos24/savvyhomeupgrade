@@ -4,7 +4,10 @@ import {
   AlertCircle, Check, Edit2, X, ChevronDown, Eye, User, Mail, Phone,
   MapPin, Calendar, Clock, ImageIcon, Megaphone, Lock, ArrowUpRight, Sparkles, Zap, Tag,
 } from 'lucide-react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link2, ExternalLink } from 'lucide-react';
+import TestModeModal from './TestModeModal';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 import { REQUIRED_PLAN, type Category } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
@@ -155,7 +158,9 @@ export default function BookingFormConfig({
     isPreviewOpen, setIsPreviewOpen, fieldConfig, isDirty, categories,
     brandColor1, brandColor2, getCtaHeading, toggleField, togglePreferredDateTime,
     handleSaveAll, enabledCount,
-  } = formLogic;
+    } = formLogic;
+  const { publicUrl, linkCopied, setLinkCopied } = formLogic;
+  const [isTestModeOpen, setIsTestModeOpen] = useState(false);
 
   const RequiredPhone = (
     <PhoneFrame>
@@ -246,6 +251,62 @@ export default function BookingFormConfig({
             </motion.div>
           )}
         </AnimatePresence>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className={`rounded-xl border ${t.border} ${t.cardBg} p-4 flex flex-col justify-between`}>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Link2 className={`h-4 w-4 ${t.subText}`} />
+                <span className={`text-xs font-bold ${t.cardText}`}>Your live link</span>
+              </div>
+              <code className={`block truncate rounded-lg border ${t.border} ${isDark ? 'bg-black/20' : 'bg-slate-50'} px-3 py-2 font-mono text-xs font-semibold ${t.cardText}`}>
+                {publicUrl}
+              </code>
+              <p className={`text-[11px] leading-relaxed ${t.subText}`}>
+                A submission here creates a real lead. Delete it afterward if it was a test.
+              </p>
+            </div>
+            <div className="mt-4 flex items-center gap-2">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(publicUrl);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 1800);
+                }}
+                className={`flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border ${t.border} py-2 text-xs font-semibold ${t.cardText} transition ${t.hoverBg}`}
+              >
+                {linkCopied ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Link2 className="h-3.5 w-3.5" />}
+                {linkCopied ? 'Copied' : 'Copy link'}
+              </button>
+              <a
+                href={publicUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 transition"
+              >
+                Open <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
+
+          <div className={`rounded-xl border ${t.border} ${t.cardBg} p-4 flex flex-col justify-between`}>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-emerald-500" />
+                <span className={`text-xs font-bold ${t.cardText}`}>Test your form</span>
+              </div>
+              <p className={`text-xs leading-relaxed ${t.subText}`}>
+                Walk through both steps as a customer would, including the questions for each service. Nothing is saved.
+              </p>
+            </div>
+            <button
+              onClick={() => setIsTestModeOpen(true)}
+              className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 transition"
+            >
+              <Sparkles className="h-4 w-4" /> Launch test
+            </button>
+          </div>
+        </div>
 
         <div className={`rounded-xl border ${t.border} ${t.cardBg} overflow-hidden`}>
           <div className={`flex items-center justify-between gap-3 border-b ${t.border} px-5 py-4`}>
@@ -353,6 +414,23 @@ export default function BookingFormConfig({
               </div>
             </motion.div>
           </>
+        )}
+           </AnimatePresence>
+
+      <AnimatePresence>
+        {isTestModeOpen && (
+          <TestModeModal
+            company={company}
+            categories={categories}
+            customQuestions={customQuestions}
+            fieldConfig={fieldConfig}
+            canUseCustomQuestions={canUseCustomQuestions}
+            brandColor1={brandColor1}
+            brandColor2={brandColor2}
+            getCtaHeading={getCtaHeading}
+            isDark={isDark}
+            onClose={() => setIsTestModeOpen(false)}
+          />
         )}
       </AnimatePresence>
     </>

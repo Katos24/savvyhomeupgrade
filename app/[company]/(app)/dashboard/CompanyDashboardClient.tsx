@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useTransition, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, Receipt, X, Zap } from 'lucide-react';
+import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, X, Zap } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { type PlanTier } from '@/lib/permissions';
 import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
@@ -42,13 +42,14 @@ type Company = {
   subscription_status?: string;
   trial_ends_at?: string | null;
   plan_tier?: string;
-   onboarding_completed?: boolean;
+  onboarding_completed?: boolean;
   onboarding_steps?: Record<string, boolean>;
   cancel_at_period_end?: boolean;
   subscription_cancel_at?: string | null;
-    stripe_connect_onboarded?: boolean;
+  stripe_connect_onboarded?: boolean;
   stripe_payment_status?: string | null;
 };
+
 export type DashboardStats = {
   leads: { new_this_week: number };
   estimates: { open: number; accepted: number };
@@ -67,7 +68,7 @@ export type DashboardStats = {
   revenue_this_month: number;
   expenses_this_month?: number;
   ready_to_invoice: { count: number; value: number };
-   recent_payments: Array<{
+  recent_payments: Array<{
     id: number;
     amount: string | number;
     kind: string;
@@ -124,12 +125,8 @@ function readableTextColor(hex: string, isDark: boolean): string {
 }
 
 // ---------------------------------------------------------------------------
-// Connect Stripe Card — only renders when Stripe genuinely isn't active
-// yet. Dismissible per-company via localStorage (a "remind me later," not
-// a permanent hide — it comes back if they revisit after dismissing but
-// still haven't connected). Once stripe_payment_status actually becomes
-// 'active', this card is gone for good regardless of dismiss state,
-// since there's nothing left to guide them toward.
+// Connect Stripe Card — only renders when Stripe genuinely isn't active yet.
+// Dismissible per-company via localStorage; gone for good once connected.
 // ---------------------------------------------------------------------------
 
 function ConnectStripeCard({
@@ -143,7 +140,7 @@ function ConnectStripeCard({
 }) {
   const router = useRouter();
   const dismissKey = `stripe-card-dismissed-${companySlug}`;
-  const [dismissed, setDismissed] = useState(true); // default hidden until mount-check below, avoids a flash
+  const [dismissed, setDismissed] = useState(true); // hidden until mount-check, avoids a flash
 
   useEffect(() => {
     setDismissed(localStorage.getItem(dismissKey) === 'true');
@@ -159,9 +156,6 @@ function ConnectStripeCard({
     >
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 px-5 py-4 sm:py-5">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          {/* Stripe wordmark, inline SVG — same technique as the brand
-              marks already used in FormTab.tsx and PaymentsTab.tsx this
-              session, no external image request. */}
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#635BFF]">
             <svg viewBox="0 0 32 32" className="h-5 w-5" fill="none">
               <path d="M14.5 11.4c0-1 .8-1.4 2.1-1.4 1.9 0 4.3.6 6.2 1.6V6.1c-2.1-.8-4.1-1.2-6.2-1.2-5.1 0-8.5 2.7-8.5 7.1 0 6.9 9.6 5.8 9.6 8.8 0 1.2-1 1.6-2.5 1.6-2.1 0-4.8-.9-6.9-2v5.6c2.3 1 4.7 1.5 6.9 1.5 5.2 0 8.8-2.6 8.8-7.1-.1-7.4-9.5-6.1-9.5-9z" fill="#fff" />
@@ -181,7 +175,7 @@ function ConnectStripeCard({
         <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
           <button
             type="button"
-                        onClick={() => router.push(`/${companySlug}/home#payments`)}
+            onClick={() => router.push(`/${companySlug}/home#payments`)}
             className="inline-flex items-center gap-1.5 rounded-xl bg-[#635BFF] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#534ae6]"
           >
             Connect Stripe <ArrowRight className="h-3.5 w-3.5" />
@@ -211,27 +205,24 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const router = useRouter();
   const [, startTransition] = useTransition();
 
-   const {
+  const {
     data: stats,
     isLoading: loading,
     error: statsError,
     refetch: fetchStats,
   } = useDashboardStats(company.slug);
   const loadError = statsError ? 'Could not load dashboard. Check your connection and try again.' : '';
-    const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
+  const [lockedDashboardModal, setLockedDashboardModal] = useState<string | null>(null);
 
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [selectedLeadTab, setSelectedLeadTab] = useState<TopTab>('overview');
+  const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
+  const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
 
-  // FIXED: AiChatWidget was hardcoded allLeads={[]} here, so every AI
-  // question on Dashboard had zero real lead data to work with — same
-  // endpoint LeadsClient.tsx already uses for its own allLeads. Only
-  // page 1 is fetched (not the full paginated history a company might
-  // have) — enough to stop the widget being empty, not a claim this
-  // covers every lead ever created. True full-history AI coverage needs
-  // the AI backend querying the database directly per-question, not a
-  // bigger fixed slice fetched up front — tracked separately.
+  // AiChatWidget data: page 1 of real leads, same endpoint LeadsClient uses.
+  // Not full history (see the AI chat rebuild item on the list).
   const [dashboardLeads, setDashboardLeads] = useState<any[]>([]);
   useEffect(() => {
     let cancelled = false;
@@ -243,9 +234,6 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       .catch(() => {});
     return () => { cancelled = true; };
   }, [company.slug]);
-  const [selectedLeadTab, setSelectedLeadTab] = useState<TopTab>('overview');
-  const [selectedLeadPayments, setSelectedLeadPayments] = useState<any[]>([]);
-  const [selectedLeadActivity, setSelectedLeadActivity] = useState<any[]>([]);
 
   const [isDark, setIsDark] = useState<boolean>(true);
   const skipFirstWrite = useRef(true);
@@ -260,13 +248,13 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       return;
     }
     localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+    // Same-tab notification so CompanyShell's background follows this toggle.
+    window.dispatchEvent(new Event('theme-changed'));
   }, [isDark]);
 
   const planTier = (company.plan_tier || 'free') as PlanTier;
 
-
-
-   const { data: currentUser } = useCurrentUser();
+  const { data: currentUser } = useCurrentUser();
   const { data: teamMembers } = useTeamMembers(company.slug);
 
   const handleLogout = useCallback(async () => {
@@ -398,6 +386,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const cardText = isDark ? 'text-white' : 'text-[#1c1917]';
   const subText = isDark ? 'text-slate-400' : 'text-[#78716c]';
   const heading = isDark ? 'text-slate-100' : 'text-[#1c1917]';
+  const divider = isDark ? 'border-white/10' : 'border-[#e7e2d8]';
 
   // Stable handlers for JSX listeners
   const handleOpenCreateModal = useCallback(() => setIsCreateModalOpen(true), []);
@@ -415,6 +404,37 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       </div>
     );
   }
+
+  // The four numbers worth glancing at. Each one is a shortcut into Leads
+  // or Financials, so the strip doubles as navigation.
+  const statItems = stats
+    ? [
+        {
+          label: 'Open estimates',
+          value: String(stats.estimates.open),
+          sub: `${stats.estimates.accepted} accepted`,
+          href: `/${company.slug}/leads?status=quoted`,
+        },
+        {
+          label: 'Active jobs',
+          value: String(stats.jobs.active),
+          sub: `${fmtMoney(stats.jobs.active_value)} booked`,
+          href: `/${company.slug}/leads`,
+        },
+        {
+          label: 'Awaiting payment',
+          value: String(stats.invoices.awaiting_payment),
+          sub: stats.invoices.past_due > 0 ? `${stats.invoices.past_due} past due` : 'None past due',
+          href: `/${company.slug}/dashboard/financials`,
+        },
+        {
+          label: 'Ready to invoice',
+          value: String(stats.ready_to_invoice.count),
+          sub: fmtMoney(stats.ready_to_invoice.value),
+          href: `/${company.slug}/leads?status=completed`,
+        },
+      ]
+    : [];
 
   return (
     <div className={`min-h-screen relative transition-colors ${bg}`}>
@@ -461,7 +481,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 py-5 sm:py-8 lg:py-12 relative z-10 font-sans">
-        {/* Top Header */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between mb-6 sm:mb-8 gap-4">
           <div className="min-w-0">
             <p className={`text-xs sm:text-sm font-medium ${subText}`}>{todayLabel}</p>
@@ -472,7 +492,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
           <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
             <div
-              className="inline-flex items-center gap-2 rounded-full pl-2 pr-3.5 py-1.5 max-w-[200px] sm:max-w-none"
+              className="inline-flex items-center gap-2 rounded-full pl-2 pr-3.5 py-1.5 max-w-[160px] sm:max-w-none"
               style={{ background: `${accentColor}1a`, border: `1px solid ${accentColor}33` }}
             >
               {company.logo_url ? (
@@ -495,6 +515,15 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
+              <button
+                onClick={handleOpenCreateModal}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#1c1917] px-2.5 sm:px-3.5 py-2 sm:py-2.5 text-xs font-bold text-white hover:opacity-90 transition"
+                aria-label="Add lead"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">Add lead</span>
+              </button>
+
               <button
                 onClick={() => router.push(`/${company.slug}/outbox`)}
                 className={`p-2 sm:p-2.5 rounded-xl border transition-colors ${
@@ -530,7 +559,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
         </div>
 
-               <ConnectStripeCard
+        <ConnectStripeCard
           companySlug={company.slug}
           isDark={isDark}
           isConnected={!!company.stripe_connect_onboarded && company.stripe_payment_status === 'active'}
@@ -539,7 +568,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         {loadError && (
           <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs sm:text-sm font-bold flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <span>{loadError}</span>
-                       <button
+            <button
               onClick={() => fetchStats()}
               className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-1.5 rounded-lg w-full sm:w-auto text-center"
             >
@@ -550,65 +579,35 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
         {stats && (
           <>
-            {/* Stat row: Leads / Estimates / Jobs / Invoices */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-              {/* Leads Card */}
-              <div className={`rounded-2xl p-4 sm:p-6 ${cardBg}`}>
-                <div className="flex items-center justify-between mb-3">
-                  <p className={`text-base sm:text-lg font-medium ${cardText}`}>New</p>
-                  <button
-                    onClick={handleOpenCreateModal}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-white bg-[#1c1917] rounded-full px-3 py-1.5 hover:opacity-90 transition min-h-[32px]"
-                  >
-                    <Plus className="w-3 h-3" /> Add lead
-                  </button>
-                </div>
-                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.leads.new_this_week}</p>
-                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>New</p>
-                <p className={`text-xs ${subText}`}>New this week</p>
-              </div>
-
-              {/* Estimates Card */}
-              <button
-                onClick={() => router.push(`/${company.slug}/leads?status=quoted`)}
-                className={`text-left rounded-2xl p-4 sm:p-6 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
-              >
-                <p className={`text-base sm:text-lg font-medium ${cardText} mb-3`}>Estimates</p>
-                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.estimates.open}</p>
-                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>Open</p>
-                <p className={`text-xs ${subText}`}>{stats.estimates.accepted} accepted</p>
-              </button>
-
-              {/* Jobs Card */}
-              <button
-                onClick={() => router.push(`/${company.slug}/leads`)}
-                className={`text-left rounded-2xl p-4 sm:p-6 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
-              >
-                <p className={`text-base sm:text-lg font-medium ${cardText} mb-3`}>Jobs</p>
-                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.jobs.active}</p>
-                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>Active</p>
-                <p className={`text-xs ${subText}`}>{fmtMoney(stats.jobs.active_value)} booked</p>
-              </button>
-
-              {/* Invoices Card */}
-              <button
-                onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
-                className={`text-left rounded-2xl p-4 sm:p-6 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
-              >
-                <p className={`text-base sm:text-lg font-medium ${cardText} mb-3`}>Invoices</p>
-                <p className={`text-3xl sm:text-4xl font-semibold tabular-nums ${cardText}`}>{stats.invoices.awaiting_payment}</p>
-                <p className={`text-xs sm:text-sm font-medium mt-1 sm:mt-2 ${cardText}`}>Awaiting payment</p>
-                <p className={`text-xs ${subText}`}>{stats.invoices.draft} draft · {stats.invoices.past_due} past due</p>
-              </button>
+            {/* Stat strip — one bordered panel, 2x2 on mobile, 4 across on desktop */}
+            <div className={`grid grid-cols-2 lg:grid-cols-4 rounded-2xl overflow-hidden mb-6 sm:mb-8 ${cardBg}`}>
+              {statItems.map((s, i) => (
+                <button
+                  key={s.label}
+                  onClick={() => router.push(s.href)}
+                  className={`text-left px-4 sm:px-5 py-4 sm:py-5 transition ${
+                    isDark ? 'hover:bg-white/5 active:bg-white/10' : 'hover:bg-[#faf9f5]'
+                  } ${i % 2 === 1 ? `border-l ${divider}` : ''} ${
+                    i >= 2 ? `border-t ${divider}` : ''
+                  } ${
+                    // On desktop everything sits in one row: rebuild the borders
+                    i > 0 ? `lg:border-l ${divider}` : 'lg:border-l-0'
+                  } lg:border-t-0`}
+                >
+                  <p className={`text-xs font-medium ${subText}`}>{s.label}</p>
+                  <p className={`mt-1 text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>{s.value}</p>
+                  <p className={`mt-0.5 text-xs ${subText}`}>{s.sub}</p>
+                </button>
+              ))}
             </div>
 
-            {/* Today's Schedule + Business Performance */}
+            {/* Today's Schedule + Financials */}
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
               {/* Today's Schedule */}
               <div className="min-w-0">
                 <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Today&apos;s Schedule</h2>
                 <div className={`rounded-2xl overflow-hidden ${cardBg}`}>
-                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                  <div className={`flex flex-col sm:flex-row sm:items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b ${divider}`}>
                     <p className={`text-xl sm:text-2xl font-semibold ${cardText}`}>
                       {fmtMoney(todaysScheduleTotal)}{' '}
                       <span className={`text-xs sm:text-sm font-normal block sm:inline ${subText}`}>booked today</span>
@@ -643,7 +642,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     </div>
                   )}
 
-                  <div className={`px-4 sm:px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                  <div className={`px-4 sm:px-5 py-3 border-t ${divider}`}>
                     <button
                       onClick={() => router.push(`/${company.slug}/dashboard/calendar`)}
                       className={`text-xs sm:text-sm font-semibold inline-flex items-center gap-1 py-1 ${cardText}`}
@@ -654,76 +653,26 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 </div>
               </div>
 
-              {/* Business Performance & Financial Utilities */}
+              {/* Financials — one entry point instead of four separate cards */}
               <div className="min-w-0">
-                <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Business Performance</h2>
-                <div className="space-y-3 sm:space-y-4">
-                  {/* Revenue Card */}
-                  <div className={`rounded-2xl p-4 sm:p-5 ${cardBg}`}>
-                    <div className="flex items-center justify-between">
-                      <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Revenue</p>
-                      <ArrowRight className={`w-4 h-4 ${subText}`} />
-                    </div>
-                    <p className={`text-xs ${subText} mb-1`}>This month so far</p>
-                    <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
-                      {fmtMoney(stats.revenue_this_month)}
-                    </p>
-                  </div>
-
-                  {/* Expenses Card */}
-                  <button
-                    onClick={() => router.push(`/${company.slug}/dashboard/financials#expenses`)}
-                    className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Receipt className={`w-4 h-4 ${subText}`} />
-                        <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Job Expenses</p>
-                      </div>
-                      <ArrowRight className={`w-4 h-4 ${subText}`} />
-                    </div>
-                    <p className={`text-xs ${subText} mb-1`}>Logged project costs & materials</p>
-                    <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
-                      {fmtMoney(stats.expenses_this_month ?? 0)}
-                    </p>
-                  </button>
-
-                  {/* Ready to Invoice Card */}
-                  <button
-                    onClick={() => router.push(`/${company.slug}/leads?status=completed`)}
-                    className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Ready to invoice</p>
-                      <ArrowRight className={`w-4 h-4 ${subText}`} />
-                    </div>
-                    <p className={`text-xs ${subText} mb-1`}>Completed jobs not yet billed</p>
-                    <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
-                      {fmtMoney(stats.ready_to_invoice.value)}
-                    </p>
-                  </button>
-
-                  {/* Outbox Status Card */}
-                  <button
-                    onClick={() => router.push(`/${company.slug}/outbox`)}
-                    className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Mail className={`w-4 h-4 ${subText}`} />
-                        <p className={`text-xs sm:text-sm font-semibold ${cardText}`}>Email Outbox</p>
-                      </div>
-                      <ArrowRight className={`w-4 h-4 ${subText}`} />
-                    </div>
-                    <p className={`text-xs ${subText} mt-1`}>Review sent schedules, invoices, and dispatch logs</p>
-                  </button>
-                </div>
+                <h2 className={`text-base sm:text-lg font-semibold mb-3 ${heading}`}>Financials</h2>
+                <button
+                  onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
+                  className={`w-full text-left rounded-2xl p-4 sm:p-5 ${cardBg} hover:opacity-90 transition active:scale-[0.99]`}
+                >
+                  <p className={`text-xs ${subText} mb-1`}>Revenue this month</p>
+                  <p className={`text-2xl sm:text-3xl font-semibold tabular-nums ${cardText}`}>
+                    {fmtMoney(stats.revenue_this_month)}
+                  </p>
+                  <span className={`mt-4 inline-flex items-center gap-1 text-xs sm:text-sm font-semibold ${cardText}`}>
+                    See financials <ArrowRight className="w-3.5 h-3.5" />
+                  </span>
+                </button>
               </div>
             </div>
 
-            {/* Side-by-Side Grid: Payment Reminders & Recent Payments */}
+            {/* Payment Reminders + Recent Payments */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 sm:mt-8">
-              {/* Payment Reminders Widget */}
               <div className="flex flex-col h-full min-w-0">
                 <PaymentRemindersWidget
                   slug={company.slug}
@@ -734,10 +683,9 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                 />
               </div>
 
-              {/* Recent Payments */}
               <div className="flex flex-col h-full min-w-0">
                 <div className={`rounded-2xl border ${cardBg} overflow-hidden font-sans flex flex-col h-full`}>
-                  <div className={`flex items-center justify-between px-4 sm:px-5 py-3.5 border-b ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                  <div className={`flex items-center justify-between px-4 sm:px-5 py-3.5 border-b ${divider}`}>
                     <h3 className={`text-sm sm:text-base font-semibold ${cardText}`}>Recent Payments</h3>
                   </div>
 
@@ -754,7 +702,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                         const isRefundRelated =
                           p.payment_status === 'refunded' || p.payment_status === 'partially_refunded';
                         return (
-                                                   <button
+                          <button
                             key={p.id}
                             onClick={() => openLead(p.lead_id)}
                             className={`w-full flex items-center justify-between gap-3 px-4 sm:px-5 py-3.5 text-left transition ${
@@ -788,12 +736,18 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                     )}
                   </div>
 
-                  <div className={`px-4 sm:px-5 py-3 border-t ${isDark ? 'border-white/10' : 'border-[#e7e2d8]'}`}>
+                  <div className={`flex items-center justify-between px-4 sm:px-5 py-3 border-t ${divider}`}>
                     <button
                       onClick={() => router.push(`/${company.slug}/dashboard/financials`)}
                       className={`text-xs sm:text-sm font-semibold inline-flex items-center gap-1 py-1 ${cardText}`}
                     >
                       View all payments <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => router.push(`/${company.slug}/outbox`)}
+                      className={`text-xs sm:text-sm font-semibold inline-flex items-center gap-1 py-1 ${subText}`}
+                    >
+                      View outbox <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
@@ -836,7 +790,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         />
       )}
 
-            <AiChatWidget
+      <AiChatWidget
         planTier={planTier}
         allLeads={dashboardLeads}
         company={company}
