@@ -331,7 +331,7 @@ export default function CategoriesTab({
     <>
             <div className="transition-colors">
         <div className="mx-auto max-w-5xl px-4 py-4 sm:px-6 space-y-6 sm:space-y-8 pb-24">
-                    
+
           {/* ── Page Header ── */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -396,13 +396,13 @@ export default function CategoriesTab({
           )}
 
           {/* ── Top Controls: Add Service & Default Deposit Cards ── */}
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        
             {/* Add Service Card */}
             <div className={`lg:col-span-1 rounded-2xl border ${t.border} p-5 ${t.cardBg} flex flex-col justify-between`}>
               <div>
-                <h2 className={`text-sm font-bold ${t.cardText}`}>Service Menu</h2>
-                <p className={`text-xs mt-0.5 ${t.subText}`}>
+                                <h2 className={`text-sm font-bold ${t.cardText}`}>Service Menu</h2>
+                <p className={`hidden sm:block text-xs mt-0.5 ${t.subText}`}>
                   Add new service options to your booking workflow.
                 </p>
               </div>
@@ -467,47 +467,45 @@ export default function CategoriesTab({
             </div>
 
             {/* Dedicated Default Deposit Control Card */}
-            <div className={`lg:col-span-2 rounded-2xl border ${t.border} p-5 ${t.cardBg} flex flex-col justify-between`}>
-              <div className="flex items-start justify-between">
-                <div>
+                      {/* Default deposit: compact, one line when not editing */}
+            <div className={`rounded-2xl border ${t.border} p-5 ${t.cardBg} flex flex-col justify-between gap-4`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <HandCoins className="h-4 w-4 text-blue-600" />
-                    <h2 className={`text-sm font-bold ${t.cardText}`}>Company Default Deposit</h2>
+                    <HandCoins className="h-4 w-4 text-blue-600 shrink-0" />
+                    <h2 className={`text-sm font-bold ${t.cardText}`}>Default deposit</h2>
                   </div>
-                  <p className={`text-xs mt-0.5 ${t.subText}`}>
-                    Applied automatically to newly created quotes unless overridden.
+                  <p className={`hidden sm:block text-xs mt-0.5 ${t.subText}`}>
+                    Applied to new quotes unless overridden.
                   </p>
                 </div>
 
                 {!editingDepositDefault && (
                   <button
                     onClick={() => setEditingDepositDefault(true)}
-                    className={`rounded-lg border ${t.border} px-3 py-1.5 text-xs font-semibold ${t.cardText} transition ${t.hoverBg}`}
+                    className={`shrink-0 rounded-lg border ${t.border} px-3 py-1.5 text-xs font-semibold ${t.cardText} transition ${t.hoverBg}`}
                   >
-                    Configure
+                    {depositType ? 'Edit' : 'Set'}
                   </button>
                 )}
               </div>
 
-              <div className="mt-4">
-                {editingDepositDefault ? (
-                  <div className={`flex flex-wrap items-center gap-3 rounded-xl border ${t.border} p-3 ${isDark ? 'bg-white/5' : 'bg-slate-50'}`}>
+              {editingDepositDefault ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
                     <div className={`flex overflow-hidden rounded-lg border ${t.border} ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
                       {(['percent', 'fixed'] as DepositType[]).map((dt) => (
                         <button
                           key={dt}
                           onClick={() => setDepositTypeDraft(dt)}
                           className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                            depositTypeDraft === dt
-                              ? 'bg-blue-600 text-white'
-                              : `${t.cardText} ${t.hoverBg}`
-                                                      }`}
+                            depositTypeDraft === dt ? 'bg-blue-600 text-white' : `${t.cardText} ${t.hoverBg}`
+                          }`}
                         >
                           {dt === 'percent' ? '%' : '$'}
                         </button>
                       ))}
                     </div>
-
                     <input
                       type="number"
                       step="0.001"
@@ -522,67 +520,53 @@ export default function CategoriesTab({
                       autoFocus
                       className={`w-24 rounded-lg border ${t.border} ${isDark ? 'bg-slate-900' : 'bg-white'} px-3 py-1.5 text-xs font-semibold outline-none ${t.cardText}`}
                     />
-
-                    <div className="ml-auto flex items-center gap-2">
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => saveDepositDefault(false)}
+                      disabled={depositSaving}
+                      className="rounded-lg bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                    >
+                      {depositSaving ? '...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setEditingDepositDefault(false);
+                        setDepositTypeDraft(depositType ?? 'percent');
+                        setDepositValueDraft(String(depositValue || ''));
+                        setDepositError('');
+                      }}
+                      className={`px-2 text-xs font-semibold ${t.subText}`}
+                    >
+                      Cancel
+                    </button>
+                    {depositType && (
                       <button
-                        onClick={() => saveDepositDefault(false)}
+                        onClick={() => saveDepositDefault(true)}
                         disabled={depositSaving}
-                        className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                        className="ml-auto px-2 text-xs font-semibold text-rose-500 hover:text-rose-600"
                       >
-                        {depositSaving ? '...' : 'Save'}
+                        Clear
                       </button>
-                      {depositType && (
-                        <button
-                          onClick={() => saveDepositDefault(true)}
-                          disabled={depositSaving}
-                          className="text-xs font-semibold text-rose-500 hover:text-rose-600 px-2"
-                        >
-                          Clear
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setEditingDepositDefault(false);
-                          setDepositTypeDraft(depositType ?? 'percent');
-                          setDepositValueDraft(String(depositValue || ''));
-                          setDepositError('');
-                        }}
-                        className={`text-xs font-semibold ${t.subText} hover:text-current px-2`}
-                      >
-                        Cancel
-                      </button>
-                    </div>
+                    )}
                   </div>
-                ) : (
-                  <div className={`flex items-center justify-between rounded-xl border ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50/80'} px-4 py-2.5`}>
-                    <span className={`text-xs font-semibold ${t.subText}`}>Active Deposit Rule:</span>
-                    <span className={`text-xs font-bold ${t.cardText} rounded-md border ${t.border} ${isDark ? 'bg-slate-900' : 'bg-white'} px-2.5 py-1`}>
-                      {depositType
-                        ? depositType === 'percent'
-                          ? `${depositValue}% of total job quote`
-                          : `${fmt(depositValue)} fixed deposit`
-                        : 'No default deposit set'}
-                    </span>
-                  </div>
-                )}
+                </div>
+              ) : (
+                <p className={`text-sm font-semibold ${depositType ? t.cardText : t.subText}`}>
+                  {depositType
+                    ? depositType === 'percent'
+                      ? `${depositValue}% of the job total`
+                      : `${fmt(depositValue)} flat`
+                    : 'No default deposit'}
+                </p>
+              )}
 
-                {depositError && (
-                  <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-rose-500">
-                    <AlertCircle className="h-3 w-3" /> {depositError}
-                  </p>
-                )}
-              </div>
+              {depositError && (
+                <p className="flex items-center gap-1 text-xs font-medium text-rose-500">
+                  <AlertCircle className="h-3 w-3" /> {depositError}
+                </p>
+              )}
             </div>
-
-          </div>
-
-                   <div className="flex justify-end">
-            <button
-              onClick={() => setShowQuotePreview(true)}
-              className={`text-xs font-medium underline ${t.subText} hover:text-current`}
-            >
-              See where this shows up on a job →
-            </button>
           </div>
 
           {/* First-visit explainer — shows only when genuinely nothing is
