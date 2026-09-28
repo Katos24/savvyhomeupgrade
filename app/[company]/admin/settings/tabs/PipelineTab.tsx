@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Plus,
   X,
@@ -67,13 +67,16 @@ export default function PipelineTab({
     JSON.parse(JSON.stringify(initialStatuses))
   );
 
+    // Set after a successful save so the reload doesn't trigger the unsaved-changes prompt
+  const justSavedRef = useRef(false);
+
   const isDirty = useMemo(() => {
     return JSON.stringify(statuses) !== JSON.stringify(initialStatuses);
   }, [statuses, initialStatuses]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isDirty) {
+           if (isDirty && !justSavedRef.current) {
         e.preventDefault();
         e.returnValue = '';
       }
@@ -177,7 +180,8 @@ export default function PipelineTab({
       });
       const data = await res.json();
       if (data.success) {
-        setSuccess('Pipeline updated successfully.');
+               setSuccess('Pipeline updated successfully.');
+        justSavedRef.current = true;
         setTimeout(() => window.location.reload(), 1200);
       } else {
         showError(data.error || 'Failed to save pipeline changes');
@@ -269,10 +273,10 @@ export default function PipelineTab({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           
           {/* STAGE LISTING TABLE (2 COLUMNS WIDE) */}
-          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 shadow-xs overflow-hidden">
-            {/* Table Header Banner */}
-            <div className="px-5 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
-              <div className="flex items-center gap-2">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200/80 shadow-xs">
+                      {/* Table Header Banner */}
+            <div className="px-5 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between rounded-t-xl">
+                          <div className="flex items-center gap-2">
                 <Workflow className="h-4 w-4 text-slate-700" />
                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Active Workflow Stages ({statuses.length})
@@ -375,8 +379,8 @@ export default function PipelineTab({
                 return (
                   <div
                     key={status.value}
-                    className={`relative flex items-center justify-between px-5 py-3 hover:bg-slate-50/60 transition-colors group ${
-                      locked ? 'bg-slate-50/40' : ''
+                    className={`relative flex items-center justify-between px-5 py-3 hover:bg-slate-50/60 transition-colors group last:rounded-b-xl ${
+                                            locked ? 'bg-slate-50/40' : ''
                     }`}
                   >
                     {/* Left side: Reorder + Color + Name */}
@@ -436,8 +440,12 @@ export default function PipelineTab({
 
                         {/* Color Picker Dropdown Popover */}
                         {activeColorPicker === index && !locked && (
-                          <div className="absolute left-0 top-7 z-30 w-44 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md">
-                            <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
+                          <div
+                            className={`absolute left-0 z-30 w-44 rounded-lg border border-slate-200 bg-white p-2.5 shadow-md ${
+                              index >= statuses.length - 3 ? 'bottom-7' : 'top-7'
+                            }`}
+                          >
+                                                        <div className="mb-2 flex items-center justify-between border-b border-slate-100 pb-1.5">
                               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
                                 Select Color
                               </span>

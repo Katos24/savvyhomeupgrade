@@ -267,11 +267,21 @@ function StatusBreakdown({
 
   return (
     <div className="mb-6 sm:mb-8">
-      <div className="flex items-baseline justify-between mb-3">
+            <div className="flex items-baseline justify-between mb-3">
         <h2 className={`text-base sm:text-lg font-semibold ${cardText}`}>Pipeline</h2>
-        <span className={`text-xs sm:text-sm ${subText}`}>
-          {total} lead{total === 1 ? '' : 's'}
-        </span>
+        <div className="flex items-baseline gap-3">
+          <span className={`text-xs sm:text-sm ${subText}`}>
+            {total} lead{total === 1 ? '' : 's'}
+          </span>
+          <button
+            type="button"
+            onClick={() => router.push(`/${companySlug}/home?section=pipeline`)}
+                        className={`inline-flex items-center gap-1 text-xs sm:text-sm font-semibold transition hover:opacity-70 ${cardText}`}
+            title="Rename, reorder, or add pipeline stages"
+          >
+            Edit stages <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
       <div className={`rounded-2xl p-2 sm:p-3 ${cardBg}`}>
         {rows.map((r) => (

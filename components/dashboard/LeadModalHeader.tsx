@@ -42,6 +42,7 @@ const STATUS_HEX: Record<string, string> = {
   blue: '#3b82f6', yellow: '#eab308', purple: '#a855f7',
   orange: '#f97316', green: '#22c55e', red: '#ef4444',
   gray: '#6b7280', indigo: '#6366f1', pink: '#ec4899',
+    slate: '#64748b', teal: '#14b8a6',
 };
 
 export default function LeadModalHeader({
