@@ -30,9 +30,10 @@ async function fetchQuoteTemplates(companySlug: string): Promise<QuoteTemplate[]
 // read from one cache entry instead of two independent fetches.
 export function useQuoteTemplates(companySlug: string) {
   return useQuery({
-    queryKey: ['quoteTemplates', companySlug],
-    queryFn: () => fetchQuoteTemplates(companySlug),
-    enabled: !!companySlug,
+queryKey: ['quoteTemplates', companySlug],
+queryFn: () => fetchQuoteTemplates(companySlug),
+enabled: !!companySlug,
+staleTime: 5 * 60 * 1000,
   });
 }
 

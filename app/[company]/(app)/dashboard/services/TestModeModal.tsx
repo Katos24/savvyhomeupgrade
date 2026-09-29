@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   X, ChevronLeft, User, Mail, Phone, MapPin, Calendar, Clock,
@@ -8,8 +8,24 @@ import {
 } from 'lucide-react';
 import type { Category } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
+import { getSchedulingConfig } from '@/lib/schedulingConfig';
 
 type Theme = ReturnType<typeof themeTokens>;
+
+// (555) 123-4567 as the user types, capped at 10 digits — same shape the
+// real booking form stores.
+function formatPhone(value: string) {
+  const d = value.replace(/\D/g, '').slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+// Same label format as the real form (UploadFormStepTwo): "9:30 AM"
+function formatSlotLabel(t: string) {
+  const [h, m] = t.split(':').map(Number);
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+}
 
 type TestModeStep1 = {
   name: string;
@@ -52,11 +68,62 @@ export default function TestModeModal({
     category: categories[0]?.value || '',
     description: '',
   });
+  const [emailTouched, setEmailTouched] = useState(false);
   const [step2Answers, setStep2Answers] = useState<Record<string, string>>({});
-  const [address, setAddress] = useState('');
+  // Split like the real form: street, unit/apt, city, zip
+  const [street, setStreet] = useState('');
+  const [unit, setUnit] = useState('');
+  const [city, setCity] = useState('');
+  const [zip, setZip] = useState('');
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
   const [leadSource, setLeadSource] = useState('');
+
+  // Real availability, from the same endpoint the public form uses, so the
+  // test shows exactly the time buttons a customer would see (booked slots
+  // struck through). Read-only: nothing is booked or saved.
+  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const showTime = !!fieldConfig.preferred_time?.enabled;
+
+  // End time only for trades that use it — same rule as the real form.
+  const showEndTime = showTime && getSchedulingConfig(company?.business_type || 'general').showEndTime;
+  const [preferredEndTime, setPreferredEndTime] = useState('');
+  const [endSlots, setEndSlots] = useState<{ time: string; available: boolean }[]>([]);
+  const [endSlotsLoading, setEndSlotsLoading] = useState(false);
+
+  // Refetch end options whenever the start changes; clear a now-stale pick.
+  useEffect(() => {
+    setPreferredEndTime('');
+    if (!showEndTime || !preferredDate || !preferredTime || !company?.slug) {
+      setEndSlots([]);
+      return;
+    }
+    let cancelled = false;
+    setEndSlotsLoading(true);
+    fetch(`/api/company/${company.slug}/availability?date=${preferredDate}&start=${preferredTime}`)
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled) setEndSlots(data.success ? data.slots : []); })
+      .catch(() => { if (!cancelled) setEndSlots([]); })
+      .finally(() => { if (!cancelled) setEndSlotsLoading(false); });
+    return () => { cancelled = true; };
+  }, [preferredTime, preferredDate, showEndTime, company?.slug]);
+
+  useEffect(() => {
+    setPreferredTime('');
+    if (!showTime || !preferredDate || !company?.slug) {
+      setSlots([]);
+      return;
+    }
+    let cancelled = false;
+    setSlotsLoading(true);
+    fetch(`/api/company/${company.slug}/availability?date=${preferredDate}`)
+      .then((r) => r.json())
+      .then((data) => { if (!cancelled) setSlots(data.success ? data.slots : []); })
+      .catch(() => { if (!cancelled) setSlots([]); })
+      .finally(() => { if (!cancelled) setSlotsLoading(false); });
+    return () => { cancelled = true; };
+  }, [preferredDate, showTime, company?.slug]);
 
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -66,7 +133,23 @@ export default function TestModeModal({
     ? customQuestions.filter((q: any) => q.category === step1.category)
     : [];
 
-  const step1Valid = step1.name.trim() && step1.email.trim() && step1.phone.trim() && step1.category;
+  const phoneDigits = step1.phone.replace(/\D/g, '');
+  // Same email shape check the signup route uses. Everything in Step 1 is
+  // required, matching the real public form.
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const emailValid = EMAIL_RE.test(step1.email.trim());
+  const step1Valid = Boolean(
+    step1.name.trim() &&
+      emailValid &&
+      phoneDigits.length === 10 &&
+      step1.category &&
+      step1.description.trim()
+  );
+
+  // One line for the test email, e.g. "123 Main St, Apt 2B, Holbrook 11741"
+  const addressLine = [street.trim(), unit.trim(), [city.trim(), zip.trim()].filter(Boolean).join(' ')]
+    .filter(Boolean)
+    .join(', ');
 
   // Shared input styling, theme-aware — every text/select field in this
   // modal routes through this so light/dark stays consistent without
@@ -92,9 +175,10 @@ export default function TestModeModal({
           category: step1.category,
           description: step1.description,
           answers: step2Answers,
-          address,
+          address: addressLine,
           preferredDate,
           preferredTime,
+          preferredEndTime,
           leadSource,
         }),
       });
@@ -137,7 +221,32 @@ export default function TestModeModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
-          {step === 1 ? (
+          {emailSent ? (
+            // Success screen — replaces the form once the test email is sent,
+            // same idea as the public form swapping to a thank-you screen.
+            <div className="flex flex-col items-center py-8 text-center">
+              <div
+                className="mb-4 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md"
+                style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
+              >
+                <Check className="h-7 w-7" />
+              </div>
+              <h3 className={`text-base font-bold ${t.cardText}`}>Test complete!</h3>
+              <p className={`mt-2 max-w-xs text-xs font-medium ${t.subText}`}>
+                We sent the test email to <span className={`font-bold ${t.cardText}`}>{step1.email}</span>.
+                Check your inbox to see exactly what your customer would receive.
+              </p>
+              <p className={`mt-3 max-w-xs text-[11px] font-medium ${t.subText}`}>
+                Nothing was saved and no lead was added to your dashboard.
+              </p>
+              <button
+                onClick={() => { setEmailSent(false); setEmailError(''); setStep(1); }}
+                className="mt-5 text-xs font-bold text-blue-600 hover:underline"
+              >
+                Run another test
+              </button>
+            </div>
+          ) : step === 1 ? (
             <div className="space-y-4">
               <p className={`text-xs font-bold uppercase tracking-wider ${t.subText}`}>Step 1 — Required</p>
 
@@ -162,10 +271,14 @@ export default function TestModeModal({
                     type="email"
                     value={step1.email}
                     onChange={(e) => setStep1((s) => ({ ...s, email: e.target.value }))}
+                    onBlur={() => setEmailTouched(true)}
                     placeholder="you@example.com — where the test email goes"
                     className={inputField}
                   />
                 </div>
+                {emailTouched && step1.email.trim() && !emailValid && (
+                  <p className="mt-1 text-[10px] font-semibold text-rose-500">Enter a valid email address.</p>
+                )}
               </div>
 
               <div>
@@ -173,12 +286,19 @@ export default function TestModeModal({
                 <div className={inputWrap}>
                   <Phone className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
                   <input
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel"
                     value={step1.phone}
-                    onChange={(e) => setStep1((s) => ({ ...s, phone: e.target.value }))}
+                    onChange={(e) => setStep1((s) => ({ ...s, phone: formatPhone(e.target.value) }))}
                     placeholder="(555) 123-4567"
+                    maxLength={14}
                     className={inputField}
                   />
                 </div>
+                {phoneDigits.length > 0 && phoneDigits.length < 10 && (
+                  <p className="mt-1 text-[10px] font-semibold text-rose-500">Enter a 10-digit phone number.</p>
+                )}
               </div>
 
               <div>
@@ -230,15 +350,48 @@ export default function TestModeModal({
 
               {fieldConfig.address.enabled && (
                 <div>
-                  <label className={labelCls}>Address</label>
-                  <div className={inputWrap}>
-                    <MapPin className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
-                    <input
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="123 Main St, New York 12345"
-                      className={inputField}
-                    />
+                  <label className={labelCls}>Street Address</label>
+                  <div className="space-y-2">
+                    <div className={inputWrap}>
+                      <MapPin className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
+                      <input
+                        value={street}
+                        onChange={(e) => setStreet(e.target.value)}
+                        placeholder="123 Main St"
+                        autoComplete="address-line1"
+                        className={inputField}
+                      />
+                    </div>
+                    <div className={inputWrap}>
+                      <input
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                        placeholder="Unit / Apt (optional)"
+                        autoComplete="address-line2"
+                        className={inputField}
+                      />
+                    </div>
+                    <div className="grid grid-cols-[1fr_110px] gap-2">
+                      <div className={inputWrap}>
+                        <input
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          placeholder="City"
+                          autoComplete="address-level2"
+                          className={inputField}
+                        />
+                      </div>
+                      <div className={inputWrap}>
+                        <input
+                          value={zip}
+                          onChange={(e) => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                          placeholder="Zip code"
+                          inputMode="numeric"
+                          autoComplete="postal-code"
+                          className={inputField}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -257,19 +410,78 @@ export default function TestModeModal({
                         style={{ colorScheme: isDark ? 'dark' : 'light' }}
                       />
                     </div>
-                    <div className={inputWrap}>
-                      <Clock className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
-                      <select
-                        value={preferredTime}
-                        onChange={(e) => setPreferredTime(e.target.value)}
-                        className={inputField}
-                      >
-                        <option value="">Select a time...</option>
-                        <option value="morning">Morning</option>
-                        <option value="afternoon">Afternoon</option>
-                        <option value="evening">Evening</option>
-                      </select>
-                    </div>
+                    {showTime && (
+                      <div>
+                        <p className={`mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold ${t.subText}`}>
+                          <Clock className="h-3.5 w-3.5" /> Select a time
+                        </p>
+                        {!preferredDate ? (
+                          <p className={`text-[11px] font-medium ${t.subText}`}>Pick a date to see available times.</p>
+                        ) : slotsLoading ? (
+                          <p className={`text-[11px] font-medium ${t.subText}`}>Checking availability...</p>
+                        ) : slots.length === 0 ? (
+                          <p className={`text-[11px] font-medium ${t.subText}`}>No times available that day.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {slots.map((slot) => {
+                              const selected = preferredTime === slot.time;
+                              return (
+                                <button
+                                  key={slot.time}
+                                  type="button"
+                                  disabled={!slot.available}
+                                  onClick={() => setPreferredTime(slot.time)}
+                                  className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                                    !slot.available
+                                      ? `cursor-not-allowed line-through ${t.border} ${t.subText} opacity-50`
+                                      : selected
+                                      ? 'border-transparent bg-blue-600 text-white shadow-sm'
+                                      : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
+                                  }`}
+                                >
+                                  {formatSlotLabel(slot.time)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {showEndTime && preferredTime && (
+                      <div>
+                        <p className={`mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold ${t.subText}`}>
+                          <Clock className="h-3.5 w-3.5" /> Preferred end time
+                        </p>
+                        {endSlotsLoading ? (
+                          <p className={`text-[11px] font-medium ${t.subText}`}>Checking availability...</p>
+                        ) : endSlots.length === 0 ? (
+                          <p className={`text-[11px] font-medium ${t.subText}`}>No end times available.</p>
+                        ) : (
+                          <div className="flex flex-wrap gap-1.5">
+                            {endSlots.map((slot) => {
+                              const selected = preferredEndTime === slot.time;
+                              return (
+                                <button
+                                  key={slot.time}
+                                  type="button"
+                                  disabled={!slot.available}
+                                  onClick={() => setPreferredEndTime(slot.time)}
+                                  className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                                    !slot.available
+                                      ? `cursor-not-allowed line-through ${t.border} ${t.subText} opacity-50`
+                                      : selected
+                                      ? 'border-transparent bg-blue-600 text-white shadow-sm'
+                                      : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
+                                  }`}
+                                >
+                                  {formatSlotLabel(slot.time)}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -346,12 +558,7 @@ export default function TestModeModal({
               ))}
 
               <div className={`rounded-xl border ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50/60'} p-4`}>
-                {emailSent ? (
-                  <p className="flex items-center gap-2 text-xs font-bold text-emerald-500">
-                    <Check className="h-4 w-4" /> Test email sent to {step1.email}.
-                  </p>
-                ) : (
-                  <>
+                <>
                     <button
                       onClick={handleSendTestEmail}
                       disabled={sendingEmail}
@@ -368,15 +575,14 @@ export default function TestModeModal({
                     <p className={`mt-2 text-[10px] font-medium ${t.subText}`}>
                       Sends a real email to the address above — nothing is stored or added to your dashboard.
                     </p>
-                  </>
-                )}
+                </>
               </div>
             </div>
           )}
         </div>
 
-        <div className={`border-t ${t.border} px-5 py-4`}>
-          {step === 1 ? (
+        {step === 1 && !emailSent && (
+          <div className={`border-t ${t.border} px-5 py-4`}>
             <button
               onClick={() => step1Valid && setStep(2)}
               disabled={!step1Valid}
@@ -385,15 +591,8 @@ export default function TestModeModal({
             >
               Continue to Step 2
             </button>
-          ) : (
-            <button
-              onClick={onClose}
-              className={`flex h-10 w-full items-center justify-center rounded-lg border ${t.border} text-xs font-bold ${t.cardText} transition ${t.hoverBg}`}
-            >
-              Done Testing
-            </button>
-          )}
-        </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

@@ -3,6 +3,8 @@ import { adminDb as sql } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { CATEGORY_MAP, ADDRESS_CONFIG } from '@/lib/formCategories';
 import { isReservedSlug } from '@/lib/reservedSlugs';
+import { defaultFieldConfig } from '@/lib/formFields';
+
 
 // ── sendWelcomeEmail intentionally removed ──
 // Welcome email now fires from the Stripe webhook after payment confirms,
@@ -84,32 +86,21 @@ export async function POST(req: NextRequest) {
     const defaultCategories = CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
     const addressConfig = ADDRESS_CONFIG[businessType] || { show: false, required: false };
 
-    // FIXED: every field here used to start enabled: true (address per
-    // business type, lead_source and preferred_date unconditionally).
-    // FormTab correctly read that state back as enabled — but Create Lead
-    // never actually showed those fields until a real Settings save
-    // happened once, for reasons that traced correctly through every file
-    // in the chain without turning up the actual cause. Rather than leave
-    // a state where FormTab's toggles lie about what's really showing,
-    // every field now starts disabled — matching what Create Lead
-    // observably does before that first save — so there's no gap between
-    // what the toggle claims and what a contractor's customers actually
-    // see, for every new company from the moment it's created.
-    const defaultFieldConfig = JSON.stringify({
-      address: { enabled: false, required: false },
-      file_upload: { enabled: false },
-      lead_source: { enabled: false },
-      preferred_date: { enabled: false },
-      preferred_time: { enabled: false },
-    });
+    // Save the shared defaults from lib/formFields.ts WITHOUT plan rules.
+    // Plan rules (free = basic form only, photos need Basic) are applied
+    // whenever the config is read, so the moment a company upgrades, its
+    // default fields turn on — no toggling off and on required. This
+    // replaces the old "everything disabled" workaround, which caused
+    // Settings, the public form and Create Lead to disagree.
+    const initialFieldConfig = JSON.stringify(defaultFieldConfig(businessType));
 
     const [newCompany] = await sql`
- INSERT INTO companies (
+      INSERT INTO companies (
         name,
         slug,
         email,
         phone,
-       business_type,
+        business_type,
         form_categories,
         subscription_status,
         email_notifications_enabled,
@@ -130,19 +121,19 @@ export async function POST(req: NextRequest) {
         ${addressConfig.show},
         ${addressConfig.required},
         ${plan},
-        ${defaultFieldConfig}::jsonb,
+        ${initialFieldConfig}::jsonb,
         ${referred_by_code || null}
       )
       RETURNING id, slug
     `;
 
     if (plan === 'free') {
-  await sql`
-    UPDATE companies 
-    SET onboarding_completed = true, onboarding_completed_at = NOW()
-    WHERE id = ${newCompany.id}
-  `;
-}
+      await sql`
+        UPDATE companies
+        SET onboarding_completed = true, onboarding_completed_at = NOW()
+        WHERE id = ${newCompany.id}
+      `;
+    }
 
     const [newUser] = await sql`
       INSERT INTO users (
@@ -162,61 +153,64 @@ export async function POST(req: NextRequest) {
     `;
 
     // Create sample lead for free-plan users so dashboard isn't empty
-if (plan === 'free') {
-  try {
-    const cats = defaultCategories;
-    const firstCat = Array.isArray(cats) && cats.length > 0
-      ? (cats[0].label || cats[0].value || 'General')
-      : 'General';
+    if (plan === 'free') {
+      try {
+        const cats = defaultCategories;
+        // FIXED: stored the category LABEL ("Roof Repair") while every real
+        // lead stores the VALUE ("roof_repair"), so the sample lead didn't
+        // match its own service for custom questions, tasks or filters.
+        const firstCat = Array.isArray(cats) && cats.length > 0
+          ? (cats[0].value || cats[0].label || 'general')
+          : 'general';
 
-    const sampleTasks = JSON.stringify([
-      { id: 't1', label: 'Call customer to confirm details', done: false },
-      { id: 't2', label: 'Send quote for approval', done: false },
-      { id: 't3', label: 'Schedule job date', done: false },
-      { id: 't4', label: 'Complete the work', done: false },
-      { id: 't5', label: 'Collect payment', done: false },
-    ]);
+        const sampleTasks = JSON.stringify([
+          { id: 't1', label: 'Call customer to confirm details', done: false },
+          { id: 't2', label: 'Send quote for approval', done: false },
+          { id: 't3', label: 'Schedule job date', done: false },
+          { id: 't4', label: 'Complete the work', done: false },
+          { id: 't5', label: 'Collect payment', done: false },
+        ]);
 
-    const sampleQuote = JSON.stringify({
-      items: [
-        { id: 'q1', description: 'Labor (8 hours)', quantity: 8, unitPrice: 150, amount: 1200 },
-        { id: 'q2', description: 'Materials & Supplies', quantity: 1, unitPrice: 800, amount: 800 },
-        { id: 'q3', description: 'Travel & Equipment', quantity: 1, unitPrice: 500, amount: 500 },
-      ],
-      total: 2500,
-    });
+        const sampleQuote = JSON.stringify({
+          items: [
+            { id: 'q1', description: 'Labor (8 hours)', quantity: 8, unitPrice: 150, amount: 1200 },
+            { id: 'q2', description: 'Materials & Supplies', quantity: 1, unitPrice: 800, amount: 800 },
+            { id: 'q3', description: 'Travel & Equipment', quantity: 1, unitPrice: 500, amount: 500 },
+          ],
+          total: 2500,
+        });
 
-    await sql`
-      INSERT INTO leads (
-        company_id, name, email, phone,
-        category, status, description,
-        address_line_1, city, zip_code,
-        quote_total, quote_data, payment_status,
-        assigned_to, tasks, origin, created_at
-      ) VALUES (
-        ${newCompany.id},
-        'Sarah Johnson',
-        'sarah.j@email.com',
-        '5551234567',
-        ${firstCat},
-        'new',
-        'This is a sample lead so you can see how everything works. Open it to explore tasks, quotes, scheduling, and more. Delete it whenever you''re ready.',
-        '123 Main Street',
-        'New York',
-        '10001',
-        2500.00,
-        ${sampleQuote},
-        'unpaid',
-        'You',
-        ${sampleTasks},
-        'sample',
-        NOW()
-      )
-    `;
-  } catch (sampleErr) {
-    console.error('Sample lead creation failed (non-blocking):', sampleErr);
-  }
-}
+        await sql`
+          INSERT INTO leads (
+            company_id, name, email, phone,
+            category, status, description,
+            address_line_1, city, zip_code,
+            quote_total, quote_data, payment_status,
+            assigned_to, tasks, origin, created_at
+          ) VALUES (
+            ${newCompany.id},
+            'Sarah Johnson',
+            'sarah.j@email.com',
+            '5551234567',
+            ${firstCat},
+            'new',
+            'This is a sample lead so you can see how everything works. Open it to explore tasks, quotes, scheduling, and more. Delete it whenever you''re ready.',
+            '123 Main Street',
+            'New York',
+            '10001',
+            2500.00,
+            ${sampleQuote},
+            'unpaid',
+            'You',
+            ${sampleTasks},
+            'sample',
+            NOW()
+          )
+        `;
+      } catch (sampleErr) {
+        console.error('Sample lead creation failed (non-blocking):', sampleErr);
+      }
+    }
 
     const jwt = require('jsonwebtoken');
     const token = jwt.sign(
@@ -227,11 +221,11 @@ if (plan === 'free') {
         companyId: newCompany.id,
         companySlug: newCompany.slug,
       },
-  process.env.JWT_SECRET!,
+      process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     );
 
-// If referred by a bookkeeper, notify them and send contractor the connected email
+    // If referred by a bookkeeper, notify them and send contractor the connected email
     if (referred_by_code) {
       try {
         const bookkeeperAccounts = await sql`
@@ -261,7 +255,7 @@ if (plan === 'free') {
       }
     }
 
-  if (plan === 'free' && !referred_by_code) {
+    if (plan === 'free' && !referred_by_code) {
       try {
         const { sendFreeWelcomeEmail } = await import('@/lib/email');
         const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lead2project.com';

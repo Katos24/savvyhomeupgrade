@@ -11,6 +11,8 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { DEFAULT_STATUSES, stageColorHex } from '@/lib/formCategories';
+import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+
 
 // --- Dynamic Imports for Heavy Modals & Widgets (Reduces Initial JS Bundle) ---
 const Sidebar = dynamic(() => import('@/components/dashboard/Sidebar'), { ssr: false });
@@ -372,6 +374,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   const { data: currentUser } = useCurrentUser();
   const { data: teamMembers } = useTeamMembers(company.slug);
+    // Loads quote templates while the list is showing, so the Quote tab has them instantly.
+  useQuoteTemplates(company.slug);
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });

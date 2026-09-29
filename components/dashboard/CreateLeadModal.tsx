@@ -7,6 +7,8 @@ import {
   Calendar, Clock, Megaphone, Search, ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { resolveFieldConfig } from '@/lib/formFields';
+
 
 // ---------------------------------------------------------------------------
 // Helper: Text color contrast
@@ -132,8 +134,11 @@ export default function CreateLeadModal({
   const isAccentDark = isColorTooDark(accentColor);
   const accentTextColor = isAccentDark ? '#ffffff' : '#000000';
 
-  const fieldConfig = company?.form_field_config || {};
-    // FOUND BUG: was every custom question from every service, regardless
+  const fieldConfig = resolveFieldConfig(company?.form_field_config, {
+    planTier: company?.plan_tier,
+    businessType: company?.business_type,
+  });
+      // FOUND BUG: was every custom question from every service, regardless
   // of which category was selected — the public form filters correctly
   // per category, this internal modal never did. Recomputes on every
   // render as formData.category changes, since it's a plain derived

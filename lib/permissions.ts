@@ -79,10 +79,7 @@ export const FEATURE_PLAN_MAP = {
   email_templates:          'pro',
 
   // ── AI features ────────────────────────────────────────────
-  ai_brief:                 'pro',
-  ai_quote:                 'pro',
   ai_chat:                  'pro',
-  ai_photo_analysis:        'pro',
 
   // ── Notifications ──────────────────────────────────────────
   daily_digest:             'pro',
@@ -166,10 +163,7 @@ export const PLAN_CONFIG = {
       'Outbox — full sent email history',
       'Custom email templates',
        'Daily digest email',
-      'AI brief on every lead',
-      'AI quote generator',
       'AI assistant chat',
-      'AI photo & text analysis',
     ],
   },
 } as const;
@@ -311,14 +305,6 @@ outbox: {
     title: 'Notification settings',
     description: 'Configure your daily digest and reminder preferences.',
   },
-  ai_brief: {
-    title: 'AI brief',
-    description: 'Get an instant AI-generated summary of every lead — saved on each card.',
-  },
-  ai_quote: {
-    title: 'AI quote generator',
-    description: 'Let AI draft a quote based on job details and your templates.',
-  },
   send_invoice_email: {
   title: 'Send invoices directly to customers',
   description: 'Email a professional invoice to your customer and let them pay online with a card.',
@@ -330,10 +316,6 @@ stripe_connect: {
   ai_chat: {
     title: 'AI assistant',
     description: 'Ask questions about your leads, get suggestions, draft follow-up messages.',
-  },
-  ai_photo_analysis: {
-    title: 'AI photo analysis',
-    description: 'AI reads job site photos and surfaces damage, scope, and material insights.',
   },
   daily_digest: {
     title: 'Daily digest',

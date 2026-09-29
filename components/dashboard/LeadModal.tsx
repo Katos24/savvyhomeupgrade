@@ -390,34 +390,6 @@ className="p-3 sm:p-7 space-y-6"
                   />
                 )}
 
-                {/* AI Brief */}
-                {activeTab === 'ai' && (
-                  can(company?.plan_tier as PlanTier, 'ai_brief') ? (
-                    <AiBriefTab
-                      lead={lead}
-                      currentUser={currentUser}
-                      company={company}
-                      customerPhotos={customerPhotos}
-                      relatedLeads={relatedLeads}
-                      isProject={isProject}
-                      onRefresh={onRefresh}
-                    />
-                  ) : (
-                    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
-                      <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-                        <Sparkles className="w-5 h-5 text-blue-500" />
-                      </div>
-                      <h3 className="text-base font-semibold text-gray-900 mb-2">AI brief</h3>
-                      <p className="text-sm text-gray-500 mb-4 max-w-xs mx-auto">
-                        Get an instant AI-generated summary of every lead — upgrade to Pro to unlock.
-                      </p>
-                      <a href={`/${companySlug}/home?section=billing`}
-                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition">
-                        Upgrade to Pro — $79.99/mo
-                      </a>
-                    </div>
-                  )
-                )}
 
                 {/* Project tabs */}
                 {renderProjectTab()}

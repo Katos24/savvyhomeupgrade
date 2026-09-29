@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { can, type PlanTier } from '@/lib/permissions';
+import { resolveFieldConfig, defaultFieldConfig } from '@/lib/formFields';
 
 export type CustomQuestion = {
   id: string;
@@ -22,20 +23,26 @@ export type FieldConfig = {
   file_upload: FieldConfigItem;
 };
 
-export const DEFAULT_FIELD_CONFIG: FieldConfig = {
-  address: { enabled: true, required: false },
-  preferred_date: { enabled: true },
-  preferred_time: { enabled: true },
-  lead_source: { enabled: true },
-  file_upload: { enabled: false },
-};
+// Kept for backwards compatibility with anything that imports it, but it's
+// now derived from the single shared default in lib/formFields.ts rather
+// than being its own separate definition. Settings used to assume its own
+// defaults here while signup, the public form and Create Lead each assumed
+// different ones, which is what caused the "fields only work after you
+// toggle them off and on" bug.
+export const DEFAULT_FIELD_CONFIG: FieldConfig = defaultFieldConfig(null);
 
 export const REQUIRED_PLAN = { label: 'Basic', price: '$49.99/mo' };
 
 export function useFormTabLogic(company: any) {
-  const planTier = (company.plan_tier ?? 'basic') as PlanTier;
+  // FIXED: defaulted to 'basic' (a paid plan) when plan_tier was missing,
+  // which unlocked photo uploads. Every other part of the app defaults to 'free'.
+  const planTier = (company.plan_tier ?? 'free') as PlanTier;
   const canUsePhotoUpload = can(planTier, 'customer_video_upload');
   const canUseCustomQuestions = can(planTier, 'custom_form_questions');
+  // Field toggles are a Basic feature (lib/permissions: customize_form).
+  // Free companies get the basic form only, and the public form never shows
+  // Step 2 for them — so the toggles must be locked here too, not just photos.
+  const canCustomizeForm = can(planTier, 'customize_form');
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
@@ -44,32 +51,15 @@ export function useFormTabLogic(company: any) {
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const existingConfig = company.form_field_config;
-  const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() => {
-    const base = existingConfig
-      ? {
-          address: {
-            enabled: existingConfig.address?.enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
-            required: existingConfig.address?.required ?? DEFAULT_FIELD_CONFIG.address.required,
-          },
-          preferred_date: { enabled: existingConfig.preferred_date?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_date.enabled },
-          preferred_time: { enabled: existingConfig.preferred_time?.enabled ?? DEFAULT_FIELD_CONFIG.preferred_time.enabled },
-          lead_source: { enabled: existingConfig.lead_source?.enabled ?? DEFAULT_FIELD_CONFIG.lead_source.enabled },
-          file_upload: { enabled: existingConfig.file_upload?.enabled ?? DEFAULT_FIELD_CONFIG.file_upload.enabled },
-        }
-      : {
-          address: {
-            enabled: company.address_enabled ?? DEFAULT_FIELD_CONFIG.address.enabled,
-            required: company.address_required ?? DEFAULT_FIELD_CONFIG.address.required,
-          },
-          preferred_date: { enabled: DEFAULT_FIELD_CONFIG.preferred_date.enabled },
-          preferred_time: { enabled: DEFAULT_FIELD_CONFIG.preferred_time.enabled },
-          lead_source: { enabled: DEFAULT_FIELD_CONFIG.lead_source.enabled },
-          file_upload: { enabled: DEFAULT_FIELD_CONFIG.file_upload.enabled },
-        };
-    if (!canUsePhotoUpload) base.file_upload = { enabled: false };
-    return base;
-  });
+  // Resolved through the same shared function the public form, Create Lead
+  // and signup use, so what these toggles show is exactly what customers see.
+  // Handles a missing config, missing keys, and JSON stored as a string.
+  const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() =>
+    resolveFieldConfig(company.form_field_config, {
+      planTier,
+      businessType: company.business_type,
+    }) as FieldConfig
+  );
 
   const [showAddQuestion, setShowAddQuestion] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
@@ -118,10 +108,9 @@ export function useFormTabLogic(company: any) {
 
   // Preferred Date and Preferred Time aren't really two independent optional
   // fields — a time slot picker only makes sense once a date is selected, so
-  // they're presented (and toggled) as one combined field now. Both keys are
-  // kept in the underlying config and save payload in lockstep, since other
-  // code (the public booking form, the settings API) may already read them
-  // as separate fields and I haven't seen those files to know for sure.
+  // they're presented (and toggled) as one combined field. Both keys are
+  // kept in the underlying config and save payload in lockstep, since the
+  // public booking form reads them as separate fields.
   const togglePreferredDateTime = () =>
     setFieldConfig((prev) => {
       const next = !prev.preferred_date.enabled;
@@ -181,7 +170,7 @@ export function useFormTabLogic(company: any) {
 
   const enabledCount =
     Number(fieldConfig.address.enabled) +
-    Number(fieldConfig.preferred_date.enabled) + // covers date & time together now
+    Number(fieldConfig.preferred_date.enabled) + // covers date & time together
     Number(fieldConfig.lead_source.enabled) +
     Number(fieldConfig.file_upload.enabled) +
     (canUseCustomQuestions ? customQuestions.length : 0);
@@ -190,6 +179,7 @@ export function useFormTabLogic(company: any) {
     planTier,
     canUsePhotoUpload,
     canUseCustomQuestions,
+    canCustomizeForm,
     loading,
     status,
     customQuestions,

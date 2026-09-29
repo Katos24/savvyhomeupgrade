@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { upload } from '@vercel/blob/client';
 import { compressImages } from '@/lib/compressImage';
 import Toast from '@/components/Toast';
-import { CATEGORY_MAP, ADDRESS_CONFIG, type Category } from '@/lib/formCategories';
+import { CATEGORY_MAP, type Category } from '@/lib/formCategories';
+import { resolveFieldConfig } from '@/lib/formFields';
 import { FormHeader, FormHero } from '@/components/FormBranding';
 import UploadFormStepOne from '@/components/UploadFormStepOne';
 import UploadFormStepTwo from '@/components/UploadFormStepTwo';
@@ -112,26 +113,15 @@ export default function UploadForm({
     (q) => !q.category || q.category === step1Data.category
   );
 
-  const isStarterPlan = company?.plan_tier === 'free';
-
-  const baseFieldConfig: FieldConfig = company?.form_field_config || {
-    address: {
-      enabled: company?.address_enabled ?? (ADDRESS_CONFIG[businessType]?.show ?? false),
-      required: company?.address_required ?? false,
-    },
-    preferred_date: { enabled: false },
-    preferred_time: { enabled: false },
-    lead_source: { enabled: true },
-    file_upload: { enabled: true },
-  };
-
-  // Starter plan cannot collect photos/videos on the customer form
-  const fieldConfig: FieldConfig = {
-    ...baseFieldConfig,
-    file_upload: {
-      enabled: isStarterPlan ? false : baseFieldConfig.file_upload.enabled,
-    },
-  };
+  // Same shared resolver Settings, Create Lead and signup use (lib/formFields.ts),
+  // so what the contractor's toggles show is exactly what customers get.
+  // It fills in missing keys from the shared defaults and applies plan rules
+  // (free = basic form only; photos need Basic). This replaces a separate
+  // inline default here that disagreed with Settings.
+  const fieldConfig: FieldConfig = resolveFieldConfig(company?.form_field_config, {
+    planTier: company?.plan_tier,
+    businessType,
+  }) as FieldConfig;
 
   const hasStep2Content = isFree
     ? false
@@ -226,6 +216,13 @@ export default function UploadForm({
     const { name, email, phone, category, description } = step1Data;
     if (!name || !email || !phone || !category || !description) {
       setStep1Error('Please fill in all required fields.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    // Catches typos like "jane@gmail" — a bad email here means the
+    // contractor can't reach the customer and the lead is effectively lost.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setStep1Error('Please enter a valid email address.');
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }

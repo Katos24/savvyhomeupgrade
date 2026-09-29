@@ -157,7 +157,7 @@ export default function BookingFormConfig({
   t: Theme;
 }) {
   const {
-    canUsePhotoUpload, canUseCustomQuestions, loading, status, customQuestions,
+    canUsePhotoUpload, canUseCustomQuestions, canCustomizeForm, loading, status, customQuestions,
     isPreviewOpen, setIsPreviewOpen, fieldConfig, isDirty, categories,
     brandColor1, brandColor2, getCtaHeading, toggleField, togglePreferredDateTime,
     handleSaveAll, enabledCount,
@@ -336,11 +336,29 @@ export default function BookingFormConfig({
             </div>
 
             <div className="p-4">
-              <h3 className={`text-xs font-bold uppercase tracking-wider ${t.subText} mb-3`}>Step 2 — Optional Fields You Control</h3>
-              <div className="space-y-2">
-                <ControlRow icon={MapPin} label="Street Address" hint="Gather specific job site locations" enabled={fieldConfig.address.enabled} onToggle={() => toggleField('address')} t={t} isDark={isDark} />
-                <ControlRow icon={Calendar} label="Preferred Date & Time" hint="Clients pick a target date and time" enabled={fieldConfig.preferred_date.enabled} onToggle={togglePreferredDateTime} t={t} isDark={isDark} />
-                <ControlRow icon={Megaphone} label="Lead Referral Source" hint="Ask 'How did you hear about us?'" enabled={fieldConfig.lead_source.enabled} onToggle={() => toggleField('lead_source')} t={t} isDark={isDark} />
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h3 className={`text-xs font-bold uppercase tracking-wider ${t.subText}`}>Step 2 — Optional Fields You Control</h3>
+                <button
+                  onClick={handleSaveAll}
+                  disabled={!isDirty || loading}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:cursor-default ${
+                    isDirty
+                      ? 'bg-blue-600 text-white shadow-xs hover:bg-blue-700 disabled:opacity-50'
+                      : `border ${t.border} ${t.subText}`
+                  }`}
+                >
+                  {loading ? (
+                    <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  ) : !isDirty ? (
+                    <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  ) : null}
+                  {loading ? 'Saving...' : isDirty ? 'Save Changes' : 'Saved'}
+                </button>
+              </div>
+                            <div className="space-y-2">
+                               <ControlRow icon={MapPin} label="Street Address" hint="Gather specific job site locations" enabled={fieldConfig.address.enabled} onToggle={() => toggleField('address')} planLocked={!canCustomizeForm} companySlug={company.slug} t={t} isDark={isDark} />
+                <ControlRow icon={Calendar} label="Preferred Date & Time" hint="Clients pick a target date and time" enabled={fieldConfig.preferred_date.enabled} onToggle={togglePreferredDateTime} planLocked={!canCustomizeForm} companySlug={company.slug} t={t} isDark={isDark} />
+                <ControlRow icon={Megaphone} label="Lead Referral Source" hint="Ask 'How did you hear about us?'" enabled={fieldConfig.lead_source.enabled} onToggle={() => toggleField('lead_source')} planLocked={!canCustomizeForm} companySlug={company.slug} t={t} isDark={isDark} />
                 <ControlRow
                   icon={ImageIcon}
                   label="Site Photos & Attachments"
@@ -380,25 +398,7 @@ export default function BookingFormConfig({
           </div>
         </div>
 
-        <AnimatePresence>
-          {isDirty && (
-            <motion.div
-              initial={{ y: 80, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 80, opacity: 0 }}
-              className={`sticky bottom-4 z-40 mx-auto max-w-xl rounded-xl border ${t.border} ${t.overlayCard} p-4 shadow-xl backdrop-blur-md`}
-            >
-              <div className="flex items-center justify-between gap-4">
-                <p className={`flex items-center gap-2 text-xs font-bold ${t.cardText}`}>
-                  <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-amber-500" />
-                  You have unsaved changes.
-                </p>
-                <button onClick={handleSaveAll} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-blue-700 disabled:opacity-50 transition">
-                  {loading && <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
-                  {loading ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+    
       </div>
 
       <AnimatePresence>

@@ -21,6 +21,8 @@ import { DEFAULT_STATUSES } from '@/lib/formCategories';
 import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+
 
 // ---------------------------------------------------------------------------
 // Types
@@ -156,6 +158,8 @@ export default function LeadsClient({
   // rather than each independently re-fetching the same thing.
   const { data: currentUser } = useCurrentUser();
   const { data: teamMembers } = useTeamMembers(company.slug);
+    // Loads quote templates while the list is showing, so the Quote tab has them instantly.
+  useQuoteTemplates(company.slug);
 
   // Tour
   const [tourActive, setTourActive] = useState(false);

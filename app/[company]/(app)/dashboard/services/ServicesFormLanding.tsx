@@ -1,14 +1,30 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Tag, FileText, ArrowRight, Sun, Moon } from 'lucide-react';
+import { ChevronLeft, Tag, FileText, ArrowRight, Sun, Moon, Check, X } from 'lucide-react';
 import CategoriesTab from './CategoriesTab';
 import BookingFormConfig from './BookingFormConfig';
 import { useFormTabLogic } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
+import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
 
 type View = 'landing' | 'services' | 'form';
+
+const MAX_PILLS = 8;
+
+const parseArray = (raw: any): any[] => {
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === 'string') {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 export default function ServicesFormLanding({ company, currentUser }: { company: any; currentUser: any }) {
   const [view, setView] = useState<View>('landing');
@@ -31,9 +47,48 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
 
   const t = themeTokens(isDark);
   const formLogic = useFormTabLogic(company);
-  const activeCategoriesCount = Array.isArray(formLogic.categories) ? formLogic.categories.length : 0;
+  const { data: templates = [], isLoading: templatesLoading } = useQuoteTemplates(company?.slug);
 
-   const backBar = (max: string, _icon: React.ReactNode, _label: string) => (
+  // ── Services summary: every service + whether it has a pricing template ──
+  const services = useMemo(() => {
+    return parseArray(formLogic.categories)
+      .filter((c: any) => c && (c.value || c.label))
+      .map((c: any) => {
+        const value = c.value || c.label;
+        return {
+          value,
+          label: c.label || String(value).replace(/_/g, ' '),
+          hasTemplate: templates.some((tpl: any) => tpl.category === value),
+        };
+      });
+  }, [formLogic.categories, templates]);
+  const servicesWithTemplate = services.filter((s) => s.hasTemplate).length;
+
+  // ── Booking form summary: which fields customers actually see ──
+  const fc: any = (formLogic as any).fieldConfig || {};
+  const customQuestions = parseArray((formLogic as any).customQuestions ?? company?.custom_questions);
+  const formFields = [
+    { label: 'Name', on: true },
+    { label: 'Email', on: true },
+    { label: 'Phone', on: true },
+    { label: 'Service', on: true },
+    { label: 'Description', on: true },
+    { label: 'Address', on: !!fc.address?.enabled },
+    { label: 'Preferred date', on: !!fc.preferred_date?.enabled },
+    { label: 'Preferred time', on: !!fc.preferred_time?.enabled },
+    { label: 'How they found you', on: !!fc.lead_source?.enabled },
+    { label: 'Photos', on: !!fc.file_upload?.enabled },
+  ];
+
+  const pillOn = isDark
+    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+    : 'border-emerald-200 bg-emerald-50 text-emerald-700';
+  const pillOff = isDark
+    ? 'border-white/10 bg-white/5 text-slate-400'
+    : 'border-slate-200 bg-slate-50 text-slate-500';
+  const pillBase = 'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold';
+
+  const backBar = (max: string) => (
     <div className={`mx-auto ${max} px-4 pt-5 sm:px-6`}>
       <button
         onClick={() => setView('landing')}
@@ -47,21 +102,21 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
   if (view === 'services') {
     return (
       <div className={`min-h-screen ${t.bg} transition-colors`}>
-        {backBar('max-w-5xl', <Tag className="w-3.5 h-3.5 text-blue-500" />, 'Services')}
-                <CategoriesTab
+        {backBar('max-w-5xl')}
+        <CategoriesTab
           company={company}
           currentUser={currentUser}
           isDark={isDark}
           onToggleTheme={() => setIsDark((v) => !v)}
         />
-              </div>
+      </div>
     );
   }
 
   if (view === 'form') {
     return (
       <div className={`min-h-screen ${t.bg} transition-colors`}>
-        {backBar('max-w-5xl', <FileText className="w-3.5 h-3.5 text-emerald-500" />, 'Booking Form')}
+        {backBar('max-w-5xl')}
         <BookingFormConfig company={company} formLogic={formLogic} isDark={isDark} t={t} />
       </div>
     );
@@ -93,41 +148,98 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 items-stretch">
+          {/* SERVICES CARD */}
           <motion.button
             whileHover={{ y: -2 }}
             onClick={() => setView('services')}
-            className={`rounded-2xl border ${t.border} ${t.cardBg} p-6 text-left transition hover:border-blue-400`}
+            className={`flex flex-col rounded-2xl border ${t.border} ${t.cardBg} p-6 text-left transition hover:border-blue-400`}
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white mb-4">
               <Tag className="h-5 w-5" />
             </div>
             <p className={`text-lg font-bold ${t.cardText}`}>Services</p>
             <p className={`mt-1 text-xs leading-relaxed ${t.subText}`}>
-              Categories, pricing, deposits, and questions per service.
+              Each service can have an estimate template, a deposit, custom questions, and a task checklist.
             </p>
-            <p className={`mt-4 text-xs font-semibold ${t.subText}`}>
-              {activeCategoriesCount} active
-            </p>
-            <span className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-blue-500">
-              Manage <ArrowRight className="h-3.5 w-3.5" />
+
+            <div className="mt-4 flex-1">
+              <p className={`mb-2 text-[11px] font-bold uppercase tracking-wider ${t.subText}`}>
+                {templatesLoading
+                  ? `${services.length} services`
+                  : `${services.length} services · ${servicesWithTemplate} with estimate templates`}
+              </p>
+              {services.length === 0 ? (
+                <p className={`text-xs ${t.subText}`}>No services yet — add your first one.</p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {services.slice(0, MAX_PILLS).map((s) => (
+                    <span
+                      key={s.value}
+                      className={`${pillBase} ${!templatesLoading && s.hasTemplate ? pillOn : pillOff}`}
+                      title={s.hasTemplate ? 'Estimate template set up' : 'No estimate template yet'}
+                    >
+                      {!templatesLoading &&
+                        (s.hasTemplate ? (
+                          <Check className="h-3 w-3" />
+                        ) : (
+                          <X className="h-3 w-3 text-rose-400" />
+                        ))}
+                      {s.label}
+                    </span>
+                  ))}
+                  {services.length > MAX_PILLS && (
+                    <span className={`${pillBase} ${pillOff}`}>+{services.length - MAX_PILLS} more</span>
+                  )}
+                </div>
+              )}
+              {!templatesLoading && services.length > 0 && servicesWithTemplate < services.length && (
+                <p className={`mt-2 text-[11px] ${t.subText}`}>
+                  <X className="mr-0.5 inline h-3 w-3 text-rose-400" /> = no estimate template yet. Add one so quotes load in one click.
+                </p>
+              )}
+            </div>
+
+            <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-500">
+              Manage services <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </motion.button>
 
+          {/* BOOKING FORM CARD */}
           <motion.button
             whileHover={{ y: -2 }}
             onClick={() => setView('form')}
-            className={`rounded-2xl border ${t.border} ${t.cardBg} p-6 text-left transition hover:border-emerald-400`}
+            className={`flex flex-col rounded-2xl border ${t.border} ${t.cardBg} p-6 text-left transition hover:border-emerald-400`}
           >
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white mb-4">
               <FileText className="h-5 w-5" />
             </div>
             <p className={`text-lg font-bold ${t.cardText}`}>Booking Form</p>
             <p className={`mt-1 text-xs leading-relaxed ${t.subText}`}>
-              Choose your form fields, share your link, and test it.
+              The form customers fill out at your booking link. Turn fields on or off, share your link, and test it.
             </p>
-            <span className="mt-5 inline-flex items-center gap-1 text-xs font-bold text-emerald-500">
-              Open <ArrowRight className="h-3.5 w-3.5" />
+
+            <div className="mt-4 flex-1">
+              <p className={`mb-2 text-[11px] font-bold uppercase tracking-wider ${t.subText}`}>
+                What customers see
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {formFields.map((f) => (
+                  <span key={f.label} className={`${pillBase} ${f.on ? pillOn : pillOff}`}>
+                    {f.on ? <Check className="h-3 w-3" /> : <X className="h-3 w-3 text-rose-400" />}
+                    {f.label}
+                  </span>
+                ))}
+              </div>
+              <p className={`mt-2 text-[11px] ${t.subText}`}>
+                {customQuestions.length > 0
+                  ? `+ ${customQuestions.length} custom question${customQuestions.length === 1 ? '' : 's'} (shown for the services they belong to)`
+                  : 'No custom questions yet — add them per service under Services.'}
+              </p>
+            </div>
+
+            <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-emerald-500">
+              Edit form <ArrowRight className="h-3.5 w-3.5" />
             </span>
           </motion.button>
         </div>
