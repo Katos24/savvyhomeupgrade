@@ -341,18 +341,6 @@ export default function CategoriesTab({
               </p>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              <button
-                onClick={onToggleTheme}
-                className={`rounded-xl border p-2.5 transition-colors ${
-                  isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-[#e7e2d8] bg-white text-[#57534e] hover:bg-slate-50'
-                }`}
-                aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-              >
-                {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              </button>
-            
-            </div>
           </div>
 
           {/* ── Banners & Notifications ── */}
