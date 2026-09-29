@@ -15,6 +15,7 @@ import {
   Sun,
   Moon,
   ExternalLink,
+  HelpCircle,
 } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
@@ -351,7 +352,7 @@ export default function CategoriesTab({
                 {applyTarget === 'tax'
                   ? `${taxRate}% tax`
                   : depositLabel(depositType, depositValue).toLowerCase()}{' '}
-                to your {quoteTemplates.length} existing pricing template
+                to your {quoteTemplates.length} existing estimate template
                 {quoteTemplates.length !== 1 ? 's' : ''} too?
               </p>
               <div className="flex items-center gap-2 shrink-0">
@@ -563,17 +564,40 @@ export default function CategoriesTab({
               a persistent fixture — the "Tap Pricing below..." hint on
               each unconfigured card (CategoriesServiceCard.tsx) handles
               ongoing guidance after this point. */}
-          {quoteTemplates.length === 0 && (
-            <div className={`rounded-2xl border p-5 ${isDark ? 'border-blue-500/20 bg-blue-500/5' : 'border-blue-200 bg-blue-50/60'}`}>
-              <p className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-900'}`}>
-                Set up your first service to speed up every quote
-              </p>
-              <p className={`mt-1 text-xs leading-relaxed ${isDark ? 'text-blue-300/80' : 'text-blue-800/80'}`}>
-                Add line items and a price to any service below, and it&rsquo;ll be one click to load into a real quote —
-                no retyping the same prices every time. Set a deposit if you collect one, and you&rsquo;re done.
-              </p>
+                    {/* ── How each part of a service works ── */}
+          <div className={`rounded-2xl border ${t.border} ${t.cardBg} overflow-hidden`}>
+            <div
+              className={`grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x ${
+                isDark ? 'divide-white/10' : 'divide-slate-200'
+              }`}
+            >
+              {[
+                {
+                  icon: DollarSign,
+                  title: 'Estimate Template',
+                  text: 'Your starting price for this service. Load it into any quote in one click, then add, remove, or change items and quantities for that job.',
+                },
+                {
+                  icon: HelpCircle,
+                  title: 'Custom Questions',
+                  text: 'Extra questions on your booking form. Customers only see the ones for the service they choose.',
+                },
+                {
+                  icon: CheckSquare,
+                  title: 'Tasks',
+                  text: 'A checklist added to every job for this service, so you and your crew can track progress.',
+                },
+              ].map(({ icon: Icon, title, text }) => (
+                <div key={title} className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-blue-600 shrink-0" />
+                    <h3 className={`text-xs font-bold uppercase tracking-wider ${t.cardText}`}>{title}</h3>
+                  </div>
+                  <p className={`mt-1.5 text-xs leading-relaxed ${t.subText}`}>{text}</p>
+                </div>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* ── Service Cards Grid ── */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

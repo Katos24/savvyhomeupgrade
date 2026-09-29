@@ -56,7 +56,7 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
       aria-label={ariaLabel}
       onClick={onToggle}
       className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-        enabled ? 'bg-blue-600' : 'bg-slate-300'
+        enabled ? 'bg-blue-600' : 'bg-slate-300 dark:bg-slate-700'
       }`}
     >
       <span
@@ -70,12 +70,12 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel }: { enabled: boolean; onTo
 
 /* ═══════════════ Phone Frame Mockups ═══════════════ */
 
-function PhoneFrame({ children }: { children: React.ReactNode }) {
+function PhoneFrame({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
   return (
     <div className="mx-auto w-full max-w-[320px]">
-      <div className="relative h-[540px] rounded-[2.25rem] border-[8px] border-slate-900 bg-slate-900 shadow-xl">
-        <div className="absolute left-1/2 top-1.5 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-slate-900" />
-        <div className="h-full overflow-y-auto rounded-[1.6rem] bg-white">{children}</div>
+      <div className="relative h-[540px] rounded-[2.25rem] border-[8px] border-slate-900 bg-slate-900 shadow-xl dark:border-slate-800">
+        <div className="absolute left-1/2 top-1.5 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-slate-900 dark:bg-slate-800" />
+        <div className={`h-full overflow-y-auto rounded-[1.6rem] ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}`}>{children}</div>
       </div>
     </div>
   );
@@ -90,12 +90,15 @@ function PhoneHeader({ logoUrl, heading, brandColor1, brandColor2 }: { logoUrl?:
   );
 }
 
-const fieldBox = 'flex min-h-[40px] w-full items-center gap-2 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-medium text-slate-700';
+const getFieldBox = (isDark: boolean) =>
+  `flex min-h-[40px] w-full items-center gap-2 overflow-hidden rounded-lg border px-3 text-xs font-medium ${
+    isDark ? 'border-slate-800 bg-slate-800/60 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'
+  }`;
 
-function PhoneField({ label, children }: { label: string; children: React.ReactNode }) {
+function PhoneField({ label, children, isDark }: { label: string; children: React.ReactNode; isDark: boolean }) {
   return (
     <div>
-      <p className="mb-1 text-[11px] font-bold text-slate-600 uppercase tracking-wider">{label}</p>
+      <p className={`mb-1 text-[11px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{label}</p>
       {children}
     </div>
   );
@@ -161,65 +164,66 @@ export default function BookingFormConfig({
     } = formLogic;
   const { publicUrl, linkCopied, setLinkCopied } = formLogic;
   const [isTestModeOpen, setIsTestModeOpen] = useState(false);
+  const fieldBox = getFieldBox(isDark);
 
   const RequiredPhone = (
-    <PhoneFrame>
+    <PhoneFrame isDark={isDark}>
       <PhoneHeader logoUrl={company.logo_url} heading={getCtaHeading()} brandColor1={brandColor1} brandColor2={brandColor2} />
       <div className="space-y-3.5 p-4">
-        <PhoneField label="Full Name"><div className={fieldBox}><User className="h-3.5 w-3.5 shrink-0 text-slate-400" />John Smith</div></PhoneField>
-        <PhoneField label="Email Address"><div className={fieldBox}><Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">john@example.com</span></div></PhoneField>
-        <PhoneField label="Phone Number"><div className={fieldBox}><Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />(555) 123-4567</div></PhoneField>
-        <PhoneField label="Service Needed">
+        <PhoneField label="Full Name" isDark={isDark}><div className={fieldBox}><User className="h-3.5 w-3.5 shrink-0 text-slate-400" />John Smith</div></PhoneField>
+        <PhoneField label="Email Address" isDark={isDark}><div className={fieldBox}><Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">john@example.com</span></div></PhoneField>
+        <PhoneField label="Phone Number" isDark={isDark}><div className={fieldBox}><Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />(555) 123-4567</div></PhoneField>
+        <PhoneField label="Service Needed" isDark={isDark}>
           <div className="flex flex-wrap gap-1.5">
             {categories.map((cat: Category, i: number) => (
-              <span key={i} className={`rounded-md border px-2 py-0.5 text-[11px] font-bold ${i === 0 ? 'border-transparent text-white' : 'border-slate-200 bg-slate-50 text-slate-600'}`} style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}>
+              <span key={i} className={`rounded-md border px-2 py-0.5 text-[11px] font-bold ${i === 0 ? 'border-transparent text-white' : isDark ? 'border-slate-800 bg-slate-800 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`} style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}>
                 {cat.label}
               </span>
             ))}
           </div>
         </PhoneField>
-        <PhoneField label="Project Description"><div className="h-16 w-full rounded-lg border border-slate-200 bg-slate-50 p-2.5 text-xs font-medium text-slate-400">Describe your project here...</div></PhoneField>
+        <PhoneField label="Project Description" isDark={isDark}><div className={`h-16 w-full rounded-lg border p-2.5 text-xs font-medium ${isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>Describe your project here...</div></PhoneField>
         <div className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>Submit Request</div>
       </div>
     </PhoneFrame>
   );
 
   const OptionalPhone = (
-    <PhoneFrame>
+    <PhoneFrame isDark={isDark}>
       <PhoneHeader logoUrl={company.logo_url} heading={getCtaHeading()} brandColor1={brandColor1} brandColor2={brandColor2} />
       <div className="space-y-3.5 p-4">
         {enabledCount === 0 && (
-          <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/50 px-4 py-8 text-center">
-            <p className="text-xs font-bold text-slate-700">No extra fields active</p>
-            <p className="mt-1 text-[11px] font-medium text-slate-500">Clients will only see your standard required fields.</p>
+          <div className={`rounded-lg border border-dashed px-4 py-8 text-center ${isDark ? 'border-slate-800 bg-slate-800/30' : 'border-slate-200 bg-slate-50/50'}`}>
+            <p className={`text-xs font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>No extra fields active</p>
+            <p className={`mt-1 text-[11px] font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Clients will only see your standard required fields.</p>
           </div>
         )}
-        {fieldConfig.address.enabled && <PhoneField label="Address"><div className={fieldBox}><MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">123 Main St, New York 12345</span></div></PhoneField>}
+        {fieldConfig.address.enabled && <PhoneField label="Address" isDark={isDark}><div className={fieldBox}><MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">123 Main St, New York 12345</span></div></PhoneField>}
         {fieldConfig.preferred_date.enabled && (
-          <PhoneField label="Preferred Date & Time">
+          <PhoneField label="Preferred Date & Time" isDark={isDark}>
             <div className="space-y-2">
               <div className={fieldBox}><Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />MM / DD / YYYY</div>
               <div className={fieldBox}><Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />Morning</div>
             </div>
           </PhoneField>
         )}
-        {fieldConfig.lead_source.enabled && <PhoneField label="How did you hear about us?"><div className={fieldBox}><Megaphone className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">Google, referral, saw your truck...</span></div></PhoneField>}
+        {fieldConfig.lead_source.enabled && <PhoneField label="How did you hear about us?" isDark={isDark}><div className={fieldBox}><Megaphone className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">Google, referral, saw your truck...</span></div></PhoneField>}
         {fieldConfig.file_upload.enabled && (
-          <PhoneField label="Site Photos">
-            <div className="flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 py-4">
+          <PhoneField label="Site Photos" isDark={isDark}>
+            <div className={`flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed py-4 ${isDark ? 'border-slate-800 bg-slate-800/40 text-slate-400' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
               <ImageIcon className="h-4 w-4 text-slate-400" />
-              <p className="text-[11px] font-bold text-slate-600">Tap to upload photos</p>
+              <p className={`text-[11px] font-bold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Tap to upload photos</p>
             </div>
           </PhoneField>
         )}
         {canUseCustomQuestions && customQuestions.map((q: any) => (
-          <PhoneField key={q.id} label={q.label}>
+          <PhoneField key={q.id} label={q.label} isDark={isDark}>
             {q.type === 'text' && <div className={`${fieldBox} text-slate-400`}>Client answer...</div>}
             {q.type === 'select' && <div className={`${fieldBox} justify-between`}><span className="truncate">{q.options?.[0] || 'Select an option...'}</span><ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" /></div>}
             {q.type === 'checkbox' && (
               <div className="flex gap-4 py-1">
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700"><span className="h-3.5 w-3.5 rounded border border-slate-300 bg-white" /> Yes</span>
-                <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-700"><span className="h-3.5 w-3.5 rounded border border-slate-300 bg-white" /> No</span>
+                <span className={`flex items-center gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}><span className={`h-3.5 w-3.5 rounded border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-300 bg-white'}`} /> Yes</span>
+                <span className={`flex items-center gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}><span className={`h-3.5 w-3.5 rounded border ${isDark ? 'border-slate-700 bg-slate-800' : 'border-slate-300 bg-white'}`} /> No</span>
               </div>
             )}
           </PhoneField>
@@ -252,7 +256,7 @@ export default function BookingFormConfig({
           )}
         </AnimatePresence>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className={`rounded-xl border ${t.border} ${t.cardBg} p-4 flex flex-col justify-between`}>
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -401,21 +405,21 @@ export default function BookingFormConfig({
         {isPreviewOpen && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsPreviewOpen(false)} className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs" />
-            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 220 }} className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-                <div className="flex items-center gap-2"><Eye className="h-4 w-4 text-emerald-600" /><span className="text-sm font-bold text-slate-900">Live Mobile Preview</span></div>
-                <button type="button" onClick={() => setIsPreviewOpen(false)} className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"><X className="h-5 w-5" /></button>
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} transition={{ type: 'spring', damping: 25, stiffness: 220 }} className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col shadow-2xl ${isDark ? 'bg-slate-900 text-slate-100 border-l border-slate-800' : 'bg-white text-slate-900'}`}>
+              <div className={`flex items-center justify-between border-b px-6 py-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <div className="flex items-center gap-2"><Eye className="h-4 w-4 text-emerald-600" /><span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Live Mobile Preview</span></div>
+                <button type="button" onClick={() => setIsPreviewOpen(false)} className={`rounded-lg p-1.5 transition hover:bg-slate-500/10 ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-400 hover:text-slate-700'}`}><X className="h-5 w-5" /></button>
               </div>
-              <div className="flex-1 overflow-y-auto bg-slate-50/50 p-6">
+              <div className={`flex-1 overflow-y-auto p-6 ${isDark ? 'bg-slate-950/40' : 'bg-slate-50/50'}`}>
                 <div className="mx-auto flex max-w-xs flex-col gap-8">
                   <div><p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Step 1 — Required Fields</p>{RequiredPhone}</div>
-                  <div><p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Step 2 — Optional Fields You've Enabled</p>{OptionalPhone}</div>
+                  <div><p className="mb-3 text-center text-[11px] font-bold uppercase tracking-wider text-slate-400">Step 2 — Optional Fields You&apos;ve Enabled</p>{OptionalPhone}</div>
                 </div>
               </div>
             </motion.div>
           </>
         )}
-           </AnimatePresence>
+      </AnimatePresence>
 
       <AnimatePresence>
         {isTestModeOpen && (

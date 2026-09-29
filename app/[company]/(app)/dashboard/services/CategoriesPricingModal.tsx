@@ -23,7 +23,6 @@ import {
   depositFor,
   depositLabel,
   noSpinners,
-  themeTokens,
 } from './CategoriesTaskEditorModal';
 
 type Props = {
@@ -49,8 +48,6 @@ export default function CategoriesPricingModal({
   onClose,
   onSaved,
 }: Props) {
-  const t = themeTokens(isDark);
-
   const mapExisting = (tpl: QuoteTemplate | undefined): LineItem[] =>
     tpl
       ? tpl.items.map((item: any, i: number) => {
@@ -180,35 +177,59 @@ export default function CategoriesPricingModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md"
+      onClick={onClose}
+    >
       <div
-        className={`flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl ${t.overlayCard} shadow-2xl transition-all`}
+        className={`flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border shadow-2xl transition-all ${
+          isDark
+            ? 'border-slate-800 bg-slate-900 text-slate-100'
+            : 'border-slate-200 bg-white text-slate-900'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className={`flex shrink-0 items-center justify-between border-b ${t.border} px-6 py-4`}>
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
+        <div
+          className={`flex shrink-0 items-center justify-between border-b px-6 py-4.5 ${
+            isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-500">
               <Receipt className="h-5 w-5" />
             </div>
-            <div>
-              <h3 className={`text-sm font-semibold ${t.cardText}`}>Pricing Template</h3>
-              <p className={`text-xs ${t.subText}`}>{category.label}</p>
+            <div className="min-w-0">
+              <h3 className={`text-base font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Estimate Template
+              </h3>
+              <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                {category.label}
+              </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className={`rounded-xl p-1.5 ${t.subText} transition hover:bg-white/10`}
             aria-label="Close"
+            className={`flex h-8 w-8 items-center justify-center rounded-xl transition cursor-pointer ${
+              isDark
+                ? 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+            }`}
           >
-            <X className="h-4 w-4" />
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto">
           {/* Table Header (Desktop) */}
-          <div className={`hidden grid-cols-[1fr_120px_80px_100px_40px] items-center border-b ${t.border} px-6 py-2.5 text-[10px] font-semibold uppercase tracking-wider ${t.subText} sm:grid`}>
+          <div
+            className={`hidden grid-cols-[1fr_120px_80px_100px_40px] items-center border-b px-6 py-2.5 text-[11px] font-bold uppercase tracking-wider ${
+              isDark ? 'border-slate-800 bg-slate-950/40 text-slate-400' : 'border-slate-200 bg-slate-50 text-slate-700'
+            } sm:grid`}
+          >
             <span>Description</span>
             <span className="text-right">Unit Price</span>
             <span className="text-center">Qty</span>
@@ -217,29 +238,41 @@ export default function CategoriesPricingModal({
           </div>
 
           {/* Line Items List */}
-          <div className={`divide-y ${isDark ? 'divide-white/5' : 'divide-slate-100'}`}>
+          <div className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
             {editingLineItems.map((item) => (
               <div
                 key={item.id}
-                className={`relative flex flex-col gap-3 p-4 transition-colors sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:gap-2 sm:px-6 sm:py-3 ${t.hoverBg}`}
+                className={`relative flex flex-col gap-3 p-4 transition-colors sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:gap-2 sm:px-6 sm:py-3 ${
+                  isDark ? 'hover:bg-slate-800/40' : 'hover:bg-slate-50/80'
+                }`}
               >
                 <div>
                   <input
                     value={item.description}
                     onChange={(e) => updateLineItem(item.id, 'description', e.target.value)}
                     placeholder="Line item description"
-                    className={`w-full rounded-lg border ${t.border} bg-transparent px-3 py-1.5 text-xs font-medium outline-none focus:border-emerald-500/50 ${t.cardText}`}
+                    className={`w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none transition ${
+                      isDark
+                        ? 'border-slate-800 bg-slate-950 text-white focus:border-emerald-500'
+                        : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500'
+                    }`}
                   />
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 sm:contents">
-                  <div className="flex items-center rounded-lg border border-transparent focus-within:border-emerald-500/50 sm:justify-end">
-                    <span className={`text-xs ${t.subText}`}>$</span>
+                  <div
+                    className={`flex items-center rounded-xl border px-2.5 py-1.5 transition ${
+                      isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-300 bg-white'
+                    } focus-within:border-emerald-500`}
+                  >
+                    <span className="mr-1 text-xs font-bold text-emerald-500">$</span>
                     <input
                       type="number"
                       value={item.unitPrice || ''}
                       onChange={(e) => updateLineItem(item.id, 'unitPrice', e.target.value)}
-                      className={`w-full bg-transparent py-1.5 pl-1 text-xs font-semibold outline-none sm:text-right ${noSpinners} ${t.cardText}`}
+                      className={`w-full bg-transparent py-0.5 text-xs font-bold outline-none sm:text-right ${noSpinners} ${
+                        isDark ? 'text-white' : 'text-slate-900'
+                      }`}
                     />
                   </div>
 
@@ -248,19 +281,26 @@ export default function CategoriesPricingModal({
                       type="number"
                       value={item.quantity || ''}
                       onChange={(e) => updateLineItem(item.id, 'quantity', e.target.value)}
-                      className={`w-full rounded-lg border ${t.border} bg-transparent px-3 py-1.5 text-center text-xs font-semibold outline-none focus:border-emerald-500/50 ${noSpinners} ${t.cardText}`}
+                      className={`w-full rounded-xl border px-3 py-2 text-center text-xs font-bold outline-none transition ${
+                        isDark
+                          ? 'border-slate-800 bg-slate-950 text-white focus:border-emerald-500'
+                          : 'border-slate-300 bg-white text-slate-900 focus:border-emerald-500'
+                      } ${noSpinners}`}
                     />
                   </div>
 
                   <div className="flex items-center justify-end">
-                    <span className="text-xs font-semibold text-emerald-500">{fmt(item.amount)}</span>
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                      {fmt(item.amount)}
+                    </span>
                   </div>
                 </div>
 
                 <div className="absolute right-3 top-3 sm:static sm:flex sm:items-center sm:justify-end">
                   <button
+                    type="button"
                     onClick={() => setEditingLineItems((prev) => prev.filter((x) => x.id !== item.id))}
-                    className={`rounded-lg p-1.5 ${t.subText} transition hover:bg-rose-500/10 hover:text-rose-500`}
+                    className="flex h-8 w-8 items-center justify-center rounded-xl text-rose-500 transition hover:bg-rose-500/10 cursor-pointer"
                     aria-label="Remove line item"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
@@ -270,7 +310,11 @@ export default function CategoriesPricingModal({
             ))}
 
             {/* Add Line Item Row */}
-            <div className={`p-4 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:gap-2 sm:px-6 sm:py-3 ${lineItemError ? 'bg-rose-500/5' : ''}`}>
+            <div
+              className={`p-4 sm:grid sm:grid-cols-[1fr_120px_80px_100px_40px] sm:items-center sm:gap-2 sm:px-6 sm:py-3 ${
+                lineItemError ? 'bg-rose-500/5' : ''
+              }`}
+            >
               <div className="mb-2 sm:mb-0">
                 <input
                   value={newDesc}
@@ -280,13 +324,23 @@ export default function CategoriesPricingModal({
                   }}
                   onKeyDown={(e) => e.key === 'Enter' && addLineItem()}
                   placeholder="Add item (e.g., Labor, Materials)"
-                  className={`w-full rounded-lg border ${t.border} bg-transparent px-3 py-1.5 text-xs font-medium outline-none focus:border-emerald-500/50 placeholder:${t.subText} ${t.cardText}`}
+                  className={`w-full rounded-xl border px-3 py-2 text-xs font-semibold outline-none transition ${
+                    isDark
+                      ? 'border-slate-800 bg-slate-950 text-white placeholder:text-slate-500 focus:border-emerald-500'
+                      : 'border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-emerald-500'
+                  }`}
                 />
               </div>
 
               <div className="grid grid-cols-[1fr_65px_40px] gap-2 sm:contents">
-                <div className={`flex items-center rounded-lg border ${t.border} px-2.5 py-1.5 focus-within:border-emerald-500/50`}>
-                  <span className="mr-1 text-xs text-emerald-500">$</span>
+                <div
+                  className={`flex items-center rounded-xl border px-2.5 py-2 transition ${
+                    isDark
+                      ? 'border-slate-800 bg-slate-950'
+                      : 'border-slate-300 bg-slate-50'
+                  } focus-within:border-emerald-500`}
+                >
+                  <span className="mr-1 text-xs font-bold text-emerald-500">$</span>
                   <input
                     type="number"
                     value={newPrice}
@@ -295,7 +349,11 @@ export default function CategoriesPricingModal({
                       setLineItemError('');
                     }}
                     placeholder="0.00"
-                    className={`w-full border-none bg-transparent p-0 text-xs font-semibold outline-none focus:ring-0 sm:text-right ${noSpinners} ${t.cardText}`}
+                    className={`w-full border-none bg-transparent p-0 text-xs font-bold outline-none focus:ring-0 sm:text-right ${noSpinners} ${
+                      isDark
+                        ? 'text-white placeholder:text-slate-500'
+                        : 'text-slate-900 placeholder:text-slate-400'
+                    }`}
                   />
                 </div>
 
@@ -304,14 +362,19 @@ export default function CategoriesPricingModal({
                     type="number"
                     value={newQty}
                     onChange={(e) => setNewQty(e.target.value)}
-                    className={`w-full rounded-lg border ${t.border} bg-transparent px-3 py-1.5 text-center text-xs font-semibold outline-none focus:border-emerald-500/50 ${noSpinners} ${t.cardText}`}
+                    className={`w-full rounded-xl border px-3 py-2 text-center text-xs font-bold outline-none transition ${
+                      isDark
+                        ? 'border-slate-800 bg-slate-950 text-white focus:border-emerald-500'
+                        : 'border-slate-300 bg-slate-50 text-slate-900 focus:border-emerald-500'
+                    } ${noSpinners}`}
                   />
                 </div>
 
                 <div className="flex items-center justify-end">
                   <button
+                    type="button"
                     onClick={addLineItem}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 active:scale-95"
+                    className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white transition hover:bg-emerald-700 cursor-pointer shadow-xs"
                     aria-label="Add line item"
                   >
                     <Plus className="h-4 w-4" />
@@ -324,12 +387,12 @@ export default function CategoriesPricingModal({
           {/* Validation Errors */}
           <div className="px-6 pt-2 space-y-2">
             {lineItemError && (
-              <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-xs font-medium text-rose-500">
+              <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-bold text-rose-500">
                 <AlertCircle className="h-4 w-4 shrink-0" /> {lineItemError}
               </div>
             )}
             {quoteError && (
-              <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-xs font-medium text-rose-500">
+              <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs font-bold text-rose-500">
                 <AlertCircle className="h-4 w-4 shrink-0" /> {quoteError}
               </div>
             )}
@@ -337,19 +400,28 @@ export default function CategoriesPricingModal({
 
           {/* Financial Summary Accordion */}
           <div className="p-6">
-            <div className={`overflow-hidden rounded-xl border ${t.border} ${isDark ? 'bg-white/[0.02]' : 'bg-slate-50/50'}`}>
-              
+            <div
+              className={`overflow-hidden rounded-2xl border transition-all ${
+                isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50/60'
+              }`}
+            >
               {/* Accordion Trigger Header */}
               <button
                 type="button"
                 onClick={() => setIsSummaryExpanded((prev) => !prev)}
-                className={`flex w-full items-center justify-between p-4 transition ${t.hoverBg}`}
+                className={`flex w-full items-center justify-between p-4 transition cursor-pointer ${
+                  isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-100/60'
+                }`}
               >
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-500">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                   <span>Total Estimate:</span>
                   <span className="text-base font-extrabold">{fmt(total)}</span>
                 </div>
-                <div className={`flex items-center gap-1.5 text-xs font-medium ${t.subText}`}>
+                <div
+                  className={`flex items-center gap-1.5 text-xs font-bold ${
+                    isDark ? 'text-slate-400' : 'text-slate-600'
+                  }`}
+                >
                   <span>{isSummaryExpanded ? 'Hide Details' : 'View Breakdown'}</span>
                   {isSummaryExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </div>
@@ -364,39 +436,66 @@ export default function CategoriesPricingModal({
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <div className={`border-t ${t.border} p-4 space-y-3`}>
-                      <div className="space-y-1.5 text-xs font-medium">
-                        <div className={`flex items-center justify-between ${t.subText}`}>
+                    <div
+                      className={`border-t p-4 space-y-3 ${
+                        isDark ? 'border-slate-800' : 'border-slate-200'
+                      }`}
+                    >
+                      <div className="space-y-1.5 text-xs font-bold">
+                        <div
+                          className={`flex items-center justify-between ${
+                            isDark ? 'text-slate-400' : 'text-slate-600'
+                          }`}
+                        >
                           <span>Subtotal</span>
-                          <span className={`font-semibold ${t.cardText}`}>{fmt(subtotal)}</span>
+                          <span className={isDark ? 'text-white' : 'text-slate-900'}>{fmt(subtotal)}</span>
                         </div>
                         {effectiveTaxRate > 0 && (
-                          <div className={`flex items-center justify-between ${t.subText}`}>
+                          <div
+                            className={`flex items-center justify-between ${
+                              isDark ? 'text-slate-400' : 'text-slate-600'
+                            }`}
+                          >
                             <span className="flex items-center gap-1">
                               <Percent className="h-3 w-3 text-emerald-500" /> Tax ({effectiveTaxRate}%)
-                              {category.tax_rate_override != null && <span className="text-[10px] text-amber-500">(custom)</span>}
+                              {category.tax_rate_override != null && (
+                                <span className="text-[10px] text-amber-500">(custom)</span>
+                              )}
                             </span>
-                            <span className={`font-semibold ${t.cardText}`}>{fmt(taxAmount)}</span>
+                            <span className={isDark ? 'text-white' : 'text-slate-900'}>{fmt(taxAmount)}</span>
                           </div>
                         )}
                       </div>
 
                       {/* Deposit Ribbon */}
-                      <div className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border ${t.border} bg-transparent px-3 py-2 text-xs ${t.subText}`}>
+                      <div
+                        className={`flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl border px-3.5 py-2.5 text-xs font-semibold ${
+                          isDark
+                            ? 'border-slate-800 bg-slate-900 text-slate-300'
+                            : 'border-slate-200 bg-white text-slate-700'
+                        }`}
+                      >
                         <span className="flex items-center gap-1.5">
                           <HandCoins className="h-3.5 w-3.5 text-amber-500" />
-                          Deposit Required: <span className={`font-semibold ${t.cardText}`}>{depositLabel(depositType, depositValue)}</span>
+                          Deposit Required:{' '}
+                          <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                            {depositLabel(depositType, depositValue)}
+                          </span>
                         </span>
                         {deposit > 0 && (
                           <span className="sm:ml-auto">
-                            Due at signing: <span className="font-semibold text-amber-500">{fmt(deposit)}</span>
-                            {' '}· Balance: <span className={`font-semibold ${t.cardText}`}>{fmt(balance)}</span>
+                            Due at signing:{' '}
+                            <span className="font-bold text-amber-600 dark:text-amber-400">{fmt(deposit)}</span>
+                            {' '}· Balance:{' '}
+                            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                              {fmt(balance)}
+                            </span>
                           </span>
                         )}
                       </div>
 
                       {depositType === 'fixed' && depositValue > total && total > 0 && (
-                        <p className="flex items-center gap-1.5 text-[11px] font-medium text-amber-500">
+                        <p className="flex items-center gap-1.5 text-[11px] font-bold text-amber-500">
                           <AlertCircle className="h-3 w-3 shrink-0" />
                           Fixed deposit exceeds the total estimate and will be capped at {fmt(total)}.
                         </p>
@@ -405,24 +504,33 @@ export default function CategoriesPricingModal({
                   </motion.div>
                 )}
               </AnimatePresence>
-
             </div>
           </div>
         </div>
 
         {/* Footer Actions */}
-        <div className={`flex items-center justify-between border-t ${t.border} px-6 py-4`}>
+        <div
+          className={`flex items-center justify-between border-t px-6 py-4.5 ${
+            isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'
+          }`}
+        >
           {existingTemplate ? (
             <button
+              type="button"
               onClick={deleteTemplate}
-              className="rounded-xl border border-rose-500/20 px-4 py-2.5 text-xs font-semibold text-rose-500 transition hover:bg-rose-500/10"
+              className="rounded-xl border border-rose-500/30 px-4 py-2.5 text-xs font-bold text-rose-500 transition hover:bg-rose-500/10 cursor-pointer"
             >
               Delete Template
             </button>
           ) : (
             <button
+              type="button"
               onClick={onClose}
-              className={`rounded-xl border ${t.border} px-4 py-2.5 text-xs font-semibold ${t.subText} transition hover:bg-white/5`}
+              className={`rounded-xl border px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
+                isDark
+                  ? 'border-slate-800 text-slate-300 hover:bg-slate-800'
+                  : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+              }`}
             >
               Cancel
             </button>
@@ -430,9 +538,10 @@ export default function CategoriesPricingModal({
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={save}
               disabled={quoteSaving}
-              className="rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-semibold text-white transition hover:bg-emerald-700 active:scale-95 disabled:opacity-60"
+              className="rounded-xl bg-emerald-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-60 cursor-pointer shadow-xs"
             >
               {quoteSaving ? 'Saving...' : 'Save Template'}
             </button>

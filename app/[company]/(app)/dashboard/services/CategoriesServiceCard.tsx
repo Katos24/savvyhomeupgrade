@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { Layers, Trash2, CheckSquare, DollarSign, HandCoins, HelpCircle, ArrowRight } from 'lucide-react';
 import { useState, type ElementType } from 'react';
 import type { Category, QuoteTemplate, CustomQuestion } from './CategoriesTaskEditorModal';
-import { fmt, depositLabel, themeTokens } from './CategoriesTaskEditorModal';
+import { fmt, depositLabel } from './CategoriesTaskEditorModal';
 
 type Props = {
   category: Category;
@@ -29,26 +29,40 @@ type StatRowProps = {
   active: boolean;
   onClick: () => void;
   accentColor: string;
-  t: ReturnType<typeof themeTokens>;
+  isDark: boolean;
 };
 
-// Stacked full-width rows instead of a 3-across row
-const StatRow = ({ icon: Icon, label, active, onClick, accentColor, t }: StatRowProps) => (
+const StatRow = ({ icon: Icon, label, active, onClick, accentColor, isDark }: StatRowProps) => (
   <button
+    type="button"
     onClick={(e) => {
       e.stopPropagation();
       onClick();
     }}
-    className={`group/stat flex w-full items-center gap-2.5 rounded-lg border p-2.5 text-left transition-colors ${t.border} ${t.hoverBg}`}
+    className={`group/stat flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all cursor-pointer ${
+      isDark ? 'hover:bg-slate-800/60' : 'hover:bg-slate-200/60'
+    }`}
   >
     <div
-      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors"
-      style={active ? { backgroundColor: `${accentColor}1a`, color: accentColor } : {}}
+      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
+        !active ? (isDark ? 'bg-slate-800/80 text-slate-400' : 'bg-slate-200/80 text-slate-600') : ''
+      }`}
+      style={active ? { backgroundColor: `${accentColor}20`, color: accentColor } : {}}
     >
-      <Icon className={`h-3.5 w-3.5 ${active ? '' : t.subText}`} />
+      <Icon className="h-4 w-4" />
     </div>
-    <p className={`min-w-0 flex-1 truncate text-xs font-semibold ${t.cardText}`}>{label}</p>
-    <ArrowRight className={`h-3 w-3 shrink-0 opacity-0 transition-opacity group-hover/stat:opacity-100 ${t.subText}`} />
+    <span
+      className={`min-w-0 flex-1 truncate text-xs font-semibold ${
+        isDark ? 'text-slate-200' : 'text-slate-800'
+      }`}
+    >
+      {label}
+    </span>
+    <ArrowRight
+      className={`h-3.5 w-3.5 shrink-0 opacity-0 transition-all group-hover/stat:opacity-100 group-hover/stat:translate-x-0.5 ${
+        isDark ? 'text-slate-400' : 'text-slate-500'
+      }`}
+    />
   </button>
 );
 
@@ -65,7 +79,6 @@ export default function CategoriesServiceCard({
   onSetTaxOverride,
   taxRate,
 }: Props) {
-  const t = themeTokens(isDark);
   const [editingRate, setEditingRate] = useState(false);
   const [rateDraft, setRateDraft] = useState(
     category.tax_rate_override != null ? String(category.tax_rate_override) : ''
@@ -80,21 +93,26 @@ export default function CategoriesServiceCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex h-full flex-col rounded-2xl ${t.cardBg} p-4 transition-colors border ${t.border}`}
+      className={`flex h-full flex-col rounded-2xl border p-4 sm:p-5 shadow-xs transition-all ${
+        isDark
+          ? 'border-slate-800 bg-slate-900 text-slate-100'
+          : 'border-slate-200 bg-white text-slate-900'
+      }`}
     >
-      {/* ── Header Area with Prominent Title ── */}
-      <div className="flex items-start justify-between gap-2">
+      {/* ── Header Area ── */}
+      <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <div
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl"
-            style={{ backgroundColor: `${accentColor}1a` }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{ backgroundColor: `${accentColor}20` }}
           >
             <Layers className="h-5 w-5" style={{ color: accentColor }} />
           </div>
-          
-          {/* Prominent, bold title */}
-          <h3 
-            className={`min-w-0 truncate text-base sm:text-lg font-bold tracking-tight ${t.cardText}`}
+
+          <h3
+            className={`min-w-0 truncate text-base font-bold tracking-tight ${
+              isDark ? 'text-white' : 'text-slate-900'
+            }`}
             title={category.label}
           >
             {category.label}
@@ -102,8 +120,11 @@ export default function CategoriesServiceCard({
         </div>
 
         <button
+          type="button"
           onClick={onDelete}
-          className={`rounded-lg p-1.5 shrink-0 ${t.subText} transition hover:bg-rose-500/10 hover:text-rose-500`}
+          className={`rounded-xl p-2 shrink-0 transition-colors hover:bg-rose-500/10 hover:text-rose-500 cursor-pointer ${
+            isDark ? 'text-slate-400' : 'text-slate-500'
+          }`}
           aria-label={`Delete ${category.label}`}
         >
           <Trash2 className="h-4 w-4" />
@@ -111,14 +132,18 @@ export default function CategoriesServiceCard({
       </div>
 
       {/* ── Action Rows ── */}
-      <div className="mt-4 space-y-2">
+      <div
+        className={`mt-4 space-y-1 rounded-2xl p-1 transition-colors ${
+          isDark ? 'bg-slate-950/50' : 'bg-slate-100/70'
+        }`}
+      >
         <StatRow
           icon={DollarSign}
           label={quoteTemplate ? `${quoteTemplate.items.length} line items` : 'No pricing'}
           active={!!quoteTemplate}
           onClick={onOpenPricing}
           accentColor={accentColor}
-          t={t}
+          isDark={isDark}
         />
         <StatRow
           icon={HelpCircle}
@@ -126,7 +151,7 @@ export default function CategoriesServiceCard({
           active={questionCount > 0}
           onClick={onOpenQuestions}
           accentColor={accentColor}
-          t={t}
+          isDark={isDark}
         />
         <StatRow
           icon={CheckSquare}
@@ -134,25 +159,35 @@ export default function CategoriesServiceCard({
           active={taskCount > 0}
           onClick={onOpenTasks}
           accentColor={accentColor}
-          t={t}
+          isDark={isDark}
         />
       </div>
 
-      {/* ── Card Footer ── */}
-      <div className={`mt-auto flex flex-wrap items-center gap-x-3 gap-y-1.5 border-t pt-3 mt-3 text-xs ${t.border} ${t.subText}`}>
-        {quoteTemplate && (
-          <span>
-            Total: <span className={`font-semibold ${t.cardText}`}>{fmt(quoteTemplate.total)}</span>
-          </span>
-        )}
-        {hasDeposit && (
-          <span className="flex items-center gap-1">
-            <HandCoins className="h-3 w-3" />
-            {depositLabel(quoteTemplate!.deposit_type, quoteTemplate!.deposit_value)}
-          </span>
-        )}
+      {/* ── Footer ── */}
+      <div className="mt-auto pt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {quoteTemplate && (
+            <span className={`font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+              Total:{' '}
+              <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                {fmt(quoteTemplate.total)}
+              </span>
+            </span>
+          )}
+          {hasDeposit && (
+            <span
+              className={`inline-flex items-center gap-1 font-semibold ${
+                isDark ? 'text-slate-400' : 'text-slate-600'
+              }`}
+            >
+              <HandCoins className="h-3.5 w-3.5 text-amber-500" />
+              {depositLabel(quoteTemplate!.deposit_type, quoteTemplate!.deposit_value)}
+            </span>
+          )}
+        </div>
+
         {editingRate ? (
-          <div className="flex w-full flex-wrap items-center gap-1.5">
+          <div className="flex w-full items-center gap-1.5 pt-1">
             <input
               type="number"
               step="0.001"
@@ -162,10 +197,15 @@ export default function CategoriesServiceCard({
               onChange={(e) => setRateDraft(e.target.value)}
               autoFocus
               placeholder={String(taxRate)}
-              className={`w-16 rounded-md border px-2 py-1 text-xs font-semibold outline-none ${t.border} bg-transparent ${t.cardText}`}
+              className={`w-16 rounded-xl border px-2.5 py-1 text-xs font-bold outline-none transition ${
+                isDark
+                  ? 'border-slate-700 bg-slate-800 text-white focus:border-blue-500'
+                  : 'border-slate-300 bg-white text-slate-900 focus:border-blue-500'
+              }`}
             />
-            <span className={`text-xs ${t.subText}`}>%</span>
+            <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>%</span>
             <button
+              type="button"
               onClick={() => {
                 const parsed = parseFloat(rateDraft);
                 if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
@@ -173,44 +213,57 @@ export default function CategoriesServiceCard({
                   setEditingRate(false);
                 }
               }}
-              className="rounded-md bg-blue-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-blue-700"
+              className="rounded-xl bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-700 cursor-pointer transition shadow-xs"
             >
               Save
             </button>
             {hasOverride && (
               <button
+                type="button"
                 onClick={() => {
                   onSetTaxOverride(null);
                   setRateDraft('');
                   setEditingRate(false);
                 }}
-                className="text-[11px] font-semibold text-rose-500 hover:text-rose-600"
+                className="text-[11px] font-bold text-rose-500 hover:text-rose-600 cursor-pointer"
               >
-                Use default
+                Reset
               </button>
             )}
             <button
+              type="button"
               onClick={() => {
                 setEditingRate(false);
                 setRateDraft(category.tax_rate_override != null ? String(category.tax_rate_override) : '');
               }}
-              className={`text-[11px] font-semibold ${t.subText} hover:text-current`}
+              className={`text-[11px] font-bold hover:underline cursor-pointer ${
+                isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
+              }`}
             >
               Cancel
             </button>
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => setEditingRate(true)}
-            className={`ml-auto flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors ${
+            className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
               hasOverride
-                ? isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-700'
-                : `${t.hoverBg} ${t.subText}`
+                ? isDark
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  : 'bg-amber-100 text-amber-900 border border-amber-200'
+                : isDark
+                ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
             }`}
-            title="Click to set a custom tax rate for this service, or leave it using the company default"
+            title="Click to set a custom tax rate for this service"
           >
-            <span className={`h-1.5 w-1.5 rounded-full ${hasOverride ? 'bg-amber-500' : 'bg-slate-400'}`} />
-            {hasOverride ? `${category.tax_rate_override}% tax (custom)` : `${taxRate}% tax`}
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                hasOverride ? (isDark ? 'bg-amber-400' : 'bg-amber-600') : 'bg-slate-400'
+              }`}
+            />
+            {hasOverride ? `${category.tax_rate_override}% tax` : `${taxRate}% tax`}
           </button>
         )}
       </div>

@@ -53,6 +53,21 @@ function fmtTimestampDate(d: string | null | undefined) {
   });
 }
 
+// Short "Sep 29" form for the progress steps, so four steps fit a phone width.
+function fmtStepDate(d: string | null | undefined) {
+  if (!d) return null;
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return null;
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// YYYY-MM-DD in the user's LOCAL time zone. toISOString() is UTC, which
+// rolls over to tomorrow at 8pm ET — that made invoices show overdue a day
+// early and recorded evening payments with tomorrow's date.
+function localDateStr(d: Date = new Date()) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function generateInvoiceNumber(projectNumber?: number): string {
   const base = projectNumber ? String(projectNumber).padStart(3, '0') : '001';
   return `INV-${base}`;
@@ -100,10 +115,6 @@ export default function BillingSection({
   const [savingDueDate, setSavingDueDate] = useState(false);
 
   const [showDepositEditor, setShowDepositEditor] = useState(false);
-  const [paymentMode, setPaymentMode] = useState<'full' | 'deposit'>(
-    lead?.deposit_type ? 'deposit' : 'full'
-  );
-
   const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
   const [depositValueDraft, setDepositValueDraft] = useState('');
   const [savingDeposit, setSavingDeposit] = useState(false);
@@ -142,7 +153,6 @@ export default function BillingSection({
   const hasQuote = total > 0;
 
   const invoiceTaxRate = parseFloat(lead?.quote_tax_rate || '0');
-  const invoiceSubtotal = invoiceTaxRate > 0 ? total / (1 + invoiceTaxRate / 100) : total;
   const paidAmount = parseFloat(lead?.payment_amount || '0');
   const remaining = Math.max(total - paidAmount, 0);
 
@@ -167,7 +177,6 @@ export default function BillingSection({
   const isRefunded = lead?.payment_status === 'refunded';
   const isPartiallyRefunded = lead?.payment_status === 'partially_refunded';
   const isClosed = isRefunded || isPartiallyRefunded;
-  const refundedButOwing = isClosed && remaining > 0;
 
   const stripeActive =
     !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
@@ -197,12 +206,11 @@ export default function BillingSection({
     : null;
 
   const depositPayments = payments.filter((p: any) => p.kind === 'deposit');
-  const balancePayments = payments.filter((p: any) => p.kind === 'balance');
   const depositPaid = hasDepositTerms && !!lead?.deposit_paid_at;
 
   const currentAmountDue = hasDepositTerms && !depositPaid ? depositAmount : remaining;
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr();
 
   const isDepositOverdue =
     !!depositDueDate && depositDueDate < todayStr && !depositPaid && !isClosed;
@@ -222,7 +230,6 @@ export default function BillingSection({
       .reduce((s: number, p2: any) => s + Math.abs(p2.amount), 0);
 
   useEffect(() => {
-    setPaymentMode(lead?.deposit_type ? 'deposit' : 'full');
     setDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
     setDepositDueDate(lead?.deposit_due_date ? String(lead.deposit_due_date).split('T')[0] : '');
     setPaymentMethod(lead?.payment_method || '');
@@ -251,7 +258,7 @@ export default function BillingSection({
     }
     const d = new Date();
     d.setDate(d.getDate() + defaultBalanceDueDays);
-    setSendDueDateDraft(d.toISOString().split('T')[0]);
+    setSendDueDateDraft(localDateStr(d));
   }, [showSendConfirm]);
 
   // Contextual PDF Download Function
@@ -332,10 +339,12 @@ export default function BillingSection({
     }
   };
 
+  // FIXED: previously showed "Due date updated" even when the server
+  // rejected the change, and updated the local date anyway.
   const handleDueDateChange = async (newDate: string) => {
     setSavingDueDate(true);
     try {
-      await fetch('/api/leads/update', {
+      const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -348,6 +357,11 @@ export default function BillingSection({
           user_email: currentUser?.email || '',
         }),
       });
+      const result = await res.json().catch(() => null);
+      if (!res.ok || !result?.success) {
+        toast.error(result?.error || 'Failed to update due date');
+        return;
+      }
       if (dueDateEditorPhase === 'deposit') {
         setDepositDueDate(newDate);
       } else {
@@ -596,7 +610,6 @@ export default function BillingSection({
       toast.error('Deposit terms are locked because a payment has already been recorded');
       return;
     }
-    setPaymentMode('deposit');
     setDepositTypeDraft(depositType ?? 'percent');
     setDepositValueDraft(depositValue > 0 ? String(depositValue) : '');
     setShowDepositEditor(true);
@@ -625,7 +638,7 @@ export default function BillingSection({
         prefill.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
       );
     }
-    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setPaymentDate(localDateStr());
     setShowRecordPayment(true);
   };
 
@@ -658,42 +671,68 @@ export default function BillingSection({
   const depositCollected = depositPayments.reduce((s: number, p: any) => s + netOf(p), 0);
   const depositRemaining = Math.max(depositAmount - depositCollected, 0);
 
-  // Compact Pipeline Step Calculations
-  const isStep1Done = depositRequestSent || depositPaid || isPaid;
-  const isStep2Done = depositPaid || isPaid;
-  const isStep3Done = balanceRequestSent || isPaid;
-  const isStep4Done = isPaid;
+  // Balance card amount: the projected balance until the deposit is in,
+  // then what's actually still owed (was always the full balance, even
+  // after partial balance payments).
+  const balancePortion = hasDepositTerms ? total - depositAmount : total;
+  const balanceDisplay = isPaid
+    ? balancePortion
+    : hasDepositTerms && !depositPaid
+    ? balancePortion
+    : remaining;
 
-  const steps = [
-    { id: 1, label: 'Deposit Requested', done: isStep1Done, date: fmtTimestampDate(depositSentAt) || (depositRequestSent ? 'Sent' : null) },
-    { id: 2, label: 'Deposit Paid', done: isStep2Done, date: lead?.deposit_paid_at ? fmtTimestampDate(lead.deposit_paid_at) : null },
-    { id: 3, label: 'Balance Due', done: isStep3Done, date: fmtTimestampDate(balanceSentAt) || (balanceRequestSent ? 'Sent' : null) },
-    { id: 4, label: 'Paid in Full', done: isStep4Done, date: lead?.paid_in_full_at ? fmtTimestampDate(lead.paid_in_full_at) : null },
-  ];
+  // Progress steps. Jobs without a deposit only get the two steps that
+  // apply to them (previously they showed two deposit steps that could
+  // never complete).
+  const steps = hasDepositTerms
+    ? [
+        { id: 1, label: 'Deposit Sent', done: depositRequestSent || depositPaid || isPaid, date: fmtStepDate(depositSentAt) },
+        { id: 2, label: 'Deposit Paid', done: depositPaid || isPaid, date: fmtStepDate(lead?.deposit_paid_at) },
+        { id: 3, label: 'Balance Sent', done: balanceRequestSent || isPaid, date: fmtStepDate(balanceSentAt) },
+        { id: 4, label: 'Paid in Full', done: isPaid, date: fmtStepDate(lead?.paid_in_full_at) },
+      ]
+    : [
+        { id: 1, label: 'Invoice Sent', done: balanceRequestSent || isPaid, date: fmtStepDate(balanceSentAt) },
+        { id: 2, label: 'Paid in Full', done: isPaid, date: fmtStepDate(lead?.paid_in_full_at) },
+      ];
+
+  const anyRequestSent = depositRequestSent || balanceRequestSent;
 
   return (
     <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 text-slate-900 px-1 sm:px-0 font-sans">
-      
-      {/* COMPACT SLIM HEADER & PIPELINE */}
+
+      {/* COMPACT HEADER & PROGRESS */}
       <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow-xs space-y-3.5">
-        
+
         {/* Header Title Bar */}
         <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
             <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900">
               Invoice #{invoiceNumber}
             </h2>
-            {isPaid ? (
+            {isRefunded ? (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                Refunded
+              </span>
+            ) : isPartiallyRefunded ? (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                Partially Refunded
+              </span>
+            ) : isPaid ? (
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                 <Check className="w-3 h-3" /> Paid
+              </span>
+            ) : isOverdue || isDepositOverdue ? (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                Overdue
               </span>
             ) : depositPaid ? (
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
                 Deposit Paid
               </span>
-            ) : depositRequestSent ? (
+            ) : anyRequestSent ? (
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Requested
+                <Clock className="w-3 h-3" /> Sent
               </span>
             ) : (
               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
@@ -706,87 +745,83 @@ export default function BillingSection({
           </span>
         </div>
 
-        {/* Ultra-Slim Responsive Pipeline (Scrollable on small mobile viewports) */}
-        <div className="pt-1 overflow-x-auto">
-          <div className="grid grid-cols-4 gap-1 sm:gap-2 min-w-[420px] sm:min-w-0 relative">
-            {steps.map((step, idx) => (
-              <div key={step.id} className="flex flex-col items-center text-center">
-                <div className="flex items-center w-full">
-                  {/* Left Connector Line */}
-                  <div
-                    className={`h-0.5 flex-1 transition-colors ${
-                      idx === 0 ? 'bg-transparent' : step.done ? 'bg-teal-600' : 'bg-slate-200'
-                    }`}
-                  />
-                  {/* Dot Badge */}
-                  <div
-                    className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition shrink-0 ${
-                      step.done
-                        ? 'bg-teal-600 text-white'
-                        : 'bg-white border-2 border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    {step.done ? <Check className="w-3 h-3 stroke-[3]" /> : step.id}
-                  </div>
-                  {/* Right Connector Line */}
-                  <div
-                    className={`h-0.5 flex-1 transition-colors ${
-                      idx === steps.length - 1
-                        ? 'bg-transparent'
-                        : steps[idx + 1]?.done
-                        ? 'bg-teal-600'
-                        : 'bg-slate-200'
-                    }`}
-                  />
-                </div>
-                <span
-                  className={`text-[10px] sm:text-xs mt-1 font-medium truncate max-w-full px-0.5 ${
-                    step.done ? 'text-teal-900 font-semibold' : 'text-slate-400'
+        {/* Progress steps — always fit the width, no horizontal scrolling,
+            so the last step is visible on phones. Labels wrap if needed. */}
+        <div className={`grid gap-1 sm:gap-2 pt-1 ${steps.length === 4 ? 'grid-cols-4' : 'grid-cols-2'}`}>
+          {steps.map((step, idx) => (
+            <div key={step.id} className="flex flex-col items-center text-center min-w-0">
+              <div className="flex items-center w-full">
+                <div
+                  className={`h-0.5 flex-1 transition-colors ${
+                    idx === 0 ? 'bg-transparent' : step.done ? 'bg-teal-600' : 'bg-slate-200'
+                  }`}
+                />
+                <div
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition shrink-0 ${
+                    step.done
+                      ? 'bg-teal-600 text-white'
+                      : 'bg-white border-2 border-slate-200 text-slate-400'
                   }`}
                 >
-                  {step.label}
-                </span>
-                <span className="text-[10px] text-slate-400 mt-0.5 font-normal h-3">
-                  {step.date || '—'}
-                </span>
+                  {step.done ? <Check className="w-3 h-3 stroke-[3]" /> : step.id}
+                </div>
+                <div
+                  className={`h-0.5 flex-1 transition-colors ${
+                    idx === steps.length - 1
+                      ? 'bg-transparent'
+                      : steps[idx + 1]?.done
+                      ? 'bg-teal-600'
+                      : 'bg-slate-200'
+                  }`}
+                />
               </div>
-            ))}
-          </div>
+              <span
+                className={`text-[10px] sm:text-xs mt-1 leading-tight px-0.5 ${
+                  step.done ? 'text-teal-900 font-semibold' : 'text-slate-400 font-medium'
+                }`}
+              >
+                {step.label}
+              </span>
+              <span className="text-[10px] text-slate-400 mt-0.5 leading-tight">
+                {step.date || '—'}
+              </span>
+            </div>
+          ))}
         </div>
 
       </div>
 
       {/* MAIN TWO-COLUMN LAYOUT */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        
+
         {/* LEFT COLUMN: Summary Bar & Phase Cards (2 cols) */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          
+
           {/* Summary Bar Card */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 grid grid-cols-3 divide-x divide-slate-200 text-slate-900 shadow-2xs">
-            <div className="pr-2 sm:pr-4 space-y-0.5 text-center sm:text-left">
+          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 grid grid-cols-3 divide-x divide-slate-200 text-slate-900 shadow-2xs">
+            <div className="pr-2 sm:pr-4 space-y-0.5 text-center sm:text-left min-w-0">
               <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Total
               </span>
-              <div className="text-base sm:text-xl font-bold text-slate-900">{fmt(total)}</div>
+              <div className="text-sm sm:text-xl font-bold text-slate-900 truncate">{fmt(total)}</div>
               {invoiceTaxRate > 0 && (
                 <span className="text-[10px] text-slate-400 hidden sm:block">
                   Incl. {invoiceTaxRate}% tax
                 </span>
               )}
             </div>
-            <div className="px-2 sm:px-4 space-y-0.5 text-center sm:text-left">
+            <div className="px-2 sm:px-4 space-y-0.5 text-center sm:text-left min-w-0">
               <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Collected
               </span>
-              <div className="text-base sm:text-xl font-bold text-slate-700">{fmt(paidAmount)}</div>
+              <div className="text-sm sm:text-xl font-bold text-slate-700 truncate">{fmt(paidAmount)}</div>
             </div>
-            <div className="pl-2 sm:pl-4 space-y-0.5 text-center sm:text-left">
+            <div className="pl-2 sm:pl-4 space-y-0.5 text-center sm:text-left min-w-0">
               <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Remaining
               </span>
               <div
-                className={`text-base sm:text-xl font-bold ${
+                className={`text-sm sm:text-xl font-bold truncate ${
                   remaining > 0 ? 'text-amber-600' : 'text-emerald-600'
                 }`}
               >
@@ -798,21 +833,20 @@ export default function BillingSection({
           {/* STAGE 1: DEPOSIT CARD */}
           {hasDepositTerms && (
             <div
-              className={`rounded-xl p-4 sm:p-5 border transition-all ${
+              className={`rounded-xl border transition-all ${
                 depositPaid
-                  ? 'bg-slate-50/50 border-slate-200'
-                  : 'bg-white border-2 border-teal-600 shadow-xs'
+                  ? 'p-3 sm:p-4 bg-slate-50/50 border-slate-200'
+                  : 'p-4 sm:p-5 bg-white border-2 border-teal-600 shadow-xs'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   <span className="text-xs sm:text-sm font-bold text-slate-900">
                     1. Deposit ({depositType === 'percent' ? `${depositValue}%` : 'Fixed'})
                   </span>
 
-                  {/* DEPOSIT EDIT BUTTON / LOCKED INDICATOR */}
                   {depositLocked ? (
-                    <span 
+                    <span
                       title="Deposit terms locked because a payment has been recorded"
                       className="inline-flex items-center gap-1 text-[10px] text-slate-400 font-medium bg-slate-100 px-2 py-0.5 rounded cursor-not-allowed"
                     >
@@ -847,49 +881,63 @@ export default function BillingSection({
                 <div className="text-xl sm:text-2xl font-extrabold text-slate-900">
                   {fmt(depositAmount)}
                 </div>
-                <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                  <span>
-                    {depositSentAt ? `Sent ${fmtTimestampDate(depositSentAt)}` : 'Not sent yet'}
-                  </span>
-                  <span>•</span>
-                  <button
-                    onClick={() => openDueDateEditor('deposit')}
-                    className="hover:text-slate-800 underline font-medium"
-                  >
-                    {depositDueDate ? `Due ${fmtDate(depositDueDate)}` : 'Set Due Date'}
-                  </button>
-                  {isDepositOverdue && (
-                    <span className="text-rose-600 font-semibold">
-                      ({depositDaysOverdue}d overdue)
+                {!depositPaid && depositCollected > 0 && (
+                  <div className="text-xs text-teal-700 font-medium mt-0.5">
+                    {fmt(depositCollected)} collected · {fmt(depositRemaining)} left
+                  </div>
+                )}
+                {depositPaid ? (
+                  // Paid: collapse to a single line — due dates and sending no longer matter
+                  <div className="text-xs text-slate-500 mt-1">
+                    Paid {fmtTimestampDate(lead?.deposit_paid_at) || ''}
+                  </div>
+                ) : (
+                  <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                    <span>
+                      {depositSentAt ? `Sent ${fmtTimestampDate(depositSentAt)}` : 'Not sent yet'}
                     </span>
-                  )}
-                </div>
+                    <span>•</span>
+                    <button
+                      onClick={() => openDueDateEditor('deposit')}
+                      className="hover:text-slate-800 underline font-medium"
+                    >
+                      {depositDueDate ? `Due ${fmtDate(depositDueDate)}` : 'Set Due Date'}
+                    </button>
+                    {isDepositOverdue && (
+                      <span className="text-rose-600 font-semibold">
+                        ({depositDaysOverdue}d overdue)
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
-              {/* Deposit Action Buttons & Contextual PDF Download */}
+              {/* Actions only while the deposit is outstanding. Once paid, the
+                  final invoice PDF (balance card) covers the full history. */}
+              {!depositPaid && (
               <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
-                {!depositPaid && canSendInvoice && (
+                {canSendInvoice && (
                   <button
                     onClick={() => setShowSendConfirm(true)}
-                    className="flex-1 sm:flex-none px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
+                    className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    {depositRequestSent ? 'Resend Deposit Request' : 'Send Deposit Request'}
+                    {depositRequestSent ? 'Resend Request' : 'Send Deposit Request'}
                   </button>
                 )}
                 {!depositPaid && hasPayLink && (
                   <button
                     onClick={handleGetPaymentLink}
-                    className="flex-1 sm:flex-none px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                    className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
                   >
                     <Copy className="w-3.5 h-3.5 text-slate-500" />
-                    Copy Link
+                    Payment Link
                   </button>
                 )}
                 {!depositPaid && (
                   <button
                     onClick={openRecordPaymentModal}
-                    className="w-full sm:w-auto px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                    className="w-full sm:w-auto px-3 py-2 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Mark Paid
@@ -898,12 +946,13 @@ export default function BillingSection({
                 <button
                   onClick={() => handleDownload('deposit')}
                   disabled={downloading}
-                  className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:ml-auto"
+                  className="w-full sm:w-auto px-3 py-2 sm:py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:ml-auto"
                 >
                   <Download className="w-3.5 h-3.5 text-slate-500" />
                   Deposit PDF
                 </button>
               </div>
+              )}
             </div>
           )}
 
@@ -924,6 +973,10 @@ export default function BillingSection({
               {isPaid ? (
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 shrink-0">
                   Paid
+                </span>
+              ) : isClosed ? (
+                <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800 shrink-0">
+                  {isRefunded ? 'Refunded' : 'Partially Refunded'}
                 </span>
               ) : hasDepositTerms && !depositPaid ? (
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200 text-slate-600 flex items-center gap-1 shrink-0">
@@ -946,7 +999,7 @@ export default function BillingSection({
                   hasDepositTerms && !depositPaid ? 'text-slate-400' : 'text-slate-900'
                 }`}
               >
-                {fmt(hasDepositTerms ? total - depositAmount : total)}
+                {fmt(balanceDisplay)}
               </div>
               <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
                 {hasDepositTerms && !depositPaid ? (
@@ -971,14 +1024,13 @@ export default function BillingSection({
               </div>
             </div>
 
-            {/* Balance Action Buttons & Contextual PDF Download */}
             <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
               {(!hasDepositTerms || depositPaid) && !isPaid && (
                 <>
                   {canSendInvoice && (
                     <button
                       onClick={() => setShowSendConfirm(true)}
-                      className="flex-1 sm:flex-none px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
+                      className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
                     >
                       <Send className="w-3.5 h-3.5" />
                       {balanceRequestSent ? 'Resend Invoice' : 'Send Invoice'}
@@ -987,15 +1039,15 @@ export default function BillingSection({
                   {hasPayLink && (
                     <button
                       onClick={handleGetPaymentLink}
-                      className="flex-1 sm:flex-none px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                      className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
                     >
                       <Copy className="w-3.5 h-3.5 text-slate-500" />
-                      Copy Link
+                      Payment Link
                     </button>
                   )}
                   <button
                     onClick={openRecordPaymentModal}
-                    className="w-full sm:w-auto px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                    className="w-full sm:w-auto px-3 py-2 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Mark Paid
@@ -1006,7 +1058,7 @@ export default function BillingSection({
               <button
                 onClick={() => handleDownload('balance')}
                 disabled={downloading}
-                className="w-full sm:w-auto px-3 py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:ml-auto"
+                className="w-full sm:w-auto px-3 py-2 sm:py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:ml-auto"
               >
                 <Download className="w-3.5 h-3.5 text-slate-500" />
                 {hasDepositTerms ? 'Balance PDF' : 'Invoice PDF'}
@@ -1021,27 +1073,40 @@ export default function BillingSection({
                 Payment Transactions
               </h3>
               <div className="divide-y divide-slate-100">
-                {payments.map((p: any) => (
-                  <div key={p.id} className="py-2.5 flex items-center justify-between text-xs">
-                    <div>
-                      <div className="font-semibold text-slate-900">
-                        {fmt(p.amount)}{' '}
-                        <span className="ml-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 capitalize">
-                          {p.kind}
-                        </span>
+                {payments.map((p: any) => {
+                  const isRefundRow = p.kind === 'refund';
+                  const reversed = isRefundRow ? 0 : reversedAmountFor(p.id);
+                  const fullyReversed = !isRefundRow && netOf(p) <= 0;
+                  return (
+                    <div key={p.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-900">
+                          {fmt(p.amount)}{' '}
+                          <span className="ml-1 text-[10px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 capitalize">
+                            {p.kind}
+                          </span>
+                        </div>
+                        <div className="text-slate-400 mt-0.5">
+                          {fmtDate(p.paid_on)} • Method: {p.method || 'Manual'}
+                          {reversed > 0 && !fullyReversed && (
+                            <span className="text-rose-500"> • {fmt(reversed)} reversed</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-slate-400 mt-0.5">
-                        {fmtDate(p.paid_on)} • Method: {p.method || 'Manual'}
-                      </div>
+                      {/* Refund rows and fully-reversed payments can't be reversed again */}
+                      {isRefundRow ? null : fullyReversed ? (
+                        <span className="text-slate-400 font-medium shrink-0">Reversed</span>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeletePayment(p)}
+                          className="text-rose-600 hover:underline font-medium shrink-0 py-1"
+                        >
+                          Reverse
+                        </button>
+                      )}
                     </div>
-                    <button
-                      onClick={() => setConfirmDeletePayment(p)}
-                      className="text-rose-600 hover:underline font-medium"
-                    >
-                      Reverse
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1050,7 +1115,7 @@ export default function BillingSection({
 
         {/* RIGHT COLUMN: Settings & Outbox Sidebar (1 col) */}
         <div className="space-y-4 sm:space-y-6">
-          
+
           {/* Settings Panel */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 sm:p-5 space-y-3.5">
             <div className="flex items-center justify-between">
@@ -1064,13 +1129,12 @@ export default function BillingSection({
                 </span>
               )}
             </div>
-            
+
             <div className="space-y-2 text-xs">
-              {/* Deposit Row (Locked if depositLocked) */}
               <div className="flex justify-between items-center py-1">
                 <span className="text-slate-500">Deposit:</span>
                 {depositLocked ? (
-                  <span 
+                  <span
                     title="Deposit settings locked after payment"
                     className="font-semibold text-slate-400 flex items-center gap-1 cursor-not-allowed"
                   >
@@ -1091,11 +1155,10 @@ export default function BillingSection({
                 )}
               </div>
 
-              {/* Tax Rate Row (Locked if taxLocked) */}
               <div className="flex justify-between items-center py-1 border-t border-slate-200/60">
                 <span className="text-slate-500">Tax Rate:</span>
                 {taxLocked ? (
-                  <span 
+                  <span
                     title="Tax rate locked after payment"
                     className="font-semibold text-slate-400 flex items-center gap-1 cursor-not-allowed"
                   >
@@ -1136,7 +1199,7 @@ export default function BillingSection({
                     key={entry.id}
                     className="p-2.5 sm:p-3 bg-white border border-slate-200 rounded-lg space-y-1 shadow-2xs"
                   >
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-800">
+                    <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-800">
                       <span className="flex items-center gap-1.5 truncate">
                         <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
                         <span className="truncate">{entry.title || entry.type || 'Invoice Sent'}</span>

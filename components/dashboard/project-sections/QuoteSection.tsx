@@ -9,7 +9,6 @@ import {
   Loader2,
   Save,
   Eye,
-  Pencil,
   FileText,
   Lock,
   ChevronDown,
@@ -36,8 +35,6 @@ type QuoteSectionProps = {
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-// Category values are stored as snake_case ("plumbing_repair") — this is
-// purely a display fix, the underlying value used elsewhere stays as stored.
 const formatCategoryLabel = (value?: string) =>
   (value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -64,37 +61,26 @@ export default function QuoteSection({
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
-   const { data: allTemplates = [], isLoading: templatesLoading } = useQuoteTemplates(companySlug);
+
+  const { data: allTemplates = [], isLoading: templatesLoading } = useQuoteTemplates(companySlug);
   const categoryTemplate = useMemo(
     () => (lead?.category ? allTemplates.find((t: any) => t.category === lead.category) : null),
     [allTemplates, lead?.category]
   );
+
   const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
   const [markingAccepted, setMarkingAccepted] = useState(false);
-    const [editingTaxRate, setEditingTaxRate] = useState(false);
+  const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState('');
-    const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [showLineItems, setShowLineItems] = useState(false);
-  // Which row is currently focused, for the subtle active-row highlight in
-  // the desktop table — tracked at the row level (not per-input) so moving
-  // focus between description/price/qty within the same row doesn't flicker.
   const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
-  // Send/Accept/Clear now live in one Actions menu instead of separate
-  // buttons scattered around the card — was causing Save and Send to sit
-  // next to each other and get mixed up.
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
-  // Subtotal/Deposit/Tax breakdown collapsed by default — only Total shows
-  // until this is toggled. Part of freeing width back to the table: the
-  // old fixed 240px side column stayed that wide whether or not anyone was
-  // looking at the breakdown, which was the actual cause of the table
-  // feeling squished. Now the table gets the full container width, and
-  // this renders as a compact bar underneath instead of a side rail.
-  const [showBreakdown, setShowBreakdown] = useState(false);
 
-  // ── DEPOSIT TERMS ── (same save_deposit_terms action BillingSection uses)
+  // ── DEPOSIT TERMS ──
   const [showDepositEditor, setShowDepositEditor] = useState(false);
   const [depositTypeDraft, setDepositTypeDraft] = useState<'percent' | 'fixed'>('percent');
   const [depositValueDraft, setDepositValueDraft] = useState('');
@@ -114,7 +100,8 @@ export default function QuoteSection({
       ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(
         e.key
       ) ||
-      (e.ctrlKey || e.metaKey)
+      e.ctrlKey ||
+      e.metaKey
     ) {
       return;
     }
@@ -124,8 +111,6 @@ export default function QuoteSection({
     }
     if (!/^[0-9]$/.test(e.key)) e.preventDefault();
   };
-
-  
 
   useEffect(() => {
     if (isDirty) return;
@@ -203,7 +188,7 @@ export default function QuoteSection({
           user_email: currentUser?.email || '',
         }),
       });
-            const result = await res.json().catch(() => null);
+      const result = await res.json().catch(() => null);
       if (res.ok && result?.success !== false) {
         toast.success('Quote saved successfully');
         await onRefresh();
@@ -218,7 +203,7 @@ export default function QuoteSection({
     }
   };
 
-   const handleManualSave = () => {
+  const handleManualSave = () => {
     if (!hasProject) return;
     if (hasIncompleteItems) {
       toast.error('Add a description and price to every item before saving.');
@@ -227,22 +212,6 @@ export default function QuoteSection({
     doSave(quoteData, taxRate);
   };
 
-   // Fires right after a successful save, not before send — a nudge, not
-  // a blocker. Only offers what's genuinely missing AND genuinely has a
-  // real company default to apply; never shows when there's nothing
-  // useful to suggest. Two separate checks (tax, deposit) can both fire
-  // off one save, stacked as two toasts, since they're unrelated facts.
-  //
-  // FIXED: was firing on every single save while the gap remained
-  // unresolved — genuinely felt like nagging on a multi-save session.
-  // Tracked per-lead in sessionStorage so it shows at most once per
-  // lead per browser tab session, not once per save. Clears itself
-  // naturally once someone actually applies a default (taxRate/deposit
-  // is no longer 0/null), so it's not permanently silenced — just not
-  // repeated on every keystroke-save cycle.
-  
-
-   
   const handleMarkAccepted = async () => {
     setMarkingAccepted(true);
     try {
@@ -261,7 +230,7 @@ export default function QuoteSection({
         toast.success('Quote marked as accepted');
         setShowAcceptConfirm(false);
         await onRefresh();
-           } else {
+      } else {
         toast.error(data.error || 'Could not update the quote');
       }
     } catch {
@@ -271,9 +240,6 @@ export default function QuoteSection({
     }
   };
 
-  // Same lock rule as BillingSection: once money's moved, deposit terms
-  // (and tax rate) describe what the customer already agreed to and paid
-  // against — changing them after the fact would silently rewrite that.
   const paidAmount = parseFloat(lead?.payment_amount || '0');
   const depositLocked = paidAmount > 0;
   const taxLocked = paidAmount > 0;
@@ -288,10 +254,6 @@ export default function QuoteSection({
     setShowDepositEditor(true);
   };
 
-    // Accepts explicit type/value now, alongside the existing draft-based
-  // flow — the toast action from promptMissingDefaults calls this with
-  // the company default directly, bypassing whatever (if anything) is
-  // currently sitting in the deposit-editor draft fields.
   const handleSaveDepositTerms = async (
     clear = false,
     explicitType?: 'percent' | 'fixed',
@@ -349,10 +311,6 @@ export default function QuoteSection({
     loadTemplateNow(template);
   };
 
-  const handleLoadTemplate = () => applyTemplate(categoryTemplate);
-
-  // Clears every line item on the CURRENT quote so someone can start over
-  // from scratch. This does not touch saved templates in any way.
   const handleClearAllItems = () => {
     setQuoteData([]);
     setIsDirty(true);
@@ -383,7 +341,6 @@ export default function QuoteSection({
 
   const requestRemoveRow = (id: number) => {
     const item = quoteData.find((i: any) => i.id === id);
-    // Skip the confirmation for a still-blank row someone just added.
     if (item && !item.description && !item.unitPrice) {
       handleRemoveRow(id);
       return;
@@ -411,7 +368,7 @@ export default function QuoteSection({
     setIsDirty(true);
   };
 
-    const handleDoneEditing = () => {
+  const handleDoneEditing = () => {
     if (!editingItem) return;
     const unitPrice = parseFloat(String(editingItem.unitPrice)) || 0;
     const quantity = parseFloat(String(editingItem.quantity)) || 0;
@@ -438,8 +395,6 @@ export default function QuoteSection({
   const total = subtotal + taxAmount;
   const lastAddedId = quoteData.length > 0 ? quoteData[quoteData.length - 1].id : null;
 
-  // Every item needs a description and a real price before this quote can
-  // be saved or sent — half-filled rows shouldn't quietly go out to a client.
   const hasIncompleteItems = useMemo(
     () =>
       quoteData.some(
@@ -450,9 +405,6 @@ export default function QuoteSection({
 
   const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;
   const depositValue = parseFloat(lead?.deposit_value || '0');
-  // Was an inline duplicate of the exact formula in lib/billing.ts's
-  // getDepositAmount() — the same category of drift that caused three
-  // separate deposit bugs this session. Now imports the real thing.
   const depositAmount = getDepositAmount({ total, depositType, depositValue });
 
   const quoteAccepted = !!(lead?.project_quote_accepted_at || lead?.quote_accepted_at);
@@ -463,24 +415,28 @@ export default function QuoteSection({
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden"
+        className="bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden"
       >
-               {/* TOP ACTION BAR — Quote label left, Save + Actions right.
-            Actions moved up here from the bottom summary bar — it was
-            getting clipped by this card's own overflow-hidden once the
-            table had enough rows that the dropdown, opening downward from
-            near the bottom, had nowhere to expand into. Near the top of
-            the container, it always has room regardless of table length. */}
-        <div className="px-4 sm:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2 flex-wrap">
-          <h3 className="text-sm font-bold text-slate-900">Quote</h3>
+        {/* TOP ACTION BAR */}
+        <div className="px-4 sm:px-5 py-3 border-b border-slate-100 flex items-center justify-between gap-2 flex-wrap bg-slate-50/50">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-900">Quote</h3>
+            {quoteAccepted && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-2">
             <button
               onClick={handleManualSave}
               disabled={!hasProject || saving || hasIncompleteItems}
-              title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
-              className={`${quoteData.length === 0 ? 'hidden ' : ''}inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                                isDirty
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              title={hasIncompleteItems ? 'Every item needs a description and a price first' : undefined}
+              className={`${
+                quoteData.length === 0 ? 'hidden ' : ''
+              }inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                isDirty
+                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
                   : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
             >
@@ -498,7 +454,7 @@ export default function QuoteSection({
               <div className="relative">
                 <button
                   onClick={() => setShowActionsMenu((v) => !v)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-slate-700 border border-slate-200 hover:bg-slate-50 transition cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
                 >
                   Actions
                   <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showActionsMenu ? 'rotate-180' : ''}`} />
@@ -514,26 +470,35 @@ export default function QuoteSection({
                         className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-20 overflow-hidden"
                       >
                         <button
-                          onClick={() => { setShowActionsMenu(false); setShowEmailModal(true); }}
+                          onClick={() => {
+                            setShowActionsMenu(false);
+                            setShowEmailModal(true);
+                          }}
                           disabled={!hasProject || quoteData.length === 0 || hasIncompleteItems}
-                          title={hasIncompleteItems ? "Every item needs a description and a price first" : undefined}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                          title={hasIncompleteItems ? 'Every item needs a description and a price first' : undefined}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-left"
                         >
                           <Mail className="w-3.5 h-3.5 text-slate-400" />
                           {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
                         </button>
                         {!quoteAccepted && (
                           <button
-                            onClick={() => { setShowActionsMenu(false); setShowAcceptConfirm(true); }}
-                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer border-t border-slate-100"
+                            onClick={() => {
+                              setShowActionsMenu(false);
+                              setShowAcceptConfirm(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer border-t border-slate-100 text-left"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                             Mark Accepted Manually
                           </button>
                         )}
                         <button
-                          onClick={() => { setShowActionsMenu(false); setShowClearAllConfirm(true); }}
-                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer border-t border-slate-100"
+                          onClick={() => {
+                            setShowActionsMenu(false);
+                            setShowClearAllConfirm(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer border-t border-slate-100 text-left"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                           Clear All Items
@@ -547,251 +512,225 @@ export default function QuoteSection({
           </div>
         </div>
 
-            {/* MAIN BODY — table now takes the full container width. The
-                summary used to be a permanently docked 240px side column
-                regardless of whether its content needed that much room —
-                that fixed allocation was the actual cause of the table
-                feeling squished, not the table's own column widths. Summary
-                now renders as a compact bar below the table instead. */}
-<div className="p-3.5 sm:p-5 lg:p-6 space-y-5">
+        {/* MAIN BODY */}
+        <div className="p-3.5 sm:p-5 lg:p-6 space-y-5">
+          {/* EMPTY STATE */}
+          {quoteData.length === 0 && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {templatesLoading ? (
+                  <div className="h-[104px] md:h-[150px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
+                ) : allTemplates.length > 0 ? (
+                  <button
+                    onClick={() => setShowTemplateBrowser(true)}
+                    className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer group"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0 shadow-2xs group-hover:scale-105 transition-transform">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-indigo-950">Choose a Template</p>
+                      <p className="text-xs text-indigo-700 mt-1">
+                        {categoryTemplate
+                          ? `${formatCategoryLabel(lead?.category)} template suggested`
+                          : `Pick from ${allTemplates.length} saved template${allTemplates.length === 1 ? '' : 's'}`}
+                      </p>
+                    </div>
+                  </button>
+                ) : (
+                  <a
+                    href={`/${companySlug}/dashboard/services`}
+                    className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 transition cursor-pointer block group"
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0 shadow-2xs group-hover:scale-105 transition-transform">
+                      <FileText className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-indigo-950">Set Up Pricing Templates</p>
+                      <p className="text-xs text-indigo-700 mt-1">Save reusable pricing so future quotes take seconds</p>
+                    </div>
+                  </a>
+                )}
 
-                    {/* TABLE & LINE ITEMS */}
-          <div className="space-y-3 min-w-0">
-            {/* EMPTY STATE — one deliberate choice, same on every screen size.
-                Previously scattered across a dismissible template banner, a
-                text-only empty table row, and a separate stack of mobile
-                buttons — none of which agreed on which options existed or
-                what happened by default. */}
-       {quoteData.length === 0 && (
-  <div className="space-y-3">
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {templatesLoading ? (
-        <div className="h-[104px] md:h-[150px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
-      ) : allTemplates.length > 0 ? (
-        <button
-          onClick={() => setShowTemplateBrowser(true)}
-          className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer"
-        >
-          <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0">
-            <FileText className="w-4 h-4" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-indigo-950">Choose a Template</p>
-            <p className="text-xs text-indigo-700 mt-1">
-              {categoryTemplate
-                ? `${formatCategoryLabel(lead?.category)} template suggested`
-                : `Pick from ${allTemplates.length} saved template${allTemplates.length === 1 ? '' : 's'}`}
-            </p>
-          </div>
-        </button>
-      ) : (
-        <a
-          href={`/${companySlug}/dashboard/services`}
-          className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 transition cursor-pointer block"
-        >
-          <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0">
-            <FileText className="w-4 h-4" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-indigo-950">Set Up Pricing Templates</p>
-            <p className="text-xs text-indigo-700 mt-1">Save reusable pricing so future quotes take seconds</p>
-          </div>
-        </a>
-      )}
-
-      <button
-        onClick={handleAddRow}
-        className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition cursor-pointer"
-      >
-        <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center mb-3 md:mb-0">
-          <Plus className="w-4 h-4" />
-        </div>
-        <div>
-          <p className="text-sm font-bold text-slate-900">Create from Scratch</p>
-          <p className="text-xs text-slate-500 mt-1">Add line items one at a time</p>
-        </div>
-      </button>
-    </div>
-
-    <button
-      onClick={() => setShowAI(true)}
-      className="inline-flex items-center gap-1.5 px-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
-    >
-      <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-      Or generate a draft with AI
-    </button>
-  </div>
-)}
-            {/* Desktop — real table, one header row, full column labels */}
-{quoteData.length > 0 && (
-  <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden font-sans antialiased">
-    <table className="w-full text-sm border-collapse table-fixed">
-      <thead>
-        <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium text-[11px] uppercase tracking-wider">
-          <th className="text-left px-4 py-2.5 w-auto">Description</th>
-          <th className="text-right px-2 py-2.5 w-24">Price</th>
-          <th className="text-center px-2 py-2.5 w-20">Qty</th>
-          <th className="text-right px-3 py-2.5 w-24">Amount</th>
-          <th className="w-9 px-2" />
-        </tr>
-      </thead>
-      <tbody>
-        {quoteData.map((item: any) => {
-          const isNew = item.id === lastAddedId && !item.description;
-          const isFocused = focusedRowId === item.id;
-          return (
-            <tr
-              key={item.id}
-              ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
-              onFocus={() => setFocusedRowId(item.id)}
-              onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) setFocusedRowId(null);
-              }}
-              className={`border-b border-slate-100 last:border-b-0 group transition-colors ${
-                isFocused ? 'bg-indigo-50/50' : 'hover:bg-slate-50/60'
-              }`}
-            >
-              {/* DESCRIPTION FIELD */}
-              <td className={`px-4 py-2 align-middle transition-colors ${!item.description?.trim() ? 'bg-amber-50/50' : ''}`}>
-                <textarea
-                  ref={(el) => {
-                    if (isNew) newRowInputRef.current = el;
-                    autoResizeTextarea(el);
-                  }}
-                  rows={1}
-                  value={item.description}
-                  onChange={(e) => {
-                    handleUpdateCell(item.id, 'description', e.target.value);
-                    autoResizeTextarea(e.target);
-                  }}
-                  placeholder="Describe line item or service..."
-                  className="w-full bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none resize-none overflow-hidden leading-relaxed block py-0.5"
-                />
-              </td>
-
-              {/* PRICE INPUT — $ is glued directly to the digits in a
-                  bordered box, so it reads as one unit regardless of how
-                  many digits are typed, and the box itself (not red text)
-                  signals an unset price. */}
-              <td className="px-2 py-2 align-middle">
-                <div
-                  className={`flex items-center gap-1 rounded-md border px-2 py-1 transition-colors ${
-                    !item.unitPrice || parseFloat(String(item.unitPrice)) <= 0
-                      ? 'border-amber-200 bg-amber-50/50'
-                      : 'border-transparent'
-                  }`}
-                >
-                  <span className="text-xs font-semibold text-slate-400 shrink-0">$</span>
-                  <input
-                    type="number"
-                    step="any"
-                    value={item.unitPrice || ''}
-                    onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                    onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
-                    placeholder="0.00"
-                    className={`w-full min-w-0 bg-transparent text-sm font-mono font-medium tracking-tight text-slate-900 outline-none text-left tabular-nums ${noSpinners}`}
-                  />
-                </div>
-              </td>
-
-              {/* QUANTITY INPUT — a × prefix on a plain grey box, so at a
-                  glance it reads as a different kind of field than Price,
-                  not just another number in an identical box. */}
-              <td className="px-2 py-2 align-middle">
-                <div className="flex items-center justify-center gap-1 rounded-md bg-slate-50 px-2 py-1">
-                  <span className="text-xs font-semibold text-slate-400 shrink-0">×</span>
-                  <input
-                    type="number"
-                    step="any"
-                    value={item.quantity || ''}
-                    onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                    onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
-                    placeholder="1"
-                    className={`w-full min-w-0 bg-transparent text-sm font-mono font-medium tracking-tight text-slate-900 outline-none text-center tabular-nums ${noSpinners}`}
-                  />
-                </div>
-              </td>
-
-              {/* TOTAL AMOUNT */}
-              <td className="px-3 py-2 text-right align-middle">
-                <span className="text-sm font-mono font-semibold tracking-tight text-slate-900 tabular-nums">
-                  {fmt(item.amount || 0)}
-                </span>
-              </td>
-
-              {/* DELETE BUTTON */}
-              <td className="px-2 py-2 align-middle">
                 <button
-                  onClick={() => requestRemoveRow(item.id)}
-                  className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer opacity-0 group-hover:opacity-100"
-                  title="Delete row"
+                  onClick={handleAddRow}
+                  className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition cursor-pointer group"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
+                  <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center mb-3 md:mb-0 shadow-2xs group-hover:scale-105 transition-transform">
+                    <Plus className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">Create from Scratch</p>
+                    <p className="text-xs text-slate-500 mt-1">Add line items one at a time</p>
+                  </div>
                 </button>
-              </td>
-            </tr>
-          );
-        })}
+              </div>
 
-        {/* HOVER-REVEAL ADD ROW — a faint "+" when idle that darkens on
-            hover, built into the table itself. Adding a line now happens
-            right where the lines are, instead of a separate button below. */}
-        <tr
-          onClick={handleAddRow}
-          className="group/addrow cursor-pointer border-t border-dashed border-slate-200 transition-colors hover:bg-slate-50/80"
-        >
-          <td colSpan={5} className="px-4 py-2.5 text-center">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-300 transition-colors group-hover/addrow:text-slate-600">
-              <Plus className="w-3.5 h-3.5" /> Add line item
-            </span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-)}
+              <button
+                onClick={() => setShowAI(true)}
+                className="inline-flex items-center gap-1.5 px-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                Or generate a draft with AI
+              </button>
+            </div>
+          )}
 
-            {/* Desktop Templates + AI Toolbar — Add Line Item now lives in
-                the table itself as a hover row, so this is just the two
-                bulk-entry options. */}
-            {quoteData.length > 0 && (
+          {/* DESKTOP TABLE */}
+          {quoteData.length > 0 && (
+            <div className="hidden md:block rounded-xl border border-slate-200 overflow-hidden font-sans antialiased">
+              <table className="w-full text-sm border-collapse table-fixed">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-500 font-medium text-[11px] uppercase tracking-wider">
+                    <th className="text-left px-4 py-2.5 w-auto">Description</th>
+                    <th className="text-right px-2 py-2.5 w-28">Price</th>
+                    <th className="text-center px-2 py-2.5 w-20">Qty</th>
+                    <th className="text-right px-3 py-2.5 w-28">Amount</th>
+                    <th className="w-9 px-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {quoteData.map((item: any) => {
+                    const isNew = item.id === lastAddedId && !item.description;
+                    const isFocused = focusedRowId === item.id;
+                    return (
+                      <tr
+                        key={item.id}
+                        ref={isNew ? (el) => { newRowRef.current = el; } : undefined}
+                        onFocus={() => setFocusedRowId(item.id)}
+                        onBlur={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node)) setFocusedRowId(null);
+                        }}
+                        className={`border-b border-slate-100 last:border-b-0 group transition-colors ${
+                          isFocused ? 'bg-indigo-50/40' : 'hover:bg-slate-50/60'
+                        }`}
+                      >
+                        {/* DESCRIPTION FIELD */}
+                        <td className={`px-4 py-2 align-middle transition-colors ${!item.description?.trim() ? 'bg-amber-50/50' : ''}`}>
+                          <textarea
+                            ref={(el) => {
+                              if (isNew) newRowInputRef.current = el;
+                              autoResizeTextarea(el);
+                            }}
+                            rows={1}
+                            value={item.description}
+                            onChange={(e) => {
+                              handleUpdateCell(item.id, 'description', e.target.value);
+                              autoResizeTextarea(e.target);
+                            }}
+                            placeholder="Describe line item or service..."
+                            className="w-full bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none resize-none overflow-hidden leading-relaxed block py-0.5"
+                          />
+                        </td>
+
+                        {/* PRICE INPUT */}
+                        <td className="px-2 py-2 align-middle">
+                          <div
+                            className={`flex items-center gap-1 rounded-md border px-2 py-1 transition-colors ${
+                              !item.unitPrice || parseFloat(String(item.unitPrice)) <= 0
+                                ? 'border-amber-200 bg-amber-50/50'
+                                : 'border-transparent'
+                            }`}
+                          >
+                            <span className="text-xs font-semibold text-slate-400 shrink-0">$</span>
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.unitPrice || ''}
+                              onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                              onChange={(e) => handleUpdateCell(item.id, 'unitPrice', e.target.value)}
+                              placeholder="0.00"
+                              className={`w-full min-w-0 bg-transparent text-sm font-mono font-medium tracking-tight text-slate-900 outline-none text-right tabular-nums ${noSpinners}`}
+                            />
+                          </div>
+                        </td>
+
+                        {/* QUANTITY INPUT */}
+                        <td className="px-2 py-2 align-middle">
+                          <div className="flex items-center justify-center gap-1 rounded-md bg-slate-50 px-2 py-1 border border-slate-100">
+                            <span className="text-xs font-semibold text-slate-400 shrink-0">×</span>
+                            <input
+                              type="number"
+                              step="any"
+                              value={item.quantity || ''}
+                              onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                              onChange={(e) => handleUpdateCell(item.id, 'quantity', e.target.value)}
+                              placeholder="1"
+                              className={`w-full min-w-0 bg-transparent text-sm font-mono font-medium tracking-tight text-slate-900 outline-none text-center tabular-nums ${noSpinners}`}
+                            />
+                          </div>
+                        </td>
+
+                        {/* TOTAL AMOUNT */}
+                        <td className="px-3 py-2 text-right align-middle">
+                          <span className="text-sm font-mono font-semibold tracking-tight text-slate-900 tabular-nums">
+                            {fmt(item.amount || 0)}
+                          </span>
+                        </td>
+
+                        {/* DELETE BUTTON */}
+                        <td className="px-2 py-2 align-middle">
+                          <button
+                            onClick={() => requestRemoveRow(item.id)}
+                            className="p-1 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer opacity-0 group-hover:opacity-100"
+                            title="Delete row"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+
+                  {/* HOVER-REVEAL ADD ROW */}
+                  <tr
+                    onClick={handleAddRow}
+                    className="group/addrow cursor-pointer border-t border-dashed border-slate-200 transition-colors hover:bg-slate-50/80"
+                  >
+                    <td colSpan={5} className="px-4 py-2.5 text-center">
+                      <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 transition-colors group-hover/addrow:text-slate-700">
+                        <Plus className="w-3.5 h-3.5" /> Add line item
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* DESKTOP TOOLBAR */}
+          {quoteData.length > 0 && (
             <div className="hidden md:flex items-center gap-2">
               {templatesLoading ? (
-                <div className="h-[42px] w-40 rounded-xl bg-slate-100 animate-pulse" />
+                <div className="h-[38px] w-36 rounded-xl bg-slate-100 animate-pulse" />
               ) : (
                 allTemplates.length > 0 && (
-                <button
-                  onClick={() => setShowTemplateBrowser(true)}
-                  className="shrink-0 inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-white text-slate-700 border border-slate-200 shadow-sm hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                  Browse More
-                </button>
+                  <button
+                    onClick={() => setShowTemplateBrowser(true)}
+                    className="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-white text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                    Browse Templates
+                  </button>
                 )
               )}
-            
             </div>
-            )}
+          )}
 
-            {hasIncompleteItems && quoteData.length > 0 && (
-              <p className="flex items-center gap-1.5 px-1 text-[11px] font-medium text-amber-700">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
-                Add a description and price to every item before saving or sending.
-              </p>
-            )}
+          {hasIncompleteItems && quoteData.length > 0 && (
+            <p className="flex items-center gap-1.5 px-1 text-[11px] font-medium text-amber-700">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" />
+              Add a description and price to every item before saving or sending.
+            </p>
+          )}
 
-                      {/* Mobile: compact summary card, replacing the old accordion —
-                item count + running total, always visible, never buries
-                the add-item action behind a tap. Tapping it opens the
-                SAME bottom-sheet visual pattern already used to edit a
-                single item, now showing the full list instead — one
-                modal language across this screen, not two. */}
-            {quoteData.length > 0 && (
+          {/* MOBILE VIEW */}
+          {quoteData.length > 0 && (
             <div className="md:hidden space-y-2.5">
               <button
                 type="button"
                 onClick={() => setShowLineItems(true)}
-                className="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-xs active:scale-[0.99] transition"
+                className="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-2xs active:scale-[0.99] transition"
               >
                 <div className="text-left">
                   <p className="text-sm font-bold text-slate-900">
@@ -805,10 +744,6 @@ export default function QuoteSection({
                 </div>
               </button>
 
-              {/* Persistent — always visible, not hidden behind the sheet.
-                  These replace or bulk-add to the WHOLE list, a different
-                  kind of action from editing one row, so they're kept
-                  visually separate rather than nested inside it. */}
               <div className="flex items-center gap-2">
                 <button
                   onClick={handleAddRowMobile}
@@ -816,7 +751,7 @@ export default function QuoteSection({
                 >
                   <Plus className="w-4 h-4" /> Add Line Item
                 </button>
-                             <button
+                <button
                   onClick={() => setShowAI(true)}
                   className="shrink-0 px-3.5 py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-slate-700 active:scale-[0.99] transition"
                   aria-label="AI Draft Generator"
@@ -839,57 +774,55 @@ export default function QuoteSection({
                 )
               )}
             </div>
-            )}
+          )}
 
-            {/* FULL LIST BOTTOM SHEET — same slide-up pattern as the
-                single-item editor further below, showing every item at
-                once instead of just one. Tapping an item here closes
-                this sheet and opens that same item editor on top,
-                keeping one consistent depth instead of stacking two
-                different modal styles. */}
-            <AnimatePresence>
-              {showLineItems && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => setShowLineItems(false)}
-                    className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-xs md:hidden"
-                  />
-                  <motion.div
-                    initial={{ y: '100%' }}
-                    animate={{ y: 0 }}
-                    exit={{ y: '100%' }}
-                    transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                    className="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-3xl md:hidden shadow-2xl border-t border-slate-200 max-h-[80vh] flex flex-col"
+          {/* MOBILE LINE ITEMS BOTTOM SHEET */}
+          <AnimatePresence>
+            {showLineItems && (
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setShowLineItems(false)}
+                  className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-xs md:hidden"
+                />
+                <motion.div
+                  initial={{ y: '100%' }}
+                  animate={{ y: 0 }}
+                  exit={{ y: '100%' }}
+                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+                  className="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-3xl md:hidden shadow-2xl border-t border-slate-200 max-h-[80vh] flex flex-col"
+                >
+                  <div className="flex justify-center pt-3 pb-1 shrink-0">
+                    <div className="w-10 h-1 rounded-full bg-slate-200" />
+                  </div>
+                  <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 shrink-0">
+                    <p className="text-sm font-bold text-slate-900">Line Items ({quoteData.length})</p>
+                    <button onClick={() => setShowLineItems(false)} className="p-1.5 -m-1.5 text-slate-400">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div
+                    className="p-3 space-y-2.5 overflow-y-auto"
+                    style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
                   >
-                    <div className="flex justify-center pt-3 pb-1 shrink-0">
-                      <div className="w-10 h-1 rounded-full bg-slate-200" />
-                    </div>
-                    <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 shrink-0">
-                      <p className="text-sm font-bold text-slate-900">Line Items ({quoteData.length})</p>
-                      <button onClick={() => setShowLineItems(false)} className="p-1.5 -m-1.5 text-slate-400">
-                        <X className="w-5 h-5" />
-                      </button>
-                    </div>
-                    <div
-                      className="p-3 space-y-2.5 overflow-y-auto"
-                      style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-                    >
-                      {quoteData.map((item: any) => {
-                        const isIncomplete =
-                          !item.description?.trim() || !item.unitPrice || parseFloat(String(item.unitPrice)) <= 0;
-                        return (
+                    {quoteData.map((item: any) => {
+                      const isIncomplete =
+                        !item.description?.trim() || !item.unitPrice || parseFloat(String(item.unitPrice)) <= 0;
+                      return (
                         <div
                           key={item.id}
-                          className={`border rounded-xl p-3.5 shadow-xs space-y-2 transition-colors ${
+                          className={`border rounded-xl p-3.5 shadow-2xs space-y-2 transition-colors ${
                             isIncomplete ? 'border-amber-200 bg-amber-50/40' : 'border-slate-200 bg-white'
                           }`}
                         >
                           <div className="flex items-start justify-between gap-3">
                             <button
-                              onClick={() => { setShowLineItems(false); setEditingItem({ ...item }); }}
+                              onClick={() => {
+                                setShowLineItems(false);
+                                setEditingItem({ ...item });
+                              }}
                               className="flex-1 text-left min-w-0"
                             >
                               <p className="text-sm font-semibold text-slate-900 leading-snug">
@@ -916,101 +849,99 @@ export default function QuoteSection({
                             </div>
                           </div>
                         </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
 
+          {/* FINANCIAL BREAKDOWN */}
           {quoteData.length > 0 && (
-          <>
-                  {/* Receipt-style summary: subtotal, tax, total, deposit as plain rows */}
-          <div className="rounded-xl border border-slate-200 bg-white px-4 text-sm">
-            <div className="flex items-center justify-between py-2.5">
-              <span className="text-slate-500">Subtotal</span>
-              <span className="tabular-nums text-slate-700">{fmt(subtotal)}</span>
-            </div>
+            <>
+              <div className="rounded-xl border border-slate-200 bg-white px-4 text-sm shadow-2xs">
+                <div className="flex items-center justify-between py-2.5">
+                  <span className="text-slate-500">Subtotal</span>
+                  <span className="tabular-nums text-slate-700 font-medium">{fmt(subtotal)}</span>
+                </div>
 
-            <div className="flex items-center justify-between py-2.5 border-t border-slate-100">
-              <span className="flex items-center gap-2 text-slate-500">
-                {taxRate > 0 ? `Tax (${taxRate}%)` : 'Tax'}
-                {taxLocked ? (
-                  <Lock className="w-3 h-3 text-slate-300" />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTaxRateDraft(taxRate ? String(taxRate) : '');
-                      setEditingTaxRate(true);
-                    }}
-                    className="text-xs font-medium text-slate-400 underline underline-offset-2 hover:text-slate-700 transition-colors"
-                  >
-                    {taxRate > 0 ? 'Edit' : 'Add tax'}
-                  </button>
-                )}
-              </span>
-              <span className={`tabular-nums ${taxRate > 0 ? 'text-slate-700' : 'text-slate-300'}`}>
-                {taxRate > 0 ? fmt(taxAmount) : '—'}
-              </span>
-            </div>
+                <div className="flex items-center justify-between py-2.5 border-t border-slate-100">
+                  <span className="flex items-center gap-2 text-slate-500">
+                    {taxRate > 0 ? `Tax (${taxRate}%)` : 'Tax'}
+                    {taxLocked ? (
+                      <Lock className="w-3 h-3 text-slate-300" />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTaxRateDraft(taxRate ? String(taxRate) : '');
+                          setEditingTaxRate(true);
+                        }}
+                        className="text-xs font-medium text-slate-400 underline underline-offset-2 hover:text-slate-700 transition-colors cursor-pointer"
+                      >
+                        {taxRate > 0 ? 'Edit' : 'Add tax'}
+                      </button>
+                    )}
+                  </span>
+                  <span className={`tabular-nums ${taxRate > 0 ? 'text-slate-700 font-medium' : 'text-slate-300'}`}>
+                    {taxRate > 0 ? fmt(taxAmount) : '—'}
+                  </span>
+                </div>
 
-            <div className="flex items-center justify-between py-3 border-t border-slate-200">
-              <span className="font-semibold text-slate-900">Total</span>
-              <span className="text-lg font-bold tabular-nums text-slate-900">{fmt(total)}</span>
-            </div>
+                <div className="flex items-center justify-between py-3 border-t border-slate-200">
+                  <span className="font-semibold text-slate-900">Total</span>
+                  <span className="text-lg font-bold tabular-nums text-slate-900">{fmt(total)}</span>
+                </div>
 
-            <div className="flex items-center justify-between py-2.5 border-t border-dashed border-slate-200">
-              <span className="flex items-center gap-2 text-slate-500">
-                {depositAmount > 0
-                  ? `Deposit due now (${depositType === 'percent' ? `${depositValue}%` : 'fixed'})`
-                  : 'Deposit'}
-                {depositLocked ? (
-                  <Lock className="w-3 h-3 text-slate-300" />
-                ) : (
-                  <button
-                    type="button"
-                    onClick={openDepositEditor}
-                    className="text-xs font-medium text-slate-400 underline underline-offset-2 hover:text-slate-700 transition-colors"
-                  >
-                    {depositAmount > 0 ? 'Edit' : 'Add deposit'}
-                  </button>
-                )}
-              </span>
-              <span className={`tabular-nums ${depositAmount > 0 ? 'text-slate-700' : 'text-slate-300'}`}>
-                {depositAmount > 0 ? fmt(depositAmount) : '—'}
-              </span>
-            </div>
-          </div>
+                <div className="flex items-center justify-between py-2.5 border-t border-dashed border-slate-200">
+                  <span className="flex items-center gap-2 text-slate-500">
+                    {depositAmount > 0
+                      ? `Deposit due now (${depositType === 'percent' ? `${depositValue}%` : 'fixed'})`
+                      : 'Deposit'}
+                    {depositLocked ? (
+                      <Lock className="w-3 h-3 text-slate-300" />
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={openDepositEditor}
+                        className="text-xs font-medium text-slate-400 underline underline-offset-2 hover:text-slate-700 transition-colors cursor-pointer"
+                      >
+                        {depositAmount > 0 ? 'Edit' : 'Add deposit'}
+                      </button>
+                    )}
+                  </span>
+                  <span className={`tabular-nums ${depositAmount > 0 ? 'text-slate-700 font-medium' : 'text-slate-300'}`}>
+                    {depositAmount > 0 ? fmt(depositAmount) : '—'}
+                  </span>
+                </div>
+              </div>
 
-          {/* Desktop-only Save, outside the receipt (mobile uses the top bar) */}
-          <div className="hidden md:flex justify-end">
-            <button
-              onClick={handleManualSave}
-              disabled={!hasProject || saving || hasIncompleteItems}
-              title={hasIncompleteItems ? 'Every item needs a description and a price first' : undefined}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
-                isDirty
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-              }`}
-            >
-              {saving ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : isDirty ? (
-                <Save className="w-3.5 h-3.5" />
-              ) : (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-              )}
-              {isDirty ? 'Save Changes' : 'Saved'}
-            </button>
-          </div>
-          </>
+              {/* DESKTOP SAVE BUTTON */}
+              <div className="hidden md:flex justify-end">
+                <button
+                  onClick={handleManualSave}
+                  disabled={!hasProject || saving || hasIncompleteItems}
+                  title={hasIncompleteItems ? 'Every item needs a description and a price first' : undefined}
+                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                    isDirty
+                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
+                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  {saving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : isDirty ? (
+                    <Save className="w-3.5 h-3.5" />
+                  ) : (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  )}
+                  {isDirty ? 'Save Changes' : 'Saved'}
+                </button>
+              </div>
+            </>
           )}
         </div>
-
 
         {/* BOTTOM SHEET ITEM EDITOR (Mobile) */}
         <AnimatePresence>
@@ -1071,7 +1002,7 @@ export default function QuoteSection({
                         setEditingItem({ ...editingItem, description: e.target.value });
                         autoResizeTextarea(e.target);
                       }}
-                                           placeholder="Item or service name..."
+                      placeholder="Item or service name..."
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:bg-white resize-none overflow-hidden leading-snug"
                     />
                   </div>
@@ -1083,15 +1014,12 @@ export default function QuoteSection({
                       </label>
                       <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-slate-400 focus-within:bg-white">
                         <span className="text-xs font-semibold text-slate-400">$</span>
-                                       <input
+                        <input
                           type="text"
                           inputMode="decimal"
-                                                   value={editingItem.unitPrice ?? ''}
+                          value={editingItem.unitPrice ?? ''}
                           onKeyDown={(e) => handleNumericKeyDown(e, true)}
                           onChange={(e) => {
-                            // Keep the raw typed string, not a parsed number —
-                            // parseFloat("30.") === 30, and storing that number
-                            // silently strips the trailing "." the user just typed.
                             const raw = e.target.value;
                             const parsedPrice = parseFloat(raw) || 0;
                             const parsedQty = parseFloat(String(editingItem.quantity)) || 0;
@@ -1111,10 +1039,10 @@ export default function QuoteSection({
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
                         Quantity
                       </label>
-                                           <input
+                      <input
                         type="text"
                         inputMode="decimal"
-                                               value={editingItem.quantity ?? ''}
+                        value={editingItem.quantity ?? ''}
                         onKeyDown={(e) => handleNumericKeyDown(e, true)}
                         onChange={(e) => {
                           const raw = e.target.value;
@@ -1134,7 +1062,7 @@ export default function QuoteSection({
 
                   <div className="flex items-center justify-between p-3.5 bg-slate-100/70 rounded-xl">
                     <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Line Total</span>
-                                        <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                    <span className="text-base font-extrabold text-slate-900 tabular-nums">
                       {fmt((parseFloat(String(editingItem.unitPrice)) || 0) * (parseFloat(String(editingItem.quantity)) || 0))}
                     </span>
                   </div>
@@ -1192,8 +1120,7 @@ export default function QuoteSection({
         )}
       </motion.div>
 
-      {/* EMAIL COMPOSER MODAL — already its own component, so it's just
-          invoked here rather than living in QuoteModals. */}
+      {/* EMAIL COMPOSER MODAL */}
       {showEmailModal && (
         <SendEmailModal
           open={showEmailModal}
@@ -1214,9 +1141,7 @@ export default function QuoteSection({
         />
       )}
 
-      {/* Every popup — email preview, AI, templates, accept/delete confirms,
-          deposit, tax — lives in QuoteModals now. See that file for any
-          change to wording or behavior of a specific dialog. */}
+      {/* MODALS HOOKUP */}
       <QuoteModals
         lead={lead}
         companySlug={companySlug}
@@ -1265,14 +1190,6 @@ export default function QuoteSection({
         setTaxRateDraft={setTaxRateDraft}
         handleNumericKeyDown={handleNumericKeyDown}
       />
-
-      <style jsx>{`
-        input[type='number']::-webkit-inner-spin-button,
-        input[type='number']::-webkit-outer-spin-button {
-          -webkit-appearance: none;
-          margin: 0;
-        }
-      `}</style>
     </>
   );
 }

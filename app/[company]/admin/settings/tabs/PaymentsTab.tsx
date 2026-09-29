@@ -3,22 +3,25 @@
 import { useState, useEffect } from 'react';
 import {
   Loader2,
-  CheckCircle2,
   AlertTriangle,
   ExternalLink,
-  ChevronDown,
-  Mail,
-  FileText,
   Calendar,
-  Eye,
   Check,
   X,
   ArrowRight,
+  FileText,
+  CreditCard,
+  Building2,
+  Sparkles,
+  ShieldCheck,
+  Link2,
+  Eye,
+  Plus,
 } from 'lucide-react';
 
-/* Real inline SVG brand marks — same technique as GoogleLogo/FacebookLogo/
-   InstagramLogo already used in FormTab.tsx this session. No external
-   image requests, nothing that can fail to load. */
+/* ─────────────────────────────────────────────────────────────
+   INLINE SVG BRAND MARKS
+───────────────────────────────────────────────────────────── */
 
 function VisaMark({ className }: { className?: string }) {
   return (
@@ -79,7 +82,7 @@ function GooglePayMark({ className }: { className?: string }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   CONSTANTS & HELPERS
+   HELPERS & CONSTANTS
 ───────────────────────────────────────────────────────────── */
 
 const SAMPLE_INVOICE_NUMBER = 'INV-1042';
@@ -102,71 +105,58 @@ function describeBlockingReasons(
 }
 
 /* ─────────────────────────────────────────────────────────────
-   PAYMENT OPTIONS PANEL — static, informational right-column
-   card. Only lists fees and features that are genuinely real and
-   built: standard published Stripe card rate, deposits/partial
-   payments (built and hardened extensively this session),
-   automatic ledger updates on payment (built), and PDF/email
-   invoices (built). ACH is marked "Coming soon" rather than live,
-   since it's still an unbuilt, scoped item — not something to
-   silently claim as available. No tip collection or saved-card
-   features listed, since neither exists in this app.
+   PAYMENT OPTIONS SIDEBAR PANEL
 ───────────────────────────────────────────────────────────── */
-
-// Font import scoped to this file/component only — not applied
-// site-wide, since that's a bigger change than "fix this one tab."
-// Poppins is the closest common match to the bold rounded heading
-// style in the reference; it isn't Jobber's literal proprietary font.
-function PaymentsFontLoader() {
-  return (
-    <style jsx global>{`
-      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700;800&display=swap');
-    `}</style>
-  );
-}
 
 function PaymentOptionsPanel() {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-slate-50/60 p-5 sm:p-6 lg:sticky lg:top-6">
-      <p className="text-lg font-extrabold text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-        Payment Options
-      </p>
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5 lg:sticky lg:top-6">
+      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+        <h3 className="text-base font-bold text-slate-900">Supported Methods</h3>
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+          <ShieldCheck className="h-3 w-3" /> Stripe Secure
+        </span>
+      </div>
 
-      <div className="mt-4 space-y-4">
-                <div>
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Bank Payment (ACH)</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-            <VisaMark className="h-6 w-auto" />
-            <MastercardMark className="h-6 w-auto" />
-            <AmexMark className="h-6 w-auto" />
-            <DiscoverMark className="h-6 w-auto" />
-            <ApplePayMark className="h-6 w-auto" />
-            <GooglePayMark className="h-6 w-auto" />
+      <div className="mt-5 space-y-6">
+        <div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Cards & Mobile Wallets</p>
+            <span className="text-xs font-bold text-slate-900">2.9% + 30¢</span>
           </div>
-          <p className="mt-2 text-xs font-semibold text-slate-700">2.9% + 30&cent;</p>
-          <p className="text-[11px] text-slate-500">Stripe&rsquo;s standard published rate for online card payments.</p>
+          <p className="mt-1 text-[11px] text-slate-500">Standard rate per successful online transaction.</p>
+          <div className="mt-3 grid grid-cols-6 gap-1.5">
+            <VisaMark className="h-7 w-auto shadow-2xs" />
+            <MastercardMark className="h-7 w-auto shadow-2xs" />
+            <AmexMark className="h-7 w-auto shadow-2xs" />
+            <DiscoverMark className="h-7 w-auto shadow-2xs" />
+            <ApplePayMark className="h-7 w-auto shadow-2xs" />
+            <GooglePayMark className="h-7 w-auto shadow-2xs" />
+          </div>
         </div>
 
-        <div className="border-t border-slate-200 pt-4">
-          <div className="flex items-center gap-2">
-            <p className="text-xs font-bold uppercase tracking-wide text-slate-500">Bank Payment (ACH)</p>
-            <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[9px] font-bold uppercase text-slate-600">Coming soon</span>
+        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 p-3.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-700">ACH Bank Transfers</span>
+            <span className="rounded-md bg-amber-100/80 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-amber-800">Coming Soon</span>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">Lower-fee bank transfers for larger invoices — not available yet.</p>
+          <p className="mt-1 text-[11px] text-slate-500">Lower 0.8% capped fees for larger invoices.</p>
         </div>
 
-        <div className="border-t border-slate-200 pt-4">
-          <p className="text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">Built Into Every Lead2Project Invoice</p>
-                    <ul className="space-y-1.5">
+        <div className="space-y-2.5 pt-2 border-t border-slate-100">
+          <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Included Features</p>
+          <ul className="space-y-2">
             {[
-              'Secure online payment link on every invoice',
-              'Deposits & partial payments',
-              'Ledger updates automatically the moment a customer pays',
-              'Branded PDF + email invoices',
-            ].map((f) => (
-              <li key={f} className="flex items-start gap-1.5 text-[11px] leading-relaxed text-slate-600">
-                <Check className="mt-0.5 h-3 w-3 shrink-0 text-emerald-600" />
-                {f}
+              'Direct online payment link on invoices',
+              'Milestone deposits & partial payments',
+              'Auto-ledger reconciliation upon payment',
+              'Custom branded PDF & email invoices',
+            ].map((feature) => (
+              <li key={feature} className="flex items-start gap-2 text-xs text-slate-600">
+                <div className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                  <Check className="h-2.5 w-2.5 stroke-[3]" />
+                </div>
+                {feature}
               </li>
             ))}
           </ul>
@@ -177,18 +167,7 @@ function PaymentOptionsPanel() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   PAYMENT PROCESSING — two always-visible step cards on the left,
-   no more click-to-expand accordions. All real logic (live status
-   refresh, redirect handling, connect flow, manual link save) is
-   unchanged — only the presentation changed to match a step-by-
-   step setup flow instead of a collapsed disclosure list.
-
-   MANUAL LINK NEEDS BACKEND SUPPORT NOT YET CONFIRMED TO EXIST:
-   posts action: 'update-payment-link' to the same settings
-   endpoint InvoiceTermsCard already uses for
-   'update-invoice-terms'. If that action doesn't exist yet on
-   /api/company/[slug]/settings, it needs to be added — same
-   shape, writing payment_link_url/payment_link_type.
+   SETUP STEPS MODULE
 ───────────────────────────────────────────────────────────── */
 
 function PaymentSetupSteps({ company }: { company: any }) {
@@ -201,7 +180,6 @@ function PaymentSetupSteps({ company }: { company: any }) {
     paymentStatus: 'active' | 'restricted' | 'pending' | null;
     blockingReasons: { capability: string; code: string }[];
   } | null>(null);
-  const [checkingStatus, setCheckingStatus] = useState(false);
 
   const isConnected = liveStatus ? liveStatus.isConnected : !!company.stripe_connect_onboarded;
   const paymentStatus: 'active' | 'restricted' | 'pending' | null = liveStatus
@@ -210,8 +188,8 @@ function PaymentSetupSteps({ company }: { company: any }) {
   const blockingReasons = liveStatus ? liveStatus.blockingReasons : company.stripe_requirements_summary ?? [];
   const stripeActive = isConnected && paymentStatus === 'active';
 
-  const [linkType, setLinkType] = useState(company.payment_link_type || 'venmo');
-  const [linkUrl, setLinkUrl] = useState(company.payment_link_url || '');
+  const [linkType, setLinkType] = useState<string>(company.payment_link_type || 'venmo');
+  const [linkUrl, setLinkUrl] = useState<string>(company.payment_link_url || '');
   const [savingLink, setSavingLink] = useState(false);
   const [linkSaved, setLinkSaved] = useState(false);
   const linkIsSet = !!company.payment_link_url;
@@ -227,7 +205,6 @@ function PaymentSetupSteps({ company }: { company: any }) {
   ];
 
   async function refreshLiveStatus() {
-    setCheckingStatus(true);
     try {
       const res = await fetch(`/api/company/${company.slug}/stripe/refresh-status`, { method: 'POST' });
       const data = await res.json();
@@ -240,8 +217,6 @@ function PaymentSetupSteps({ company }: { company: any }) {
       }
     } catch {
       // Silent catch
-    } finally {
-      setCheckingStatus(false);
     }
   }
 
@@ -301,77 +276,79 @@ function PaymentSetupSteps({ company }: { company: any }) {
   }
 
   return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold tracking-tight text-slate-900">Set Up Payments</h2>
-        <p className="mt-0.5 text-xs text-slate-500">
-          Connect Stripe to accept cards online, or set a manual link as a no-fee fallback.
-        </p>
-      </div>
-
+    <div className="space-y-5">
       {redirectStatus === 'error' && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
-          Something went wrong during Stripe setup. Please try connecting again.
+        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 shadow-2xs">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
+          Stripe setup could not be completed. Please attempt connection again.
         </div>
       )}
       {connectError && (
-        <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-medium text-rose-700">
+        <div className="flex items-center gap-2 rounded-xl border border-rose-200 bg-rose-50 p-4 text-xs font-semibold text-rose-800 shadow-2xs">
+          <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
           {connectError}
         </div>
       )}
 
-      {/* STEP 1 — STRIPE, always expanded, matching the reference's
-          always-visible step cards instead of a collapsed row. */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6">
-        <div className="flex items-start gap-3.5">
-          <div
-            className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-              stripeActive ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white'
-            }`}
-          >
-            {stripeActive ? <Check className="h-4 w-4 stroke-[3]" /> : '1'}
+      {/* STEP 1: STRIPE CARD */}
+      <div className="relative overflow-hidden rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition-all hover:shadow-md ring-1 ring-slate-900/5">
+        <div className="absolute top-0 right-0 left-0 h-1 bg-gradient-to-r from-slate-900 via-slate-700 to-slate-900" />
+        
+        <div className="flex items-start gap-4">
+          <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold transition-all ${
+            stripeActive ? 'bg-emerald-600 text-white shadow-emerald-200 shadow-lg' : 'bg-slate-900 text-white shadow-slate-200 shadow-lg'
+          }`}>
+            {stripeActive ? <Check className="h-5 w-5 stroke-[3]" /> : '1'}
           </div>
-          <div className="min-w-0 flex-1">
-                        <p className="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-              Connect Stripe
-              <span className="rounded bg-indigo-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-indigo-600">Recommended</span>
-              {stripeActive && (
-                <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">Connected</span>
-              )}
-            </p>
-                       <p className="mt-1.5 text-xs sm:text-[13px] leading-relaxed text-slate-600">
-              Customers pay online with a card, and your Lead2Project ledger updates the moment they do.
-              Business verification (legal name, tax ID, and bank account for payouts) happens securely
-              inside Stripe&rsquo;s own onboarding — nothing extra to set up here.
-            </p>
-            <div className="mt-4">
-              {isConnected && paymentStatus === 'restricted' && (
-                <div className="mb-3 rounded-xl border border-rose-200 bg-rose-50/70 p-3.5">
-                  <div className="flex items-center gap-2 text-xs font-bold text-rose-900">
-                    <AlertTriangle className="h-4 w-4 shrink-0 text-rose-600" />
-                    Payouts temporarily on hold
-                  </div>
-                  <p className="mt-1 text-xs leading-relaxed text-rose-700">{describeBlockingReasons(blockingReasons)}</p>
-                  <a
-                    href="https://dashboard.stripe.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-rose-800 underline hover:text-rose-900"
-                  >
-                    Complete verification on Stripe <ArrowRight className="h-3 w-3" />
-                  </a>
-                </div>
-              )}
 
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold text-slate-900">Automated Credit Card Processing</h3>
+                <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-slate-700 border border-slate-200">
+                  Recommended
+                </span>
+              </div>
               {stripeActive && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Active
+                </span>
+              )}
+            </div>
+
+            <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600">
+              Accept all major credit cards and digital wallets natively on every invoice. Payments sync instantly to your financial ledger. Business identity verification is handled directly by Stripe.
+            </p>
+
+            {isConnected && paymentStatus === 'restricted' && (
+              <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50/80 p-4">
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                  <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
+                  Payouts temporarily on hold
+                </div>
+                <p className="mt-1 text-xs text-amber-800">{describeBlockingReasons(blockingReasons)}</p>
                 <a
                   href="https://dashboard.stripe.com"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
+                  className="mt-2.5 inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 hover:underline"
                 >
-                  View Stripe Dashboard <ExternalLink className="h-3 w-3" />
+                  Resolve on Stripe Dashboard <ArrowRight className="h-3.5 w-3.5" />
                 </a>
+              </div>
+            )}
+
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              {!isConnected && (
+                <button
+                  type="button"
+                  onClick={handleConnect}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-amber-400" />}
+                  Connect Stripe Account
+                </button>
               )}
 
               {isConnected && !stripeActive && paymentStatus !== 'restricted' && (
@@ -379,73 +356,97 @@ function PaymentSetupSteps({ company }: { company: any }) {
                   type="button"
                   onClick={handleConnect}
                   disabled={loading}
-                  className="inline-flex items-center gap-2 rounded-xl bg-[#635BFF] px-4 py-2.5 text-xs font-bold text-white hover:bg-[#534ae6] transition disabled:opacity-50"
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-slate-800 transition active:scale-[0.98] cursor-pointer disabled:opacity-50"
                 >
-                  {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  Resume Setup <ArrowRight className="h-3.5 w-3.5" />
+                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                  Resume Stripe Onboarding <ArrowRight className="h-3.5 w-3.5" />
                 </button>
               )}
 
-              {!isConnected && (
-                <button
-                  type="button"
-                  onClick={handleConnect}
-                  disabled={loading}
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:opacity-60"
+              {stripeActive && (
+                <a
+                  href="https://dashboard.stripe.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition"
                 >
-                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Get Started'}
-                </button>
+                  Open Stripe Dashboard <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+                </a>
               )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* STEP 2 — MANUAL LINK, same always-expanded treatment */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6">
-        <div className="flex items-start gap-3.5">
-          <div
-            className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
-              linkIsSet ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600'
-            }`}
-          >
-            {linkIsSet ? <Check className="h-4 w-4 stroke-[3]" /> : '2'}
+      {/* STEP 2: MANUAL LINK FALLBACK */}
+      <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition-all hover:shadow-md ring-1 ring-slate-900/5">
+        <div className="flex items-start gap-4">
+          <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl font-bold transition-all ${
+            linkIsSet ? 'bg-emerald-600 text-white shadow-emerald-200 shadow-lg' : 'bg-slate-100 text-slate-700'
+          }`}>
+            {linkIsSet ? <Check className="h-5 w-5 stroke-[3]" /> : '2'}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>Manual Link (optional)</p>
-                        <p className="mt-1.5 text-xs sm:text-[13px] leading-relaxed text-slate-600">
-              Venmo, Zelle, Cash App, or PayPal — no processing fee, works right away. The tradeoff: nothing
-              updates automatically, so you&rsquo;ll record each payment yourself once it lands. No card
-              payments through this method.
+
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900">Direct Payment Link (Optional)</h3>
+              <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-slate-600">
+                0% Processing Fee
+              </span>
+            </div>
+
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-600 leading-relaxed">
+              Provide a direct link to Venmo, Zelle, Cash App, or PayPal. No fees are charged, but payments must be logged into your ledger manually.
             </p>
 
-            <div className="mt-4 flex flex-col sm:flex-row gap-2">
-              <select
-                value={linkType}
-                onChange={(e) => setLinkType(e.target.value)}
-                className="shrink-0 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:border-indigo-500 focus:bg-white"
-              >
-                {methods.map((m) => (
-                  <option key={m.value} value={m.value}>{m.label}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={linkUrl}
-                onChange={(e) => setLinkUrl(e.target.value)}
-                placeholder="e.g. venmo.com/u/YourBusiness"
-                className="flex-1 min-w-0 rounded-lg border border-slate-200 bg-slate-50/50 px-3 py-2.5 text-xs text-slate-800 outline-none placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white"
-              />
-              <button
-                type="button"
-                onClick={handleSaveLink}
-                disabled={savingLink || !linkIsDirty}
-                className="shrink-0 inline-flex items-center justify-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30"
-              >
-                {savingLink && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                {savingLink ? 'Saving...' : linkSaved ? 'Saved' : 'Save'}
-                {linkSaved && !savingLink && <Check className="h-3.5 w-3.5 text-emerald-400" />}
-              </button>
+            <div className="mt-4 space-y-3">
+              {/* Brand Pills Selectors */}
+              <div className="flex flex-wrap gap-2">
+                {methods.map((m) => {
+                  const active = linkType === m.value;
+                  return (
+                    <button
+                      key={m.value}
+                      type="button"
+                      onClick={() => setLinkType(m.value)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-bold transition cursor-pointer border ${
+                        active
+                          ? 'border-slate-900 bg-slate-900 text-white shadow-2xs'
+                          : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* URL Input Group */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <Link2 className="h-4 w-4 text-slate-400" />
+                  </div>
+                  <input
+                    type="text"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder={`e.g. ${linkType}.com/u/YourBusiness`}
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleSaveLink}
+                  disabled={savingLink || !linkIsDirty}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+                >
+                  {savingLink && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {savingLink ? 'Saving...' : linkSaved ? 'Saved' : 'Save Payment Link'}
+                  {linkSaved && !savingLink && <Check className="h-3.5 w-3.5 text-emerald-400" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -454,11 +455,25 @@ function PaymentSetupSteps({ company }: { company: any }) {
   );
 }
 
+/* ─────────────────────────────────────────────────────────────
+   INVOICE TERMS CARD WITH QUICK TEMPLATES
+───────────────────────────────────────────────────────────── */
+
 function InvoiceTermsCard({ company }: { company: any }) {
-  const [terms, setTerms] = useState(company.invoice_terms || '');
+  const [terms, setTerms] = useState<string>(company.invoice_terms || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const isDirty = terms !== (company.invoice_terms || '');
+
+  const templates = [
+    { label: '+ Net 15', text: 'Payment is due within 15 days of invoice date.' },
+    { label: '+ 1.5% Late Fee', text: 'A 1.5% monthly late fee applies to all past due balances.' },
+    { label: '+ 1-Year Warranty', text: 'All workmanship guaranteed for 12 months.' },
+  ];
+
+  function appendTemplate(text: string) {
+    setTerms((prev: string) => (prev ? `${prev.trim()} ${text}` : text));
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -485,44 +500,61 @@ function InvoiceTermsCard({ company }: { company: any }) {
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6 lg:sticky lg:top-6">
-      <p className="text-sm font-bold text-slate-900">Standard Payment Terms</p>
-      <p className="mt-0.5 text-xs text-slate-500">Printed as fine print on every PDF invoice — not shown in the email itself.</p>
-
-      <textarea
-        value={terms}
-        onChange={(e) => setTerms(e.target.value)}
-        rows={5}
-        placeholder="e.g. Net 15 days. A 1.5% monthly late fee applies to overdue balances. All work is warrantied for 12 months."
-        className="mt-3 w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-xs sm:text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10"
-      />
-
-      {!terms && (
-        <div className="mt-3 rounded-lg bg-slate-50 border border-slate-100 p-3">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1">Common example</p>
-          <p className="text-[11px] leading-relaxed text-slate-500">
-            &ldquo;Payment due within 15 days of invoice date. A 1.5% monthly late fee applies to balances
-            over 30 days past due. All labor is warrantied for 12 months from completion.&rdquo;
-          </p>
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-bold text-slate-900">Standard Payment Terms</h3>
+          <p className="mt-0.5 text-xs text-slate-500">Appears in the fine print section on generated invoice PDFs.</p>
         </div>
-      )}
+      </div>
 
-      <div className="mt-4 flex items-center justify-end">
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !isDirty}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30"
-        >
-          {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {saving ? 'Saving...' : saved ? 'Saved' : 'Save'}
-          {saved && !saving && <Check className="h-3.5 w-3.5 text-emerald-400" />}
-        </button>
+      <div className="mt-4 space-y-3">
+        <textarea
+          value={terms}
+          onChange={(e) => setTerms(e.target.value)}
+          rows={5}
+          placeholder="e.g. Payment due within 15 days. A 1.5% monthly late fee applies to balances over 30 days past due."
+          className="w-full resize-none rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 text-xs sm:text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:bg-white focus:ring-4 focus:ring-slate-900/5"
+        />
+
+        {/* Template Quick Chips */}
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Quick Insert Clause</p>
+          <div className="flex flex-wrap gap-1.5">
+            {templates.map((tpl) => (
+              <button
+                key={tpl.label}
+                type="button"
+                onClick={() => appendTemplate(tpl.text)}
+                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <Plus className="h-3 w-3 text-slate-400" />
+                {tpl.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end pt-2">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving || !isDirty}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-30 cursor-pointer"
+          >
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {saving ? 'Saving...' : saved ? 'Saved Terms' : 'Save Terms'}
+            {saved && !saving && <Check className="h-3.5 w-3.5 text-emerald-400" />}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
+/* ─────────────────────────────────────────────────────────────
+   INVOICE PREVIEW CARD & MODAL
+───────────────────────────────────────────────────────────── */
 
 function InvoicePreviewCard({ company }: { company: any }) {
   const [emailVariant, setEmailVariant] = useState<'deposit' | 'invoice'>('invoice');
@@ -542,29 +574,23 @@ function InvoicePreviewCard({ company }: { company: any }) {
 
   const effectiveType = stripeActive ? 'stripe' : hasManualLink ? company.payment_link_type || 'other' : null;
   const payVerb = effectiveType ? paymentMethodLabels[effectiveType] || 'Pay Now' : null;
-  const accent = company.email_brand_color_1 || '#4F46E5';
+  const accent = company.email_brand_color_1 || '#0F172A';
   const companyName = company.name || 'Your Business Name';
   const previewUrl = `/api/company/${company.slug}/preview-invoice${emailVariant === 'deposit' ? '?variant=deposit' : ''}`;
 
-  // Two genuinely different, real emails your customers actually
-  // receive — matching the exact distinction already built in
-  // BillingModals.tsx's Send modal ("Send Deposit Request" vs "Send
-  // Invoice"). Not two copies of the same content with a different
-  // label — the deposit variant reflects that a balance remains due
-  // later, since that's real, accurate information a customer sees.
   const variants = {
     deposit: {
       subject: `Deposit Request — Invoice ${SAMPLE_INVOICE_NUMBER} from ${companyName}`,
       heading: `Hi ${SAMPLE_CUSTOMER_NAME},`,
-      body: `A deposit is due to get your job on the schedule. Your deposit is `,
+      body: `A deposit is required to lock in your project on our schedule. Your deposit total is `,
       amount: 155.0,
       payLabel: payVerb ? payVerb.replace('Pay', 'Pay Deposit') : null,
-      footNote: `The remaining balance of $${(SAMPLE_TOTAL - 155.0).toFixed(2)} will be invoiced once the job is complete.`,
+      footNote: `The remaining balance of $${(SAMPLE_TOTAL - 155.0).toFixed(2)} will be invoiced upon project completion.`,
     },
     invoice: {
       subject: `Invoice ${SAMPLE_INVOICE_NUMBER} from ${companyName}`,
       heading: `Hi ${SAMPLE_CUSTOMER_NAME},`,
-      body: `Your invoice is ready. You can review details or pay securely online below. Your total due is `,
+      body: `Your invoice is ready for review. You can pay securely online using the button below. Your total due is `,
       amount: SAMPLE_TOTAL,
       payLabel: payVerb,
       footNote: null,
@@ -573,135 +599,108 @@ function InvoicePreviewCard({ company }: { company: any }) {
   const v = variants[emailVariant];
 
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5 sm:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-5">
+    <div className="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm ring-1 ring-slate-900/5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
         <div>
-          <p className="text-sm font-bold text-slate-900">Preview</p>
-          <p className="text-xs text-slate-500 mt-0.5">Exactly what customers see, for either kind of email you send.</p>
+          <h3 className="text-base font-bold text-slate-900">Live Customer View</h3>
+          <p className="text-xs text-slate-500 mt-0.5">Real-time preview of emails dispatched to your clients.</p>
         </div>
         <button
           type="button"
           onClick={() => setShowPdfModal(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-xs hover:bg-slate-50 transition"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 transition cursor-pointer"
         >
-          <FileText className="h-3.5 w-3.5 text-slate-500" />
-          View Invoice PDF
+          <FileText className="h-3.5 w-3.5 text-slate-700" />
+          Preview PDF Attachment
         </button>
       </div>
 
-            {/* Segmented toggle — not a tab bar, since these two aren't
-          alternate views of the SAME thing, they're two real, different
-          emails a customer might receive depending on where a job is. */}
-      <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/60 mb-3">
-        <button
-          type="button"
-          onClick={() => setEmailVariant('deposit')}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
-            emailVariant === 'deposit' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Deposit Request Email
-        </button>
-        <button
-          type="button"
-          onClick={() => setEmailVariant('invoice')}
-          className={`rounded-lg px-3.5 py-1.5 text-xs font-bold transition-all ${
-            emailVariant === 'invoice' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          Full Invoice Email
-        </button>
+      {/* Segmented Variant Controller */}
+      <div className="flex items-center gap-2 mb-4">
+        <div className="inline-flex items-center rounded-xl bg-slate-100 p-1 border border-slate-200/60">
+          <button
+            type="button"
+            onClick={() => setEmailVariant('deposit')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              emailVariant === 'deposit' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Deposit Request
+          </button>
+          <button
+            type="button"
+            onClick={() => setEmailVariant('invoice')}
+            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              emailVariant === 'invoice' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            Full Invoice
+          </button>
+        </div>
       </div>
 
-      {/* Concrete, real difference — not just relabeled toggle buttons.
-          Names exactly what changes between the two, so someone doesn't
-          have to compare the mockups line-by-line to understand it. */}
-      <div className="mb-5 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3.5 py-2.5">
-        <p className="text-[11px] leading-relaxed text-indigo-900">
-          {emailVariant === 'deposit' ? (
-            <>
-              <span className="font-bold">Deposit emails</span> charge only a portion now — the sample
-              below shows 25% due today, with the remaining balance invoiced once the job&rsquo;s complete.
-            </>
-          ) : (
-            <>
-              <span className="font-bold">Full invoice emails</span> charge the entire total in one
-              payment, with nothing held back for later.
-            </>
-          )}
-        </p>
-      </div>
-
-      {/* Full-width, native card treatment — no more floating centered
-          island. Browser-chrome header kept, since it's a genuinely
-          clear "this is what an email looks like" signal, just sized
-          to actually fill the space instead of sitting in a void. */}
-      <div className="w-full overflow-hidden rounded-xl border border-slate-200/80 bg-white">
-        <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50 px-5 py-3.5">
+      {/* Email Inbox Browser Frame */}
+      <div className="w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50 shadow-inner">
+        {/* Browser Topbar */}
+        <div className="flex items-center gap-3 border-b border-slate-200/80 bg-slate-100/80 px-4 py-3">
           <div className="flex gap-1.5 shrink-0">
             <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
             <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
           </div>
-          <p className="min-w-0 flex-1 truncate text-xs font-medium text-slate-500">
+          <div className="min-w-0 flex-1 rounded-md bg-white px-3 py-1 text-[11px] font-mono text-slate-500 border border-slate-200/60 truncate">
             {companyName} &lt;{company.email || 'billing@yourbusiness.com'}&gt;
-          </p>
+          </div>
         </div>
 
-        <div className="border-b border-slate-100 px-6 py-3.5 bg-slate-50/30">
+        {/* Email Header */}
+        <div className="border-b border-slate-200/60 bg-white px-6 py-3">
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subject</p>
-          <p className="mt-0.5 text-sm font-bold text-slate-900">{v.subject}</p>
+          <p className="mt-0.5 text-xs sm:text-sm font-bold text-slate-900">{v.subject}</p>
         </div>
 
-        <div className="p-6 sm:p-10">
-          <div className="mb-7">
+        {/* Email Body Preview */}
+        <div className="bg-white p-6 sm:p-8">
+          <div className="mb-6">
             {company.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={company.logo_url} alt={companyName} className="h-8 w-auto object-contain" />
             ) : (
-              <span className="text-base font-black tracking-tight text-slate-900">{companyName}</span>
+              <span className="text-lg font-black tracking-tight text-slate-900">{companyName}</span>
             )}
           </div>
 
-          <p className="text-base font-bold text-slate-900">{v.heading}</p>
-          <p className="mt-2.5 text-sm leading-relaxed text-slate-600">
+          <p className="text-sm sm:text-base font-bold text-slate-900">{v.heading}</p>
+          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-slate-600">
             {v.body}
             <span className="font-semibold text-slate-900">${v.amount.toFixed(2)}</span>.
           </p>
 
-          <div className="mt-7 space-y-2.5 max-w-md">
+          <div className="mt-6 space-y-2.5 max-w-sm">
             {v.payLabel ? (
-              <div className="rounded-xl py-3.5 text-center text-sm font-bold text-white shadow-sm" style={{ backgroundColor: accent }}>
+              <div className="rounded-xl py-3 text-center text-xs sm:text-sm font-bold text-white shadow-sm transition hover:opacity-95" style={{ backgroundColor: accent }}>
                 {v.payLabel} — ${v.amount.toFixed(2)}
               </div>
             ) : (
-              <div className="rounded-xl bg-amber-50 py-3.5 text-center text-sm font-bold text-amber-800">
-                Manual Collection — No Online Link
+              <div className="rounded-xl bg-amber-50 border border-amber-200 py-3 text-center text-xs font-bold text-amber-800">
+                Manual Collection — Check/Cash Payment
               </div>
             )}
-            <div className="rounded-xl border border-slate-200 py-3.5 text-center text-sm font-bold text-slate-700">
-              Download Attached PDF
+            <div className="rounded-xl border border-slate-200 bg-white py-2.5 text-center text-xs font-bold text-slate-700 shadow-2xs">
+              Download Invoice PDF
             </div>
           </div>
 
           {v.footNote && (
-            <p className="mt-4 text-xs text-slate-500 leading-relaxed">{v.footNote}</p>
+            <p className="mt-4 text-xs text-slate-500 italic">{v.footNote}</p>
           )}
 
-          <div className="mt-7 flex items-center gap-1.5 text-xs text-slate-400">
+          <div className="mt-6 flex items-center gap-1.5 text-xs text-slate-400 border-t border-slate-100 pt-4">
             <Calendar className="h-3.5 w-3.5" />
-            Due on <span className="font-semibold text-slate-600">{SAMPLE_DUE_DATE}</span>
+            Payment Due Date: <span className="font-semibold text-slate-700">{SAMPLE_DUE_DATE}</span>
           </div>
         </div>
       </div>
-
-      <p className="mt-3 text-[11px] text-slate-400">
-        Your payment terms appear on the actual invoice PDF, not in the email itself — click{' '}
-        <button type="button" onClick={() => setShowPdfModal(true)} className="font-semibold text-slate-600 underline hover:text-slate-800">
-          View Invoice PDF
-        </button>{' '}
-        above to see them.
-      </p>
 
       {showPdfModal && (
         <div
@@ -713,8 +712,12 @@ function InvoicePreviewCard({ company }: { company: any }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <span className="text-sm font-bold text-slate-900">Invoice Preview</span>
-              <button type="button" onClick={() => setShowPdfModal(false)} className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+              <span className="text-sm font-bold text-slate-900">PDF Document Preview</span>
+              <button
+                type="button"
+                onClick={() => setShowPdfModal(false)}
+                className="rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 cursor-pointer"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -727,38 +730,52 @@ function InvoicePreviewCard({ company }: { company: any }) {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   MAIN PAGE LAYOUT — two-column at the top (setup steps + static
-   fee/features panel), matching the reference's structure. Invoice
-   presentation stays full-width below, since it doesn't have a
-   natural "info sidebar" counterpart the way payment setup does.
+   MAIN CONTAINER & HEADER
 ───────────────────────────────────────────────────────────── */
 
-export default function PaymentsTab({ company, currentUser }: { company: any; currentUser: any }) {
+export default function PaymentsTab({ company }: { company: any; currentUser?: any }) {
+  const stripeActive = !!company.stripe_connect_onboarded && company.stripe_payment_status === 'active';
+
   return (
     <div className="w-full font-sans text-slate-900 antialiased">
       <div className="w-full space-y-8 pb-12">
-               <div>
-          <PaymentsFontLoader />
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            Lead2Project Payments
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
-            Connect card payments and set how Lead2Project invoices look to your customers.
-          </p>
+        {/* Page Top Header Bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-6">
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black tracking-tight text-slate-900">Payment Settings</h1>
+              {stripeActive ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700 border border-emerald-200">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Live Card Payments
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-700 border border-amber-200">
+                  Setup Required
+                </span>
+              )}
+            </div>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500">
+              Configure how clients pay online and manage invoice formatting.
+            </p>
+          </div>
         </div>
 
+        {/* Section 1: Payment Processing Setup */}
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
           <PaymentSetupSteps company={company} />
           <PaymentOptionsPanel />
         </div>
 
-               <section>
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3">Invoice Presentation</p>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[340px_1fr] lg:items-start">
+        {/* Section 2: Invoice Terms & Customer Email Preview */}
+        <div className="space-y-4 pt-4 border-t border-slate-200/80">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-slate-900">Invoice Presentation</h2>
+          </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr] lg:items-start">
             <InvoiceTermsCard company={company} />
             <InvoicePreviewCard company={company} />
           </div>
-        </section>
+        </div>
       </div>
     </div>
   );

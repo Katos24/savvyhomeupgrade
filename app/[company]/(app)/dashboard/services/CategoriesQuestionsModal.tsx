@@ -14,10 +14,9 @@ import {
   ListFilter,
   ToggleRight,
   Check,
-  Sparkles,
+  MessageSquarePlus,
 } from 'lucide-react';
 import type { Category, CustomQuestion } from './CategoriesTaskEditorModal';
-import { themeTokens } from './CategoriesTaskEditorModal';
 
 type QuestionType = 'text' | 'select' | 'checkbox';
 
@@ -29,20 +28,20 @@ const QUESTION_TYPES: {
 }[] = [
   {
     val: 'text',
-    label: 'Text Response',
-    description: 'Freeform text box for short or long answers',
+    label: 'Text Field',
+    description: 'Freeform input box for short or long responses',
     icon: Type,
   },
   {
     val: 'select',
-    label: 'Dropdown Menu',
-    description: 'Let customers choose one option from a list',
+    label: 'Dropdown List',
+    description: 'Select a single option from a custom list',
     icon: ListFilter,
   },
   {
     val: 'checkbox',
-    label: 'Yes / No Choice',
-    description: 'A simple toggle for boolean confirmation',
+    label: 'Yes / No',
+    description: 'Simple Yes / No or True / False confirmation',
     icon: ToggleRight,
   },
 ];
@@ -64,10 +63,9 @@ export default function CategoriesQuestionsModal({
   onClose,
   onSaved,
 }: Props) {
-  const t = themeTokens(isDark);
   const [questions, setQuestions] = useState<CustomQuestion[]>(allQuestions);
-  
-  // View State: 'list' = view all questions | 'editor' = add/edit question form
+
+  // View State: 'list' | 'editor'
   const [viewMode, setViewMode] = useState<'list' | 'editor'>('list');
 
   // Form State
@@ -110,16 +108,20 @@ export default function CategoriesQuestionsModal({
 
   const handleAddOption = () => {
     const trimmed = newQOptionDraft.trim();
-    if (trimmed) {
+    if (trimmed && !newQOptions.includes(trimmed)) {
       setNewQOptions((prev) => [...prev, trimmed]);
       setNewQOptionDraft('');
     }
   };
 
+  const handleRemoveOption = (index: number) => {
+    setNewQOptions((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
   const handleConfirmQuestion = () => {
     const trimmedLabel = newQLabel.trim();
     if (!trimmedLabel) {
-      setQuestionLabelError('Please enter a question prompt.');
+      setQuestionLabelError('Question prompt cannot be empty.');
       return;
     }
 
@@ -183,122 +185,167 @@ export default function CategoriesQuestionsModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md"
       onClick={onClose}
     >
-      <div
-        className={`flex max-h-[92vh] sm:max-h-[85vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl sm:rounded-2xl ${t.overlayCard} shadow-2xl transition-all`}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.96 }}
+        transition={{ duration: 0.2 }}
+        className={`flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border shadow-2xl transition-all ${
+          isDark
+            ? 'border-slate-800 bg-slate-900 text-slate-100'
+            : 'border-slate-200 bg-white text-slate-900'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <div className={`flex items-center justify-between border-b ${t.border} px-5 py-4`}>
-          <div className="flex items-center gap-2.5 min-w-0">
+        {/* ── Header ── */}
+        <div className={`flex items-center justify-between border-b px-6 py-4.5 ${
+          isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'
+        }`}>
+          <div className="flex items-center gap-3 min-w-0">
             {viewMode === 'editor' && (
               <button
                 type="button"
                 onClick={() => setViewMode('list')}
-                className={`flex h-8 w-8 items-center justify-center rounded-lg border ${t.border} ${t.subText} hover:bg-white/5 transition`}
+                className={`flex h-8 w-8 items-center justify-center rounded-xl border transition cursor-pointer ${
+                  isDark
+                    ? 'border-slate-800 bg-slate-800/50 text-slate-300 hover:text-white'
+                    : 'border-slate-200 bg-white text-slate-700 hover:text-slate-900'
+                }`}
                 aria-label="Back to questions list"
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
             <div className="min-w-0">
-              <h3 className={`text-sm font-bold ${t.cardText}`}>
+              <h3 className={`text-base font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 {viewMode === 'editor'
                   ? editingQId
-                    ? 'Edit Question'
-                    : 'New Question Builder'
-                  : 'Custom Service Questions'}
+                    ? 'Edit Service Question'
+                    : 'Create Custom Question'
+                  : 'Service Questions'}
               </h3>
-              <p className={`text-xs ${t.subText} truncate`}>{category.label}</p>
+              <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                {category.label}
+              </p>
             </div>
           </div>
+
           <button
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${t.subText} transition hover:bg-white/10`}
+            className={`flex h-8 w-8 items-center justify-center rounded-xl transition cursor-pointer ${
+              isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
+            }`}
           >
-            <X className="h-4 w-4" />
+            <X className="h-4.5 w-4.5" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        {/* ── Body Content ── */}
+        <div className="flex-1 overflow-y-auto p-6">
           <AnimatePresence mode="wait">
             {viewMode === 'list' ? (
               <motion.div
                 key="list-view"
-                initial={{ opacity: 0, x: -10 }}
+                initial={{ opacity: 0, x: -12 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -10 }}
-                className="space-y-4"
+                exit={{ opacity: 0, x: -12 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-5"
               >
-                {/* Information Banner */}
-                <div className="flex items-start gap-2.5 rounded-xl border border-blue-500/20 bg-blue-500/5 px-3.5 py-3 text-xs font-medium leading-relaxed text-blue-500">
+                {/* Banner */}
+                <div className={`flex items-start gap-3 rounded-2xl border p-4 text-xs font-semibold leading-relaxed ${
+                  isDark
+                    ? 'border-sky-500/30 bg-sky-500/10 text-sky-300'
+                    : 'border-sky-200 bg-sky-50 text-sky-800'
+                }`}>
                   <HelpCircle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
-                    Questions configured here will only appear on the booking form when a customer selects{' '}
-                    <strong className="font-semibold">{category.label}</strong>.
+                    Questions added here will be prompted on the booking form specifically when customers select{' '}
+                    <strong className={`font-bold ${isDark ? 'text-sky-200' : 'text-sky-950'}`}>{category.label}</strong>.
                   </span>
                 </div>
 
                 {/* Question List Header */}
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-bold uppercase tracking-wider ${t.subText}`}>
-                    Questions ({questionsForThisService.length})
+                <div className="flex items-center justify-between pt-1">
+                  <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                    isDark ? 'text-slate-400' : 'text-slate-700'
+                  }`}>
+                    Active Questions ({questionsForThisService.length})
                   </span>
                   <button
                     type="button"
                     onClick={handleOpenAddForm}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700"
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-blue-700 cursor-pointer"
                   >
                     <Plus className="h-3.5 w-3.5" />
-                    <span>Add Question</span>
+                    <span>New Question</span>
                   </button>
                 </div>
 
                 {/* Questions List */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   {questionsForThisService.length === 0 ? (
-                    <div className={`flex flex-col items-center justify-center rounded-2xl border border-dashed ${t.border} p-8 text-center`}>
-                      <div className={`mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-500/10 text-blue-500`}>
-                        <Sparkles className="h-5 w-5" />
+                    <div className={`flex flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center ${
+                      isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-300 bg-slate-50'
+                    }`}>
+                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
+                        <MessageSquarePlus className="h-5 w-5" />
                       </div>
-                      <p className={`text-xs font-semibold ${t.cardText}`}>No questions added yet</p>
-                      <p className={`mt-1 text-[11px] ${t.subText}`}>
-                        Ask customers for specific details when booking this service.
+                      <p className={`text-xs font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        No custom questions created
+                      </p>
+                      <p className={`mt-1 text-xs max-w-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                        Ask customers for measurements, preferences, or specific scope details.
                       </p>
                     </div>
                   ) : (
                     questionsForThisService.map((q) => (
                       <div
                         key={q.id}
-                        className={`group flex items-center justify-between gap-3 rounded-xl border ${t.border} p-3.5 transition hover:border-blue-500/30`}
+                        className={`group flex items-center justify-between gap-4 rounded-2xl border p-4 transition-all ${
+                          isDark
+                            ? 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+                            : 'border-slate-200 bg-slate-50/80 hover:border-slate-300'
+                        }`}
                       >
                         <div className="min-w-0 flex-1">
-                          <p className={`truncate text-xs font-semibold ${t.cardText}`}>
+                          <p className={`truncate text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                             {q.label}
                           </p>
-                          <p className={`mt-0.5 text-[11px] ${t.subText}`}>
-                            {q.type === 'text' && 'Text Response'}
-                            {q.type === 'checkbox' && 'Yes / No Choice'}
-                            {q.type === 'select' && `Dropdown (${q.options?.length || 0} options)`}
-                          </p>
+                          <div className="mt-1 flex items-center gap-2">
+                            <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
+                              isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {q.type === 'text' && 'Text Input'}
+                              {q.type === 'checkbox' && 'Yes/No'}
+                              {q.type === 'select' && `Dropdown (${q.options?.length || 0} options)`}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
+
+                        <div className="flex items-center gap-1 shrink-0">
                           <button
                             type="button"
                             onClick={() => handleStartEdit(q)}
-                            className={`flex h-8 w-8 items-center justify-center rounded-lg border ${t.border} ${t.subText} hover:text-blue-500 transition hover:bg-blue-500/5`}
+                            className={`flex h-8 w-8 items-center justify-center rounded-xl border transition cursor-pointer ${
+                              isDark
+                                ? 'border-slate-800 text-slate-300 hover:border-slate-700 hover:text-blue-400 hover:bg-slate-800'
+                                : 'border-slate-300 text-slate-700 hover:border-slate-400 hover:text-blue-600 hover:bg-white'
+                            }`}
+                            title="Edit question"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleRemoveQuestion(q.id)}
-                            className={`flex h-8 w-8 items-center justify-center rounded-lg border ${t.border} text-rose-500 hover:bg-rose-500/10 transition`}
+                            className="flex h-8 w-8 items-center justify-center rounded-xl text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
+                            title="Delete question"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                           </button>
@@ -311,15 +358,18 @@ export default function CategoriesQuestionsModal({
             ) : (
               <motion.div
                 key="editor-view"
-                initial={{ opacity: 0, x: 10 }}
+                initial={{ opacity: 0, x: 12 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="space-y-5"
+                exit={{ opacity: 0, x: 12 }}
+                transition={{ duration: 0.15 }}
+                className="space-y-6"
               >
-                {/* Step 1: Question Title */}
-                <div className="space-y-1.5">
-                  <label className={`block text-xs font-bold ${t.cardText}`}>
-                    1. Question Prompt
+                {/* Field 1: Question Title */}
+                <div className="space-y-2">
+                  <label className={`block text-xs font-bold uppercase tracking-wider ${
+                    isDark ? 'text-slate-400' : 'text-slate-700'
+                  }`}>
+                    Question Prompt
                   </label>
                   <input
                     type="text"
@@ -330,23 +380,29 @@ export default function CategoriesQuestionsModal({
                       setQuestionLabelError('');
                     }}
                     placeholder='e.g., "What is the square footage of the roof?"'
-                    className={`w-full rounded-xl border bg-transparent px-3.5 py-2.5 text-xs font-medium outline-none transition ${t.cardText} ${
-                      questionLabelError ? 'border-rose-500 bg-rose-500/5' : t.border
+                    className={`w-full rounded-xl border px-4 py-3 text-xs font-semibold outline-none transition ${
+                      questionLabelError
+                        ? 'border-rose-500 bg-rose-500/5'
+                        : isDark
+                        ? 'border-slate-800 bg-slate-950 text-white placeholder:text-slate-500 focus:border-blue-500'
+                        : 'border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
                     }`}
                   />
                   {questionLabelError && (
-                    <p className="flex items-center gap-1 text-[11px] font-medium text-rose-500">
-                      <AlertCircle className="h-3 w-3" /> {questionLabelError}
+                    <p className="flex items-center gap-1.5 text-[11px] font-bold text-rose-500">
+                      <AlertCircle className="h-3.5 w-3.5" /> {questionLabelError}
                     </p>
                   )}
                 </div>
 
-                {/* Step 2: Answer Format Selector */}
+                {/* Field 2: Answer Format Cards */}
                 <div className="space-y-2">
-                  <label className={`block text-xs font-bold ${t.cardText}`}>
-                    2. Select Answer Type
+                  <label className={`block text-xs font-bold uppercase tracking-wider ${
+                    isDark ? 'text-slate-400' : 'text-slate-700'
+                  }`}>
+                    Response Format
                   </label>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                     {QUESTION_TYPES.map((typeObj) => {
                       const Icon = typeObj.icon;
                       const isSelected = newQType === typeObj.val;
@@ -355,19 +411,29 @@ export default function CategoriesQuestionsModal({
                           key={typeObj.val}
                           type="button"
                           onClick={() => setNewQType(typeObj.val)}
-                                                    className={`flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left transition ${
+                          className={`relative flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
                             isSelected
-                              ? 'border-blue-600 bg-blue-600/10 text-blue-600 ring-1 ring-blue-600'
-                              : `${t.border} ${t.cardText} hover:bg-white/5`
+                              ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500'
+                              : isDark
+                              ? 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
+                              : 'border-slate-200 bg-slate-50 hover:border-slate-300'
                           }`}
                         >
-                          <div className="flex w-full items-center justify-between">
-                            <Icon className="h-4 w-4" />
-                            {isSelected && <Check className="h-3.5 w-3.5 text-blue-600" />}
+                          <div className="flex items-center justify-between">
+                            <div className={`flex h-7 w-7 items-center justify-center rounded-xl ${
+                              isSelected ? 'bg-blue-600 text-white' : isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'
+                            }`}>
+                              <Icon className="h-3.5 w-3.5" />
+                            </div>
+                            {isSelected && <Check className="h-4 w-4 text-blue-500" />}
                           </div>
-                          <div>
-                            <p className="text-xs font-semibold">{typeObj.label}</p>
-                            <p className={`text-[10px] leading-tight ${t.subText}`}>
+                          <div className="mt-3">
+                            <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+                              {typeObj.label}
+                            </p>
+                            <p className={`mt-0.5 text-[10px] font-medium leading-tight ${
+                              isDark ? 'text-slate-400' : 'text-slate-600'
+                            }`}>
                               {typeObj.description}
                             </p>
                           </div>
@@ -377,32 +443,41 @@ export default function CategoriesQuestionsModal({
                   </div>
                 </div>
 
-                {/* Step 3: Options (If Dropdown selected) */}
+                {/* Field 3: Dropdown Option Pills */}
                 {newQType === 'select' && (
-                  <div className={`space-y-3 rounded-xl border ${t.border} p-4 bg-white/5`}>
-                    <label className={`block text-xs font-bold ${t.cardText}`}>
-                      3. Dropdown Options
+                  <div className={`space-y-3 rounded-2xl border p-4 ${
+                    isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'
+                  }`}>
+                    <label className={`block text-xs font-bold uppercase tracking-wider ${
+                      isDark ? 'text-slate-400' : 'text-slate-700'
+                    }`}>
+                      Dropdown Options
                     </label>
-                    <div className="space-y-2">
-                      {newQOptions.map((opt, i) => (
-                        <div
-                          key={i}
-                          className={`flex items-center justify-between rounded-lg border ${t.border} px-3 py-1.5 text-xs font-medium ${t.cardText}`}
-                        >
-                          <span>{opt}</span>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setNewQOptions((prev) => prev.filter((_, idx) => idx !== i))
-                            }
-                            className={`text-rose-500 hover:text-rose-600`}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
 
+                    {/* Option Pills Box */}
+                    {newQOptions.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {newQOptions.map((opt, i) => (
+                          <span
+                            key={i}
+                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
+                              isDark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-300 bg-white text-slate-900'
+                            }`}
+                          >
+                            <span>{opt}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveOption(i)}
+                              className="text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add Input */}
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -414,13 +489,21 @@ export default function CategoriesQuestionsModal({
                             handleAddOption();
                           }
                         }}
-                        placeholder="Add an option (e.g. 1-2 Stories)..."
-                        className={`flex-1 rounded-lg border ${t.border} bg-transparent px-3 py-2 text-xs outline-none ${t.cardText}`}
+                        placeholder="Add option (e.g. 1-2 Stories)..."
+                        className={`flex-1 rounded-xl border px-3.5 py-2 text-xs font-semibold outline-none ${
+                          isDark
+                            ? 'border-slate-800 bg-slate-900 text-white placeholder:text-slate-500 focus:border-blue-500'
+                            : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
+                        }`}
                       />
                       <button
                         type="button"
                         onClick={handleAddOption}
-                        className={`rounded-lg border ${t.border} px-3 py-2 text-xs font-semibold ${t.cardText} hover:bg-white/5`}
+                        className={`rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
+                          isDark
+                            ? 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+                            : 'bg-slate-800 text-white hover:bg-slate-900'
+                        }`}
                       >
                         Add
                       </button>
@@ -428,7 +511,7 @@ export default function CategoriesQuestionsModal({
                   </div>
                 )}
 
-                {/* Form Controls */}
+                {/* Controls */}
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
                     type="button"
@@ -436,16 +519,20 @@ export default function CategoriesQuestionsModal({
                       resetForm();
                       setViewMode('list');
                     }}
-                    className={`rounded-xl border ${t.border} px-4 py-2.5 text-xs font-semibold ${t.cardText} hover:bg-white/5 transition`}
+                    className={`rounded-xl border px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
+                      isDark
+                        ? 'border-slate-800 text-slate-300 hover:bg-slate-800'
+                        : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+                    }`}
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleConfirmQuestion}
-                    className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-blue-700 transition"
+                    className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-700 transition cursor-pointer shadow-xs"
                   >
-                    {editingQId ? 'Update Question' : 'Add to List'}
+                    {editingQId ? 'Update Question' : 'Add Question'}
                   </button>
                 </div>
               </motion.div>
@@ -453,19 +540,25 @@ export default function CategoriesQuestionsModal({
           </AnimatePresence>
 
           {saveError && (
-            <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/5 p-3 text-xs font-medium text-rose-500">
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs font-semibold text-rose-500">
               <AlertCircle className="h-4 w-4 shrink-0" /> {saveError}
             </div>
           )}
         </div>
 
-        {/* Modal Footer */}
+        {/* ── Footer ── */}
         {viewMode === 'list' && (
-          <div className={`grid grid-cols-2 gap-2 border-t ${t.border} p-4`}>
+          <div className={`grid grid-cols-2 gap-3 border-t p-4.5 ${
+            isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'
+          }`}>
             <button
               type="button"
               onClick={onClose}
-              className={`rounded-xl border ${t.border} py-2.5 text-xs font-semibold ${t.cardText} transition hover:bg-white/5`}
+              className={`rounded-xl border py-2.5 text-xs font-bold transition cursor-pointer ${
+                isDark
+                  ? 'border-slate-800 text-slate-300 hover:bg-slate-800'
+                  : 'border-slate-300 text-slate-700 hover:bg-slate-100'
+              }`}
             >
               Cancel
             </button>
@@ -473,13 +566,13 @@ export default function CategoriesQuestionsModal({
               type="button"
               onClick={handleSave}
               disabled={saving}
-              className="rounded-xl bg-blue-600 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+              className="rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer shadow-xs"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
