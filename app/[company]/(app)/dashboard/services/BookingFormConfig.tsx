@@ -329,8 +329,8 @@ export default function BookingFormConfig({
               <div className="space-y-2">
                 <LockedControlRow icon={User} label="Full Name" hint="Client's legal or full contact name" t={t} isDark={isDark} />
                 <LockedControlRow icon={Mail} label="Email Address" hint="For quote delivery and booking updates" t={t} isDark={isDark} />
-                <LockedControlRow icon={Phone} label="Phone Number" hint="For SMS updates and direct call-backs" t={t} isDark={isDark} />
-                <LockedControlRow icon={Sparkles} label="Service Category" hint="Required service item or package choices" t={t} isDark={isDark} />
+                <LockedControlRow icon={Phone} label="Phone Number" hint="So you can call the customer back" t={t} isDark={isDark} />
+                                <LockedControlRow icon={Sparkles} label="Service Category" hint="Required service item or package choices" t={t} isDark={isDark} />
                 <LockedControlRow icon={Edit2} label="Project Description" hint="Freeform scope or job details box" t={t} isDark={isDark} />
               </div>
             </div>
@@ -375,7 +375,7 @@ export default function BookingFormConfig({
             </div>
             <div className="min-w-0 flex-1">
               <p className={`text-xs font-bold ${t.cardText}`}>Managing Services &amp; Questions?</p>
-              <p className={`mt-0.5 text-xs ${t.subText}`}>Service item selections and custom questions are managed under Services — they show up here automatically, under Step 2.</p>
+              <p className={`mt-0.5 text-xs ${t.subText}`}>Services and custom questions are managed under Services. Any questions you add appear on the form only for the service they belong to. Use Preview or Launch test to see them.</p>
             </div>
           </div>
         </div>
