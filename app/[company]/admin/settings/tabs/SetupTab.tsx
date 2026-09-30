@@ -38,7 +38,7 @@ const STAGE_GUIDE: { label: string; trigger: string }[] = [
   { label: 'Quoted', trigger: 'Moves here automatically when you email a quote to the customer.' },
   { label: 'Approved', trigger: 'Moves here when the customer accepts the quote.' },
   { label: 'Scheduled', trigger: 'Moves here when you set a job date.' },
-  { label: 'In Progress', trigger: 'You move jobs here yourself once work actually starts.' },
+   { label: 'In Progress', trigger: 'Moves here automatically on the scheduled date. You can also move it yourself.' },
   { label: 'Completed', trigger: 'You move jobs here yourself once the work is done.' },
 ];
 

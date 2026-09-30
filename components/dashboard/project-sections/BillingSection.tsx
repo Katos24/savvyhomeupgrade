@@ -56,7 +56,12 @@ function fmtTimestampDate(d: string | null | undefined) {
 // Short "Sep 29" form for the progress steps, so four steps fit a phone width.
 function fmtStepDate(d: string | null | undefined) {
   if (!d) return null;
-  const date = new Date(d);
+  // A plain "2026-09-30" is a calendar date, not a moment in time. new Date()
+  // reads it as UTC midnight, which shows as the previous day in the US.
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.exec(String(d));
+  const date = dateOnly
+    ? new Date(Number(d.slice(0, 4)), Number(d.slice(5, 7)) - 1, Number(d.slice(8, 10)))
+    : new Date(d);
   if (isNaN(date.getTime())) return null;
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
@@ -681,6 +686,16 @@ export default function BillingSection({
     ? balancePortion
     : remaining;
 
+
+      // No paid_in_full_at column exists — use the date of the most recent
+  // payment (refunds excluded) once the job is fully paid.
+  const paidInFullDate = isPaid
+    ? payments
+        .filter((p: any) => Number(p.amount) > 0 && p.paid_on)
+        .map((p: any) => String(p.paid_on).slice(0, 10))
+        .sort()
+        .pop() ?? null
+    : null;
   // Progress steps. Jobs without a deposit only get the two steps that
   // apply to them (previously they showed two deposit steps that could
   // never complete).
@@ -689,11 +704,11 @@ export default function BillingSection({
         { id: 1, label: 'Deposit Sent', done: depositRequestSent || depositPaid || isPaid, date: fmtStepDate(depositSentAt) },
         { id: 2, label: 'Deposit Paid', done: depositPaid || isPaid, date: fmtStepDate(lead?.deposit_paid_at) },
         { id: 3, label: 'Balance Sent', done: balanceRequestSent || isPaid, date: fmtStepDate(balanceSentAt) },
-        { id: 4, label: 'Paid in Full', done: isPaid, date: fmtStepDate(lead?.paid_in_full_at) },
+        { id: 4, label: 'Paid in Full', done: isPaid, date: fmtStepDate(paidInFullDate) },
       ]
     : [
         { id: 1, label: 'Invoice Sent', done: balanceRequestSent || isPaid, date: fmtStepDate(balanceSentAt) },
-        { id: 2, label: 'Paid in Full', done: isPaid, date: fmtStepDate(lead?.paid_in_full_at) },
+        { id: 2, label: 'Paid in Full', done: isPaid, date: fmtStepDate(paidInFullDate) },
       ];
 
   const anyRequestSent = depositRequestSent || balanceRequestSent;

@@ -80,6 +80,13 @@ export async function GET(request: Request, { params }: Props) {
     // server's (UTC on Vercel), so the schedule doesn't flip to tomorrow at 8pm ET.
     const tz = resolveTimeZone(new URL(request.url).searchParams.get('tz'));
     const { todayStr: todayDateStr, weekStartStr, monthStartStr } = localCalendar(tz);
+        // Remember the owner's time zone so server-side jobs (Stripe webhooks,
+    // recorded payments) can date things in their local day. Only writes
+    // when it's a valid zone and actually changed.
+    const tzParam = new URL(request.url).searchParams.get('tz');
+    if (tzParam && resolveTimeZone(tzParam) === tzParam) {
+      await sql`UPDATE companies SET timezone = ${tzParam} WHERE slug = ${slug} AND timezone IS DISTINCT FROM ${tzParam}`;
+    }
 
     // ── Leads: new this week ──
     // Local Sunday midnight converted to the correct instant in time.

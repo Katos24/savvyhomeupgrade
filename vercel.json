@@ -1,12 +1,6 @@
 {
   "functions": {
-    "app/api/ai/analyze-photos/route.ts": {
-      "maxDuration": 60
-    },
     "app/api/ai/brief/route.ts": {
-      "maxDuration": 60
-    },
-    "app/api/ai/quote-status/route.ts": {
       "maxDuration": 60
     }
   },

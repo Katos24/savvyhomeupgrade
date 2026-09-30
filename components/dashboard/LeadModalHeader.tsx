@@ -100,18 +100,27 @@ export default function LeadModalHeader({
     ? getAmountDueNow({ total: quoteTotal, paidAmount: paymentAmount || 0, depositType, depositValue, depositPaidAt: lead?.deposit_paid_at })
     : 0;
 
+   const paidSoFar = paymentAmount || 0;
+  const remaining = Math.max((quoteTotal || 0) - paidSoFar, 0);
+  // The deposit counts as covered once enough money is in, even if it came in
+  // as "balance" payments and deposit_paid_at was never set. deposit_paid_at
+  // stays the sticky source of truth when it IS set (quote-grew case).
+  const depositCovered =
+    depositAlreadyPaid || (hasDepositTerms && paidSoFar > 0 && paidSoFar >= depositAmount);
+  const dueNow = hasDepositTerms && !depositCovered ? amountDueNow : remaining;
+
   const paymentLabel = paymentStatus === 'paid'
     ? `${fmt(paymentAmount || quoteTotal || 0)} paid`
     : hasDepositTerms
-    ? (depositAlreadyPaid ? 'Balance due' : 'Deposit due')
+    ? (depositCovered ? 'Balance due' : 'Deposit due')
     : quoteTotal
     ? 'Unpaid'
     : null;
 
-    const paymentSub = paymentStatus === 'paid'
+  const paymentSub = paymentStatus === 'paid'
     ? { text: 'Paid in full', color: '#34d399' }
     : quoteTotal
-    ? { text: fmt(amountDueNow), color: '#f87171' }
+    ? { text: fmt(dueNow), color: '#f87171' }
     : null;
 
   const snapshot = [

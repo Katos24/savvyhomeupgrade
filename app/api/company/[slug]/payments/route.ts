@@ -281,7 +281,7 @@ export async function POST(
   ${original.invoiced_total},
   'other',
   'refund',
-  ${new Date().toISOString().split('T')[0]},
+  (NOW() AT TIME ZONE COALESCE((SELECT timezone FROM companies WHERE id = ${auth.company.id}), 'America/New_York'))::date,
   ${note ? `Reversal of payment #${paymentId}: ${note}` : `Reversal of payment #${paymentId}`},
   ${auth.user.name || auth.user.email || 'Unknown'},
   ${paymentId},
@@ -455,7 +455,7 @@ export async function POST(
   ${total || null},
   ${method},
   ${resolvedKind},
-  ${paidOn ?? new Date().toISOString().split('T')[0]},
+  COALESCE(${paidOn ?? null}::date, (NOW() AT TIME ZONE COALESCE((SELECT timezone FROM companies WHERE id = ${auth.company.id}), 'America/New_York'))::date),
   ${note},
   ${auth.user.name || auth.user.email || 'Unknown'},
   (SELECT id FROM invoices WHERE project_id = ${projectId})
