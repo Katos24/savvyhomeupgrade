@@ -81,3 +81,38 @@ export async function autoAdvanceStatus(
   }
 }
 
+
+/**
+ * Adds an entry to a job's Activity log (projects.notes), by lead id.
+ * Same read-append-write as the payments route's addActivityToProject.
+ * Never throws — a missing log line shouldn't fail the real action.
+ */
+export async function logAutoMove(sql: any, leadId: number, text: string): Promise<void> {
+  try {
+    const rows = await sql`SELECT id, notes FROM projects WHERE lead_id = ${leadId} LIMIT 1`;
+    const project = rows[0];
+    if (!project) return;
+
+    let notes: any[] = [];
+    const raw = project.notes;
+    if (Array.isArray(raw)) notes = raw;
+    else if (typeof raw === 'string' && raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) notes = parsed;
+      } catch {}
+    }
+
+    notes.push({
+      type: 'status_change',
+      text,
+      user_name: 'System',
+      user_email: '',
+      timestamp: new Date().toISOString(),
+    });
+
+    await sql`UPDATE projects SET notes = ${JSON.stringify(notes)}, updated_at = NOW() WHERE id = ${project.id}`;
+  } catch (err) {
+    console.error('logAutoMove failed:', err);
+  }
+}

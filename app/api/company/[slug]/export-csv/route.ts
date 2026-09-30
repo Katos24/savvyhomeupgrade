@@ -4,6 +4,8 @@ import { can, type PlanTier } from '@/lib/permissions';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getPaymentMethodLabel } from '@/lib/paymentStatus';
+import { periodStartsInZone } from '@/lib/timezone';
+
 
 
 export async function GET(
@@ -31,7 +33,7 @@ export async function GET(
 
     // Get company + custom_questions + plan check
     const companies = await sql`
-      SELECT id, custom_questions, plan_tier
+      SELECT id, custom_questions, plan_tier, timezone
       FROM companies 
       WHERE slug = ${slug}
     `;
@@ -129,24 +131,16 @@ p.payment_due_date,
       paramIndex++;
     }
 
-    if (timeFilter !== 'all') {
-      const now = new Date();
-      if (timeFilter === 'today') {
-        const todayStart = new Date(now.setHours(0, 0, 0, 0));
+       if (timeFilter !== 'all') {
+      const starts = periodStartsInZone(companies[0].timezone || null);
+      const from =
+        timeFilter === 'today' ? starts.todayStart
+        : timeFilter === 'week' ? starts.weekStart
+        : timeFilter === 'month' ? starts.monthStart
+        : null;
+      if (from) {
         query += ` AND l.created_at >= $${paramIndex}`;
-        queryParams.push(todayStart.toISOString());
-        paramIndex++;
-      } else if (timeFilter === 'week') {
-        const weekStart = new Date(now);
-        weekStart.setDate(now.getDate() - now.getDay());
-        weekStart.setHours(0, 0, 0, 0);
-        query += ` AND l.created_at >= $${paramIndex}`;
-        queryParams.push(weekStart.toISOString());
-        paramIndex++;
-      } else if (timeFilter === 'month') {
-        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        query += ` AND l.created_at >= $${paramIndex}`;
-        queryParams.push(monthStart.toISOString());
+        queryParams.push(from.toISOString());
         paramIndex++;
       }
     }

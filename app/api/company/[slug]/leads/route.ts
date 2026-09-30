@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '@/lib/auth';
+import { todayInZone, periodStartsInZone, startOfDayInZone, endOfDayInZone } from '@/lib/timezone';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -31,7 +32,7 @@ export async function GET(request: Request, { params }: Props) {
 
     // ── 2. Verify user belongs to this company ─────────────────
     const companies = await sql`
-      SELECT c.id FROM companies c
+      SELECT c.id, c.timezone FROM companies c
       JOIN users u ON u.company_id = c.id
       WHERE c.slug = ${slug} AND u.id = ${decoded.userId}
       LIMIT 1
@@ -40,6 +41,8 @@ export async function GET(request: Request, { params }: Props) {
       return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
     }
     const companyId = companies[0].id;
+        const tz = companies[0].timezone || null;
+
 
     // ── 3. Parse Params ─────────────────────────────────────────
     const url = new URL(request.url);
@@ -84,36 +87,27 @@ export async function GET(request: Request, { params }: Props) {
     const includeStats = url.searchParams.get('includeStats') === 'true';
 
     const isScheduledToday = timeFilter === 'scheduled_today';
-    const today = new Date();
-    const todayDateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const todayDateStr = todayInZone(tz);
 
     // ── 4. Build created_at time boundary ───────────────────────
     let timeFrom: Date | null = null;
     let timeTo: Date | null = null;
-    const now = new Date();
-
-    if (!isScheduledToday) {
+        if (!isScheduledToday) {
       if (startDate && endDate) {
-        timeFrom = new Date(startDate);
-        timeTo = new Date(endDate);
-        timeTo.setHours(23, 59, 59, 999);
+        timeFrom = startOfDayInZone(startDate, tz);
+        timeTo = endOfDayInZone(endDate, tz);
       } else if (startDate) {
-        timeFrom = new Date(startDate);
+        timeFrom = startOfDayInZone(startDate, tz);
       } else if (endDate) {
-        timeTo = new Date(endDate);
-        timeTo.setHours(23, 59, 59, 999);
+        timeTo = endOfDayInZone(endDate, tz);
       } else if (timeFilter === 'today') {
-        timeFrom = new Date(now);
-        timeFrom.setHours(0, 0, 0, 0);
+        timeFrom = periodStartsInZone(tz).todayStart;
       } else if (timeFilter === 'week') {
-        timeFrom = new Date(now);
-        timeFrom.setDate(now.getDate() - now.getDay());
-        timeFrom.setHours(0, 0, 0, 0);
+        timeFrom = periodStartsInZone(tz).weekStart;
       } else if (timeFilter === 'month') {
-        timeFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+        timeFrom = periodStartsInZone(tz).monthStart;
       }
     }
-
     const fromISO = timeFrom ? timeFrom.toISOString() : '2000-01-01T00:00:00.000Z';
     const toISO = timeTo ? timeTo.toISOString() : '2099-12-31T23:59:59.999Z';
 

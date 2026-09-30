@@ -61,8 +61,8 @@ export function usePlan(): UsePlanReturn {
       .then(data => {
         const tier = data.company?.plan_tier as PlanTier;
         // Normalise — map to valid tier, default to starter (fail safe)
-        const validTiers: PlanTier[] = ['starter', 'basic', 'pro'];
-        setPlan(validTiers.includes(tier) ? tier : 'starter');
+        const validTiers: PlanTier[] = ['free', 'basic', 'pro'];
+        setPlan(validTiers.includes(tier) ? tier : 'free');
       })
       .catch(() => setPlan('basic')) // fail safe — never grant access on error
       .finally(() => setIsLoading(false));
@@ -90,7 +90,7 @@ export function usePlan(): UsePlanReturn {
     can,
     upgradePrompt,
     planConfig,
-    isStarter: plan === 'starter',
+    isStarter: plan === 'free',
     isBasic:   plan === 'basic',
     isPro:     plan === 'pro',
   };

@@ -78,7 +78,7 @@ export const STAGE_TRIGGERS: Record<string, string> = {
   quoted: 'Moves here when you email a quote',
   approved: 'Moves here when the quote is accepted',
   scheduled: 'Moves here when you set a job date',
-  'in-progress': 'You move jobs here when work starts',
+  'in-progress': 'Moves here on the scheduled date',
   completed: 'You move jobs here when work is done',
 };
 

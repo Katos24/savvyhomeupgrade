@@ -3,6 +3,7 @@ import { adminDb as sql } from '@/lib/db';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '@/lib/auth';
+import { todayInZone } from '@/lib/timezone';
 
 
 // Plain array checked here, not a DB constraint — same pattern
@@ -38,8 +39,8 @@ async function authorize(slug: string, requireWriteRole: boolean): Promise<AuthR
     return { error: NextResponse.json({ success: false, error: 'Invalid session' }, { status: 401 }) };
   }
 
-  const companies = await sql`SELECT id, slug FROM companies WHERE slug = ${slug} LIMIT 1`;
-  if (companies.length === 0) {
+  const companies = await sql`SELECT id, slug, timezone FROM companies WHERE slug = ${slug} LIMIT 1`;
+    if (companies.length === 0) {
     return { error: NextResponse.json({ success: false, error: 'Company not found' }, { status: 404 }) };
   }
 
@@ -183,7 +184,7 @@ export async function POST(
     const expenseDate =
       typeof body.expense_date === 'string' && body.expense_date
         ? body.expense_date
-        : new Date().toISOString().split('T')[0];
+        : todayInZone(auth.company.timezone);
     const paymentMethod =
       typeof body.payment_method === 'string' ? body.payment_method.trim().slice(0, 50) || null : null;
     const projectId = body.project_id ? parseInt(body.project_id) : null;

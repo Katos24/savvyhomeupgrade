@@ -211,6 +211,8 @@ RETURNING id
             paymentKind,
             cardBrand,
             cardLast4,
+                      projectId: parseInt(projectId),
+
           });
         }
 

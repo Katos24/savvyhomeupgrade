@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
-import { autoAdvanceStatus } from '@/lib/statusAutomation';
+import { autoAdvanceStatus, logAutoMove } from '@/lib/statusAutomation';
 
 // Runs once a day (see vercel.json). Moves every job whose scheduled date
 // has arrived from Scheduled → In Progress.
@@ -39,8 +39,11 @@ export async function GET(request: Request) {
 
   let moved = 0;
   for (const row of due) {
-    const result = await autoAdvanceStatus(sql, row.id, 'job_started');
-    if (result) moved++;
+        const result = await autoAdvanceStatus(sql, row.id, 'job_started');
+    if (result) {
+      moved++;
+      await logAutoMove(sql, row.id, `Moved to ${result} automatically — scheduled date arrived`);
+    }
   }
 
   console.log(`start-scheduled-jobs: ${moved} of ${due.length} due jobs moved to In Progress`);

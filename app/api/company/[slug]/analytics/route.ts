@@ -2,6 +2,7 @@ import { neon } from '@neondatabase/serverless';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
+import { dateInZone } from '@/lib/timezone';
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -86,19 +87,16 @@ export async function GET(request: NextRequest, { params }: Props) {
     }));
 
    // Projects over time (last N days)
+const tzRows = await sql`SELECT timezone FROM companies WHERE slug = ${slug}`;
+const tz = tzRows[0]?.timezone || null;
+
 const projectsOverTime = [];
 for (let i = daysAgo - 1; i >= 0; i--) {
   const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-  const dateStr = date.toISOString().split('T')[0];
-  const count = projects.filter((p: any) => {
-    const createdAt = new Date(p.created_at);
-    const createdStr = createdAt.toISOString().split('T')[0];
-    return createdStr === dateStr;
-  }).length;
-  projectsOverTime.push({
-    date: `${date.getMonth() + 1}/${date.getDate()}`,
-    count
-  });
+  const dateStr = dateInZone(date, tz);
+  const count = projects.filter((p: any) => dateInZone(p.created_at, tz) === dateStr).length;
+  const [, m, d] = dateStr.split('-').map(Number);
+  projectsOverTime.push({ date: `${m}/${d}`, count });
 }
 
     // Top categories

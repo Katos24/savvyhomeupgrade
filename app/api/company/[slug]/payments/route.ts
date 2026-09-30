@@ -476,6 +476,40 @@ export async function POST(
       timestamp: new Date().toISOString(),
     });
 
+        // Same customer receipt Stripe payments already send — including the
+    // "Paid in full" version once the balance hits zero. Never blocks the
+    // payment itself: a failed email is logged, the payment still records.
+    try {
+      const rows = await sql`
+        SELECT l.email AS customer_email, l.name AS customer_name,
+               c.name AS company_name, p.invoice_number
+        FROM projects p
+        JOIN leads l ON p.lead_id = l.id
+        JOIN companies c ON p.company_id = c.id
+        WHERE p.id = ${projectId} AND p.company_id = ${auth.company.id}
+        LIMIT 1
+      `;
+      const r = rows[0];
+      if (r?.customer_email) {
+        const { sendPaymentReceiptToCustomer } = await import('@/lib/email');
+        await sendPaymentReceiptToCustomer({
+          customerEmail: r.customer_email,
+          customerName: r.customer_name,
+          companyName: r.company_name,
+          companyId: auth.company.id,
+          amountPaid: amount,
+          invoiceNumber: r.invoice_number || undefined,
+          contractTotal: total || undefined,
+          paidToDate: collected,
+          paymentKind: resolvedKind,
+                    projectId,
+
+        });
+      }
+    } catch (err) {
+      console.error('Manual payment receipt failed (non-blocking):', err);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Payment recorded',

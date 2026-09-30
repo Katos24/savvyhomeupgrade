@@ -75,8 +75,15 @@ export function filterByPeriod(
     // period somehow reaches here as 'custom' with an incomplete range,
     // return nothing rather than guessing or defaulting to everything.
     if (!customStart || !customEnd) return [];
-    const start = new Date(customStart);
-    const end = new Date(customEnd);
+       // "2026-09-30" is a calendar date. new Date() reads it as UTC midnight,
+    // which in the US is the evening BEFORE — so the whole end day was
+    // silently left out of the range. Build local dates instead.
+    const toLocal = (s: string) => {
+      const [y, m, d] = s.slice(0, 10).split('-').map(Number);
+      return new Date(y, m - 1, d);
+    };
+    const start = toLocal(customStart);
+    const end = toLocal(customEnd);
     end.setHours(23, 59, 59, 999);
     return projects.filter((p) => {
       const date = new Date(p.created_at);

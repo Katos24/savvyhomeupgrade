@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Plus,
   X,
@@ -16,6 +16,7 @@ import {
   Loader2,
   Info,
   SlidersHorizontal,
+  Zap,
 } from 'lucide-react';
 import {
   DEFAULT_STATUSES,
@@ -24,6 +25,7 @@ import {
   stageColorHex,
   type StatusOption,
 } from '@/lib/formCategories';
+
 
 // Modern, high-contrast color options
 const COLOR_OPTIONS = [
@@ -67,23 +69,11 @@ export default function PipelineTab({
     JSON.parse(JSON.stringify(initialStatuses))
   );
 
-    // Set after a successful save so the reload doesn't trigger the unsaved-changes prompt
-  const justSavedRef = useRef(false);
 
   const isDirty = useMemo(() => {
     return JSON.stringify(statuses) !== JSON.stringify(initialStatuses);
   }, [statuses, initialStatuses]);
 
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-           if (isDirty && !justSavedRef.current) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [isDirty]);
 
     const getColorHex = (name: string) => stageColorHex(name) || '#475569';
 
@@ -181,7 +171,6 @@ export default function PipelineTab({
       const data = await res.json();
       if (data.success) {
                setSuccess('Pipeline updated successfully.');
-        justSavedRef.current = true;
         setTimeout(() => window.location.reload(), 1200);
       } else {
         showError(data.error || 'Failed to save pipeline changes');
@@ -500,13 +489,14 @@ export default function PipelineTab({
 
                     {/* Right side: Badge / Delete Action */}
                     <div className="flex items-center gap-3 shrink-0">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                                           <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
                         locked
                           ? 'text-slate-500 bg-slate-100 border-slate-200'
                           : 'text-amber-800 bg-amber-50 border-amber-200'
                       }`}>
+                        {!locked && !isRemovable(status) && <Zap className="h-3 w-3" />}
                         {locked ? 'Fixed' : isRemovable(status) ? 'Custom' : 'Automated'}
-                                              </span>
+                      </span>
 
                                            {!locked && isRemovable(status) && (
                         <button

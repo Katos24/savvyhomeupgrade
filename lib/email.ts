@@ -2850,6 +2850,7 @@ amountPaid,
   paymentKind,
   cardBrand,
   cardLast4,
+    projectId,
 }: {
   customerEmail: string;
   customerName: string;
@@ -2865,6 +2866,8 @@ amountPaid,
   paymentKind?: 'deposit' | 'balance' | 'refund' | string;
   cardBrand?: string | null;
   cardLast4?: string | null;
+    /** When set and the job is paid off, the final invoice PDF is attached. */
+  projectId?: number;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -2930,6 +2933,7 @@ amountPaid,
           ${settled ? `<p style="margin: 10px 0 0; color: #059669; font-size: 13px; font-weight: 700;">Paid in full — thank you!</p>` : ''}
         </div>
         ${balanceHtml}
+        
       `,
       phone: company.phone,
       website: company.website,
@@ -2940,6 +2944,64 @@ amountPaid,
         : `Payment of ${fmt(amountPaid)} received — thank you!`,
     });
 
+        // Paid in full → attach the final invoice PDF, same generator the
+    // deposit/balance invoice emails use. Any failure here just means the
+    // receipt goes out without the attachment.
+    let attachments: { filename: string; content: string; contentType: string }[] | undefined;
+    if (settled && projectId) {
+      try {
+        const { adminDb } = await import('@/lib/db');
+        const rows = await adminDb`
+          SELECT quote_data, quote_tax_rate, quote_total, invoice_number
+          FROM projects WHERE id = ${projectId} LIMIT 1
+        `;
+        const p = rows[0];
+        let items: any[] = [];
+        const raw = p?.quote_data;
+        if (Array.isArray(raw)) items = raw;
+        else if (typeof raw === 'string') {
+          try { const parsed = JSON.parse(raw); if (Array.isArray(parsed)) items = parsed; } catch {}
+        }
+
+        if (p && items.length > 0) {
+          const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
+          const finalTotal = contractTotal ?? parseFloat(p.quote_total || '0');
+          const number = invoiceNumber || p.invoice_number || 'Invoice';
+          const pdfBuffer = await generateInvoicePDFBuffer({
+            invoiceNumber: number,
+            invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+            dueDate: 'Paid in full',
+            companyName: company.name || companyName,
+            companyPhone: company.phone || undefined,
+            companyEmail: company.email || undefined,
+            companyLogoUrl: company.logo_url || undefined,
+            customerName,
+            customerEmail,
+            customerPhone: undefined,
+            customerAddress: undefined,
+            lineItems: items.map((item: any) => ({
+              description: item.description || '',
+              quantity: item.quantity ?? 1,
+              unitPrice: item.unitPrice ?? undefined,
+              amount: item.amount ?? 0,
+            })),
+            total: finalTotal,
+            taxRate: parseFloat(p.quote_tax_rate || '0'),
+            amountPaid: paidToDate ?? finalTotal,
+            brandColor1: company.email_brand_color_1 || undefined,
+            brandColor2: company.email_brand_color_2 || undefined,
+          });
+          attachments = [{
+            filename: `Invoice-${number}-Paid.pdf`,
+            content: Buffer.from(pdfBuffer as Uint8Array).toString('base64'),
+            contentType: 'application/pdf',
+          }];
+        }
+      } catch (pdfErr) {
+        console.error('Receipt PDF failed — sending without it:', pdfErr);
+      }
+    }
+
     await resend.emails.send({
       from: `${company.name || companyName} <hello@lead2project.com>`,
       to: customerEmail,
@@ -2949,7 +3011,8 @@ amountPaid,
         : isDeposit
         ? `Deposit received — ${fmt(amountPaid)}`
         : `Payment received — ${fmt(amountPaid)}`,
-      html,
+           html,
+      attachments,
     });
 
     console.log('Payment receipt sent to customer:', customerEmail);
