@@ -5,6 +5,8 @@ import dynamic from 'next/dynamic';
 import { ChevronDown, Mail, MapPin, Briefcase, ArrowRight, User, Phone, Search, CalendarDays, Sun, Moon } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
+import { DEFAULT_STATUSES } from '@/lib/formCategories';
+
 
 const LeadModal = dynamic(() => import('@/components/dashboard/LeadModal'), { ssr: false });
 
@@ -416,7 +418,7 @@ const [selectedLeadTab] = useState<'overview'>('overview');
           payments={selectedLeadPayments}
           activity={selectedLeadActivity}
           currentUser={currentUser}
-          statusOptions={company?.status_options || []}
+          statusOptions={company?.status_options?.length ? company.status_options : DEFAULT_STATUSES}
           categories={company?.form_categories || []}
           company={company}
           companySlug={companySlug}

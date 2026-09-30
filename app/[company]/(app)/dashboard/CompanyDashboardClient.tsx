@@ -869,7 +869,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           payments={selectedLeadPayments}
           activity={selectedLeadActivity}
           currentUser={currentUser}
-          statusOptions={company.status_options || []}
+          statusOptions={company.status_options?.length ? company.status_options : DEFAULT_STATUSES}
           categories={company.form_categories || []}
           company={company}
           companySlug={company.slug}
