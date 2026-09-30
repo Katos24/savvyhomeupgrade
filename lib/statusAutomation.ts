@@ -7,7 +7,7 @@ const EVENT_TO_STAGE: Record<AutoEvent, string> = {
   quote_sent: 'quoted',
   quote_accepted: 'approved',
   job_scheduled: 'scheduled',
-  job_started: 'in_progress',
+  job_started: 'in-progress',
 };
 
 /** Set by hand to end a job. Automation doesn't reopen these. */

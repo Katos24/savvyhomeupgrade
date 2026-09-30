@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { neon } from '@neondatabase/serverless';
+import { adminDb as sql } from '@/lib/db';
 import { autoAdvanceStatus } from '@/lib/statusAutomation';
 
 // Runs once a day (see vercel.json). Moves every job whose scheduled date
@@ -23,8 +23,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const sql = neon(process.env.DATABASE_URL!);
-
   // Today's date in US Eastern — the same calendar date as every other US
   // zone at the time this runs. Includes past dates too, so a missed run
   // (or a job scheduled while the cron was down) still gets caught.
@@ -33,6 +31,7 @@ export async function GET(request: Request) {
     FROM leads l
     LEFT JOIN projects p ON p.lead_id = l.id
     WHERE l.status = 'scheduled'
+      AND l.deleted = false
       AND COALESCE(p.scheduled_date, l.scheduled_date) IS NOT NULL
       AND COALESCE(p.scheduled_date, l.scheduled_date)::date
           <= (NOW() AT TIME ZONE 'America/New_York')::date
