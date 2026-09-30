@@ -4,6 +4,8 @@ import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Download, CheckCircle2, XCircle, AlertCircle, XCircle as CloseIcon } from 'lucide-react';
 import type { ThemeTokens } from '@/lib/financialsTheme';
 import { getPaymentStatusDisplay, getPaymentMethodLabel } from '@/lib/paymentStatus';
+import { toLocalDate } from '@/lib/dates';
+
 
 function fmt(n: number) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -85,7 +87,7 @@ function RemindersPanel({
                       <span className="text-xs font-medium" style={{ color: '#f59e0b' }}>{fmtFull(due)} due</span>
                       {reminder.payment_due_date && (
                         <span className={`text-xs font-medium ${reminder.is_overdue ? 'text-red-500' : ''}`} style={!reminder.is_overdue ? { color: t.text.muted } : {}}>
-                          {reminder.is_overdue ? 'Overdue' : 'Due'} {new Date(reminder.payment_due_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+{reminder.is_overdue ? 'Overdue' : 'Due'} {toLocalDate(reminder.payment_due_date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                         </span>
                       )}
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full"

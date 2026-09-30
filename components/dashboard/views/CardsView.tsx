@@ -14,6 +14,8 @@ import {
   Phone,
   Mail,
 } from 'lucide-react';
+import { toLocalDate } from '@/lib/dates';
+
 
 // ---------------------------------------------------------------------------
 // Helper: Text color contrast & Hex to RGBA conversion (Pure-black fallback)
@@ -29,6 +31,9 @@ function getSafeAccentColor(input: string, isDark: boolean): string {
   if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) {
     return isDark ? '#3b82f6' : '#2563eb';
   }
+
+
+
 
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
 
@@ -69,9 +74,8 @@ const statusColorMap: Record<string, { dot: string; textDark: string; textLight:
 };
 
 function isPastDue(dueDateStr?: string): boolean {
-  if (!dueDateStr) return false;
-  const dueDate = new Date(dueDateStr);
-  if (isNaN(dueDate.getTime())) return false;
+  const dueDate = toLocalDate(dueDateStr);
+  if (!dueDate) return false;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return dueDate < today;
@@ -117,8 +121,8 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
               : isDark ? 'text-slate-500' : 'text-[#a8a29e]'
           }`}
         >
-          {lead.scheduled_date
-            ? new Date(lead.scheduled_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                   {lead.scheduled_date
+            ? toLocalDate(lead.scheduled_date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
             : 'Unscheduled'}
         </span>
       </div>

@@ -16,6 +16,8 @@ import LeadActivityTab from '@/components/dashboard/LeadActivityTab';
 import CompletionSummaryModal from './CompletionSummaryModal';
 import { canDeleteLead, can, type PlanTier } from '@/lib/permissions';
 import LockedTabsPreview from '@/components/dashboard/LockedTabsPreview';
+import { toLocalDate } from '@/lib/dates';
+
 
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'expenses' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
 
@@ -456,7 +458,7 @@ className="p-3 sm:p-7 space-y-6"
                     <div className="flex items-center gap-3 text-xs text-gray-500">
                       {rl.quote_total && <span className="font-medium text-gray-700">${parseFloat(rl.quote_total).toLocaleString()}</span>}
                       {rl.payment_status === 'paid' && <span className="text-emerald-600 font-medium">Paid</span>}
-                      {rl.scheduled_date && <span>{new Date(rl.scheduled_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
+{rl.scheduled_date && <span>{toLocalDate(rl.scheduled_date)?.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>}
                     </div>
                   </motion.div>
                 ))}
