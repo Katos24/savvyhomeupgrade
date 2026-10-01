@@ -926,13 +926,13 @@ export default function QuoteSection({
                 </div>
               </div>
 
-              {/* DESKTOP SAVE BUTTON */}
-              <div className="hidden md:flex justify-end">
+                           {/* BOTTOM SAVE BUTTON — always on desktop, mobile only when there are unsaved changes */}
+              <div className={`${isDirty || saving ? 'flex' : 'hidden md:flex'} justify-end sticky bottom-3 z-10 md:static`}>
                 <button
                   onClick={handleManualSave}
                   disabled={!hasProject || saving || hasIncompleteItems}
                   title={hasIncompleteItems ? 'Every item needs a description and a price first' : undefined}
-                  className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  className={`w-full md:w-auto justify-center inline-flex items-center gap-1.5 px-4 py-3 md:py-2 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                     isDirty
                   ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xs'
                                         : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
