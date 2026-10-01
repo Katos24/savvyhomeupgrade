@@ -39,6 +39,8 @@ const fmt = (n: number) =>
 const formatCategoryLabel = (value?: string) =>
   (value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
+const MOBILE_ITEM_LIMIT = 6;
+
 const noSpinners =
   '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
@@ -94,8 +96,8 @@ export default function QuoteSection({
   const [editingTaxRate, setEditingTaxRate] = useState(false);
   const [taxRateDraft, setTaxRateDraft] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [showLineItems, setShowLineItems] = useState(false);
-  const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
+  const [showAllItems, setShowAllItems] = useState(false);
+    const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -385,7 +387,8 @@ export default function QuoteSection({
   const handleAddRowMobile = () => {
     const newItem = { id: Date.now(), description: '', quantity: 1, unitPrice: 0, amount: 0 };
     setQuoteData((prev) => [...prev, newItem]);
-    setEditingItem(newItem);
+       setEditingItem(newItem);
+    setShowAllItems(true);
     setIsDirty(true);
   };
 
@@ -802,23 +805,45 @@ export default function QuoteSection({
 
           {/* MOBILE VIEW */}
           {quoteData.length > 0 && (
-            <div className="md:hidden space-y-2.5">
-              <button
-                type="button"
-                onClick={() => setShowLineItems(true)}
-                className="w-full flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3.5 shadow-2xs active:scale-[0.99] transition"
-              >
-                <div className="text-left">
-                  <p className="text-sm font-bold text-slate-900">
-                    {quoteData.length} line item{quoteData.length !== 1 ? 's' : ''}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-0.5">Tap to view and edit</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-base font-bold text-slate-900 tabular-nums">{fmt(total)}</span>
-                  <ChevronDown className="w-4 h-4 text-slate-400 -rotate-90" />
-                </div>
-              </button>
+                      <div className="md:hidden space-y-2.5">
+              <div className="rounded-xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden shadow-2xs">
+                {(showAllItems ? quoteData : quoteData.slice(0, MOBILE_ITEM_LIMIT)).map((item: any) => {
+                  const isIncomplete =
+                    !item.description?.trim() || !item.unitPrice || parseFloat(String(item.unitPrice)) <= 0;
+                  return (
+                    <div key={item.id} className={`flex items-center gap-3 px-3.5 py-3 ${isIncomplete ? 'bg-amber-50/50' : ''}`}>
+                      <button onClick={() => setEditingItem({ ...item })} className="flex-1 min-w-0 text-left">
+                        <p className="text-sm font-semibold text-slate-900 leading-snug line-clamp-2">
+                          {item.description || <span className="font-normal italic text-amber-600">No description</span>}
+                        </p>
+                        <p className="text-xs text-slate-500 mt-0.5 tabular-nums">
+                          {item.unitPrice && parseFloat(String(item.unitPrice)) > 0 ? (
+                            `${fmt(item.unitPrice)} × ${item.quantity || 1}`
+                          ) : (
+                            <span className="italic text-amber-600">No price set</span>
+                          )}
+                        </p>
+                      </button>
+                      <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{fmt(item.amount || 0)}</span>
+                      <button
+                        onClick={() => requestRemoveRow(item.id)}
+                        className="p-2 -mr-2 text-slate-300 active:text-rose-500 shrink-0"
+                        aria-label="Delete item"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  );
+                })}
+                {quoteData.length > MOBILE_ITEM_LIMIT && (
+                  <button
+                    onClick={() => setShowAllItems((v) => !v)}
+                    className="w-full py-2.5 text-xs font-semibold text-slate-600 active:bg-slate-50"
+                  >
+                    {showAllItems ? 'Show less' : `Show all ${quoteData.length} items`}
+                  </button>
+                )}
+              </div>
 
                             <div className={`grid gap-2 ${!templatesLoading && allTemplates.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
                 <button
@@ -839,89 +864,7 @@ export default function QuoteSection({
             </div>
           )}
 
-                    {/* MOBILE LINE ITEMS BOTTOM SHEET */}
-          {mounted && createPortal(
-          <AnimatePresence>
-            {showLineItems && (
-              <>
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setShowLineItems(false)}
-                  className="fixed inset-0 z-[400] bg-slate-900/60 backdrop-blur-xs md:hidden"
-                />
-                <motion.div
-                  initial={{ y: '100%' }}
-                  animate={{ y: 0 }}
-                  exit={{ y: '100%' }}
-                  transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-                  className="fixed bottom-0 left-0 right-0 z-[500] bg-white rounded-t-3xl md:hidden shadow-2xl border-t border-slate-200 max-h-[80vh] flex flex-col"
-                >
-                  <div className="flex justify-center pt-3 pb-1 shrink-0">
-                    <div className="w-10 h-1 rounded-full bg-slate-200" />
-                  </div>
-                  <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 shrink-0">
-                    <p className="text-sm font-bold text-slate-900">Line Items ({quoteData.length})</p>
-                    <button onClick={() => setShowLineItems(false)} className="p-1.5 -m-1.5 text-slate-400">
-                      <X className="w-5 h-5" />
-                    </button>
-                  </div>
-                  <div
-                    className="p-3 space-y-2.5 overflow-y-auto"
-                    style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 16px)' }}
-                  >
-                    {quoteData.map((item: any) => {
-                      const isIncomplete =
-                        !item.description?.trim() || !item.unitPrice || parseFloat(String(item.unitPrice)) <= 0;
-                      return (
-                        <div
-                          key={item.id}
-                          className={`border rounded-xl p-3.5 shadow-2xs space-y-2 transition-colors ${
-                            isIncomplete ? 'border-amber-200 bg-amber-50/40' : 'border-slate-200 bg-white'
-                          }`}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <button
-                              onClick={() => {
-                                setShowLineItems(false);
-                                setEditingItem({ ...item });
-                              }}
-                              className="flex-1 text-left min-w-0"
-                            >
-                              <p className="text-sm font-semibold text-slate-900 leading-snug">
-                                {item.description || <span className="font-normal italic text-amber-600">No description</span>}
-                              </p>
-                              <p className="text-xs text-slate-500 mt-1 font-medium tabular-nums">
-                                {item.unitPrice && parseFloat(String(item.unitPrice)) > 0 ? (
-                                  `${fmt(item.unitPrice)} × ${item.quantity || 1}`
-                                ) : (
-                                  <span className="italic text-amber-600">No price set</span>
-                                )}
-                              </p>
-                            </button>
-                            <div className="text-right shrink-0">
-                              <p className="text-sm font-bold text-slate-900 tabular-nums">
-                                {fmt(item.amount || 0)}
-                              </p>
-                              <button
-                                onClick={() => requestRemoveRow(item.id)}
-                                className="mt-1 p-2 -m-1 text-slate-300 hover:text-rose-500 rounded transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-                          </>
-            )}
-          </AnimatePresence>,
-          document.body
-          )}
+       
 
           {/* FINANCIAL BREAKDOWN */}
           {quoteData.length > 0 && (
