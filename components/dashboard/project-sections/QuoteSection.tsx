@@ -21,6 +21,7 @@ import QuoteModals from './QuoteModals';
 import { getDepositAmount } from '@/lib/billing';
 import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 
 type QuoteSectionProps = {
   lead: any;
@@ -97,6 +98,8 @@ export default function QuoteSection({
   const [focusedRowId, setFocusedRowId] = useState<number | null>(null);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showClearAllConfirm, setShowClearAllConfirm] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   // ── DEPOSIT TERMS ──
   const [showDepositEditor, setShowDepositEditor] = useState(false);
@@ -450,8 +453,8 @@ export default function QuoteSection({
               <button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!hasProject || hasIncompleteItems}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs"
-              >
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-teal-600 text-white hover:bg-teal-700 shadow-xs"
+                              >
                 <Mail className="w-3.5 h-3.5" /> Send Estimate
               </button>
             ) : (
@@ -463,8 +466,8 @@ export default function QuoteSection({
                 quoteData.length === 0 ? 'hidden ' : ''
               }inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                 isDirty
-                  ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
-                  : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xs'
+                                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
               }`}
             >
               {saving ? (
@@ -836,7 +839,8 @@ export default function QuoteSection({
             </div>
           )}
 
-          {/* MOBILE LINE ITEMS BOTTOM SHEET */}
+                    {/* MOBILE LINE ITEMS BOTTOM SHEET */}
+          {mounted && createPortal(
           <AnimatePresence>
             {showLineItems && (
               <>
@@ -913,9 +917,11 @@ export default function QuoteSection({
                     })}
                   </div>
                 </motion.div>
-              </>
+                          </>
             )}
-          </AnimatePresence>
+          </AnimatePresence>,
+          document.body
+          )}
 
           {/* FINANCIAL BREAKDOWN */}
           {quoteData.length > 0 && (
@@ -985,8 +991,8 @@ export default function QuoteSection({
                   title={hasIncompleteItems ? 'Every item needs a description and a price first' : undefined}
                   className={`inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
                     isDirty
-                      ? 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs'
-                      : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                  ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xs'
+                                        : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
                   }`}
                 >
                   {saving ? (
@@ -1003,7 +1009,8 @@ export default function QuoteSection({
           )}
         </div>
 
-        {/* BOTTOM SHEET ITEM EDITOR (Mobile) */}
+                {/* BOTTOM SHEET ITEM EDITOR (Mobile) */}
+        {mounted && createPortal(
         <AnimatePresence>
           {editingItem && (
             <>
@@ -1128,9 +1135,11 @@ export default function QuoteSection({
                   </div>
                 </div>
               </motion.div>
-            </>
+                     </>
           )}
-        </AnimatePresence>
+        </AnimatePresence>,
+        document.body
+        )}
 
         {/* SENT OUTBOX LOG */}
         {outboxLog.length > 0 && (
