@@ -80,32 +80,34 @@ export default function PipelineTab({
   // Stages with automations attached can be renamed/recolored but not deleted.
   const isRemovable = (s: StatusOption) => !LOCKED_STAGES.includes(s.value);
 
-  const isLockedStage = (s: StatusOption) =>
-    s.value === 'new' || s.value === 'completed';
+   const isLockedStage = (s: StatusOption) =>
+    s.value === 'new' || s.value === 'completed' || s.value === 'lost';
+
+  // Everything from Completed onward (Completed, Lost) stays pinned at the end.
+  const tailStart = (list: StatusOption[]) => {
+    const i = list.findIndex((s) => s.value === 'completed');
+    return i === -1 ? list.length : i;
+  };
 
   const showError = (msg: string) => {
     setError(msg);
     setTimeout(() => setError(''), 3500);
   };
 
-  const handleMoveUp = (index: number) => {
-    if (index <= 1 || index >= statuses.length - 1) return;
+    const handleMoveUp = (index: number) => {
+    if (index <= 1 || index >= tailStart(statuses)) return;
     setStatuses((prev) => {
       const next = [...prev];
-      const temp = next[index];
-      next[index] = next[index - 1];
-      next[index - 1] = temp;
+      [next[index - 1], next[index]] = [next[index], next[index - 1]];
       return next;
     });
   };
 
   const handleMoveDown = (index: number) => {
-    if (index < 1 || index >= statuses.length - 2) return;
+    if (index < 1 || index >= tailStart(statuses) - 1) return;
     setStatuses((prev) => {
       const next = [...prev];
-      const temp = next[index];
-      next[index] = next[index + 1];
-      next[index + 1] = temp;
+      [next[index], next[index + 1]] = [next[index + 1], next[index]];
       return next;
     });
   };
@@ -129,8 +131,8 @@ export default function PipelineTab({
       return showError('A stage with this name already exists');
 
     const updated = statuses.map((s) => ({ ...s }));
-    updated.splice(updated.length - 1, 0, {
-      value,
+    updated.splice(tailStart(updated), 0, {
+            value,
       label: trimmed,
       color: newColor,
     });
@@ -363,7 +365,7 @@ export default function PipelineTab({
               {statuses.map((status, index) => {
                 const locked = isLockedStage(status);
                 const canMoveUp = !locked && index > 1;
-                const canMoveDown = !locked && index < statuses.length - 2;
+                const canMoveDown = !locked && index < tailStart(statuses) - 1;
 
                 return (
                   <div

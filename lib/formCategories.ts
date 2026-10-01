@@ -66,6 +66,8 @@ export const DEFAULT_STATUSES = [
   { value: 'scheduled',   label: 'Scheduled',   color: 'blue'   },
   { value: 'in-progress', label: 'In Progress', color: 'orange' },
   { value: 'completed',   label: 'Completed',   color: 'green'  },
+    { value: 'lost',        label: 'Lost',        color: 'slate'  },
+
 ];
 
 /** Stages with behaviour attached. Renameable, not removable. */
@@ -80,6 +82,7 @@ export const STAGE_TRIGGERS: Record<string, string> = {
   scheduled: 'Moves here when you set a job date',
   'in-progress': 'Moves here on the scheduled date',
   completed: 'You move jobs here when work is done',
+    lost: 'You move jobs here when a job falls through',
 };
 
 export const COLOR_OPTIONS = [

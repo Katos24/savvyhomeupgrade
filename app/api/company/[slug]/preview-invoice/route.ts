@@ -55,8 +55,8 @@ export async function GET(
     const { generateInvoicePDFBuffer } = await import('@/lib/generateInvoicePDFServer');
     const pdfBuffer = await generateInvoicePDFBuffer({
       invoiceNumber: 'SAMPLE-001',
-      invoiceDate: today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-      dueDate: due.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+            invoiceDate: today.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }),
+      dueDate: due.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/New_York' }),
       companyName: company.name,
       companyPhone: company.phone || undefined,
       companyEmail: company.email || undefined,

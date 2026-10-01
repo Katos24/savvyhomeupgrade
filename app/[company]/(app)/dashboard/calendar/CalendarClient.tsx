@@ -182,8 +182,12 @@ export default function CalendarClient({ company }: { company: Company }) {
   // correctly, without needing a new prop threaded through LeadModal and
   // ProjectSection — it just rides along on the same object already
   // flowing through that existing chain.
-  const scheduleJobOnDay = useCallback(async (job: { lead_id: number; project_id: number; customer_name: string }, day: string) => {
-    setModalInitialTab('schedule');
+  const scheduleJobOnDay = useCallback(async (
+    job: { lead_id: number; project_id: number; customer_name: string },
+    day: string,
+    opts?: { reschedule?: boolean }
+  ) => {
+        setModalInitialTab('schedule');
     setSelectedLead({ id: job.lead_id, name: job.customer_name, project_id: job.project_id });
     setSelectedLeadPayments([]);
     setSelectedLeadActivity([]);
@@ -191,7 +195,9 @@ export default function CalendarClient({ company }: { company: Company }) {
       const res = await fetch(`/api/leads/${job.lead_id}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.success && data.lead) {
-        const seeded = data.lead.scheduled_date
+                // Unscheduled jobs get the picked day filled in. Rescheduling does
+        // the same even though a date exists — still unsaved until Save.
+        const seeded = data.lead.scheduled_date && !opts?.reschedule
           ? data.lead
           : { ...data.lead, scheduled_date: day, _unsavedScheduleDateSeed: true };
         setSelectedLead(seeded);

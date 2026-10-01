@@ -752,7 +752,7 @@ export async function sendInvoiceToCustomer({
     const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
   const pdfBuffer = await generateInvoicePDFBuffer({
       invoiceNumber,
-      invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: (company as any).timezone || 'America/New_York' }),
       dueDate,
       companyName: company.name || companyName,
       companyPhone: company.phone || companyPhone,
@@ -2969,7 +2969,7 @@ amountPaid,
           const number = invoiceNumber || p.invoice_number || 'Invoice';
           const pdfBuffer = await generateInvoicePDFBuffer({
             invoiceNumber: number,
-            invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+            invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: (company as any).timezone || 'America/New_York' }),
             dueDate: 'Paid in full',
             companyName: company.name || companyName,
             companyPhone: company.phone || undefined,

@@ -3,12 +3,12 @@
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import { 
-  ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
+import {
+  ChevronLeft, ChevronRight, Calendar as CalendarIcon,
   CalendarDays, LayoutGrid, ArrowLeft, Filter, User, Clock,
-  Briefcase, List, Sun, Moon, X, MapPin, Search, Plus
+  Briefcase, List, Sun, Moon, X, MapPin, Search, Plus, ChevronDown,
 } from 'lucide-react';
-import { DEFAULT_STATUSES } from '@/lib/formCategories';
+import { DEFAULT_STATUSES, stageColorHex } from '@/lib/formCategories';
 import AddJobToDayModal from './AddJobToDayModal';
 
 export interface Lead {
@@ -29,33 +29,44 @@ type CalendarProps = {
   companySlug: string;
   onSelectLead: (lead: Lead) => void;
   statusOptions: any[];
-  onScheduleJob?: (job: { project_id: number; lead_id: number; customer_name: string }, day: string) => void;
+  onScheduleJob?: (
+    job: { project_id: number; lead_id: number; customer_name: string },
+    day: string,
+    opts?: { reschedule?: boolean }
+  ) => void;
   refreshTrigger?: number;
 };
 
 type ViewMode = 'month' | 'week' | 'day' | 'agenda';
+type WeekLength = 5 | 7;
 
-const STATUS_COLOR_HEX: Record<string, string> = {
-  blue: '#3b82f6',
-  indigo: '#4f46e5',
-  purple: '#7c3aed',
-  violet: '#7c3aed',
-  pink: '#db2777',
-  yellow: '#d97706',
-  amber: '#d97706',
-  orange: '#ea580c',
-  coral: '#ea580c',
-  green: '#1a6645',
-  emerald: '#059669',
-  teal: '#0d9488',
-  red: '#dc2626',
-  rose: '#e11d48',
-  slate: '#475569',
-  gray: '#6b7280',
-  zinc: '#3f3f46',
+// Fallbacks for older color names the shared stage palette doesn't define.
+const EXTRA_COLOR_HEX: Record<string, string> = {
+  violet: '#7c3aed', amber: '#d97706', coral: '#ea580c', emerald: '#059669', rose: '#e11d48', zinc: '#3f3f46',
 };
+const resolveStatusColor = (colorName?: string) =>
+  stageColorHex(colorName) || EXTRA_COLOR_HEX[colorName || ''] || '#3b82f6';
 
-const resolveStatusColor = (colorName?: string) => STATUS_COLOR_HEX[colorName || ''] || '#3b82f6';
+const ACCENT = '#1a6645';
+
+// Same page colors as Leads and the Dashboard, so the Calendar doesn't look
+// like a different app. Light mode was a darker cream before.
+function theme(isDark: boolean) {
+  return {
+    page: isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-[#faf9f5] text-[#1c1917]',
+    headerBar: isDark ? 'bg-[#0b0f17]/95 border-white/10' : 'bg-[#faf9f5]/95 border-[#e7e2d8]',
+    panel: isDark ? 'bg-slate-900/60 border-white/10' : 'bg-white border-[#e7e2d8]',
+    control: isDark ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-white border-[#e7e2d8] text-[#292524]',
+    subtle: isDark ? 'bg-white/[0.03]' : 'bg-[#faf9f5]',
+    divider: isDark ? 'border-white/10' : 'border-[#f0ece1]',
+    muted: isDark ? 'text-slate-500' : 'text-[#a8a29e]',
+    soft: isDark ? 'text-slate-400' : 'text-[#78716c]',
+    strong: isDark ? 'text-white' : 'text-[#1c1917]',
+    hover: isDark ? 'hover:bg-white/10' : 'hover:bg-[#f5f1e8]',
+    item: isDark ? 'bg-white/5 border-white/10 hover:bg-white/[0.08]' : 'bg-white border-[#e7e2d8] hover:bg-[#faf9f5]',
+    option: isDark ? 'bg-[#0b0f17]' : '',
+  };
+}
 
 function dayKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -68,10 +79,15 @@ function leadDayKey(lead: Lead): string | null {
   return s.length >= 10 ? s.slice(0, 10) : null;
 }
 
+// A YYYY-MM-DD key → Date at local noon (avoids any UTC day-shift).
+function keyToDate(key: string) {
+  return new Date(`${key}T12:00:00`);
+}
+
 function formatTime12h(timeStr?: string) {
-  if (!timeStr || timeStr === 'TBD') return 'TBD';
+  if (!timeStr || timeStr === 'TBD') return 'Any time';
   const [h, m] = String(timeStr).split(':').map(Number);
-  if (Number.isNaN(h)) return 'TBD';
+  if (Number.isNaN(h)) return 'Any time';
   const ampm = h >= 12 ? 'PM' : 'AM';
   return `${h % 12 || 12}:${String(m || 0).padStart(2, '0')} ${ampm}`;
 }
@@ -83,64 +99,99 @@ function timeRank(timeStr?: string): number {
   return h * 60 + (m || 0);
 }
 
+// Sunday-start for the 7-day week, Monday-start for the 5-day work week.
+function weekDates(anchor: Date, length: WeekLength): Date[] {
+  const start = new Date(anchor);
+  start.setHours(12, 0, 0, 0);
+  const dow = start.getDay();
+  start.setDate(start.getDate() - (length === 5 ? (dow + 6) % 7 : dow));
+  return Array.from({ length }, (_, i) => {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    return d;
+  });
+}
+
+const shortDate = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
 export default function Calendar({ companySlug, onSelectLead, statusOptions, onScheduleJob, refreshTrigger }: CalendarProps) {
   const [events, setEvents] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(() => new Date());
   const [view, setView] = useState<ViewMode>('week');
+  const [weekLength, setWeekLength] = useState<WeekLength>(7);
   const [filterAssignee, setFilterAssignee] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [drawerDay, setDrawerDay] = useState<string | null>(null);
-  const [showAddJobModal, setShowAddJobModal] = useState(false);
+  // One "add a job to this day" flow shared by Week, Day, and the Month drawer.
+  const [addJobDay, setAddJobDay] = useState<string | null>(null);
 
-  // Same localStorage key + hydration-safe pattern already used on
-  // Dashboard, Services, and Customers — one source of truth passed down
-  // as a prop to every memoized sub-component below, rather than each
-  // one independently reading localStorage (which is exactly the kind
-  // of split-state bug that caused the Services white-border issue
-  // earlier this session).
   const [isDark, setIsDark] = useState<boolean>(true);
   useEffect(() => {
-    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+    try {
+      setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+      const savedLen = localStorage.getItem('calendar-week-length');
+      if (savedLen === '5' || savedLen === '7') setWeekLength(Number(savedLen) as WeekLength);
+      const savedView = localStorage.getItem('calendar-view');
+      if (savedView === 'month' || savedView === 'week' || savedView === 'day' || savedView === 'agenda') setView(savedView);
+    } catch {}
   }, []);
+
   const toggleTheme = useCallback(() => {
     setIsDark((prev) => {
       const next = !prev;
-      localStorage.setItem('dashboard-theme', next ? 'dark' : 'light');
+      try {
+        localStorage.setItem('dashboard-theme', next ? 'dark' : 'light');
+      } catch {}
       window.dispatchEvent(new Event('theme-changed'));
       return next;
     });
   }, []);
 
-  const safeStatusOptions = useMemo(() => 
-    statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES,
-  [statusOptions]);
+  const changeView = useCallback((v: ViewMode) => {
+    setView(v);
+    try { localStorage.setItem('calendar-view', v); } catch {}
+  }, []);
+
+  const changeWeekLength = useCallback((len: WeekLength) => {
+    setWeekLength(len);
+    try { localStorage.setItem('calendar-week-length', String(len)); } catch {}
+  }, []);
+
+  const t = theme(isDark);
+
+  const safeStatusOptions = useMemo(
+    () => (statusOptions?.length > 0 ? statusOptions : DEFAULT_STATUSES),
+    [statusOptions]
+  );
 
   const fetchScheduledJobs = useCallback(async () => {
     try {
       const response = await fetch(`/api/company/${companySlug}/leads?calendarAll=true`);
       const data = await response.json();
       setEvents((data.leads || []).filter((l: Lead) => l.scheduled_date && !l.deleted));
-    } catch (error) { 
-      toast.error('Failed to sync schedule'); 
-    } finally { 
-      setLoading(false); 
+    } catch {
+      toast.error('Failed to load the schedule');
+    } finally {
+      setLoading(false);
     }
   }, [companySlug]);
 
-  useEffect(() => { 
-    fetchScheduledJobs(); 
+  useEffect(() => {
+    fetchScheduledJobs();
   }, [fetchScheduledJobs, refreshTrigger]);
 
-  const getStatusConfig = useCallback((status: string) => {
-    return safeStatusOptions.find((s: any) => s.value === status) || safeStatusOptions[0];
-  }, [safeStatusOptions]);
+  const getStatusConfig = useCallback(
+    (status: string) => safeStatusOptions.find((s: any) => s.value === status) || safeStatusOptions[0],
+    [safeStatusOptions]
+  );
 
   const filteredEvents = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return events.filter((e: Lead) => {
       const matchesAssignee = filterAssignee === 'all' || e.assigned_to === filterAssignee;
-      const matchesSearch = !term || 
+      const matchesSearch =
+        !term ||
         e.name?.toLowerCase().includes(term) ||
         e.category?.toLowerCase().includes(term) ||
         e.address_line_1?.toLowerCase().includes(term);
@@ -155,181 +206,218 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
       if (!key) return;
       (map[key] ||= []).push(e);
     });
-    Object.values(map).forEach((list) =>
-      list.sort((a, b) => timeRank(a.scheduled_time) - timeRank(b.scheduled_time))
-    );
+    Object.values(map).forEach((list) => list.sort((a, b) => timeRank(a.scheduled_time) - timeRank(b.scheduled_time)));
     return map;
   }, [filteredEvents]);
 
-  const assignees = useMemo(() => 
-    Array.from(new Set(events.map((e: Lead) => e.assigned_to))).filter(Boolean),
-  [events]);
+  const assignees = useMemo(
+    () => Array.from(new Set(events.map((e: Lead) => e.assigned_to))).filter(Boolean) as string[],
+    [events]
+  );
 
-  const handleNav = useCallback((dir: number) => {
-    setCurrentDate((prev) => {
-      const d = new Date(prev);
-      if (view === 'month') d.setMonth(d.getMonth() + dir);
-      else if (view === 'week') d.setDate(d.getDate() + (dir * 7));
-      else if (view === 'day') d.setDate(d.getDate() + dir);
-      return d;
-    });
-  }, [view]);
+  const handleNav = useCallback(
+    (dir: number) => {
+      setCurrentDate((prev) => {
+        const d = new Date(prev);
+        if (view === 'month') {
+          d.setDate(1);
+          d.setMonth(d.getMonth() + dir);
+        } else if (view === 'week') d.setDate(d.getDate() + dir * 7);
+        else if (view === 'day') d.setDate(d.getDate() + dir);
+        return d;
+      });
+    },
+    [view]
+  );
 
-  const activeDrawerEvents = useMemo(() => 
-    drawerDay ? eventsByDay[drawerDay] || [] : [],
-  [drawerDay, eventsByDay]);
+  const currentWeek = useMemo(() => weekDates(currentDate, weekLength), [currentDate, weekLength]);
+
+  const periodLabel = useMemo(() => {
+    if (view === 'day') return currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    if (view === 'week') {
+      const first = currentWeek[0];
+      const last = currentWeek[currentWeek.length - 1];
+      return first.getMonth() === last.getMonth()
+        ? `${first.toLocaleDateString('en-US', { month: 'short' })} ${first.getDate()} – ${last.getDate()}`
+        : `${shortDate(first)} – ${shortDate(last)}`;
+    }
+    if (view === 'agenda') return 'Upcoming';
+    return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, [view, currentDate, currentWeek]);
+
+  // Every scheduled job (ignoring the search/assignee filters) so the
+  // add-job picker can offer to move one onto another day.
+  const scheduledForPicker = useMemo(
+    () =>
+      events
+        .filter((e: Lead) => e.project_id)
+        .map((e: Lead) => ({
+          project_id: Number(e.project_id),
+          lead_id: Number(e.id),
+          customer_name: e.name,
+          category: e.category ?? null,
+          quote_total: e.quote_total ?? null,
+          scheduled_date: leadDayKey(e),
+          scheduled_time: e.scheduled_time ?? null,
+        })),
+    [events]
+  );
+
+  const activeDrawerEvents = useMemo(() => (drawerDay ? eventsByDay[drawerDay] || [] : []), [drawerDay, eventsByDay]);
+
+  const openAddJob = onScheduleJob ? (day: string) => setAddJobDay(day) : undefined;
 
   if (loading) {
     return (
-      <div className={`flex h-screen w-full items-center justify-center transition-colors ${isDark ? 'bg-[#0b0f17]' : 'bg-[#F2EDE4]'}`}>
-        <div className="text-center space-y-4">
-          <div className="w-10 h-10 border-4 border-[#1a6645] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Loading Schedule</p>
+      <div className={`flex h-screen w-full items-center justify-center ${t.page}`}>
+        <div className="text-center space-y-3">
+          <div className="w-9 h-9 border-4 border-[#1a6645] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className={`text-xs font-semibold ${t.muted}`}>Loading schedule…</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen w-full pb-20 select-none transition-colors ${isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-[#F2EDE4] text-[#0F1F3D]'}`}>
+    <div className={`min-h-screen w-full pb-20 transition-colors ${t.page}`}>
 
       {/* STICKY HEADER */}
-      <nav className={`sticky top-0 z-20 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 sm:py-4 transition-all ${
-        isDark ? 'bg-[#0b0f17]/95 border-white/10' : 'bg-[#F2EDE4]/95 border-[#D1C9BD]/60'
-      }`}>
-        <div className="w-full flex items-center justify-between gap-2 max-w-7xl mx-auto">
-
-          {/* Left Side Header */}
+      <nav className={`sticky top-0 z-20 backdrop-blur-md border-b px-3 sm:px-6 py-2.5 sm:py-3.5 ${t.headerBar}`}>
+        <div className="w-full max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <button
               onClick={() => window.history.back()}
-              className={`shrink-0 p-2 rounded-xl shadow-xs border hover:scale-105 active:scale-95 transition-transform ${
-                isDark ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-white border-[#D1C9BD]'
-              }`}
+              className={`shrink-0 p-2 rounded-xl border transition ${t.control} ${t.hover}`}
               aria-label="Back"
             >
               <ArrowLeft size={16} />
             </button>
-            <div className="truncate">
-              <h1 className="text-base sm:text-2xl font-black tracking-tighter uppercase italic flex items-center gap-1.5 truncate">
-                <CalendarIcon className="text-[#1a6645] shrink-0" size={18} />
-                <span className="truncate">Schedule</span>
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-2xl font-black tracking-tight flex items-center gap-1.5">
+                <CalendarIcon className="shrink-0" style={{ color: ACCENT }} size={20} />
+                Schedule
               </h1>
-              <p className={`hidden sm:block text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                {filteredEvents.length} Jobs
+              <p className={`hidden sm:block text-[11px] font-semibold ${t.muted}`}>
+                {filteredEvents.length} scheduled job{filteredEvents.length === 1 ? '' : 's'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={toggleTheme}
-              className={`p-2 rounded-xl border shadow-xs transition-colors ${
-                isDark ? 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10' : 'bg-white border-[#D1C9BD] text-slate-600 hover:bg-slate-50'
-              }`}
-              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDark ? <Sun size={14} /> : <Moon size={14} />}
-            </button>
+          <button
+            onClick={toggleTheme}
+            className={`sm:order-last p-2 rounded-xl border transition ${t.control} ${t.hover}`}
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
 
-            {/* Responsive View Switcher */}
-            <div className={`flex items-center gap-0.5 p-1 rounded-2xl border shadow-inner ${
-              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
-            }`}>
-              <ViewTab active={view === 'month'} onClick={() => setView('month')} icon={CalendarDays} shortLabel="M" fullLabel="Month" isDark={isDark} />
-              <ViewTab active={view === 'week'} onClick={() => setView('week')} icon={LayoutGrid} shortLabel="W" fullLabel="Week" isDark={isDark} />
-              <ViewTab active={view === 'day'} onClick={() => setView('day')} icon={Sun} shortLabel="D" fullLabel="Day" isDark={isDark} />
-              <ViewTab active={view === 'agenda'} onClick={() => setView('agenda')} icon={List} shortLabel="List" fullLabel="Agenda" isDark={isDark} />
-            </div>
+          {/* View switcher — full width row on phones, inline on larger screens */}
+          <div className={`order-last sm:order-none w-full sm:w-auto grid grid-cols-4 sm:flex items-center gap-0.5 p-1 rounded-xl border ${t.control}`}>
+            <ViewTab active={view === 'month'} onClick={() => changeView('month')} icon={CalendarDays} label="Month" />
+            <ViewTab active={view === 'week'} onClick={() => changeView('week')} icon={LayoutGrid} label="Week" />
+            <ViewTab active={view === 'day'} onClick={() => changeView('day')} icon={Sun} label="Day" />
+            <ViewTab active={view === 'agenda'} onClick={() => changeView('agenda')} icon={List} label="List" />
           </div>
         </div>
       </nav>
 
-      <main className="w-full px-2.5 sm:px-6 mt-3 sm:mt-6 max-w-7xl mx-auto space-y-3 sm:space-y-4">
+      <main className="w-full px-3 sm:px-6 mt-3 sm:mt-5 max-w-7xl mx-auto space-y-3">
 
         {/* CONTROLS BAR */}
-        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 items-stretch sm:items-center justify-between">
-
-          {/* Date Navigator */}
-          <div className={`flex items-center justify-between px-3 py-2 rounded-2xl shadow-xs border ${
-            isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
-          }`}>
+        <div className="flex flex-col md:flex-row gap-2 md:items-center md:justify-between">
+          {/* Date navigator */}
+          <div className={`flex items-center justify-between gap-2 px-2 py-1.5 rounded-xl border ${t.control}`}>
             <div className="flex items-center gap-1">
-              <button onClick={() => handleNav(-1)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`} aria-label="Previous">
-                <ChevronLeft size={16} />
-              </button>
+              {view !== 'agenda' && (
+                <button onClick={() => handleNav(-1)} className={`p-2 rounded-lg transition ${t.hover}`} aria-label="Previous">
+                  <ChevronLeft size={18} />
+                </button>
+              )}
               <button
                 onClick={() => setCurrentDate(new Date())}
-                className="px-2.5 py-1 bg-[#0F1F3D] text-white rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-wider hover:bg-[#1a6645] transition-colors"
+                className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition hover:opacity-90"
+                style={{ backgroundColor: ACCENT }}
               >
                 Today
               </button>
-              <button onClick={() => handleNav(1)} className={`p-1.5 rounded-lg transition-colors ${isDark ? 'hover:bg-white/10' : 'hover:bg-slate-100'}`} aria-label="Next">
-                <ChevronRight size={16} />
-              </button>
+              {view !== 'agenda' && (
+                <button onClick={() => handleNav(1)} className={`p-2 rounded-lg transition ${t.hover}`} aria-label="Next">
+                  <ChevronRight size={18} />
+                </button>
+              )}
             </div>
-            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider truncate text-right ml-2">
-              {view === 'day' 
-                ? currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-                : currentDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-              }
-            </h2>
+            <h2 className="text-sm font-bold truncate text-right pr-1">{periodLabel}</h2>
           </div>
 
-          {/* Search & Filter Controls */}
           <div className="flex items-center gap-2">
-            <div className={`flex-1 flex items-center gap-1.5 px-3 py-2 rounded-2xl shadow-xs border ${
-              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
-            }`}>
-              <Search size={13} className={`shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+            {/* 5-day / 7-day — only meaningful in Week view */}
+            {view === 'week' && (
+              <label className={`relative flex items-center shrink-0 rounded-xl border ${t.control}`}>
+                <select
+                  value={weekLength}
+                  onChange={(e) => changeWeekLength(Number(e.target.value) as WeekLength)}
+                  className="appearance-none bg-transparent pl-3 pr-7 py-2 text-xs font-bold outline-none cursor-pointer"
+                  aria-label="Days shown in week view"
+                >
+                  <option value={7} className={t.option}>7-day week</option>
+                  <option value={5} className={t.option}>Mon–Fri</option>
+                </select>
+                <ChevronDown size={14} className={`pointer-events-none absolute right-2 ${t.muted}`} />
+              </label>
+            )}
+
+            {/* Search */}
+            <div className={`flex-1 min-w-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border ${t.control}`}>
+              <Search size={14} className={`shrink-0 ${t.muted}`} />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder="Search jobs…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className={`w-full text-[11px] font-bold bg-transparent outline-none ${isDark ? 'text-slate-100 placeholder:text-slate-500' : 'placeholder:text-slate-400'}`}
+                className={`w-full min-w-0 text-xs font-medium bg-transparent outline-none ${isDark ? 'placeholder:text-slate-500' : 'placeholder:text-[#a8a29e]'}`}
               />
               {searchTerm && (
-                <button onClick={() => setSearchTerm('')} className={isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}>
-                  <X size={12} />
+                <button onClick={() => setSearchTerm('')} className={t.muted} aria-label="Clear search">
+                  <X size={13} />
                 </button>
               )}
             </div>
 
-            <div className={`flex items-center gap-1 px-2.5 py-2 rounded-2xl shadow-xs border shrink-0 ${
-              isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]'
-            }`}>
-              <Filter size={12} className="text-[#1a6645] shrink-0" />
-              <select
-                value={filterAssignee}
-                onChange={(e) => setFilterAssignee(e.target.value)}
-                className={`text-[10px] font-black uppercase outline-none bg-transparent cursor-pointer max-w-[90px] sm:max-w-none truncate ${isDark ? 'text-slate-200' : ''}`}
-              >
-                <option value="all" className={isDark ? 'bg-[#0b0f17]' : ''}>Assignee</option>
-                {assignees.map((a: any) => (
-                  <option key={a} value={a} className={isDark ? 'bg-[#0b0f17]' : ''}>{a}</option>
-                ))}
-              </select>
-            </div>
+            {/* Assignee filter */}
+            {assignees.length > 0 && (
+              <label className={`relative flex items-center gap-1 pl-2.5 shrink-0 rounded-xl border ${t.control}`}>
+                <Filter size={13} className="shrink-0" style={{ color: ACCENT }} />
+                <select
+                  value={filterAssignee}
+                  onChange={(e) => setFilterAssignee(e.target.value)}
+                  className="appearance-none bg-transparent pr-7 py-2 text-xs font-bold outline-none cursor-pointer max-w-[110px] sm:max-w-[160px] truncate"
+                  aria-label="Filter by assignee"
+                >
+                  <option value="all" className={t.option}>Everyone</option>
+                  {assignees.map((a) => (
+                    <option key={a} value={a} className={t.option}>{a}</option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className={`pointer-events-none absolute right-2 ${t.muted}`} />
+              </label>
+            )}
           </div>
         </div>
 
         {/* STATUS LEGEND */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 px-1">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           {safeStatusOptions.map((s: any) => (
-            <div key={s.value} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shrink-0 shadow-2xs ${
-              isDark ? 'bg-white/5 border-white/10' : 'bg-white/70 border-[#D1C9BD]/40'
-            }`}>
+            <div key={s.value} className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border shrink-0 ${t.control}`}>
               <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: resolveStatusColor(s.color) }} />
-              <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-wider ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{s.label}</span>
+              <span className={`text-[10px] font-semibold ${t.soft}`}>{s.label}</span>
             </div>
           ))}
         </div>
 
-        {/* ACTIVE VIEW (Optimized Key to prevent re-animating on typing) */}
+        {/* ACTIVE VIEW */}
         <AnimatePresence mode="wait">
           <motion.div
-            key={`${view}-${currentDate.getFullYear()}-${currentDate.getMonth()}-${currentDate.getDate()}`}
+            key={`${view}-${weekLength}-${dayKey(currentDate)}`}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
@@ -347,12 +435,11 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
             )}
             {view === 'week' && (
               <WeekStrip
-                currentDate={currentDate}
+                days={currentWeek}
                 eventsByDay={eventsByDay}
                 onSelect={onSelectLead}
                 getStatus={getStatusConfig}
-                onScheduleJob={onScheduleJob}
-                companySlug={companySlug}
+                onAddJob={openAddJob}
                 isDark={isDark}
               />
             )}
@@ -362,22 +449,18 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
                 eventsByDay={eventsByDay}
                 onSelect={onSelectLead}
                 getStatus={getStatusConfig}
+                onAddJob={openAddJob}
                 isDark={isDark}
               />
             )}
             {view === 'agenda' && (
-              <AgendaListView
-                events={filteredEvents}
-                onSelect={onSelectLead}
-                getStatus={getStatusConfig}
-                isDark={isDark}
-              />
+              <AgendaListView events={filteredEvents} onSelect={onSelectLead} getStatus={getStatusConfig} isDark={isDark} />
             )}
           </motion.div>
         </AnimatePresence>
       </main>
 
-      {/* MOBILE JOB DRAWER */}
+      {/* DAY DRAWER (from Month view) */}
       <AnimatePresence>
         {drawerDay && (
           <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
@@ -394,63 +477,55 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               className={`relative w-full max-w-sm h-full shadow-2xl z-10 flex flex-col border-l ${
-                isDark ? 'bg-[#0b0f17] border-white/10' : 'bg-[#faf9f5] border-[#D1C9BD]'
+                isDark ? 'bg-[#0b0f17] border-white/10' : 'bg-[#faf9f5] border-[#e7e2d8]'
               }`}
             >
-              <div className={`p-4 border-b flex items-center justify-between gap-2 ${
-                isDark ? 'border-white/10 bg-white/5' : 'border-[#D1C9BD] bg-white'
-              }`}>
+              <div className={`p-4 border-b flex items-center justify-between gap-2 ${t.divider}`}>
                 <div className="min-w-0">
-                  <h3 className={`text-base font-black uppercase tracking-tight truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
-                    {new Date(`${drawerDay}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                  <h3 className={`text-base font-bold truncate ${t.strong}`}>
+                    {keyToDate(drawerDay).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
                   </h3>
-                  <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                    {activeDrawerEvents.length} Scheduled Job{activeDrawerEvents.length === 1 ? '' : 's'}
+                  <p className={`text-xs font-medium mt-0.5 ${t.muted}`}>
+                    {activeDrawerEvents.length} scheduled job{activeDrawerEvents.length === 1 ? '' : 's'}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  {onScheduleJob && (
-                    <button
-                      onClick={() => setShowAddJobModal(true)}
-                      className="flex items-center gap-1 px-2.5 py-1.5 bg-[#1a6645] text-white rounded-lg text-[10px] font-black uppercase tracking-wide hover:bg-[#0F1F3D] transition-colors"
-                    >
-                      <Plus size={13} /> Add job
-                    </button>
-                  )}
-                  <button onClick={() => setDrawerDay(null)} className={`p-1.5 rounded-full ${isDark ? 'hover:bg-white/10 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
-                    <X size={18} />
-                  </button>
-                </div>
+                <button onClick={() => setDrawerDay(null)} className={`p-1.5 rounded-full ${t.hover} ${t.soft}`} aria-label="Close">
+                  <X size={18} />
+                </button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-3 space-y-2.5">
                 {activeDrawerEvents.length === 0 ? (
-                  <div className={`py-12 text-center ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                  <div className={`py-10 text-center ${t.muted}`}>
                     <Briefcase size={28} className="mx-auto mb-2 opacity-40" />
-                    <p className="text-xs font-bold uppercase tracking-wider">No jobs on this day</p>
+                    <p className="text-sm font-semibold">No jobs this day</p>
                   </div>
                 ) : (
                   activeDrawerEvents.map((job: Lead) => (
                     <JobCard key={job.id} job={job} onSelect={onSelectLead} getStatus={getStatusConfig} isDark={isDark} />
                   ))
                 )}
+                {openAddJob && <AddJobButton onClick={() => openAddJob(drawerDay as string)} isDark={isDark} />}
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* ADD JOB TO DAY MODAL */}
-      {drawerDay && onScheduleJob && (
+      {/* ADD JOB TO DAY MODAL — shared by Week, Day, and the Month drawer */}
+      {addJobDay && onScheduleJob && (
         <AddJobToDayModal
-          isOpen={showAddJobModal}
-          onClose={() => setShowAddJobModal(false)}
+          isOpen={true}
+          onClose={() => setAddJobDay(null)}
           companySlug={companySlug}
-          dayLabel={new Date(`${drawerDay}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-          onPick={(job) => {
-            setShowAddJobModal(false);
+          dayLabel={keyToDate(addJobDay).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          targetDay={addJobDay}
+          scheduledJobs={scheduledForPicker}
+          onPick={(job: any, opts?: { reschedule?: boolean }) => {
+            const day = addJobDay as string;
+            setAddJobDay(null);
             setDrawerDay(null);
-            onScheduleJob(job, drawerDay);
+            onScheduleJob(job, day, opts);
           }}
         />
       )}
@@ -458,77 +533,88 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
   );
 }
 
-// ── MEMOIZED SUB-COMPONENTS ──
+// ── SUB-COMPONENTS ──
 
-const ViewTab = memo(function ViewTab({ active, onClick, icon: Icon, shortLabel, fullLabel, isDark }: any) {
+const ViewTab = memo(function ViewTab({ active, onClick, icon: Icon, label }: any) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-wider transition-all ${
-        active
-          ? 'bg-[#0F1F3D] text-white shadow-xs'
-          : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-800'
+      className={`flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-lg text-xs font-bold transition-all ${
+        active ? 'text-white shadow-xs' : 'opacity-60 hover:opacity-100'
       }`}
+      style={active ? { backgroundColor: ACCENT } : undefined}
     >
-      <Icon size={12} />
-      <span className="sm:hidden">{shortLabel}</span>
-      <span className="hidden sm:inline">{fullLabel}</span>
+      <Icon size={13} />
+      {label}
     </button>
   );
 });
 
-const JobCard = memo(function JobCard({ 
-  job, 
-  onSelect, 
+// Dashed "+ Add job" button that lives inside a day's box.
+const AddJobButton = memo(function AddJobButton({ onClick, isDark, compact }: { onClick: () => void; isDark: boolean; compact?: boolean }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={`w-full flex items-center justify-center gap-1 rounded-lg border border-dashed font-semibold transition ${
+        compact ? 'py-1.5 text-[11px]' : 'py-2.5 text-xs'
+      } ${
+        isDark
+          ? 'border-white/15 text-slate-400 hover:border-[#1a6645] hover:text-emerald-400 hover:bg-emerald-500/5'
+          : 'border-[#d6cfc2] text-[#78716c] hover:border-[#1a6645] hover:text-[#1a6645] hover:bg-emerald-50/60'
+      }`}
+    >
+      <Plus size={13} strokeWidth={2.5} /> Add job
+    </button>
+  );
+});
+
+const JobCard = memo(function JobCard({
+  job,
+  onSelect,
   getStatus,
   isDark,
-}: { 
-  job: Lead; 
-  onSelect: (lead: Lead) => void; 
-  getStatus: (status: string) => any; 
+}: {
+  job: Lead;
+  onSelect: (lead: Lead) => void;
+  getStatus: (status: string) => any;
   isDark: boolean;
 }) {
+  const t = theme(isDark);
   const statusConfig = getStatus(job.job_status || job.status || '');
   const color = resolveStatusColor(statusConfig?.color);
-  const time = formatTime12h(job.scheduled_time);
 
   return (
     <button
       onClick={() => onSelect(job)}
-      className={`w-full text-left p-3.5 rounded-xl border shadow-2xs hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 group ${
-        isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]/70'
-      }`}
+      className={`w-full text-left p-3.5 rounded-xl border transition-all hover:border-[#1a6645] hover:shadow-sm group ${t.item}`}
     >
-      <div className="flex items-center justify-between gap-1 mb-1.5">
+      <div className="flex items-center justify-between gap-2 mb-1.5">
         <span
-          className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full truncate max-w-[130px]"
+          className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full truncate max-w-[150px]"
           style={{ backgroundColor: `${color}1A`, color }}
         >
           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
           {statusConfig?.label || 'Scheduled'}
         </span>
-        <span className={`text-[9px] font-black flex items-center gap-1 shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-          <Clock size={10} className="text-[#1a6645]" /> {time}
+        <span className={`text-[11px] font-semibold flex items-center gap-1 shrink-0 ${t.soft}`}>
+          <Clock size={11} style={{ color: ACCENT }} /> {formatTime12h(job.scheduled_time)}
         </span>
       </div>
-      <h4 className={`text-xs sm:text-sm font-black group-hover:text-[#1a6645] truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
-        {job.name}
-      </h4>
-      {job.category && (
-        <p className={`text-[9px] font-bold uppercase tracking-wider mt-0.5 capitalize truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-          {job.category.replace(/_/g, ' ')}
-        </p>
-      )}
+      <h4 className={`text-sm font-bold truncate group-hover:text-[#1a6645] ${t.strong}`}>{job.name}</h4>
+      {job.category && <p className={`text-[11px] font-medium mt-0.5 capitalize truncate ${t.muted}`}>{job.category.replace(/_/g, ' ')}</p>}
       {(job.assigned_to || job.address_line_1) && (
-        <div className={`mt-2 pt-2 border-t flex flex-wrap gap-x-3 gap-y-1 text-[9px] ${isDark ? 'border-white/10 text-slate-500' : 'border-slate-100 text-slate-500'}`}>
+        <div className={`mt-2 pt-2 border-t flex flex-wrap gap-x-3 gap-y-1 text-[11px] ${t.divider} ${t.soft}`}>
           {job.assigned_to && (
             <span className="flex items-center gap-1 truncate">
-              <User size={10} className="text-[#1a6645]" /> {job.assigned_to}
+              <User size={11} style={{ color: ACCENT }} /> {job.assigned_to}
             </span>
           )}
           {job.address_line_1 && (
             <span className="flex items-center gap-1 truncate">
-              <MapPin size={10} className="text-[#1a6645]" /> {job.address_line_1}
+              <MapPin size={11} style={{ color: ACCENT }} /> {job.address_line_1}
             </span>
           )}
         </div>
@@ -538,67 +624,69 @@ const JobCard = memo(function JobCard({
 });
 
 const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, onOpenDrawer, getStatus, isDark }: any) {
+  const t = theme(isDark);
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const startDay = new Date(year, month, 1).getDay();
 
-  const cells = useMemo(() => [
-    ...Array(startDay).fill(null), 
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1)
-  ], [startDay, daysInMonth]);
+  const cells = useMemo(
+    () => [...Array(startDay).fill(null), ...Array.from({ length: daysInMonth }, (_, i) => i + 1)],
+    [startDay, daysInMonth]
+  );
 
-  const DAY_LABELS_MOBILE = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-  const DAY_LABELS_DESKTOP = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const todayStr = dayKey(new Date());
 
   return (
-    <div className={`rounded-2xl border shadow-md overflow-hidden ${isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-[#D1C9BD]'}`}>
-      <div className={`grid grid-cols-7 border-b ${isDark ? 'border-white/10 bg-white/5' : 'border-[#D1C9BD]/40 bg-[#faf9f5]'}`}>
-        {DAY_LABELS_DESKTOP.map((d, i) => (
-          <div key={d} className={`py-2.5 text-center text-[9px] sm:text-[10px] font-black uppercase ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-            <span className="sm:hidden">{DAY_LABELS_MOBILE[i]}</span>
+    <div className={`rounded-2xl border overflow-hidden ${t.panel}`}>
+      <div className={`grid grid-cols-7 border-b ${t.divider} ${t.subtle}`}>
+        {LABELS.map((d) => (
+          <div key={d} className={`py-2 text-center text-[10px] sm:text-[11px] font-bold ${t.muted}`}>
+            <span className="sm:hidden">{d.charAt(0)}</span>
             <span className="hidden sm:inline">{d}</span>
           </div>
         ))}
       </div>
 
-      <div className={`grid grid-cols-7 divide-x divide-y ${isDark ? 'divide-white/10' : 'divide-[#D1C9BD]/20'}`}>
+      <div className={`grid grid-cols-7 divide-x divide-y ${isDark ? 'divide-white/10' : 'divide-[#f0ece1]'}`}>
         {cells.map((day, i) => {
-          const isNull = !day;
           const cellDate = day ? new Date(year, month, day) : null;
           const dStr = cellDate ? dayKey(cellDate) : '';
-          const dayEvents = cellDate ? (eventsByDay[dStr] || []) : [];
+          const dayEvents: Lead[] = cellDate ? eventsByDay[dStr] || [] : [];
           const isToday = todayStr === dStr;
+
+          const cellBg = !day
+            ? isDark ? 'bg-white/[0.02]' : 'bg-[#faf9f5]/60'
+            : isToday
+            ? isDark ? 'bg-emerald-500/10 cursor-pointer' : 'bg-emerald-50/60 cursor-pointer'
+            : `cursor-pointer ${t.hover}`;
 
           return (
             <div
               key={i}
               onClick={() => dStr && onOpenDrawer(dStr)}
-              className={`min-h-[68px] sm:min-h-[124px] p-1.5 sm:p-2 transition-all flex flex-col justify-between ${
-                isNull
-                  ? isDark ? 'bg-white/[0.02]' : 'bg-slate-50/30'
-                  : isDark
-                  ? 'bg-transparent hover:bg-white/5 hover:shadow-[inset_0_0_0_1px_rgba(26,102,69,0.25)] cursor-pointer'
-                  : 'bg-white hover:bg-slate-50/80 hover:shadow-[inset_0_0_0_1px_rgba(26,102,69,0.15)] cursor-pointer'
-              } ${isToday ? (isDark ? 'bg-emerald-500/10' : 'bg-emerald-50/40') : ''}`}
+              className={`min-h-[64px] sm:min-h-[120px] p-1 sm:p-2 transition-colors ${cellBg}`}
             >
-              {!isNull && (
-                <div>
+              {day && (
+                <>
                   <div className="flex items-center justify-between">
-                    <span className={`text-[9px] sm:text-[10px] font-black w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center rounded ${
-                      isToday ? 'bg-[#1a6645] text-white shadow-xs' : isDark ? 'text-slate-400' : 'text-slate-500'
-                    }`}>
+                    <span
+                      className={`text-[11px] font-bold w-6 h-6 flex items-center justify-center rounded-full ${
+                        isToday ? 'text-white' : t.soft
+                      }`}
+                      style={isToday ? { backgroundColor: ACCENT } : undefined}
+                    >
                       {day}
                     </span>
                     {dayEvents.length > 0 && (
-                      <span className={`text-[8px] font-black text-[#1a6645] px-1 rounded-full ${isDark ? 'bg-emerald-500/15' : 'bg-emerald-100/80'}`}>
+                      <span className={`hidden sm:inline text-[10px] font-bold px-1.5 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-100 text-[#1a6645]'}`}>
                         {dayEvents.length}
                       </span>
                     )}
                   </div>
 
-                  {/* Desktop Detailed Badges */}
+                  {/* Desktop: job names */}
                   <div className="hidden sm:flex flex-col gap-1 mt-1">
                     {dayEvents.slice(0, 3).map((e: Lead) => {
                       const color = resolveStatusColor(getStatus(e.job_status || e.status || '').color);
@@ -609,33 +697,31 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
                             evt.stopPropagation();
                             onSelect(e);
                           }}
-                          className="w-full flex items-center justify-between gap-1 text-[8px] font-semibold px-1.5 py-1 rounded-md border-l-2 truncate text-left transition-all hover:shadow-2xs hover:brightness-95"
+                          className="w-full flex items-center justify-between gap-1 text-[10px] font-semibold px-1.5 py-1 rounded-md border-l-2 truncate text-left hover:brightness-95"
                           style={{ backgroundColor: `${color}14`, borderColor: color, color }}
                         >
-                          <span className="truncate normal-case">{e.name}</span>
-                          <span className="text-[7px] opacity-70 shrink-0 ml-1">{formatTime12h(e.scheduled_time)}</span>
+                          <span className="truncate">{e.name}</span>
+                          <span className="text-[9px] opacity-75 shrink-0">{e.scheduled_time ? formatTime12h(e.scheduled_time) : ''}</span>
                         </button>
                       );
                     })}
-                    {dayEvents.length > 3 && (
-                      <p className={`text-[7px] font-black pl-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>+{dayEvents.length - 3} more</p>
-                    )}
+                    {dayEvents.length > 3 && <p className={`text-[10px] font-semibold pl-0.5 ${t.muted}`}>+{dayEvents.length - 3} more</p>}
                   </div>
 
-                  {/* Mobile Dot Indicators */}
-                  <div className="sm:hidden flex flex-wrap gap-0.5 mt-1 justify-center">
-                    {dayEvents.slice(0, 3).map((e: Lead) => (
-                      <span
-                        key={e.id}
-                        className="w-1.5 h-1.5 rounded-full shrink-0"
-                        style={{ backgroundColor: resolveStatusColor(getStatus(e.job_status || e.status || '').color) }}
-                      />
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isDark ? 'bg-slate-500' : 'bg-slate-400'}`} />
-                    )}
-                  </div>
-                </div>
+                  {/* Mobile: count dots */}
+                  {dayEvents.length > 0 && (
+                    <div className="sm:hidden flex flex-wrap gap-0.5 mt-1 justify-center">
+                      {dayEvents.slice(0, 3).map((e: Lead) => (
+                        <span
+                          key={e.id}
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: resolveStatusColor(getStatus(e.job_status || e.status || '').color) }}
+                        />
+                      ))}
+                      {dayEvents.length > 3 && <span className={`text-[8px] font-bold leading-none ${t.muted}`}>+</span>}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           );
@@ -645,135 +731,98 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
   );
 });
 
-const WeekStrip = memo(function WeekStrip({ currentDate, eventsByDay, onSelect, getStatus, onScheduleJob, companySlug, isDark }: any) {
-  const weekDays = useMemo(() => {
-    const start = new Date(currentDate);
-    start.setDate(currentDate.getDate() - currentDate.getDay());
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(start); 
-      d.setDate(start.getDate() + i); 
-      return d;
-    });
-  }, [currentDate]);
-
+const WeekStrip = memo(function WeekStrip({ days, eventsByDay, onSelect, getStatus, onAddJob, isDark }: any) {
+  const t = theme(isDark);
   const todayStr = dayKey(new Date());
-  const [addJobDay, setAddJobDay] = useState<string | null>(null);
+  const cols = days.length === 5 ? 'lg:grid-cols-5' : 'lg:grid-cols-7';
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-7 gap-2.5">
-      {weekDays.map((d, i) => {
+    <div className={`grid grid-cols-1 sm:grid-cols-2 ${cols} gap-2.5`}>
+      {days.map((d: Date) => {
         const dStr = dayKey(d);
-        const dayEvents = eventsByDay[dStr] || [];
+        const dayEvents: Lead[] = eventsByDay[dStr] || [];
         const isToday = todayStr === dStr;
 
         return (
           <div
-            key={i}
-            className={`rounded-xl border transition-all overflow-hidden flex flex-col ${
-              isToday
-                ? isDark ? 'border-[#1a6645] bg-white/5 shadow-sm ring-1 ring-[#1a6645]' : 'border-[#1a6645] bg-white shadow-sm ring-1 ring-[#1a6645]'
-                : isDark ? 'border-white/10 bg-white/[0.02]' : 'border-[#D1C9BD] bg-white/80'
+            key={dStr}
+            className={`rounded-xl border overflow-hidden flex flex-col lg:min-h-[280px] ${t.panel} ${
+              isToday ? 'ring-2 ring-[#1a6645] border-transparent' : ''
             }`}
           >
-            <div className={`px-3 py-1.5 flex lg:flex-col lg:items-start items-center justify-between gap-1 ${
-              isToday
-                ? 'bg-[#1a6645] text-white'
-                : isDark ? 'bg-white/5 border-b border-white/10 text-slate-200' : 'bg-[#faf9f5] border-b border-[#D1C9BD]/40 text-[#0F1F3D]'
-            }`}>
-              <span className="text-[11px] font-black uppercase tracking-wider">
-                {d.toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })}
+            {/* Date header — date and count only */}
+            <div
+              className={`px-3 py-2 flex items-center justify-between gap-2 border-b ${
+                isToday ? 'text-white border-transparent' : `${t.divider} ${t.subtle}`
+              }`}
+              style={isToday ? { backgroundColor: ACCENT } : undefined}
+            >
+              <span className={`text-xs font-bold ${isToday ? '' : t.strong}`}>
+                {d.toLocaleDateString('en-US', { weekday: 'short' })}{' '}
+                <span className={isToday ? 'text-white/85' : t.soft}>{shortDate(d)}</span>
               </span>
-              <div className="flex items-center gap-1.5">
-                <span className={`text-[8px] font-bold uppercase ${isToday ? 'text-white/80' : isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-                  {dayEvents.length} Job{dayEvents.length === 1 ? '' : 's'}
+              {dayEvents.length > 0 && (
+                <span className={`text-[10px] font-semibold ${isToday ? 'text-white/85' : t.muted}`}>
+                  {dayEvents.length} job{dayEvents.length === 1 ? '' : 's'}
                 </span>
-                {onScheduleJob && (
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setAddJobDay(dStr); }}
-                    className={`p-0.5 rounded transition-colors ${
-                      isToday ? 'text-white/80 hover:text-white hover:bg-white/10' : 'text-[#1a6645] hover:bg-emerald-500/15'
-                    }`}
-                    aria-label="Add job to this day"
-                  >
-                    <Plus size={12} strokeWidth={3} />
-                  </button>
-                )}
-              </div>
+              )}
             </div>
 
-            <div className="p-2 space-y-1.5 flex-1">
-              {dayEvents.length === 0 ? (
-                <p className={`text-[8px] font-bold uppercase tracking-wider text-center py-2 lg:py-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                  No Jobs
-                </p>
-              ) : (
-                dayEvents.map((job: Lead) => {
-                  const statusConfig = getStatus(job.job_status || job.status || '');
-                  const color = resolveStatusColor(statusConfig?.color);
-                  return (
-                    <button
-                      key={job.id}
-                      onClick={() => onSelect(job)}
-                      className={`w-full text-left p-2.5 rounded-lg border hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 shadow-2xs group ${
-                        isDark ? 'bg-white/5 border-white/10' : 'bg-white border-[#D1C9BD]/60'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between gap-1 mb-0.5">
-                        <span className={`text-[8px] font-black uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {formatTime12h(job.scheduled_time)}
-                        </span>
-                        <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                      </div>
-                      <p className={`text-[11px] font-black group-hover:text-[#1a6645] truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
-                        {job.name}
-                      </p>
-                    </button>
-                  );
-                })
+            {/* Jobs + Add job inside the box */}
+            <div className="p-2 space-y-1.5 flex-1 flex flex-col">
+              {dayEvents.length === 0 && (
+                <p className={`text-[11px] font-medium text-center py-1.5 lg:py-3 ${t.muted}`}>No jobs</p>
+              )}
+              {dayEvents.map((job: Lead) => {
+                const statusConfig = getStatus(job.job_status || job.status || '');
+                const color = resolveStatusColor(statusConfig?.color);
+                return (
+                  <button
+                    key={job.id}
+                    onClick={() => onSelect(job)}
+                    className={`w-full text-left p-2.5 rounded-lg border-l-[3px] border transition hover:shadow-sm group ${t.item}`}
+                    style={{ borderLeftColor: color }}
+                  >
+                    <div className={`text-[10px] font-semibold ${t.soft}`}>{formatTime12h(job.scheduled_time)}</div>
+                    <p className={`text-xs font-bold truncate group-hover:text-[#1a6645] ${t.strong}`}>{job.name}</p>
+                    {job.assigned_to && <p className={`text-[10px] truncate ${t.muted}`}>{job.assigned_to}</p>}
+                  </button>
+                );
+              })}
+              {onAddJob && (
+                <div className="mt-auto pt-1">
+                  <AddJobButton onClick={() => onAddJob(dStr)} isDark={isDark} compact />
+                </div>
               )}
             </div>
           </div>
         );
       })}
-
-      {addJobDay && onScheduleJob && (
-        <AddJobToDayModal
-          isOpen={true}
-          onClose={() => setAddJobDay(null)}
-          companySlug={companySlug}
-          dayLabel={new Date(`${addJobDay}T12:00:00`).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
-          onPick={(job: any) => {
-            const day = addJobDay;
-            setAddJobDay(null);
-            onScheduleJob(job, day);
-          }}
-        />
-      )}
     </div>
   );
 });
 
-const DayDetailView = memo(function DayDetailView({ currentDate, eventsByDay, onSelect, getStatus, isDark }: any) {
+const DayDetailView = memo(function DayDetailView({ currentDate, eventsByDay, onSelect, getStatus, onAddJob, isDark }: any) {
+  const t = theme(isDark);
   const dStr = dayKey(currentDate);
-  const dayEvents = eventsByDay[dStr] || [];
+  const dayEvents: Lead[] = eventsByDay[dStr] || [];
+  const isToday = dStr === dayKey(new Date());
 
   return (
-    <div className={`rounded-2xl border p-4 sm:p-5 shadow-md ${isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-[#D1C9BD]'}`}>
-      <div className={`mb-4 pb-3 border-b flex items-center justify-between ${isDark ? 'border-white/10' : 'border-slate-100'}`}>
-        <div>
-          <h3 className={`text-base sm:text-lg font-black uppercase tracking-tight ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
-            {currentDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
-          </h3>
-          <p className={`text-[9px] font-bold uppercase tracking-widest mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>
-            {dayEvents.length} Scheduled Jobs
-          </p>
-        </div>
+    <div className={`rounded-2xl border p-4 sm:p-5 ${t.panel}`}>
+      <div className={`mb-4 pb-3 border-b ${t.divider}`}>
+        <h3 className={`text-base sm:text-lg font-bold ${t.strong}`}>
+          {currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </h3>
+        <p className={`text-xs font-medium mt-0.5 ${t.muted}`}>
+          {dayEvents.length} scheduled job{dayEvents.length === 1 ? '' : 's'}
+        </p>
       </div>
 
       {dayEvents.length === 0 ? (
-        <div className={`py-12 text-center ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-          <CalendarIcon size={32} className="mx-auto mb-2 opacity-30" />
-          <p className="text-xs font-black uppercase tracking-widest">No jobs scheduled for today</p>
+        <div className={`py-10 text-center ${t.muted}`}>
+          <CalendarIcon size={30} className="mx-auto mb-2 opacity-30" />
+          <p className="text-sm font-semibold">{isToday ? 'Nothing scheduled today' : 'Nothing scheduled this day'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
@@ -782,77 +831,94 @@ const DayDetailView = memo(function DayDetailView({ currentDate, eventsByDay, on
           ))}
         </div>
       )}
+
+      {onAddJob && (
+        <div className="mt-3 sm:max-w-xs">
+          <AddJobButton onClick={() => onAddJob(dStr)} isDark={isDark} />
+        </div>
+      )}
     </div>
   );
 });
 
 const AgendaListView = memo(function AgendaListView({ events, onSelect, getStatus, isDark }: any) {
-  const upcomingEvents = useMemo(() => {
+  const t = theme(isDark);
+
+  // Upcoming jobs grouped by day, so a long list is easy to scan.
+  const groups = useMemo(() => {
     const todayStr = dayKey(new Date());
-    
-    return events
+    const upcoming = events
       .filter((a: Lead) => {
-        const dateStr = leadDayKey(a);
-        return dateStr && dateStr >= todayStr;
+        const k = leadDayKey(a);
+        return k && k >= todayStr;
       })
       .sort((a: Lead, b: Lead) => {
-        const timeA = String(a.scheduled_date).slice(0, 10);
-        const timeB = String(b.scheduled_date).slice(0, 10);
-        return timeA.localeCompare(timeB);
+        const byDay = String(leadDayKey(a)).localeCompare(String(leadDayKey(b)));
+        return byDay !== 0 ? byDay : timeRank(a.scheduled_time) - timeRank(b.scheduled_time);
       });
+    const map = new Map<string, Lead[]>();
+    upcoming.forEach((e: Lead) => {
+      const k = leadDayKey(e)!;
+      if (!map.has(k)) map.set(k, []);
+      map.get(k)!.push(e);
+    });
+    return Array.from(map.entries());
   }, [events]);
 
-  return (
-    <div className={`rounded-2xl border p-3 sm:p-5 shadow-md ${isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-[#D1C9BD]'}`}>
-      <h3 className={`text-xs font-black uppercase tracking-widest mb-3 ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>
-        Upcoming Agenda ({upcomingEvents.length})
-      </h3>
+  const total = groups.reduce((n, [, list]) => n + list.length, 0);
+  const todayStr = dayKey(new Date());
 
-      {upcomingEvents.length === 0 ? (
-        <div className={`py-12 text-center ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-          <List size={32} className="mx-auto mb-2 opacity-30" />
-          <p className="text-xs font-black uppercase tracking-widest">No upcoming scheduled jobs</p>
+  return (
+    <div className={`rounded-2xl border p-3 sm:p-5 ${t.panel}`}>
+      <h3 className={`text-sm font-bold mb-3 ${t.strong}`}>Upcoming jobs ({total})</h3>
+
+      {total === 0 ? (
+        <div className={`py-10 text-center ${t.muted}`}>
+          <List size={30} className="mx-auto mb-2 opacity-30" />
+          <p className="text-sm font-semibold">No upcoming jobs</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          {upcomingEvents.map((job: Lead) => {
-            const statusConfig = getStatus(job.job_status || job.status || '');
-            const color = resolveStatusColor(statusConfig?.color);
-            const dateDisplay = job.scheduled_date 
-              ? new Date(`${String(job.scheduled_date).slice(0, 10)}T12:00:00`).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-              : 'TBD';
-
-            return (
-              <div
-                key={job.id}
-                onClick={() => onSelect(job)}
-                className={`flex items-center justify-between gap-2 p-3 rounded-xl border hover:border-[#1a6645] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ${
-                  isDark ? 'bg-white/5 border-white/10 hover:bg-white/[0.07]' : 'bg-[#faf9f5] border-[#D1C9BD]/60 hover:bg-white'
-                }`}
-              >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="px-2 py-1 bg-[#0F1F3D] text-[#faf9f5] rounded-lg text-center shrink-0 min-w-[55px]">
-                    <span className="text-[9px] font-black uppercase block">{dateDisplay}</span>
-                    <span className="text-[8px] text-slate-300 font-medium block">{formatTime12h(job.scheduled_time)}</span>
-                  </div>
-                  <div className="truncate">
-                    <h4 className={`text-xs font-black truncate ${isDark ? 'text-white' : 'text-[#0F1F3D]'}`}>{job.name}</h4>
-                    <p className={`text-[9px] font-bold uppercase tracking-wider truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {job.category?.replace(/_/g, ' ') || 'Service'}
-                    </p>
-                  </div>
-                </div>
-
-                <span
-                  className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full shrink-0"
-                  style={{ backgroundColor: `${color}1A`, color }}
-                >
-                  <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                  {statusConfig?.label || 'Scheduled'}
-                </span>
+        <div className="space-y-4">
+          {groups.map(([k, list]) => (
+            <div key={k}>
+              <p className={`text-[11px] font-bold uppercase tracking-wide mb-1.5 ${k === todayStr ? 'text-[#1a6645]' : t.muted}`}>
+                {k === todayStr ? 'Today · ' : ''}
+                {keyToDate(k).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              </p>
+              <div className="space-y-1.5">
+                {list.map((job: Lead) => {
+                  const statusConfig = getStatus(job.job_status || job.status || '');
+                  const color = resolveStatusColor(statusConfig?.color);
+                  return (
+                    <button
+                      key={job.id}
+                      onClick={() => onSelect(job)}
+                      className={`w-full flex items-center justify-between gap-2 p-3 rounded-xl border text-left transition hover:border-[#1a6645] ${t.item}`}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className={`text-[11px] font-bold shrink-0 w-16 ${t.soft}`}>{formatTime12h(job.scheduled_time)}</span>
+                        <div className="min-w-0">
+                          <p className={`text-sm font-bold truncate ${t.strong}`}>{job.name}</p>
+                          <p className={`text-[11px] truncate capitalize ${t.muted}`}>
+                            {job.category?.replace(/_/g, ' ') || 'Service'}
+                            {job.assigned_to ? ` · ${job.assigned_to}` : ''}
+                          </p>
+                        </div>
+                      </div>
+                      <span
+                        className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0"
+                        style={{ backgroundColor: `${color}1A`, color }}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: color }} />
+                        {statusConfig?.label || 'Scheduled'}
+                      </span>
+                      <span className="sm:hidden w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    </button>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       )}
     </div>

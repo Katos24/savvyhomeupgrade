@@ -4,6 +4,8 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
 import { getDepositAmount, isDepositSatisfied } from '@/lib/billing';
+import { dateInZone } from '@/lib/timezone';
+
 
 // Reuse single connection instance across warm serverless invocations
 const sql = neon(process.env.DATABASE_URL!);
@@ -113,8 +115,14 @@ export async function GET(
       lineItems = [{ description: 'Services', amount: contractTotal, quantity: 1 }];
     }
 
-    const invoiceDate = fmtPaymentDate(project.invoice_sent_at || project.created_at) || '';
-    const dueDate = fmtPaymentDate(project.payment_due_date);
+    // invoice_sent_at is a real moment in time — show the calendar day it
+    // was in the company's time zone, not UTC (which rolls over at 8pm ET).
+    const tzRows = await sql`SELECT timezone FROM companies WHERE id = ${project.company_id} LIMIT 1`;
+    const invoiceTs = project.invoice_sent_at || project.created_at;
+    const invoiceDate = invoiceTs
+      ? fmtPaymentDate(dateInZone(invoiceTs, tzRows[0]?.timezone || null)) || ''
+      : '';
+          const dueDate = fmtPaymentDate(project.payment_due_date);
 
     // ── 3. Calculate Deposit Terms & Payments in Parallel ────────────────────────
     // Was its own inline copy of the deposit-target and satisfaction math —

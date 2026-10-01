@@ -181,7 +181,7 @@ function ConnectStripeCard({
         <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
           <button
             type="button"
-            onClick={() => router.push(`/${companySlug}/home#payments`)}
+            onClick={() => router.push(`/${companySlug}/home?section=payments`)}
             className="inline-flex items-center gap-1.5 rounded-xl bg-[#635BFF] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#534ae6]"
           >
             Connect Stripe <ArrowRight className="h-3.5 w-3.5" />
