@@ -445,7 +445,16 @@ export default function QuoteSection({
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
+            {!isDirty && !saving && outboxLog.length === 0 && quoteData.length > 0 ? (
+              <button
+                onClick={() => setShowEmailModal(true)}
+                disabled={!hasProject || hasIncompleteItems}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-indigo-600 text-white hover:bg-indigo-700 shadow-xs"
+              >
+                <Mail className="w-3.5 h-3.5" /> Send Estimate
+              </button>
+            ) : (
             <button
               onClick={handleManualSave}
               disabled={!hasProject || saving || hasIncompleteItems}
@@ -465,8 +474,9 @@ export default function QuoteSection({
               ) : (
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               )}
-              {isDirty ? 'Save Changes' : 'Saved'}
+                          {isDirty ? 'Save Changes' : 'Saved'}
             </button>
+            )}
 
             {quoteData.length > 0 && (
               <div className="relative">
@@ -772,8 +782,8 @@ export default function QuoteSection({
                     onClick={() => setShowTemplateBrowser(true)}
                     className="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-white text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
                   >
-                    <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                    Browse Templates
+                                   <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                    Add from Saved
                   </button>
                 )
               )}
@@ -807,26 +817,22 @@ export default function QuoteSection({
                 </div>
               </button>
 
-                     <button
-                onClick={handleAddRowMobile}
-                className="w-full py-3 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.99] transition"
-              >
-                <Plus className="w-4 h-4" /> Add Line Item
-              </button>
-
-              {templatesLoading ? (
-                <div className="w-full h-[38px] rounded-full bg-slate-100 animate-pulse" />
-              ) : (
-                allTemplates.length > 0 && (
+                            <div className={`grid gap-2 ${!templatesLoading && allTemplates.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                <button
+                  onClick={handleAddRowMobile}
+                  className="py-3 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.99] transition"
+                >
+                  <Plus className="w-4 h-4" /> New Item
+                </button>
+                {!templatesLoading && allTemplates.length > 0 && (
                   <button
                     onClick={() => setShowTemplateBrowser(true)}
-                    className="w-full flex items-center justify-center gap-1.5 px-4 py-2 bg-white border border-slate-200 rounded-full text-xs font-semibold text-slate-700 active:scale-[0.99] transition"
+                    className="py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 active:scale-[0.99] transition"
                   >
-                    <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                    Browse Templates
+                    <FileText className="w-4 h-4 text-indigo-500" /> Add from Saved
                   </button>
-                )
-              )}
+                )}
+              </div>
             </div>
           )}
 

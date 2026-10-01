@@ -1401,7 +1401,8 @@ const leadCheck = await sql`
   }
 
   try {
-    const emailResult = await sendInvoiceToCustomer({
+       const emailResult = await sendInvoiceToCustomer({
+      projectId: lead.project_id,
       customerEmail: lead.email,
       customerName: lead.name,
       companyName: lead.company_name || '',

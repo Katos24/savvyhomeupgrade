@@ -94,6 +94,12 @@ export default function LeadModal({
       .catch(() => {});
   }, [lead.id]);
 
+   useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
   const contentPaneRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     contentPaneRef.current?.scrollTo(0, 0);
@@ -289,8 +295,8 @@ export default function LeadModal({
         animate={{ x: 0 }}
         exit={{ x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-        className="bg-white w-full sm:w-[650px] lg:w-[850px] xl:w-[1000px] 2xl:w-[1150px] h-[96vh] sm:h-full sm:rounded-l-2xl shadow-2xl flex flex-col border-l border-gray-200"
-        style={{ ['--mobile-tabbar-h' as any]: `${tabBarHeight}px` }}
+        className="bg-white w-full sm:w-[650px] lg:w-[850px] xl:w-[1000px] 2xl:w-[1150px] h-[100dvh] sm:h-full sm:rounded-l-2xl shadow-2xl flex flex-col border-l border-gray-200"
+                style={{ ['--mobile-tabbar-h' as any]: `${tabBarHeight}px` }}
         onClick={e => e.stopPropagation()}
       >
         {/* ── HEADER ── */}
@@ -350,8 +356,8 @@ export default function LeadModal({
             onLockedTab={setLockedFeatureModal}
           />
 
-          <div ref={contentPaneRef} className="flex-1 overflow-y-auto bg-gray-50">
-            {/* Locked preview for free plan non-project leads */}
+          <div ref={contentPaneRef} className="flex-1 overflow-y-auto overscroll-contain bg-gray-50">
+                        {/* Locked preview for free plan non-project leads */}
             {!isProject && activeTab !== 'overview' && activeTab !== 'activity' && activeTab !== 'ai' && (
               <LockedTabsPreview companySlug={companySlug} activeTab={activeTab} />
             )}

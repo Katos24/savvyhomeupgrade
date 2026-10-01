@@ -671,6 +671,39 @@ export async function sendQuoteToCustomer({
 }
 
 
+// Itemized payments for invoice PDFs — same list the download route builds.
+async function getPaymentBreakdown(projectId: number | string) {
+  try {
+       const { adminDb: db } = await import('@/lib/db');
+    const rows = await db`
+      SELECT amount, kind, paid_on FROM payments
+      WHERE project_id = ${projectId}
+      ORDER BY paid_on ASC
+    `;
+    const labels: Record<string, string> = { deposit: 'Deposit paid', balance: 'Balance paid', refund: 'Refund' };
+    // paid_on is a date-only value; format it without letting UTC shift the day.
+    const fmtDay = (d: any) => {
+      if (!d) return undefined;
+      const s = d instanceof Date ? d.toISOString() : String(d);
+      const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+      if (!m) return undefined;
+      return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]))
+        .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
+    };
+    const list = rows
+      .filter((p: any) => parseFloat(p.amount) !== 0)
+      .map((p: any) => ({
+        label: labels[p.kind] || 'Payment received',
+        amount: parseFloat(p.amount) || 0,
+        date: fmtDay(p.paid_on),
+      }));
+    return list.length ? list : undefined;
+  } catch (err) {
+    console.error('getPaymentBreakdown failed:', err);
+    return undefined;
+  }
+}
+
 
 export async function sendInvoiceToCustomer({
   customerEmail,
@@ -689,8 +722,9 @@ export async function sendInvoiceToCustomer({
  paymentLinkType,
   taxRate,
    depositAmount,
-  collectionKind,
+   collectionKind,
   terms,
+  projectId,
 }: {
   customerEmail: string;
   customerName: string;
@@ -706,11 +740,13 @@ export async function sendInvoiceToCustomer({
   amountPaid?: number;
   paymentLinkUrl?: string;
  paymentLinkType?: string;
-  taxRate?: number;
-   /** What the pay link actually charges, when it's less than the total. */
+    taxRate?: number;
+  /** What the pay link actually charges, when it's less than the total. */
   depositAmount?: number;
   collectionKind?: 'deposit' | 'balance';
   terms?: string;
+  /** Lets the PDF itemize past payments (deposit, etc). */
+  projectId?: number | string;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -749,7 +785,8 @@ export async function sendInvoiceToCustomer({
     const showProjectTotalLine = isDepositCollection || (!!amountPaid && amountPaid > 0 && amountPaid < invoiceTotal);
 
     // ── STEP 1: Generate PDF buffer ───────────────────────
-    const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
+      const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
+    const paymentBreakdown = projectId ? await getPaymentBreakdown(projectId) : undefined;
   const pdfBuffer = await generateInvoicePDFBuffer({
       invoiceNumber,
       invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: (company as any).timezone || 'America/New_York' }),
@@ -774,7 +811,8 @@ export async function sendInvoiceToCustomer({
 
       notes,
       terms,
-      amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
+            amountPaid: amountPaid && amountPaid > 0 ? amountPaid : undefined,
+      paymentBreakdown,
       paymentLinkUrl: effectivePaymentUrl || undefined,
       paymentLinkType: effectivePaymentType || undefined,
       brandColor1: company.email_brand_color_1 || undefined,
@@ -2966,7 +3004,8 @@ amountPaid,
         if (p && items.length > 0) {
           const { generateInvoicePDFBuffer } = await import('./generateInvoicePDFServer');
           const finalTotal = contractTotal ?? parseFloat(p.quote_total || '0');
-          const number = invoiceNumber || p.invoice_number || 'Invoice';
+                    const number = invoiceNumber || p.invoice_number || 'Invoice';
+          const paymentBreakdown = await getPaymentBreakdown(projectId);
           const pdfBuffer = await generateInvoicePDFBuffer({
             invoiceNumber: number,
             invoiceDate: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: (company as any).timezone || 'America/New_York' }),
@@ -2987,7 +3026,8 @@ amountPaid,
             })),
             total: finalTotal,
             taxRate: parseFloat(p.quote_tax_rate || '0'),
-            amountPaid: paidToDate ?? finalTotal,
+                        amountPaid: paidToDate ?? finalTotal,
+            paymentBreakdown,
             brandColor1: company.email_brand_color_1 || undefined,
             brandColor2: company.email_brand_color_2 || undefined,
           });
