@@ -150,7 +150,6 @@ export default function EmailTemplatesTab({
     })()
   );
 
-  const stripeActive = !!company?.stripe_connect_onboarded && company?.stripe_payment_status === 'active';
 
   const isCustomized = (key: TemplateKey) => {
     const def = defaultTemplates[key];
@@ -325,23 +324,15 @@ export default function EmailTemplatesTab({
                     <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f5f1e8] text-[#57534e]">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
-                    {stripeActive ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" />
-                        Automatic (Stripe)
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                        Not sent
-                      </span>
-                    )}
+                                       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                      Automatic
+                    </span>
                   </div>
                   <h3 className="text-sm font-semibold text-[#1c1917]">Payment Confirmation</h3>
                   <p className="mt-1 text-xs leading-relaxed text-[#78716c]">
-                    {stripeActive
-                      ? "Stripe emails the customer a receipt automatically when they pay by card."
-                      : 'Nothing is sent when a payment is recorded manually — no template exists for this yet.'}
+                                       Sent automatically every time a payment is recorded, card or manual. Shows the amount
+                    and what&apos;s left; when the job is paid in full, the final invoice PDF is attached.
                   </p>
                 </div>
                 <div className="mt-3 flex items-center gap-1.5 border-t border-[#f0ece1] pt-2.5 text-[11px] font-medium text-[#78716c]">
@@ -360,19 +351,12 @@ export default function EmailTemplatesTab({
                   className="overflow-hidden"
                 >
                   <div className="mt-3 rounded-2xl border border-[#e7e2d8] bg-white p-4 text-xs leading-relaxed text-[#57534e]">
-                    {stripeActive ? (
-                      <p>
-                        When a customer pays a Stripe checkout link, Stripe emails them its own
-                        receipt directly — that email isn&apos;t branded to your business and can&apos;t be
-                        edited here, since it&apos;s generated and sent by Stripe, not by this app.
-                      </p>
-                    ) : (
-                      <p>
-                        When you record a cash, check, or manual payment, the customer currently
-                        receives no confirmation from this app. If they need to know it was
-                        received, that&apos;s worth a personal follow-up for now.
-                      </p>
-                    )}
+                                     <p>
+                      This receipt is built from the payment itself (amount paid, balance remaining,
+                      and the card used for card payments), so there&apos;s no template to edit. It goes
+                      out under your business name and logo, for card payments and for cash, check or
+                      other payments you record by hand.
+                    </p>
                   </div>
                 </motion.div>
               )}
