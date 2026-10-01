@@ -1043,11 +1043,11 @@ export default function QuoteSection({
                         Unit Price
                       </label>
                       <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-slate-400 focus-within:bg-white">
-                        <span className="text-xs font-semibold text-slate-400">$</span>
+                        <span className="text-sm font-bold text-slate-500">$</span>
                         <input
                           type="text"
                           inputMode="decimal"
-                          value={editingItem.unitPrice ?? ''}
+                          value={editingItem.unitPrice === 0 || editingItem.unitPrice === '0' ? '' : editingItem.unitPrice ?? ''}
                           onKeyDown={(e) => handleNumericKeyDown(e, true)}
                           onChange={(e) => {
                             const raw = e.target.value;
@@ -1067,8 +1067,10 @@ export default function QuoteSection({
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-                        Quantity
+                                              Quantity
                       </label>
+                      <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-slate-400 focus-within:bg-white">
+                        <span className="text-sm font-bold text-slate-500">×</span>
                       <input
                         type="text"
                         inputMode="decimal"
@@ -1085,14 +1087,17 @@ export default function QuoteSection({
                           });
                         }}
                         placeholder="1"
-                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-900 text-center outline-none focus:border-slate-400 focus:bg-white tabular-nums"
+                                               className="w-full bg-transparent text-sm font-bold text-slate-900 outline-none tabular-nums"
                       />
+                      </div>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between p-3.5 bg-slate-100/70 rounded-xl">
-                    <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Line Total</span>
-                    <span className="text-base font-extrabold text-slate-900 tabular-nums">
+                    <span className="text-xs font-semibold text-slate-500 tabular-nums">
+                      {fmt(parseFloat(String(editingItem.unitPrice)) || 0)} × {parseFloat(String(editingItem.quantity)) || 0}
+                    </span>
+                                        <span className="text-base font-extrabold text-slate-900 tabular-nums">
                       {fmt((parseFloat(String(editingItem.unitPrice)) || 0) * (parseFloat(String(editingItem.quantity)) || 0))}
                     </span>
                   </div>
