@@ -788,11 +788,30 @@ export default function QuoteSection({
                     onClick={() => setShowTemplateBrowser(true)}
                     className="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-white text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
                   >
-                                   <FileText className="w-3.5 h-3.5 text-indigo-500" />
+                                  <FileText className="w-3.5 h-3.5 text-indigo-500" />
                     Add from Saved
                   </button>
                 )
               )}
+              <button
+                onClick={handleManualSave}
+                disabled={!hasProject || saving || hasIncompleteItems}
+                title={hasIncompleteItems ? 'Every item needs a description and a price first' : undefined}
+                className={`ml-auto inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                  isDirty
+                    ? 'bg-slate-900 text-white hover:bg-slate-800 shadow-xs'
+                    : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                {saving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : isDirty ? (
+                  <Save className="w-3.5 h-3.5" />
+                ) : (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                )}
+                {isDirty ? 'Save Changes' : 'Saved'}
+              </button>
             </div>
           )}
 
@@ -927,7 +946,8 @@ export default function QuoteSection({
               </div>
 
                            {/* BOTTOM SAVE BUTTON — always on desktop, mobile only when there are unsaved changes */}
-              <div className={`${isDirty || saving ? 'flex' : 'hidden md:flex'} justify-end sticky bottom-3 z-10 md:static`}>
+              <div className={`${isDirty || saving ? 'flex' : 'hidden'} md:hidden justify-end sticky bottom-3 z-10`}>
+
                 <button
                   onClick={handleManualSave}
                   disabled={!hasProject || saving || hasIncompleteItems}
