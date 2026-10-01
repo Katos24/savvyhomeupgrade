@@ -158,12 +158,12 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white mb-4">
               <Tag className="h-5 w-5" />
             </div>
-            <p className={`text-lg font-bold ${t.cardText}`}>Services</p>
-            <p className={`mt-1 text-xs leading-relaxed ${t.subText}`}>
-              Each service can have an estimate template, a deposit, custom questions, and a task checklist.
+            <p className={`text-lg font-bold ${t.cardText}`}>Services & Templates</p>
+            <p className={`mt-1.5 text-xs sm:text-sm leading-relaxed ${t.subText}`}>
+              Add the services you offer. Create reusable templates for estimates/quotes so you can price jobs instantly in 1-click.
             </p>
 
-            <div className="mt-4 flex-1">
+            <div className="mt-5 flex-1">
               <p className={`mb-2 text-[11px] font-bold uppercase tracking-wider ${t.subText}`}>
                 {templatesLoading
                   ? `${services.length} services`
@@ -200,8 +200,8 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
               )}
             </div>
 
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-blue-500">
-              Manage services <ArrowRight className="h-3.5 w-3.5" />
+            <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-500">
+              Add services & templates <ArrowRight className="h-4 w-4" />
             </span>
           </motion.button>
 
@@ -215,13 +215,13 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
               <FileText className="h-5 w-5" />
             </div>
             <p className={`text-lg font-bold ${t.cardText}`}>Booking Form</p>
-            <p className={`mt-1 text-xs leading-relaxed ${t.subText}`}>
-              The form customers fill out at your booking link. Turn fields on or off, share your link, and test it.
+            <p className={`mt-1.5 text-xs sm:text-sm leading-relaxed ${t.subText}`}>
+              Update and test your live booking form. Toggle fields on or off, grab your booking link, and see exactly what customers see.
             </p>
 
-            <div className="mt-4 flex-1">
+            <div className="mt-5 flex-1">
               <p className={`mb-2 text-[11px] font-bold uppercase tracking-wider ${t.subText}`}>
-                What customers see
+                Active customer fields
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {formFields.map((f) => (
@@ -233,13 +233,13 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
               </div>
               <p className={`mt-2 text-[11px] ${t.subText}`}>
                 {customQuestions.length > 0
-                  ? `+ ${customQuestions.length} custom question${customQuestions.length === 1 ? '' : 's'} (shown for the services they belong to)`
-                  : 'No custom questions yet — add them per service under Services.'}
+                  ? `+ ${customQuestions.length} custom question${customQuestions.length === 1 ? '' : 's'} (shown based on the service selected)`
+                  : 'No custom questions yet — add them per service in the Services tab.'}
               </p>
             </div>
 
-            <span className="mt-4 inline-flex items-center gap-1 text-xs font-bold text-emerald-500">
-              Edit form <ArrowRight className="h-3.5 w-3.5" />
+            <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-emerald-500">
+              Update & test form <ArrowRight className="h-4 w-4" />
             </span>
           </motion.button>
         </div>

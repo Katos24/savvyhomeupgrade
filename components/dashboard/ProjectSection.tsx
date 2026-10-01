@@ -10,7 +10,9 @@ import RemindersSection from './project-sections/RemindersSection';
 import ExpensesSection from './project-sections/ExpensesSection';
 
 type ProjectSectionProps = {
-  lead: any;
+    lead: any;
+  onDirtyChange?: (dirty: boolean) => void;
+  onRegisterSave?: (fn: (() => Promise<boolean>) | null) => void;
   currentUser: any;
   onRefresh: () => Promise<void>;
   statusOptions: any[];
@@ -26,6 +28,8 @@ type ProjectSectionProps = {
 
 export default function ProjectSection({
   lead,
+  onDirtyChange,
+  onRegisterSave,
   company,
   currentUser,
   onRefresh,
@@ -266,7 +270,9 @@ export default function ProjectSection({
           )}
 
                    {financialsTab === 'quote' && (
-            <QuoteSection
+                        <QuoteSection
+              onDirtyChange={onDirtyChange}
+              onRegisterSave={onRegisterSave}
               lead={lead}
               company={company}
               currentUser={currentUser}

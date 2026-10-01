@@ -1,12 +1,14 @@
 'use client';
 
+import { useEffect } from 'react';
 import { Inbox, Download, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CardsView from '@/components/dashboard/views/CardsView';
 import TableView from '@/components/dashboard/views/TableView';
+import BoardView from '@/components/dashboard/views/BoardView';
 import { can, type PlanTier } from '@/lib/permissions';
 
-type ViewMode = 'cards' | 'table';
+type ViewMode = 'cards' | 'table' | 'board';
 
 type DashboardLeadsSectionProps = {
   filteredLeads: any[];
@@ -33,9 +35,10 @@ type DashboardLeadsSectionProps = {
   onLoadMore: () => void;
   sortKey: string | null;
   sortDir: 'asc' | 'desc';
-  onSortChange: (key: string) => void;
+   onSortChange: (key: string) => void;
+  onMoveLead?: (lead: any, newStatus: string) => void;
 };
- 
+
 function getContrastTextColor(input: string): string {
   let c = input.trim().replace('#', '');
   if (c.length === 3) {
@@ -76,9 +79,21 @@ export default function DashboardLeadsSection({
   onLoadMore,
   sortKey,
   sortDir,
-  onSortChange,
+    onSortChange,
+  onMoveLead,
 }: DashboardLeadsSectionProps) {
   const buttonTextColor = getContrastTextColor(accentColor);
+
+  // The board needs every job for correct column counts and totals,
+  // so it pulls in the remaining pages one after another.
+  useEffect(() => {
+    if (
+      currentView === 'board' &&
+      window.matchMedia('(min-width: 768px)').matches &&
+      pagination.page < pagination.pages
+    ) onLoadMore();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentView, pagination.page, pagination.pages]);
 
   return (
     <>
@@ -156,9 +171,19 @@ export default function DashboardLeadsSection({
               )}
             </div>
           </div>
-        ) : currentView === 'cards' ? (
-          /* Cards View */
-          <div className="space-y-8 sm:space-y-12">
+                ) : currentView === 'cards' || currentView === 'board' ? (
+          <>
+          {currentView === 'board' && (
+            <BoardView
+              leads={filteredLeads}
+              onSelectLead={onSelectLead}
+              statusOptions={statusOptions}
+              isDark={isDark}
+              onMoveLead={onMoveLead}
+            />
+          )}
+          {/* Cards View — also the mobile fallback for Board */}
+          <div className={`space-y-8 sm:space-y-12 ${currentView === 'board' ? 'md:hidden' : ''}`}>
             {groups.map(
               ({ title, leads }) =>
                 leads.length > 0 && (
@@ -195,9 +220,10 @@ export default function DashboardLeadsSection({
                       />
                     </div>
                   </section>
-                )
+                            )
             )}
           </div>
+          </>
         ) : (
           /* Table View */
           <div key={`table-${refreshKey}`} className="animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -261,8 +287,8 @@ export default function DashboardLeadsSection({
       </section>
 
       {/* Refined Load More Section */}
-      {pagination.page < pagination.pages && (
-        <div className="flex flex-col items-center pt-12 pb-10 gap-3 relative">
+      {currentView !== 'board' && pagination.page < pagination.pages && (
+<div className="flex flex-col items-center pt-12 pb-10 gap-3 relative">
           <div className={`absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent to-transparent ${
             isDark ? 'via-slate-700/50' : 'via-slate-300/60'
           }`} />

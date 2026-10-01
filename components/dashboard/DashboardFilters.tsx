@@ -3,12 +3,12 @@
 import { useState, useRef } from 'react';
 import {
   Search, X, Filter, ChevronDown, LayoutGrid, List,
-  Calendar, Lock, Sun, Moon, Clock, DollarSign, Loader2, User, Tag
+  Calendar, Lock, Sun, Moon, Clock, DollarSign, Loader2, User, Tag, Columns3, 
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
 type StatusOption = { value: string; label: string; color: string; emoji?: string };
-type ViewMode = 'cards' | 'table';
+type ViewMode = 'cards' | 'table' | 'board';
 type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
 
 type DashboardFiltersProps = {
@@ -165,7 +165,8 @@ export default function DashboardFilters({
         >
           {[
             { id: 'cards', icon: LayoutGrid, label: 'Cards', feature: null },
-            { id: 'table', icon: List, label: 'Table', feature: 'table_view' },
+                        { id: 'table', icon: List, label: 'Table', feature: 'table_view' },
+            { id: 'board', icon: Columns3, label: 'Board', feature: null, desktopOnly: true },
           ].map((v) => {
             const locked = v.feature && !can(planTier, v.feature as any);
             const active = currentView === v.id;
@@ -178,7 +179,7 @@ export default function DashboardFilters({
                     ? { backgroundColor: safeAccent, color: buttonTextColor }
                     : undefined
                 }
-                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold transition-all relative cursor-pointer ${
+                className={`${v.desktopOnly ? 'hidden md:flex' : 'flex'} items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl text-xs font-bold transition-all relative cursor-pointer ${
                   active
                     ? ''
                     : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'

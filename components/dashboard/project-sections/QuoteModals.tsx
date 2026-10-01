@@ -150,8 +150,8 @@ export default function QuoteModals({
   // Reset to a clean state each time the browser opens, since this
   // component never unmounts — only the modal's visibility toggles.
   useEffect(() => {
-    if (showTemplateBrowser) {
-      setBrowserMode('templates');
+       if (showTemplateBrowser) {
+      setBrowserMode(quoteData.length > 0 ? 'items' : 'templates');
       setItemSearchQuery('');
       setAddedItems(new Map());
     }
@@ -441,6 +441,14 @@ export default function QuoteModals({
                   line items pulled from every template */}
               <div className="px-4 pt-3 shrink-0">
                 <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
+                                 <button
+                    onClick={() => setBrowserMode('items')}
+                    className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
+                      browserMode === 'items' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    Line Items
+                  </button>
                   <button
                     onClick={() => setBrowserMode('templates')}
                     className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
@@ -448,14 +456,6 @@ export default function QuoteModals({
                     }`}
                   >
                     Templates
-                  </button>
-                  <button
-                    onClick={() => setBrowserMode('items')}
-                    className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
-                      browserMode === 'items' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Search Line Items
                   </button>
                 </div>
               </div>

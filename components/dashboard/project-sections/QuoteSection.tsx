@@ -30,9 +30,9 @@ type QuoteSectionProps = {
   onRefresh: () => Promise<void>;
   hasProject: boolean;
   companySlug: string;
-  onDirtyChange?: (dirty: boolean) => void;
+   onDirtyChange?: (dirty: boolean) => void;
+  onRegisterSave?: (fn: (() => Promise<boolean>) | null) => void;
 };
-
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
@@ -51,7 +51,8 @@ export default function QuoteSection({
   onRefresh,
   hasProject,
   companySlug,
-  onDirtyChange,
+    onDirtyChange,
+  onRegisterSave,
 }: QuoteSectionProps) {
   const [saving, setSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -215,12 +216,15 @@ export default function QuoteSection({
       if (res.ok && result?.success !== false) {
         toast.success('Quote saved successfully');
         await onRefresh();
-        setIsDirty(false);
+                setIsDirty(false);
+        return true;
       } else {
         toast.error(result?.error || 'Failed to save quote');
+        return false;
       }
     } catch {
       toast.error('Failed to save quote');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -427,8 +431,19 @@ export default function QuoteSection({
     [quoteData]
   );
 
-  const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;
-  const depositValue = parseFloat(lead?.deposit_value || '0');
+  useEffect(() => {
+    onRegisterSave?.(async () => {
+      if (hasIncompleteItems) {
+        toast.error('Add a description and price to every item before saving.');
+        return false;
+      }
+      return doSave(quoteData, taxRate);
+    });
+    return () => onRegisterSave?.(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quoteData, taxRate, hasIncompleteItems]);
+
+  const depositType = (lead?.deposit_type || null) as 'percent' | 'fixed' | null;  const depositValue = parseFloat(lead?.deposit_value || '0');
   const depositAmount = getDepositAmount({ total, depositType, depositValue });
 
   const quoteAccepted = !!(lead?.project_quote_accepted_at || lead?.quote_accepted_at);

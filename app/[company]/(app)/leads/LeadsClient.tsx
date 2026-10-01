@@ -6,7 +6,7 @@ import {
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import LeadModal from '@/components/dashboard/LeadModal';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
 import { type PlanTier } from '@/lib/permissions';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
@@ -22,6 +22,7 @@ import PaymentToastPoller from '@/components/dashboard/PaymentToastPoller';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+import CompletionSummaryModal from '@/components/dashboard/CompletionSummaryModal';
 
 
 // ---------------------------------------------------------------------------
@@ -53,7 +54,7 @@ type Company = {
   subscription_cancel_at?: string | null;
 };
 
-type ViewMode = 'cards' | 'table';
+type ViewMode = 'cards' | 'table' | 'board';
 type TimeFilter = 'today' | 'week' | 'month' | 'all' | 'scheduled_today';
 
 // ---------------------------------------------------------------------------
@@ -326,7 +327,31 @@ export default function LeadsClient({
       }
       return false;
     } catch (e) { console.error('updateLeadStatus:', e); return false; }
-  }, [selectedLead, currentUser]);
+   }, [selectedLead, currentUser]);
+
+  // ── Board drag-and-drop ──
+  // Completed goes through the same summary pop-up as the lead modal.
+  const [pendingComplete, setPendingComplete] = useState<any | null>(null);
+
+  const handleMoveLead = useCallback(async (lead: any, newStatus: string) => {
+    if (newStatus === 'completed') {
+      setPendingComplete(lead);
+      return;
+    }
+      const ok = await updateLeadStatus(lead.id, newStatus, lead.status);
+    if (!ok) {
+      toast.error('Could not move the job');
+      setAllLeads((prev) => [...prev]); // snaps the card back
+      return;
+    }
+    const label = statusOptions.find((s: any) => s.value === newStatus)?.label || newStatus;
+    toast.success(`${lead.name} moved to ${label}`, {
+      action: {
+        label: 'Undo',
+        onClick: () => { updateLeadStatus(lead.id, lead.status, newStatus); },
+      },
+    });
+  }, [updateLeadStatus, statusOptions]);
 
   const addNote = useCallback(async (id: number, noteText: string) => {
     try {
@@ -706,9 +731,29 @@ export default function LeadsClient({
           accentColor={accentColor}
           sortKey={sortKey}
           sortDir={sortDir}
-          onSortChange={handleSortChange}
+                   onSortChange={handleSortChange}
+          onMoveLead={handleMoveLead}
         />
       </main>
+
+      {pendingComplete && (
+        <CompletionSummaryModal
+          lead={pendingComplete}
+          onConfirm={async (sendReview) => {
+            const lead = pendingComplete;
+            setPendingComplete(null);
+            const ok = await updateLeadStatus(lead.id, 'completed', lead.status, sendReview);
+            if (!ok) {
+              toast.error('Could not mark the job complete');
+              setAllLeads((prev) => [...prev]);
+            }
+          }}
+          onCancel={() => {
+            setPendingComplete(null);
+            setAllLeads((prev) => [...prev]); // snaps the card back out of Completed
+          }}
+        />
+      )}
 
       {/* Modals & Components */}
       {selectedLead && (

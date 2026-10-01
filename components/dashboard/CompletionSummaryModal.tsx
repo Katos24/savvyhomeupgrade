@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, XCircle, AlertTriangle, X, CheckCheck, Star } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Check, X, Star, AlertTriangle } from 'lucide-react';
 
 type CompletionSummaryModalProps = {
   lead: any;
@@ -10,293 +10,248 @@ type CompletionSummaryModalProps = {
   onCancel: () => void;
 };
 
-type CheckItem = {
-  label: string;
-  passed: boolean;
-  warning?: boolean;
-  badge?: string;
+type CheckItem = { label: string; done: boolean; detail?: string };
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+// Parses a JSON array field that may arrive as a string, an array, or not at all.
+// Returns null when the field isn't present on this lead object (e.g. opened
+// from the board, where the list data doesn't carry photos/tasks) so we skip
+// the check instead of wrongly calling it "missing".
+const parseList = (val: any): any[] | null => {
+  if (val === undefined) return null;
+  if (val === null) return [];
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 };
 
 export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: CompletionSummaryModalProps) {
-  /* On by default — asking for a review is the right move on most jobs, and
-     a contractor closing five on a Friday shouldn't have to opt in five
-     times. The opt-out exists because the app can't know when a job ended
-     badly, and a public review request after a dispute makes it worse. */
+  // On by default — most finished jobs should get a review ask. The toggle
+  // exists because the app can't know when a job ended badly.
   const [sendReview, setSendReview] = useState(true);
-  const alreadySent = !!lead?.review_request_sent_at;
 
-  const beforePhotos = lead?.before_photos
-    ? (typeof lead.before_photos === 'string' ? JSON.parse(lead.before_photos) : lead.before_photos)
-    : [];
-  const afterPhotos = lead?.after_photos
-    ? (typeof lead.after_photos === 'string' ? JSON.parse(lead.after_photos) : lead.after_photos)
-    : [];
-  const documents = lead?.documents
-    ? (typeof lead.documents === 'string' ? JSON.parse(lead.documents) : lead.documents)
-    : [];
-  const receipts = documents.filter((d: any) => d.type === 'receipt');
-  const quoteData = lead?.quote_data || [];
-  const tasks = Array.isArray(lead?.tasks) ? lead.tasks : [];
-  const incompleteTasks = tasks.filter((t: any) => !t.completed);
+  const firstName = lead?.name?.split(' ')[0] || 'the customer';
+  const hasEmail = !!lead?.email;
+  const reviewSentAt = lead?.review_request_sent_at;
+  const canAskReview = hasEmail && !reviewSentAt;
+
+  // ── Money ──
+  const total = parseFloat(lead?.quote_total || '0') || 0;
+  const paid = parseFloat(lead?.payment_amount || '0') || 0;
+  const balance = Math.max(Math.round((total - paid) * 100) / 100, 0);
+  const paidInFull = total > 0 && balance <= 0;
+
+  // ── Checklist (only items we actually have data for) ──
+  const quoteItems = parseList(lead?.quote_data);
+  const afterPhotos = parseList(lead?.after_photos);
+  const documents = parseList(lead?.documents);
+  const tasks = parseList(lead?.tasks);
+  const receipts = documents ? documents.filter((d: any) => d?.type === 'receipt') : null;
+  const openTasks = tasks ? tasks.filter((t: any) => !t?.completed) : null;
 
   const checks: CheckItem[] = [
-    {
-      label: 'Scheduled date set',
-      passed: !!lead?.scheduled_date,
-      warning: true,
-      badge: lead?.scheduled_date ? 'Done' : 'Missing',
-    },
-    {
-      label: quoteData.length > 0
-        ? `Quote created — ${quoteData.length} line item${quoteData.length !== 1 ? 's' : ''}`
-        : 'Quote created',
-      passed: quoteData.length > 0,
-      warning: true,
-      badge: quoteData.length > 0 ? 'Done' : 'Missing',
-    },
-    {
-      label: lead?.payment_amount
-        ? `Payment recorded — $${parseFloat(lead.payment_amount).toLocaleString()}`
-        : 'Payment recorded',
-      passed: !!lead?.payment_amount,
-      warning: false,
-      badge: lead?.payment_amount ? 'Done' : 'Missing',
-    },
-    {
-      label: afterPhotos.length > 0
-        ? `After photos — ${afterPhotos.length} photo${afterPhotos.length !== 1 ? 's' : ''}`
-        : 'After photos uploaded',
-      passed: afterPhotos.length > 0,
-      warning: true,
-      badge: afterPhotos.length > 0 ? 'Done' : 'Missing',
-    },
-    {
-      label: receipts.length > 0
-        ? `Receipts attached — ${receipts.length} file${receipts.length !== 1 ? 's' : ''}`
-        : 'Receipts attached',
-      passed: receipts.length > 0,
-      warning: true,
-      badge: receipts.length > 0 ? 'Done' : 'Missing',
-    },
-    {
-      label: lead?.project_internal_notes ? 'Internal notes added' : 'Internal notes added',
-      passed: !!lead?.project_internal_notes,
-      warning: true,
-      badge: lead?.project_internal_notes ? 'Done' : 'Missing',
-    },
-    ...(incompleteTasks.length > 0
+    { label: 'Scheduled', done: !!lead?.scheduled_date },
+    ...(quoteItems
       ? [{
-          label: `${incompleteTasks.length} task${incompleteTasks.length !== 1 ? 's' : ''} still open`,
-          passed: false,
-          warning: false,
-          badge: 'Open',
+          label: 'Quote',
+          done: quoteItems.length > 0,
+          detail: quoteItems.length > 0 ? `${quoteItems.length} item${quoteItems.length === 1 ? '' : 's'}` : undefined,
+        }]
+      : []),
+    ...(total > 0 ? [{ label: 'Paid in full', done: paidInFull }] : []),
+    ...(afterPhotos
+      ? [{
+          label: 'After photos',
+          done: afterPhotos.length > 0,
+          detail: afterPhotos.length > 0 ? `${afterPhotos.length}` : undefined,
+        }]
+      : []),
+    ...(receipts
+      ? [{
+          label: 'Receipts',
+          done: receipts.length > 0,
+          detail: receipts.length > 0 ? `${receipts.length}` : undefined,
+        }]
+      : []),
+    ...(openTasks && tasks && tasks.length > 0
+      ? [{
+          label: 'Tasks',
+          done: openTasks.length === 0,
+          detail: openTasks.length > 0 ? `${openTasks.length} open` : 'All done',
         }]
       : []),
   ];
 
-  const criticalMissing = checks.filter(c => !c.passed && !c.warning);
-  const warningMissing = checks.filter(c => !c.passed && c.warning);
-  const allPassed = checks.every(c => c.passed);
-  const passedCount = checks.filter(c => c.passed).length;
-  const progressPct = Math.round((passedCount / checks.length) * 100);
-
-  const hasReceiptWarning = warningMissing.some(c => c.label.includes('Receipt'));
+  const missingCount = checks.filter((c) => !c.done).length;
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center z-[70] p-0 sm:p-4"
+      className="fixed inset-0 z-[700] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4"
       onClick={onCancel}
     >
       <motion.div
-        initial={{ y: '100%', opacity: 0 }}
+        initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
-        transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-        className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
-        onClick={e => e.stopPropagation()}
+        exit={{ y: 40, opacity: 0 }}
+        transition={{ type: 'spring', damping: 32, stiffness: 340 }}
+        className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Drag handle */}
-        <div className="flex justify-center pt-3 pb-1 sm:hidden">
+        <div className="flex justify-center pt-3 sm:hidden">
           <div className="w-9 h-1 rounded-full bg-slate-200" />
         </div>
 
         {/* Header */}
-        <div className="px-5 pt-4 pb-5">
-
-          {/* Progress */}
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              {passedCount} of {checks.length} complete
-            </span>
-            <span className="text-xs font-bold text-slate-400">{progressPct}%</span>
+        <div className="flex items-start justify-between gap-3 px-5 pt-4 sm:pt-5">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Complete job</p>
+            <h3 className="mt-0.5 text-lg font-bold text-slate-900 truncate">{lead?.name || 'This job'}</h3>
+            {lead?.category && (
+              <p className="text-xs text-slate-500 capitalize">{String(lead.category).replace(/_/g, ' ')}</p>
+            )}
           </div>
-          <div className="h-1 w-full bg-slate-100 rounded-full overflow-hidden mb-5">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPct}%` }}
-              transition={{ duration: 0.5, ease: 'easeOut', delay: 0.15 }}
-              className={`h-full rounded-full ${allPassed ? 'bg-emerald-500' : progressPct > 50 ? 'bg-blue-500' : 'bg-amber-400'}`}
-            />
-          </div>
+          <button
+            onClick={onCancel}
+            className="p-1.5 -mr-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-          {/* Title */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                allPassed ? 'bg-emerald-100' : criticalMissing.length > 0 ? 'bg-slate-100' : 'bg-amber-100'
-              }`}>
-                {allPassed
-                  ? <CheckCheck className="w-4 h-4 text-emerald-600" strokeWidth={2.5} />
-                  : <AlertTriangle className={`w-4 h-4 ${criticalMissing.length > 0 ? 'text-slate-600' : 'text-amber-500'}`} strokeWidth={2.5} />
-                }
+        <div className="px-5 pt-4 pb-2 space-y-4">
+          {/* Money */}
+          {total > 0 && (
+            <div className="grid grid-cols-3 rounded-xl border border-slate-200 divide-x divide-slate-200">
+              <div className="px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total</p>
+                <p className="text-sm font-bold text-slate-900 tabular-nums">{fmt(total)}</p>
               </div>
-              <div>
-                <p className="text-sm font-black text-slate-900 tracking-tight">
-                  {allPassed ? 'Ready to complete' : 'Review before closing'}
-                </p>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">
-                  {allPassed
-                    ? 'Everything looks good'
-                    : `${warningMissing.length + criticalMissing.length} item${warningMissing.length + criticalMissing.length !== 1 ? 's' : ''} need attention`
-                  }
+              <div className="px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Collected</p>
+                <p className="text-sm font-bold text-emerald-600 tabular-nums">{fmt(paid)}</p>
+              </div>
+              <div className="px-3 py-2.5">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Balance</p>
+                <p className={`text-sm font-bold tabular-nums ${balance > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
+                  {fmt(balance)}
                 </p>
               </div>
             </div>
-            <button
-              onClick={onCancel}
-              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Divider */}
-        <div className="h-px bg-slate-100 mx-5" />
-
-        {/* Checklist */}
-        <div className="px-5 py-4 space-y-2 max-h-64 overflow-y-auto">
-          {checks.map((item, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -4 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.03 }}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl ${
-                item.passed
-                  ? 'bg-slate-50'
-                  : item.warning
-                  ? 'bg-amber-50'
-                  : 'bg-red-50'
-              }`}
-            >
-              {item.passed ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" strokeWidth={2.5} />
-              ) : item.warning ? (
-                <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" strokeWidth={2.5} />
-              ) : (
-                <XCircle className="w-4 h-4 text-red-500 shrink-0" strokeWidth={2.5} />
-              )}
-              <span className={`text-xs font-semibold flex-1 ${
-                item.passed ? 'text-slate-600' : item.warning ? 'text-amber-700' : 'text-red-700'
-              }`}>
-                {item.label}
-              </span>
-              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${
-                item.passed
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : item.warning
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-red-100 text-red-700'
-              }`}>
-                {item.badge}
-              </span>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Callout */}
-        <AnimatePresence>
-          {(criticalMissing.length > 0 || warningMissing.length > 0) && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden px-5"
-            >
-              <div className={`px-4 py-3 rounded-xl text-xs font-bold mb-3 ${
-                criticalMissing.length > 0
-                  ? 'bg-red-50 text-red-700 border border-red-100'
-                  : 'bg-amber-50 text-amber-700 border border-amber-100'
-              }`}>
-                {hasReceiptWarning
-                  ? 'Receipts missing — your bookkeeper may need these at month end'
-                  : criticalMissing.length > 0
-                  ? `${criticalMissing.length} required item${criticalMissing.length !== 1 ? 's' : ''} missing — recommended to fill in before completing`
-                  : `${warningMissing.length} optional item${warningMissing.length !== 1 ? 's' : ''} incomplete — not required but keeps records clean`
-                }
-              </div>
-            </motion.div>
           )}
-        </AnimatePresence>
 
-        {/* Review request */}
-        {!alreadySent && lead?.customer_email !== null && (
-          <div className="px-5 pb-1">
-            <button
-              onClick={() => setSendReview(v => !v)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition ${
-                sendReview
-                  ? 'bg-emerald-50 border-emerald-200'
-                  : 'bg-slate-50 border-slate-200'
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition ${
-                  sendReview ? 'bg-emerald-600' : 'bg-white border border-slate-300'
-                }`}
+          {balance > 0 && (
+            <div className="flex items-start gap-2 rounded-xl bg-amber-50 border border-amber-100 px-3 py-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-px" />
+              <p className="text-xs text-amber-800 leading-relaxed">
+                {fmt(balance)} is still owed. You can still collect it after the job is marked complete.
+              </p>
+            </div>
+          )}
+
+          {/* Checklist */}
+          {checks.length > 0 && (
+            <div>
+              <p className="mb-2 text-xs font-semibold text-slate-500">
+                {missingCount === 0 ? 'Everything is in place' : `${missingCount} thing${missingCount === 1 ? '' : 's'} not done — fine to complete anyway`}
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {checks.map((c) => (
+                  <div
+                    key={c.label}
+                    className={`flex items-center gap-2 rounded-lg px-2.5 py-2 ${c.done ? 'bg-slate-50' : 'bg-white border border-dashed border-slate-200'}`}
+                  >
+                    <span
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
+                        c.done ? 'bg-emerald-500 text-white' : 'border border-slate-300'
+                      }`}
+                    >
+                      {c.done && <Check className="w-2.5 h-2.5" strokeWidth={3.5} />}
+                    </span>
+                    <span className={`text-xs font-medium truncate ${c.done ? 'text-slate-700' : 'text-slate-400'}`}>
+                      {c.label}
+                    </span>
+                    {c.detail && <span className="ml-auto text-[11px] text-slate-400 shrink-0">{c.detail}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Review request */}
+          <div className="rounded-xl border border-slate-200 px-3.5 py-3">
+            {canAskReview ? (
+              <button
+                type="button"
+                onClick={() => setSendReview((v) => !v)}
+                className="w-full flex items-center gap-3 text-left"
+                role="switch"
+                aria-checked={sendReview}
               >
-                {sendReview && <CheckCircle2 className="w-3.5 h-3.5 text-white" strokeWidth={3} />}
-              </div>
-              <div className="flex-1 text-left">
-                <p className={`text-xs font-bold ${sendReview ? 'text-emerald-800' : 'text-slate-500'}`}>
-                  Ask {lead?.name?.split(' ')[0] || 'them'} for a Google review
+                <Star
+                  className={`w-4 h-4 shrink-0 ${sendReview ? 'text-amber-400' : 'text-slate-300'}`}
+                  fill={sendReview ? 'currentColor' : 'none'}
+                />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-slate-900">Ask {firstName} for a Google review</p>
+                  <p className="text-[11px] text-slate-500">
+                    {sendReview ? 'Email goes out when you complete the job' : 'No review email will be sent'}
+                  </p>
+                </div>
+                <span
+                  className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
+                    sendReview ? 'bg-emerald-500' : 'bg-slate-200'
+                  }`}
+                >
+                  <span
+                    className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-all ${
+                      sendReview ? 'left-[18px]' : 'left-0.5'
+                    }`}
+                  />
+                </span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Star className="w-4 h-4 shrink-0 text-slate-300" />
+                <p className="text-xs text-slate-500">
+                  {reviewSentAt
+                    ? `Review request already sent ${new Date(reviewSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                    : `No email on file for ${firstName}, so no review request`}
                 </p>
-                <p className={`text-[11px] font-medium mt-0.5 ${sendReview ? 'text-emerald-600' : 'text-slate-400'}`}>
-                  {sendReview ? 'Sends right after you complete this' : 'No review request will be sent'}
-                </p>
               </div>
-              <Star
-                className={`w-4 h-4 shrink-0 ${sendReview ? 'text-emerald-500' : 'text-slate-300'}`}
-                fill={sendReview ? 'currentColor' : 'none'}
-              />
-            </button>
+            )}
           </div>
-        )}
+        </div>
 
         {/* Actions */}
         <div
-          className="px-5 pb-6 pt-2 grid grid-cols-2 gap-3"
-          style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}
+          className="grid grid-cols-2 gap-2.5 px-5 pt-3"
+          style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
         >
           <button
             onClick={onCancel}
-            className="py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-[0.97]"
+            className="py-3 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition active:scale-[0.98]"
           >
-            Go Back
+            Cancel
           </button>
-         <button
-            onClick={() => onConfirm(sendReview && !alreadySent)}
-            className={`py-3.5 text-white font-black text-xs uppercase tracking-widest rounded-2xl transition active:scale-[0.97] ${
-              allPassed
-                ? 'bg-emerald-600 hover:bg-emerald-500'
-                : 'bg-slate-900 hover:bg-slate-800'
-            }`}
+          <button
+            onClick={() => onConfirm(canAskReview && sendReview)}
+            className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-sm font-semibold text-white transition active:scale-[0.98] inline-flex items-center justify-center gap-1.5"
           >
-            {allPassed ? 'Complete Project' : 'Complete Anyway'}
+            <Check className="w-4 h-4" strokeWidth={3} />
+            Mark complete
           </button>
         </div>
       </motion.div>

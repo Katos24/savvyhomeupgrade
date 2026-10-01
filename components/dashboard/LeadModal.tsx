@@ -73,8 +73,29 @@ export default function LeadModal({
   const [relatedLeads, setRelatedLeads] = useState<any[]>([]);
   const [quoteTemplates, setQuoteTemplates] = useState<any[]>([]);
 
+  const [quoteDirty, setQuoteDirty] = useState(false);
+  const [pendingTab, setPendingTab] = useState<TopTab | null>(null);
+  const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
+  const quoteSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const registerQuoteSave = (fn: (() => Promise<boolean>) | null) => { quoteSaveRef.current = fn; };
+
+    const requestTabChange = (tab: TopTab) => {
+    if (tab === activeTab) return;
+    if (activeTab === 'quote' && quoteDirty) {
+      setPendingTab(tab);
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const leaveQuote = (tab: TopTab) => {
+    setQuoteDirty(false);
+    setPendingTab(null);
+    setActiveTab(tab);
+  };
+
   const planTier = (company?.plan_tier || 'free') as PlanTier;
-  const isProject = !!lead.project_id;
+    const isProject = !!lead.project_id;
   const userRole = currentUser?.role || 'member';
   const canDelete = canDeleteLead(userRole);
 
@@ -221,8 +242,10 @@ export default function LeadModal({
         companySlug={companySlug}
         defaultTab={activeTab}
         teamMembers={teamMembers}
-        payments={payments}
+                payments={payments}
         activity={activity}
+        onDirtyChange={setQuoteDirty}
+        onRegisterSave={registerQuoteSave}
       />
     );
   };
@@ -352,8 +375,8 @@ export default function LeadModal({
             lead={lead}
             company={company}
             activeTab={activeTab}
-            onTabChange={(tab) => setActiveTab(tab as TopTab)}
-            onLockedTab={setLockedFeatureModal}
+            onTabChange={(tab) => requestTabChange(tab as TopTab)}
+                        onLockedTab={setLockedFeatureModal}
           />
 
           <div ref={contentPaneRef} className="flex-1 overflow-y-auto overscroll-contain bg-gray-50">
@@ -412,8 +435,8 @@ className="p-3 sm:p-7 space-y-6"
             lead={lead}
             company={company}
             activeTab={activeTab}
-            onTabChange={(tab) => setActiveTab(tab as TopTab)}
-            onLockedTab={setLockedFeatureModal}
+            onTabChange={(tab) => requestTabChange(tab as TopTab)}
+                        onLockedTab={setLockedFeatureModal}
           />
         </div>
       </motion.div>
@@ -468,6 +491,57 @@ className="p-3 sm:p-7 space-y-6"
                     </div>
                   </motion.div>
                 ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+           {/* ── UNSAVED QUOTE PROMPT ── */}
+      <AnimatePresence>
+        {pendingTab && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[700] flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+            onClick={(e) => { e.stopPropagation(); if (!savingBeforeLeave) setPendingTab(null); }}
+          >
+            <motion.div
+              initial={{ scale: 0.96, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 12 }}
+              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-base font-bold text-slate-900 mb-1">Save your quote changes?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-5">
+                You changed this quote but haven&rsquo;t saved it yet.
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  disabled={savingBeforeLeave}
+                  onClick={async () => {
+                    setSavingBeforeLeave(true);
+                    const ok = (await quoteSaveRef.current?.()) ?? false;
+                    setSavingBeforeLeave(false);
+                    if (ok) leaveQuote(pendingTab);
+                    else setPendingTab(null);
+                  }}
+                  className="w-full py-3 bg-slate-900 text-white rounded-xl font-semibold text-sm disabled:opacity-50"
+                >
+                  {savingBeforeLeave ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  disabled={savingBeforeLeave}
+                  onClick={() => leaveQuote(pendingTab)}
+                  className="w-full py-3 bg-white border border-slate-200 text-rose-600 rounded-xl font-semibold text-sm disabled:opacity-50"
+                >
+                  Discard changes
+                </button>
+                <button
+                  disabled={savingBeforeLeave}
+                  onClick={() => setPendingTab(null)}
+                  className="w-full py-2 text-xs font-semibold text-slate-400"
+                >
+                  Keep editing
+                </button>
               </div>
             </motion.div>
           </motion.div>
