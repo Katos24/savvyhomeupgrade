@@ -812,51 +812,73 @@ export default function BillingSection({
         {/* LEFT COLUMN: Summary Bar & Phase Cards (2 cols) */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
 
-          {/* Summary Bar Card */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 grid grid-cols-3 divide-x divide-slate-200 text-slate-900 shadow-2xs">
-            <div className="pr-2 sm:pr-4 space-y-0.5 text-center sm:text-left min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Total
-              </span>
-              <div className="text-sm sm:text-xl font-bold text-slate-900 truncate">{fmt(total)}</div>
-              {invoiceTaxRate > 0 && (
-                <span className="text-[10px] text-slate-400 hidden sm:block">
-                  Incl. {invoiceTaxRate}% tax
-                </span>
-              )}
-            </div>
-            <div className="px-2 sm:px-4 space-y-0.5 text-center sm:text-left min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Collected
-              </span>
-              <div className="text-sm sm:text-xl font-bold text-slate-700 truncate">{fmt(paidAmount)}</div>
-            </div>
-            <div className="pl-2 sm:pl-4 space-y-0.5 text-center sm:text-left min-w-0">
-              <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                Remaining
-              </span>
-              <div
-                className={`text-sm sm:text-xl font-bold truncate ${
-                  remaining > 0 ? 'text-amber-600' : 'text-emerald-600'
-                }`}
-              >
-                {fmt(remaining)}
+                   {/* Summary — one number that matters now, changes with payment state */}
+                    {/* Progress strip — context only; the stage cards own the "due now" amount */}
+          {(() => {
+            const paidInFull = total > 0 && remaining <= 0;
+            const nothingPaid = paidAmount <= 0;
+            const pct = total > 0 ? Math.min(Math.max((paidAmount / total) * 100, 0), 100) : 0;
+            const taxNote = invoiceTaxRate > 0 ? `incl. ${invoiceTaxRate}% tax` : '';
+
+            if (total <= 0) {
+              return (
+                <p className="px-1 text-xs text-slate-400">
+                  No amount to collect yet. Add items on the Quote tab to set a total.
+                </p>
+              );
+            }
+
+            if (paidInFull) {
+              return (
+                              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-base font-bold text-emerald-700">✓ Paid in full</p>
+                    <p className="text-xs text-emerald-700/80 mt-0.5 tabular-nums">
+                      {fmt(paidAmount)} collected{taxNote ? ` · ${taxNote}` : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDownload('balance')}
+                    disabled={downloading}
+                    className="shrink-0 px-3 py-2 sm:py-1.5 bg-white border border-emerald-200 hover:bg-emerald-100/60 text-emerald-800 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Invoice PDF
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div className="px-1">
+                <div className="flex items-baseline justify-between gap-3 text-xs">
+                  <p className="text-slate-600 tabular-nums">
+                    <span className="font-semibold text-slate-900">{fmt(paidAmount)}</span> of {fmt(total)} collected
+                    {taxNote && <span className="text-slate-400"> · {taxNote}</span>}
+                  </p>
+                  <span className={`font-semibold shrink-0 ${nothingPaid ? 'text-slate-400' : 'text-emerald-600'}`}>
+                    {nothingPaid ? 'Not paid yet' : `${Math.round(pct)}% paid`}
+                  </span>
+                </div>
+                <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200/70 overflow-hidden">
+                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* STAGE 1: DEPOSIT CARD */}
           {hasDepositTerms && (
             <div
               className={`rounded-xl border transition-all ${
                 depositPaid
-                  ? 'p-3 sm:p-4 bg-slate-50/50 border-slate-200'
-                  : 'p-4 sm:p-5 bg-white border-2 border-teal-600 shadow-xs'
+                  ? 'p-3 sm:p-4 bg-emerald-50/60 border-emerald-200'
+                                    : 'p-4 sm:p-5 bg-white border-2 border-teal-600 shadow-xs'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs sm:text-sm font-bold text-slate-900">
+                                  <span className={`text-xs sm:text-sm font-bold ${depositPaid ? 'text-slate-500' : 'text-slate-900'}`}>
                     1. Deposit ({depositType === 'percent' ? `${depositValue}%` : 'Fixed'})
                   </span>
 
@@ -893,7 +915,11 @@ export default function BillingSection({
               </div>
 
               <div className="mt-2.5">
-                <div className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                               <div
+                  className={`font-extrabold tabular-nums ${
+                    depositPaid ? 'text-lg sm:text-xl text-emerald-600' : 'text-xl sm:text-2xl text-slate-900'
+                  }`}
+                >
                   {fmt(depositAmount)}
                 </div>
                 {!depositPaid && depositCollected > 0 && (
@@ -903,8 +929,8 @@ export default function BillingSection({
                 )}
                 {depositPaid ? (
                   // Paid: collapse to a single line — due dates and sending no longer matter
-                  <div className="text-xs text-slate-500 mt-1">
-                    Paid {fmtTimestampDate(lead?.deposit_paid_at) || ''}
+                                    <div className="text-xs text-emerald-700 font-medium mt-1">
+                    ✓ Paid {fmtTimestampDate(lead?.deposit_paid_at) || ''}
                   </div>
                 ) : (
                   <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -974,15 +1000,15 @@ export default function BillingSection({
           {/* STAGE 2: REMAINING BALANCE CARD */}
           <div
             className={`rounded-xl p-4 sm:p-5 border transition-all ${
-              isPaid
-                ? 'bg-emerald-50/40 border-emerald-200'
+                           isPaid
+                ? 'bg-emerald-50/60 border-emerald-200'
                 : hasDepositTerms && !depositPaid
                 ? 'bg-slate-50/70 border-2 border-dashed border-slate-200 opacity-75'
                 : 'bg-white border-2 border-teal-600 shadow-xs'
             }`}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs sm:text-sm font-bold text-slate-900">
+                            <span className={`text-xs sm:text-sm font-bold ${isPaid ? 'text-slate-500' : 'text-slate-900'}`}>
                 {hasDepositTerms ? '2. Remaining Balance' : 'Invoice Balance'}
               </span>
               {isPaid ? (
@@ -1010,14 +1036,30 @@ export default function BillingSection({
 
             <div className="mt-2.5">
               <div
-                className={`text-xl sm:text-2xl font-extrabold ${
-                  hasDepositTerms && !depositPaid ? 'text-slate-400' : 'text-slate-900'
+                               className={`font-extrabold tabular-nums ${
+                  isPaid
+                    ? 'text-lg sm:text-xl text-emerald-600'
+                    : hasDepositTerms && !depositPaid
+                    ? 'text-xl sm:text-2xl text-slate-400'
+                    : 'text-xl sm:text-2xl text-slate-900'
                 }`}
               >
                 {fmt(balanceDisplay)}
               </div>
               <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-                {hasDepositTerms && !depositPaid ? (
+                                {isPaid ? (
+                  <span className="text-emerald-700 font-medium">
+                    ✓ Paid{' '}
+                    {(() => {
+                      const last = payments
+                        .filter((p: any) => p.kind !== 'refund' && parseFloat(p.amount) > 0 && p.paid_on)
+                        .map((p: any) => String(p.paid_on))
+                        .sort()
+                        .pop();
+                      return last ? fmtDate(last) : '';
+                    })()}
+                  </span>
+                ) : hasDepositTerms && !depositPaid ? (
                   <span>Unlocks automatically once deposit is paid.</span>
                 ) : (
                   <>
@@ -1039,6 +1081,7 @@ export default function BillingSection({
               </div>
             </div>
 
+                       {!isPaid && (
             <div className="mt-4 pt-3.5 border-t border-slate-100 flex flex-wrap items-center gap-2">
               {(!hasDepositTerms || depositPaid) && !isPaid && (
                 <>
@@ -1070,15 +1113,18 @@ export default function BillingSection({
                 </>
               )}
 
-              <button
-                onClick={() => handleDownload('balance')}
-                disabled={downloading}
-                className="w-full sm:w-auto px-3 py-2 sm:py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:ml-auto"
-              >
-                <Download className="w-3.5 h-3.5 text-slate-500" />
-                {hasDepositTerms ? 'Balance PDF' : 'Invoice PDF'}
-              </button>
+                         {!(total > 0 && remaining <= 0) && (
+                <button
+                  onClick={() => handleDownload('balance')}
+                  disabled={downloading}
+                  className="w-full sm:w-auto px-3 py-2 sm:py-1.5 border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 sm:ml-auto"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                                   {hasDepositTerms ? 'Balance PDF' : 'Invoice PDF'}
+                </button>
+              )}
             </div>
+            )}
           </div>
 
           {/* RECORDED PAYMENTS TABLE */}
