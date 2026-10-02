@@ -1,0 +1,115 @@
+'use client';
+
+import { motion } from 'framer-motion';
+import { Lock, Star, Landmark, CheckCircle2 } from 'lucide-react';
+import { Plus_Jakarta_Sans } from 'next/font/google';
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+});
+
+// Two call-outs side by side: card payments through Stripe, and Google review requests.
+// Brand names are shown as plain text on purpose (no third-party logos).
+export default function PaymentsReviewsSection() {
+  return (
+    <section
+      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-[#F4F7F6] text-slate-900 py-16 sm:py-24 px-4 sm:px-6 lg:px-8`}
+    >
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-5 sm:gap-6">
+        {/* ── Stripe payments ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.45 }}
+          className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
+        >
+          <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Payments by Stripe</p>
+          <h2 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight">
+            Customers pay by card. The money goes to your bank.
+          </h2>
+          <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+            Connect your own Stripe account once. Every deposit and invoice gets a secure pay link, and payouts go
+            straight to your bank account.
+          </p>
+
+          {/* Mock checkout */}
+          <div className="mt-6 rounded-xl border border-slate-200 bg-[#F8FAF9] p-4 sm:p-5">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-semibold text-slate-700">Summit Roofing</span>
+              <span className="inline-flex items-center gap-1">
+                <Lock className="w-3 h-3" /> Secure checkout
+              </span>
+            </div>
+            <p className="mt-3 text-[11px] text-slate-500">Deposit for Roof Repair</p>
+            <p className="text-2xl font-extrabold tabular-nums">$4,800.00</p>
+            <div className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-400">
+              Card number
+            </div>
+            <div className="mt-3 rounded-lg bg-[#00828A] py-2.5 text-center text-xs font-bold text-white">
+              Pay $4,800.00
+            </div>
+          </div>
+
+          <ul className="mt-5 space-y-2 text-sm text-slate-700">
+            <li className="flex items-center gap-2">
+              <Lock className="w-4 h-4 text-[#00828A]" /> Card details handled by Stripe, never stored by us
+            </li>
+            <li className="flex items-center gap-2">
+              <Landmark className="w-4 h-4 text-[#00828A]" /> Payouts to your own bank account
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#00828A]" /> Balance and receipt update automatically
+            </li>
+          </ul>
+        </motion.div>
+
+        {/* ── Google reviews ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.45, delay: 0.1 }}
+          className="flex flex-col rounded-2xl border border-slate-200 bg-white p-6 sm:p-8"
+        >
+          <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Google reviews</p>
+          <h2 className="mt-2 text-xl sm:text-2xl font-extrabold tracking-tight">
+            Ask for the review while the job is fresh.
+          </h2>
+          <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+            Mark a job complete and your customer gets a thank-you email with a button to your Google review page.
+            More reviews help you show up higher when neighbors search for your trade.
+          </p>
+
+          {/* Mock email */}
+          <div className="mt-6 rounded-xl border border-slate-200 bg-[#F8FAF9] p-4 sm:p-5">
+            <p className="text-[11px] text-slate-500">From Summit Roofing</p>
+            <p className="mt-0.5 text-sm font-bold">Thanks for choosing us, Maria!</p>
+            <p className="mt-2 text-xs text-slate-600 leading-relaxed">
+              Your roof repair is all done. If you were happy with the work, a quick Google review would mean a lot.
+            </p>
+            <div className="mt-3 flex items-center gap-0.5 text-amber-400">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Star key={i} className="w-4 h-4" fill="currentColor" />
+              ))}
+            </div>
+            <div className="mt-3 rounded-lg bg-[#00828A] py-2.5 text-center text-xs font-bold text-white">
+              Leave a Google review
+            </div>
+          </div>
+
+          <ul className="mt-5 space-y-2 text-sm text-slate-700">
+            <li className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-[#00828A]" /> Sent when you mark the job complete
+            </li>
+            <li className="flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-[#00828A]" /> You choose per job, so a rough job doesn&rsquo;t get one
+            </li>
+          </ul>
+        </motion.div>
+      </div>
+    </section>
+  );
+}

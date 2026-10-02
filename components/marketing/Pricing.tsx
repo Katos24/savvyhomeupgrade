@@ -3,132 +3,126 @@
 import Link from 'next/link';
 import { Check } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 
-const font = "'Nunito', sans-serif";
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-jakarta',
+});
 
+// Keep every line here true to what each plan actually unlocks in the app.
 const plans = [
   {
     name: 'Free',
-    price: 0,
-    desc: 'See your leads come in. Upgrade when you\'re ready.',
+    price: '0',
+    desc: 'Take requests and keep track of every job.',
     highlight: false,
-    cta: 'Get Started Free',
-    href: '/signup',
-    borderStyle: 'border-dashed',
+    cta: 'Start free',
     features: [
       'Booking link and QR code',
-      'Basic lead form',
-      'Lead dashboard',
-      'Table and calendar view',
-      'Create leads manually',
+      'Lead dashboard and job board',
+      'Calendar',
+      'Add jobs by hand',
     ],
   },
   {
     name: 'Basic',
-    price: 49.99,
-    desc: 'Full job management for growing crews.',
-    highlight: false,
-    cta: 'Start 14-Day Free Trial',
-    href: '/signup',
-    borderStyle: '',
+    price: '49.99',
+    desc: 'Quote, collect deposits and get paid.',
+    highlight: true,
+    cta: 'Start 14-day free trial',
     features: [
       'Everything in Free',
+      'Services with price templates',
+      'Quotes your customers accept online',
+      'Deposits and balance invoices',
+      'Card payments through Stripe',
+      'Receipts sent automatically',
       'Custom booking form and branding',
-      'Quotes, scheduling, and online payments',
-      'Send invoices — customers pay by card',
-      'QuickBooks and CSV export',
-      'Unlimited team members',
+      'CSV export',
     ],
   },
   {
     name: 'Pro',
-    price: 79.99,
-    desc: 'Automation and AI for serious contractors.',
-    highlight: true,
-    cta: 'Go Pro | 14 Days Free',
-    href: '/signup',
-    borderStyle: '',
+    price: '79.99',
+    desc: 'More automation for busy crews.',
+    highlight: false,
+    cta: 'Start 14-day free trial',
     features: [
       'Everything in Basic',
-      'One-click quote and schedule emails',
-      'Full email history and templates',
-      '6AM Daily Digest',
-      'AI Quote Generator✦',
-      'AI Project Briefs✦',
-      'Smart AI Assistant✦',
+      'Custom email templates',
+      'Full email history',
+      '6 AM daily digest',
+      'AI assistant for your job data',
     ],
   },
 ];
 
 export default function Pricing() {
   return (
-    <section id="pricing" className="relative py-24 sm:py-32 px-6 sm:px-8 overflow-hidden bg-slate-50">
-      {/* Light-mode compatible background elements */}
-      <div className="absolute inset-0 opacity-[0.05]" style={{ backgroundImage: 'radial-gradient(circle, #000 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      <div className="absolute top-20 left-20 w-96 h-96 bg-sky-400 rounded-full blur-3xl opacity-10" />
-      <div className="absolute bottom-20 right-20 w-96 h-96 bg-emerald-400 rounded-full blur-3xl opacity-10" />
+    <section
+      id="pricing"
+      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-20`}
+    >
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-10 sm:mb-14">
+          <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Pricing</p>
+          <h2 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight text-slate-900">
+            One job pays for the whole year.
+          </h2>
+          <p className="mt-3 text-sm sm:text-base text-slate-600">Cancel anytime. No setup fees.</p>
+        </div>
 
-      <div className="max-w-6xl mx-auto relative z-10">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }}>
-          <div className="text-center mb-16">
-            <h2 className="text-4xl sm:text-5xl text-slate-900 mb-4 font-black tracking-tight leading-[1.05]" style={{ fontFamily: font }}>
-              One job pays for <br />
-              <span className="text-[#68AB43]"> the whole year.</span>
-            </h2>
-            <p className="text-slate-500 max-w-sm mx-auto text-sm sm:text-base font-bold leading-relaxed" style={{ fontFamily: font }}>
-              Cancel anytime. No hidden setup fees. Just better business.
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-stretch">
+          {plans.map((plan, i) => (
+            <motion.div
+              key={plan.name}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.4, delay: i * 0.06 }}
+              className={`relative flex flex-col rounded-2xl border p-6 sm:p-7 ${
+                plan.highlight
+                  ? 'border-2 border-[#00828A] bg-white shadow-lg shadow-[#00828A]/10'
+                  : 'border-slate-200 bg-[#F8FAF9]'
+              }`}
+            >
+              {plan.highlight && (
+                <span className="absolute -top-3 left-6 rounded-full bg-[#00828A] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                  Recommended
+                </span>
+              )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {plans.map((plan, idx) => (
-              <div key={plan.name} className={`relative rounded-2xl p-6 sm:p-8 border flex flex-col justify-between ${plan.highlight ? 'bg-white border-emerald-500 shadow-xl shadow-slate-200' : `bg-white/70 backdrop-blur-sm border-slate-200 ${plan.borderStyle}`}`}>
-                {plan.highlight && (
-                  <div className="absolute -top-3 left-6 bg-emerald-500 text-white text-[9px] uppercase tracking-widest font-black px-3 py-1 rounded-md" style={{ fontFamily: font }}>
-                    Most Popular
-                  </div>
-                )}
-                
-                <div>
-                  <div className="mb-6 border-b border-slate-100 pb-6">
-                    <h3 className={`text-[10px] uppercase tracking-widest font-black mb-1 ${plan.highlight ? 'text-emerald-600' : 'text-slate-400'}`} style={{ fontFamily: font }}>
-                      {plan.name} Tier
-                    </h3>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-black text-slate-900 tracking-tight" style={{ fontFamily: font }}>${plan.price}</span>
-                      <span className="text-xs uppercase font-extrabold text-slate-400" style={{ fontFamily: font }}>/ mo</span>
-                    </div>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-3" style={{ fontFamily: font }}>{plan.desc}</p>
-                  </div>
-
-                  <div className="space-y-3.5 mb-8">
-                    {plan.features.map(f => {
-                      const isAI = f.includes('✦');
-                      const label = f.replace('✦', '').trim();
-                      return (
-                        <div key={f} className="flex items-center gap-3">
-                          <div className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border ${isAI ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : plan.highlight ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                            <Check size={10} strokeWidth={3} />
-                          </div>
-                          <span className={`text-xs font-bold ${isAI ? 'text-emerald-600' : 'text-slate-600'}`} style={{ fontFamily: font }}>
-                            {label}
-                            {isAI && <span className="ml-1.5 text-[8px] px-1 py-0.5 rounded bg-emerald-50 text-emerald-600 uppercase tracking-wide font-black">AI</span>}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <Link href={plan.href}>
-                  <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }} className={`block text-center w-full py-3.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer border ${plan.highlight ? 'bg-emerald-500 text-white border-emerald-600 hover:bg-emerald-600' : 'bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200'}`} style={{ fontFamily: font }}>
-                    {plan.cta}
-                  </motion.div>
-                </Link>
+              <h3 className="text-sm font-bold text-slate-900">{plan.name}</h3>
+              <div className="mt-2 flex items-baseline gap-1">
+                <span className="text-4xl font-extrabold tracking-tight text-slate-900">${plan.price}</span>
+                <span className="text-sm font-medium text-slate-500">/mo</span>
               </div>
-            ))}
-          </div>
-        </motion.div>
+              <p className="mt-2 text-sm text-slate-600">{plan.desc}</p>
+
+              <ul className="mt-6 space-y-2.5 flex-1">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-start gap-2.5 text-sm text-slate-700">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={2.5} />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href="/signup"
+                className={`mt-7 block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors ${
+                  plan.highlight
+                    ? 'bg-[#00828A] text-white hover:bg-[#006e75]'
+                    : 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                }`}
+              >
+                {plan.cta}
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

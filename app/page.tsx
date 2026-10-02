@@ -2,64 +2,27 @@
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
-import FeaturesSection from '@/components/marketing/FeaturesSection';
 import FormAndDashboardSection from '@/components/marketing/FormAndDashboardSection';
-import ComparisonSection from '@/components/marketing/ComparisonSection';
-import TruckSection from '@/components/marketing/TruckSection';
-import FullStorySection from '@/components/marketing/FullStorySection';
-import GoogleReviewSection from '@/components/marketing/GoogleReviewSection';
-import DigestBanner from '@/components/marketing/DigestBanner';
-
+import FeaturesSection from '@/components/marketing/FeaturesSection';
 import Pricing from '@/components/marketing/Pricing';
 import FinalCTA from '@/components/marketing/FinalCTA';
+import ProfitSection from '@/components/marketing/ProfitSection';
+import FAQSection from '@/components/marketing/FAQSection';
+import PaymentsReviewsSection from '@/components/marketing/PaymentsReviewsSection';
 import Footer from '@/components/marketing/Footer';
 
 export default function NewHome() {
   return (
     <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-white text-slate-900">
-      <Nav />
-
-      {/* 1. Sign up and create your form */}
+            <Nav />
       <NewHero />
-
-
-            <FormAndDashboardSection></FormAndDashboardSection>
-
-                  <FullStorySection />
-
-
-
-
-
-
-
-
-
-
-      {/* 2. Blast your link everywhere */}
-      <TruckSection />
-
-                        <FeaturesSection></FeaturesSection>
-
-
-      {/* 3. Form lands, ready to track */}
-
-      {/* 4. The full story, tab by tab */}
-
-            <ComparisonSection></ComparisonSection>
-
-
-
-
-
-      <DigestBanner />
-
-      {/* 7. Pricing */}
+      <FormAndDashboardSection />
+      <FeaturesSection />
+      <ProfitSection />
+      <PaymentsReviewsSection />
       <Pricing />
-
-      {/* 8. Final CTA */}
+      <FAQSection />
       <FinalCTA />
-
       <Footer />
     </div>
   );

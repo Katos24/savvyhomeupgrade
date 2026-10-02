@@ -1,30 +1,8 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Home,
-  Flame,
-  Droplet,
-  Zap,
-  Sun,
-  CheckCircle2,
-  Send,
-  Sparkles,
-  ArrowRight,
-  Clock,
-  MapPin,
-  User,
-  ShieldCheck,
-  RefreshCw,
-  type LucideIcon,
-} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight, ArrowDown, Camera, CalendarDays, QrCode, Link2 } from 'lucide-react';
 import { Plus_Jakarta_Sans } from 'next/font/google';
-
-import DashboardHeader from '@/components/dashboard/DashboardHeader';
-import DashboardStats from '@/components/dashboard/DashboardStats';
-import HeroDispatchCards from '@/components/marketing/HeroDispatchCards';
-import { TRADE_EXAMPLES } from '@/components/marketing/tradeExamples';
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ['latin'],
@@ -32,315 +10,151 @@ const jakarta = Plus_Jakarta_Sans({
   variable: '--font-jakarta',
 });
 
-const STATUS_OPTIONS = [
-  { value: 'new', label: 'New Lead', color: 'green' },
-  { value: 'contacted', label: 'Dispatched', color: 'yellow' },
-  { value: 'in-progress', label: 'In Progress', color: 'orange' },
-  { value: 'completed', label: 'Completed', color: 'blue' },
+// Mock data for the board preview — illustrative only.
+type MockCard = { name: string; service: string; amount: string; date: string; fresh?: boolean; paid?: string };
+
+const COLUMNS: { label: string; dot: string; cards: MockCard[] }[] = [
+  {
+    label: 'New',
+    dot: 'bg-blue-500',
+    cards: [
+      { name: 'Maria Lopez', service: 'Roof repair', amount: '', date: 'Unscheduled', fresh: true },
+      { name: 'Dan Kim', service: 'Gutter cleaning', amount: '', date: 'Unscheduled' },
+    ],
+  },
+  {
+    label: 'Quoted',
+    dot: 'bg-purple-500',
+    cards: [{ name: 'S. Patel', service: 'Siding', amount: '$8,400', date: 'Unscheduled' }],
+  },
+  {
+    label: 'Scheduled',
+    dot: 'bg-amber-500',
+    cards: [{ name: 'M. Johnson', service: 'Roof repair', amount: '$12,000', date: 'Oct 9', paid: 'Deposit paid' }],
+  },
 ];
 
-const TOP_TRADES = [
-  { label: 'Roofing', tradeKey: 'Roofing', icon: Home },
-  { label: 'HVAC', tradeKey: 'HVAC', icon: Flame },
-  { label: 'Plumbing', tradeKey: 'Plumbing', icon: Droplet },
-  { label: 'Electrical', tradeKey: 'Electrical', icon: Zap },
-  { label: 'Solar', tradeKey: 'Solar', icon: Sun },
-] as const;
-
-const SERVICE_OPTIONS: Record<string, string[]> = {
-  Roofing: ['Inspection', 'Replacement', 'Leak Repair', 'Gutters'],
-  HVAC: ['AC Tune-Up', 'Install', 'Duct Cleaning', 'Furnace'],
-  Plumbing: ['Drain Cleaning', 'Pipe Repair', 'Water Heater', 'Leak Detection'],
-  Electrical: ['Panel Upgrade', 'Rewiring', 'Outlet Install', 'Lighting'],
-  Solar: ['System Check', 'Panel Install', 'Inverter Repair', 'Battery Backup'],
-};
-
-const DEMO_PREFILLS: Record<string, { service: string; notes: string; address: string; name: string }> = {
-  Roofing: { name: 'Jennifer L.', service: 'Inspection', notes: 'Missing shingles on south ridge', address: '42 Maple Ave, Austin TX' },
-  HVAC: { name: 'Marcus T.', service: 'AC Tune-Up', notes: 'Central AC blowing warm air', address: '128 Highland Rd, Austin TX' },
-  Plumbing: { name: 'Dana R.', service: 'Drain Cleaning', notes: 'Main bathroom drain backing up', address: '88 Ocean Blvd, Miami FL' },
-  Electrical: { name: 'Priya S.', service: 'Panel Upgrade', notes: 'Breaker box tripping frequently', address: '154 Pinecrest St, Denver CO' },
-  Solar: { name: 'Carlos M.', service: 'System Check', notes: 'Inverter error light on panel', address: '910 Sun Valley Way, Phoenix AZ' },
-};
-
 export default function FormAndDashboardSection() {
-  const [activeTradeIndex, setActiveTradeIndex] = useState(0);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const [extraLeads, setExtraLeads] = useState<any[]>([]);
-
-  const current = TRADE_EXAMPLES[activeTradeIndex] || TRADE_EXAMPLES[0];
-  const prefill = DEMO_PREFILLS[current.trade] || DEMO_PREFILLS.Roofing;
-  const serviceOptions = SERVICE_OPTIONS[current.trade] || SERVICE_OPTIONS.Roofing;
-
-  const [selectedService, setSelectedService] = useState<string>(prefill.service);
-  const [selectedTime, setSelectedTime] = useState<string>('Morning');
-
-  // Reset prefill when trade changes
-  useEffect(() => {
-    setHasSubmitted(false);
-    setIsSubmitting(false);
-    setExtraLeads([]);
-    const newPrefill = DEMO_PREFILLS[current.trade] || DEMO_PREFILLS.Roofing;
-    setSelectedService(newPrefill.service);
-    setSelectedTime('Morning');
-  }, [activeTradeIndex, current.trade]);
-
-  const handleSimulatedSubmit = () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    setTimeout(() => {
-      const newLiveLead = {
-        id: `lead-${Date.now()}`,
-        name: prefill.name,
-        phone: '(555) 382-9102',
-        email: `${prefill.name.toLowerCase().replace(/[^a-z]/g, '')}@example.com`,
-        category: selectedService,
-        address: prefill.address,
-        notes: `${prefill.notes} (${selectedTime} preference)`,
-        status: 'new',
-        createdAt: 'Just now',
-        isNew: true,
-      };
-
-      setExtraLeads([newLiveLead]);
-      setIsSubmitting(false);
-      setHasSubmitted(true);
-    }, 600);
-  };
-
-  const combinedLeads = useMemo(() => {
-    return [...extraLeads, ...current.leads.slice(0, 3)];
-  }, [current.leads, extraLeads]);
-
   return (
     <section
-      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-[#F4F7F6] py-16 sm:py-24 border-t border-slate-200/80 text-slate-900 antialiased selection:bg-[#00828A]/20 selection:text-[#00828A]`}
+      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-white text-slate-900 py-16 sm:py-24 px-4 sm:px-6 lg:px-8`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 sm:space-y-16">
-        
-        {/* ── 1. SECTION HEADER ── */}
-        <div className="text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white border border-slate-200/80 shadow-sm text-xs font-semibold text-[#00828A]">
-            <Sparkles className="w-3.5 h-3.5" />
-            Instant Client-to-Board Dispatch
-          </div>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
-            From client request to live dispatch in under 5 seconds.
+      <div className="max-w-6xl mx-auto">
+        <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
+          <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Your booking form</p>
+          <h2 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight">
+            Customers request a quote. It lands in your dashboard.
           </h2>
-          <p className="text-base sm:text-lg text-slate-600 font-normal">
-            Custom brand your intake forms. When clients submit, jobs drop instantly onto your Lead2Project live board.
+          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
+            Share your link or QR code anywhere: your Google profile, your truck, your invoices. Every request shows up
+            with the details and photos you need to quote it.
           </p>
-
-          {/* ── Trade Selector Pills ── */}
-          <div className="pt-4 flex justify-center">
-            <div className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl bg-white border border-slate-200/80 shadow-sm max-w-full overflow-x-auto no-scrollbar">
-              {TOP_TRADES.map((item) => {
-                const Icon = item.icon;
-                const tradeIndex = TRADE_EXAMPLES.findIndex(
-                  (t) => t.trade.toLowerCase() === item.tradeKey.toLowerCase()
-                );
-                const isSelected = activeTradeIndex === (tradeIndex !== -1 ? tradeIndex : 0);
-
-                return (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => setActiveTradeIndex(tradeIndex !== -1 ? tradeIndex : 0)}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shrink-0 ${
-                      isSelected
-                        ? 'bg-[#00828A] text-white shadow-md shadow-[#00828A]/20'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                    }`}
-                  >
-                    <Icon className="w-3.5 h-3.5" />
-                    <span>{item.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="mt-4 flex flex-wrap justify-center sm:justify-start gap-2 text-xs font-semibold text-slate-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-[#F8FAF9] px-3 py-1">
+              <Link2 className="w-3.5 h-3.5 text-[#00828A]" /> Booking link
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-[#F8FAF9] px-3 py-1">
+              <QrCode className="w-3.5 h-3.5 text-[#00828A]" /> QR code
+            </span>
           </div>
         </div>
 
-        {/* ── 2. TWO-COLUMN INTERACTIVE WORKSPACE ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          
-          {/* LEFT: Clean Intake Form Card */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                1. Client Request Form
-              </span>
-              <span className="text-[11px] font-semibold text-[#00828A] bg-teal-50 border border-teal-100 px-2.5 py-0.5 rounded-md">
-                Live Embed Preview
-              </span>
-            </div>
-
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-sm space-y-5">
-              {/* Form Branding Bar */}
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#00828A]/10 text-[#00828A] flex items-center justify-center font-bold text-sm">
-                    {current.trade.charAt(0)}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-900">
-                      {current.company?.name ?? `${current.trade} Services`}
-                    </h4>
-                    <p className="text-[11px] text-slate-500">
-                      Online Request Portal
-                    </p>
-                  </div>
-                </div>
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+        <div className="grid grid-cols-1 lg:grid-cols-[300px_auto_1fr] items-center gap-6 lg:gap-8">
+          {/* ── Phone: the customer's form ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5 }}
+            className="mx-auto w-full max-w-[300px] rounded-[2rem] bg-slate-900 p-2.5 shadow-2xl"
+          >
+            <div className="rounded-[1.6rem] bg-white overflow-hidden">
+              <div className="bg-[#00828A] px-5 pt-6 pb-4 text-white">
+                <p className="text-[11px] font-semibold opacity-80">Summit Roofing</p>
+                <p className="text-base font-bold">Request a free quote</p>
               </div>
-
-              {/* Form Fields */}
-              <div className="space-y-3.5 text-xs">
-                {/* Contact Prefill */}
-                <div className="grid grid-cols-2 gap-2.5">
-                  <div className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-xl">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Name</span>
-                    <span className="font-semibold text-slate-800">{prefill.name}</span>
+              <div className="p-4 space-y-2.5 text-[11px]">
+                {[
+                  ['Name', 'Maria Lopez'],
+                  ['Service', 'Roof repair'],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <p className="mb-1 font-semibold text-slate-500">{label}</p>
+                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 font-medium text-slate-800">
+                      {value}
+                    </div>
                   </div>
-                  <div className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-xl">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Phone</span>
-                    <span className="font-semibold text-slate-800">(555) 382-9102</span>
-                  </div>
-                </div>
-
-                {/* Interactive Service Options */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase block">
-                    Service Requested
-                  </label>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    {serviceOptions.map((service) => (
-                      <button
-                        key={service}
-                        type="button"
-                        onClick={() => setSelectedService(service)}
-                        className={`px-3 py-2 rounded-xl text-[11px] font-semibold border text-left transition-all truncate ${
-                          selectedService === service
-                            ? 'bg-[#00828A] text-white border-[#00828A] shadow-sm'
-                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                        }`}
-                      >
-                        {service}
-                      </button>
-                    ))}
+                ))}
+                <div>
+                  <p className="mb-1 font-semibold text-slate-500">What do you need?</p>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700 leading-snug">
+                    Leak over the back bedroom after the last storm.
                   </div>
                 </div>
-
-                {/* Preferred Time Window */}
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase block">
-                    Preferred Time Window
-                  </label>
-                  <div className="grid grid-cols-3 gap-1.5">
-                    {['Morning', 'Afternoon', 'Flexible'].map((time) => (
-                      <button
-                        key={time}
-                        type="button"
-                        onClick={() => setSelectedTime(time)}
-                        className={`py-1.5 rounded-lg text-[11px] font-semibold border text-center transition-all ${
-                          selectedTime === time
-                            ? 'bg-slate-900 text-white border-slate-900'
-                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
+                    <Camera className="w-3.5 h-3.5 text-slate-400" /> 2 photos
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
+                    <CalendarDays className="w-3.5 h-3.5 text-slate-400" /> Oct 7
                   </div>
                 </div>
-
-                {/* Job Location */}
-                <div className="bg-slate-50 border border-slate-200/70 p-2.5 rounded-xl flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-[#00828A] shrink-0" />
-                  <div className="truncate">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">Property Location</span>
-                    <span className="font-semibold text-slate-800 truncate block">{prefill.address}</span>
-                  </div>
+                <div className="mt-1 rounded-lg bg-[#00828A] py-2.5 text-center text-xs font-bold text-white">
+                  Send request
                 </div>
               </div>
-
-              {/* Submit CTA */}
-              <button
-                type="button"
-                onClick={handleSimulatedSubmit}
-                disabled={isSubmitting}
-                className="w-full bg-[#00828A] hover:bg-[#006e75] text-white font-bold text-xs py-3.5 rounded-xl shadow-md shadow-[#00828A]/20 transition-all flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                    <span>Syncing to Dispatch Board...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Submit Service Request</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </>
-                )}
-              </button>
-
-              {hasSubmitted && (
-                <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-center gap-2 text-emerald-800 text-xs font-semibold">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Request sent! Check the live board on the right &rarr;</span>
-                </div>
-              )}
             </div>
+          </motion.div>
+
+          {/* ── Arrow ── */}
+          <div className="flex justify-center text-[#00828A]">
+            <ArrowRight className="hidden lg:block w-8 h-8" />
+            <ArrowDown className="lg:hidden w-7 h-7" />
           </div>
 
-          {/* RIGHT: Live Lead2Project Dispatch Board */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                  2. Live Lead2Project Board
-                </span>
-              </div>
-              {hasSubmitted && (
-                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-md animate-bounce">
-                  ⚡ New lead injected!
-                </span>
-              )}
+          {/* ── Dashboard: the job board ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5, delay: 0.15 }}
+            className="rounded-2xl border border-slate-200 bg-[#F4F7F6] p-3 sm:p-4 shadow-xl overflow-hidden"
+          >
+            <div className="mb-3 flex items-center justify-between px-1">
+              <p className="text-sm font-bold">Jobs</p>
+              <span className="text-[11px] font-semibold text-slate-500">Board view</span>
             </div>
-
-            {/* Dark Mode Dashboard Mockup */}
-            <div className="bg-[#081524] border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-2xl space-y-5 text-white">
-              <DashboardHeader
-                company={current.company}
-                isDark={true}
-                isRefreshing={isSubmitting}
-                planTier="pro"
-                onCreateLead={() => {}}
-                onLockedFeature={() => {}}
-                onRefresh={() => {}}
-                accentColor="#00828A"
-              />
-
-              <DashboardStats
-                globalStats={current.stats}
-                allLeads={combinedLeads}
-                isDark={true}
-                accentColor="#00828A"
-              />
-
-              <HeroDispatchCards
-                leads={combinedLeads}
-                statusOptions={STATUS_OPTIONS}
-                trade={current.trade}
-                view="cards"
-                isDark={true}
-              />
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              {COLUMNS.map((col) => (
+                <div key={col.label} className="rounded-xl bg-white/70 border border-slate-200 p-2 space-y-2 min-w-0">
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${col.dot}`} />
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 truncate">{col.label}</span>
+                    <span className="text-[10px] text-slate-400">{col.cards.length}</span>
+                  </div>
+                  {col.cards.map((c) => (
+                    <div
+                      key={c.name}
+                      className={`rounded-lg border bg-white p-2 ${
+                        c.fresh ? 'border-[#00828A] ring-2 ring-[#00828A]/20' : 'border-slate-200'
+                      }`}
+                    >
+                      <div className="flex items-baseline justify-between gap-1">
+                        <p className="text-[11px] font-bold truncate">{c.name}</p>
+                        {c.amount && <span className="text-[10px] font-bold shrink-0">{c.amount}</span>}
+                      </div>
+                      <p className="text-[10px] text-slate-500 truncate">{c.service}</p>
+                      <div className="mt-1 flex items-center justify-between gap-1">
+                        <span className="text-[9px] text-slate-400 truncate">{c.date}</span>
+                        {c.fresh && <span className="text-[9px] font-bold text-[#00828A] shrink-0">Just now</span>}
+                        {c.paid && <span className="text-[9px] font-semibold text-emerald-600 shrink-0">{c.paid}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ))}
             </div>
-          </div>
-
+          </motion.div>
         </div>
       </div>
     </section>
