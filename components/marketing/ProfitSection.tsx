@@ -3,7 +3,7 @@
 import { Eyebrow } from './marketingUI';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronDown, Receipt, TrendingUp } from 'lucide-react';
+import { ChevronDown, TrendingUp } from 'lucide-react';
 // Mirrors Financials → Expenses (FinancialsExpenses.tsx). Illustrative jobs;
 // every job's line items and expenses add up to its totals.
 type Line = { description: string; amount: number; category?: string };
@@ -75,9 +75,6 @@ export default function ProfitSection() {
             <li className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-[#1C1F23]" /> Income, expenses and profit per job
             </li>
-            <li className="flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-[#1C1F23]" /> Overhead tracked separately from jobs
-            </li>
           </ul>
           <p className="mt-4 text-xs text-slate-400">Tap a job to see the breakdown.</p>
         </div>
@@ -88,17 +85,8 @@ export default function ProfitSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-xl mx-auto rounded-md bg-[#faf9f5] p-3 sm:p-4 border-2 border-[#1C1F23] shadow-[6px_6px_0_0_#1C1F23] space-y-2.5"
+          className="w-full max-w-xl mx-auto rounded-md bg-[#faf9f5] p-3 sm:p-4 border border-slate-200 shadow-lg space-y-2.5"
         >
-          {/* Overhead */}
-          <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2 min-w-0">
-              <Receipt className="h-4 w-4 text-stone-500 shrink-0" />
-              <p className="text-sm font-semibold text-stone-900">General Overhead</p>
-              <span className="hidden sm:inline text-xs text-stone-400">(3 not tied to a job)</span>
-            </div>
-            <span className="text-sm font-bold tabular-nums text-rose-600">{fmt(642)}</span>
-          </div>
 
           {JOBS.map((job) => {
             const income = sum(job.income);

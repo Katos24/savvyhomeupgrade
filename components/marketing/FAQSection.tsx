@@ -51,7 +51,7 @@ export default function FAQSection() {
           <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">Common questions</h2>
         </div>
 
-        <div className="rounded-md border-2 border-[#1C1F23] bg-white shadow-[5px_5px_0_0_#1C1F23] divide-y-2 divide-[#1C1F23]/10">
+        <div className="rounded-md border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">
           {FAQS.map((item, i) => {
             const isOpen = open === i;
             return (

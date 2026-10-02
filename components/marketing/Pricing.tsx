@@ -50,10 +50,6 @@ const plans = [
   },
 ];
 
-export const hazardStripe = {
-  backgroundImage: 'repeating-linear-gradient(-45deg, #FFC72C 0 10px, #1C1F23 10px 20px)',
-};
-
 export default function Pricing() {
   return (
     <section id="pricing" className="bg-white text-[#1C1F23] py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-20">
@@ -74,21 +70,21 @@ export default function Pricing() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.4, delay: i * 0.06 }}
-              className={`relative flex flex-col border-2 border-[#1C1F23] bg-white ${
-                plan.highlight ? 'shadow-[7px_7px_0_0_#1C1F23]' : 'shadow-[4px_4px_0_0_#1C1F23]'
+              className={`relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white ${
+                plan.highlight ? 'shadow-lg' : 'shadow-sm'
               }`}
             >
               {plan.highlight ? (
-                <div className="h-3 border-b-2 border-[#1C1F23]" style={hazardStripe} aria-hidden />
+                <div className="h-1.5 bg-[#00828A]" aria-hidden />
               ) : (
-                <div className="h-3 border-b-2 border-[#1C1F23] bg-[#F4EFE6]" aria-hidden />
+                <div className="h-1.5 bg-slate-200" aria-hidden />
               )}
 
               <div className="flex flex-1 flex-col p-6 sm:p-7">
                 <div className="flex items-center justify-between">
                   <h3 className="font-[family-name:var(--font-display)] text-2xl font-extrabold uppercase">{plan.name}</h3>
                   {plan.highlight && (
-                    <span className="bg-[#FFC72C] border-2 border-[#1C1F23] px-2 py-0.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider">
+                    <span className="rounded bg-[#00828A] px-2 py-0.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider text-white">
                       Recommended
                     </span>
                   )}
@@ -112,10 +108,10 @@ export default function Pricing() {
 
                 <Link
                   href="/signup"
-                  className={`mt-7 block w-full rounded-md border-2 border-[#1C1F23] py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-all hover:translate-x-[2px] hover:translate-y-[2px] ${
+                  className={`mt-7 block w-full rounded-md border border-slate-200 py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-all ${
                     plan.highlight
-                      ? 'bg-[#FFC72C] shadow-[4px_4px_0_0_#1C1F23] hover:shadow-[2px_2px_0_0_#1C1F23]'
-                      : 'bg-white shadow-[3px_3px_0_0_#1C1F23] hover:shadow-[1px_1px_0_0_#1C1F23]'
+                      ? 'bg-[#00828A] hover:bg-[#006e75] text-white border-[#00828A]'
+                      : 'bg-white '
                   }`}
                 >
                   {plan.cta}

@@ -132,7 +132,7 @@ function Cell({ on }: { on: boolean }) {
   return (
     <div className="flex items-center justify-center">
       {on ? (
-        <span className="flex h-5 w-5 items-center justify-center bg-[#FFC72C] border-2 border-[#1C1F23]">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00828A] text-white">
           <Check className="h-3 w-3" strokeWidth={3.5} />
         </span>
       ) : (
@@ -167,21 +167,21 @@ export default function PricingPage() {
             return (
               <div
                 key={plan}
-                className={`relative flex flex-col border-2 border-[#1C1F23] bg-white p-6 sm:p-7 pt-8 ${
-                  info.highlight ? 'shadow-[7px_7px_0_0_#1C1F23]' : 'shadow-[4px_4px_0_0_#1C1F23]'
+                className={`relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white p-6 sm:p-7 pt-8 ${
+                  info.highlight ? 'shadow-lg' : 'shadow-sm'
                 }`}
               >
                 <div
-                  className="absolute inset-x-0 top-0 h-3 border-b-2 border-[#1C1F23]"
+                  className="absolute inset-x-0 top-0 h-1.5"
                   style={
                     info.highlight
-                      ? { backgroundImage: 'repeating-linear-gradient(-45deg, #FFC72C 0 10px, #1C1F23 10px 20px)' }
-                      : { background: '#F4EFE6' }
+                      ? { background: '#00828A' }
+                      : { background: '#e2e8f0' }
                   }
                   aria-hidden
                 />
                 {info.highlight && (
-                  <span className="absolute top-6 right-6 bg-[#FFC72C] border-2 border-[#1C1F23] px-2 py-0.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider">
+                  <span className="absolute top-6 right-6 rounded bg-[#00828A] px-2 py-0.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider text-white">
                     Recommended
                   </span>
                 )}
@@ -195,10 +195,10 @@ export default function PricingPage() {
 
                 <Link
                   href="/signup"
-                  className={`mt-6 block w-full rounded-md border-2 border-[#1C1F23] py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-all hover:translate-x-[2px] hover:translate-y-[2px] ${
+                  className={`mt-6 block w-full rounded-md border border-slate-200 py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-all ${
                     info.highlight
-                      ? 'bg-[#FFC72C] shadow-[4px_4px_0_0_#1C1F23] hover:shadow-[2px_2px_0_0_#1C1F23]'
-                      : 'bg-white shadow-[3px_3px_0_0_#1C1F23] hover:shadow-[1px_1px_0_0_#1C1F23]'
+                      ? 'bg-[#00828A] hover:bg-[#006e75] text-white border-[#00828A]'
+                      : 'bg-white '
                   }`}
                 >
                   {info.cta}
@@ -226,13 +226,13 @@ export default function PricingPage() {
             <p className="mt-2 text-sm text-slate-500">Everything included in each plan.</p>
           </div>
 
-          <div className="border-2 border-[#1C1F23] bg-white shadow-[5px_5px_0_0_#1C1F23] overflow-hidden">
+          <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden">
             {/* Header row (sticks while scrolling the table) */}
-            <div className="grid grid-cols-[1.6fr_repeat(3,1fr)] border-b-2 border-[#1C1F23] bg-[#1C1F23] text-white">
+            <div className="grid grid-cols-[1.6fr_repeat(3,1fr)] border-b border-slate-200 bg-[#1C1F23] text-white">
               <div className="px-3 sm:px-5 py-4" />
               {PLANS.map((plan) => (
                 <div key={plan} className="px-1 sm:px-4 py-4 text-center">
-                  <p className={`font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider ${PLAN_INFO[plan].highlight ? 'text-[#FFC72C]' : 'text-slate-300'}`}>{plan}</p>
+                  <p className={`font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider ${PLAN_INFO[plan].highlight ? 'text-[#5EC4C9]' : 'text-slate-300'}`}>{plan}</p>
                   <p className="mt-0.5 font-[family-name:var(--font-display)] text-lg sm:text-2xl font-extrabold">{PLAN_INFO[plan].price}</p>
                 </div>
               ))}
@@ -240,7 +240,7 @@ export default function PricingPage() {
 
             {FEATURE_TABLE.map((group) => (
               <div key={group.group}>
-                <div className="bg-[#F4EFE6] px-3 sm:px-5 py-2 border-y-2 border-[#1C1F23]/15">
+                <div className="bg-[#F4EFE6] px-3 sm:px-5 py-2/15">
                   <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em]">{group.group}</p>
                 </div>
                 {group.rows.map((row) => (
@@ -264,21 +264,21 @@ export default function PricingPage() {
 
       {/* ── Final CTA ── */}
       <section className="pb-20 sm:pb-24 px-4">
-        <div className="max-w-2xl mx-auto text-center bg-[#FFC72C] border-2 border-[#1C1F23] shadow-[6px_6px_0_0_#1C1F23] p-8 sm:p-12">
+        <div className="max-w-2xl mx-auto text-center rounded-lg bg-[#00828A] text-white shadow-lg p-8 sm:p-12">
           <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold uppercase tracking-tight">Start free today.</h2>
-          <p className="mt-3 text-base">
+          <p className="mt-3 text-base text-white/85">
             Set up your services and booking link, then upgrade when you&rsquo;re ready to take payments.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/signup"
-              className="px-8 py-3 rounded-md border-2 border-[#1C1F23] bg-[#1C1F23] text-[#FFC72C] font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider shadow-[4px_4px_0_0_#ffffff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#ffffff] transition-all"
+              className="px-8 py-3 rounded-md bg-white text-[#00828A] hover:bg-slate-50 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider shadow-sm transition-colors"
             >
               Start free
             </Link>
             <Link
               href="/login"
-              className="px-8 py-3 rounded-md border-2 border-[#1C1F23] bg-white font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider shadow-[4px_4px_0_0_#1C1F23] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#1C1F23] transition-all"
+              className="px-8 py-3 rounded-md border border-white/40 text-white hover:bg-white/10 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-colors"
             >
               Log in
             </Link>

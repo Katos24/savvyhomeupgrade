@@ -17,7 +17,7 @@ export default function PaymentsReviewsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.45 }}
-          className="flex flex-col rounded-md border-2 border-[#1C1F23] bg-white shadow-[5px_5px_0_0_#1C1F23] p-6 sm:p-8"
+          className="flex flex-col rounded-md border border-slate-200 bg-white shadow-sm p-6 sm:p-8"
         >
           <Eyebrow>Payments by Stripe</Eyebrow>
           <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl sm:text-3xl font-extrabold uppercase tracking-tight leading-none">
@@ -29,7 +29,7 @@ export default function PaymentsReviewsSection() {
           </p>
 
           {/* Mock checkout */}
-          <div className="mt-6 rounded-md border-2 border-dashed border-[#1C1F23]/30 bg-[#FBF8F2] p-4 sm:p-5">
+          <div className="mt-6 rounded-md border-2 border-dashed border-slate-300 bg-[#FBF8F2] p-4 sm:p-5">
             <div className="flex items-center justify-between text-xs text-slate-500">
               <span className="font-semibold text-slate-700">Summit Roofing</span>
               <span className="inline-flex items-center gap-1">
@@ -65,7 +65,7 @@ export default function PaymentsReviewsSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.45, delay: 0.1 }}
-          className="flex flex-col rounded-md border-2 border-[#1C1F23] bg-white shadow-[5px_5px_0_0_#1C1F23] p-6 sm:p-8"
+          className="flex flex-col rounded-md border border-slate-200 bg-white shadow-sm p-6 sm:p-8"
         >
           <Eyebrow>Google reviews</Eyebrow>
           <h2 className="mt-2 font-[family-name:var(--font-display)] text-2xl sm:text-3xl font-extrabold uppercase tracking-tight leading-none">
@@ -77,7 +77,7 @@ export default function PaymentsReviewsSection() {
           </p>
 
           {/* Mock email */}
-          <div className="mt-6 rounded-md border-2 border-dashed border-[#1C1F23]/30 bg-[#FBF8F2] p-4 sm:p-5">
+          <div className="mt-6 rounded-md border-2 border-dashed border-slate-300 bg-[#FBF8F2] p-4 sm:p-5">
             <p className="text-[11px] text-slate-500">From Summit Roofing</p>
             <p className="mt-0.5 text-sm font-bold">Thanks for choosing us, Maria!</p>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">

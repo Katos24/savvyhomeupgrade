@@ -49,7 +49,7 @@ const STEPS = [
 export default function Hero() {
   return (
     <div
-      className="bg-[#F4EFE6] text-[#1C1F23] antialiased selection:bg-[#FFC72C]"
+      className="bg-[#F4EFE6] text-[#1C1F23] antialiased selection:bg-[#00828A]/20"
       style={{
         // Faint blueprint grid
         backgroundImage:
@@ -66,7 +66,7 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 bg-[#1C1F23] px-2.5 py-1 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em] text-[#FFC72C]"
+                className="inline-flex items-center gap-2 bg-[#1C1F23] px-2.5 py-1 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em] text-[#5EC4C9]"
               >
                 <HardHat className="w-4 h-4" strokeWidth={2.25} />
                 Built for contractors
@@ -80,7 +80,7 @@ export default function Hero() {
               >
                 The easiest way to{' '}
                 <span className="relative whitespace-nowrap">
-                  <span className="absolute inset-x-0 bottom-[0.08em] h-[0.32em] bg-[#FFC72C] -z-10" aria-hidden />
+                  <span className="absolute inset-x-0 bottom-[0.08em] h-[0.3em] bg-[#00828A]/25 -z-10" aria-hidden />
                   get paid
                 </span>{' '}
                 for every job.
@@ -104,14 +104,14 @@ export default function Hero() {
               >
                 <Link
                   href="/signup"
-                  className="w-full sm:w-auto bg-[#FFC72C] text-[#1C1F23] font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider px-7 py-3 rounded-md border-2 border-[#1C1F23] shadow-[4px_4px_0_0_#1C1F23] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#1C1F23] transition-all text-center"
+                  className="w-full sm:w-auto bg-[#00828A] hover:bg-[#006e75] text-white font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider px-7 py-3 rounded-md shadow-sm transition-all text-center"
                 >
                   Start free
                 </Link>
                 {DEMO_URL && (
                   <Link
                     href={DEMO_URL}
-                    className="w-full sm:w-auto bg-white text-[#1C1F23] font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider px-6 py-3 rounded-md border-2 border-[#1C1F23] shadow-[4px_4px_0_0_#1C1F23] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#1C1F23] transition-all text-center"
+                    className="w-full sm:w-auto bg-white text-[#1C1F23] hover:bg-slate-50 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider px-6 py-3 rounded-md border border-slate-300 shadow-sm transition-all text-center"
                   >
                     Book a 15-min demo
                   </Link>
@@ -142,7 +142,7 @@ export default function Hero() {
                 initial={{ opacity: 0, scale: 0.97, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ duration: 0.7, delay: 0.15 }}
-                className="relative mx-auto max-w-[680px] rounded-md overflow-hidden bg-white border-2 border-[#1C1F23] shadow-[8px_8px_0_0_#1C1F23] text-[10px] sm:text-[11px]"
+                className="relative mx-auto max-w-[680px] rounded-md overflow-hidden bg-white border border-slate-200 shadow-2xl text-[10px] sm:text-[11px]"
                 aria-hidden
               >
                 {/* Lead header */}

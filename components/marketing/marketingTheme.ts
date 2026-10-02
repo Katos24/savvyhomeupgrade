@@ -18,6 +18,5 @@ export const fontVars = `${bodyFont.variable} ${displayFont.variable}`;
 
 // Palette (for inline styles / SVG). Tailwind classes use the same hex values.
 export const INK = '#1C1F23'; // asphalt / charcoal
-export const SAFETY = '#FFC72C'; // hi-vis yellow
 export const PAPER = '#F4EFE6'; // kraft / work-order paper
 export const TEAL = '#00828A'; // Lead2Project brand

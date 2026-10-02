@@ -57,21 +57,21 @@ export default function FeaturesSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-60px' }}
                   transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="relative bg-white border-2 border-[#1C1F23] shadow-[5px_5px_0_0_#1C1F23]"
+                  className="relative overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm"
                 >
                   {/* Ticket stub */}
                   <div className="flex items-center justify-between bg-[#1C1F23] px-4 py-2 text-white">
                     <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em]">
                       Work order
                     </span>
-                    <span className="font-[family-name:var(--font-display)] text-xl font-extrabold text-[#FFC72C]">
+                    <span className="font-[family-name:var(--font-display)] text-xl font-extrabold text-[#5EC4C9]">
                       #{String(i + 1).padStart(2, '0')}
                     </span>
                   </div>
                   {/* Perforation */}
-                  <div className="border-b-2 border-dashed border-[#1C1F23]/25" />
+                  <div className="border-b border-dashed border-slate-300" />
                   <div className="p-5 sm:p-6">
-                    <span className="flex h-10 w-10 items-center justify-center bg-[#FFC72C] border-2 border-[#1C1F23]">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
                       <Icon className="w-5 h-5" strokeWidth={2.25} />
                     </span>
                     <h3 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-bold uppercase leading-tight">
@@ -101,7 +101,7 @@ export default function FeaturesSection() {
               const Icon = f.icon;
               return (
                 <li key={f.title} className="flex items-start gap-4">
-                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center bg-[#1C1F23] text-[#FFC72C]">
+                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center bg-[#1C1F23] text-[#5EC4C9]">
                     <Icon className="w-5 h-5" strokeWidth={2.25} />
                   </span>
                   <div>

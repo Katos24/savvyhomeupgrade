@@ -61,7 +61,7 @@ function InvoiceMock() {
   const balance = total - DEPOSIT;
 
   return (
-    <div className="relative w-full bg-white text-[#1f2937] rounded-sm overflow-hidden border-2 border-[#1C1F23] shadow-[8px_8px_0_0_#FFC72C] text-[7px] sm:text-[8.5px] leading-snug">
+    <div className="relative w-full bg-white text-[#1f2937] rounded-sm overflow-hidden border border-slate-200 shadow-2xl text-[7px] sm:text-[8.5px] leading-snug">
       <Stamp label="Deposit paid" className="absolute right-[8%] top-[40%] text-base sm:text-xl" />
       {/* Header */}
       <div className="h-1 bg-[#f59e0b]" />
@@ -186,7 +186,7 @@ export default function InvoiceShowcaseSection() {
               'A QR code your customer scans to pay',
             ].map((t) => (
               <li key={t} className="flex items-center gap-2">
-                <Check className="w-4 h-4 text-[#FFC72C]" strokeWidth={3} /> {t}
+                <Check className="w-4 h-4 text-[#5EC4C9]" strokeWidth={3} /> {t}
               </li>
             ))}
           </ul>
