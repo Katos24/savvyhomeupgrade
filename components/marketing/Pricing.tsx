@@ -13,7 +13,7 @@ const plans = [
     desc: 'Take requests and keep track of every job.',
     highlight: false,
     cta: 'Start free',
-    features: ['Booking link and QR code', 'Lead dashboard and job board', 'Calendar', 'Add jobs by hand'],
+    features: ['Booking link and QR code', 'Lead dashboard and job board', 'Table and calendar views', 'Add jobs by hand'],
   },
   {
     name: 'Basic',
@@ -27,9 +27,11 @@ const plans = [
       'Quote builder',
       'Deposits and balance invoices',
       'Card payments through Stripe',
-      'Receipts sent automatically',
+      'Invoice and payment reminder emails',
+      'Google review requests',
       'Custom booking form and branding',
-      'CSV and QuickBooks export',
+      'Unlimited team members',
+      'CSV export',
     ],
   },
   {

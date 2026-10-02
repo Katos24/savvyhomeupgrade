@@ -27,10 +27,11 @@ const PLAN_HIGHLIGHTS: Record<PlanName, string[]> = {
     'Services with price templates',
     'Deposits and balance invoices',
     'Card payments through Stripe',
-    'Receipts sent automatically',
+    'Invoice and payment reminder emails',
+    'Google review requests',
     'Custom booking form and branding',
     'Scheduling, tasks and photo uploads',
-    'CSV and QuickBooks export',
+    'CSV export',
     'Unlimited team members',
   ],
   Pro: [
@@ -90,6 +91,7 @@ const FEATURE_TABLE: FeatureGroup[] = [
       { label: 'Record cash and check payments', free: false, basic: true, pro: true },
       { label: 'Automatic payment receipts', free: false, basic: true, pro: true },
       { label: 'Due dates and overdue tracking', free: false, basic: true, pro: true },
+      { label: 'Payment reminder emails', free: false, basic: true, pro: true },
     ],
   },
   {
@@ -104,9 +106,8 @@ const FEATURE_TABLE: FeatureGroup[] = [
     group: 'Bookkeeping',
     rows: [
       { label: 'CSV export', free: false, basic: true, pro: true },
-      { label: 'QuickBooks-formatted export', free: false, basic: true, pro: true },
-      { label: 'Receipt uploads per job', free: false, basic: true, pro: true },
-      { label: 'Financials page', free: false, basic: true, pro: true },
+      { label: 'Expenses and profit per job', free: false, basic: true, pro: true },
+      { label: 'Receipt and document uploads per job', free: false, basic: true, pro: true },
     ],
   },
   {

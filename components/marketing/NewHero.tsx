@@ -76,12 +76,12 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.08 }}
-                className="font-[family-name:var(--font-display)] text-5xl sm:text-6xl lg:text-7xl font-extrabold uppercase leading-[0.9] tracking-tight text-[#1C1F23]"
+className="font-[family-name:var(--font-display)] text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight text-[#1C1F23]"
               >
                 The easiest way to{' '}
-                <span className="relative whitespace-nowrap">
-                  <span className="absolute inset-x-0 bottom-[0.08em] h-[0.3em] bg-[#00828A]/25 -z-10" aria-hidden />
-                  get paid
+                               <span className="relative inline-block whitespace-nowrap">
+                  <span className="absolute inset-x-0 bottom-[0.08em] h-[0.3em] bg-[#00828A]/30" aria-hidden />
+                  <span className="relative">get paid</span>
                 </span>{' '}
                 for every job.
               </motion.h1>
