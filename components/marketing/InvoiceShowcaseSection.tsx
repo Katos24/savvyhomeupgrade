@@ -56,7 +56,7 @@ function FakeQR() {
   );
 }
 
-function InvoiceMock() {
+export function InvoiceMock() {
   const total = ITEMS.reduce((s, i) => s + i.qty * i.price, 0);
   const balance = total - DEPOSIT;
 

@@ -1,327 +1,422 @@
-'use client';
-
 import Link from 'next/link';
-import { ArrowRight, QrCode, FormInput, Smartphone, CheckCircle, MapPin, Wrench, FileText, CalendarDays, HelpCircle, Clock, Star } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  QrCode,
+  Link2,
+  LayoutDashboard,
+  Smartphone,
+  MapPin,
+  Wrench,
+  Camera,
+  FileText,
+  CalendarDays,
+  HelpCircle,
+  Clock,
+  Star,
+  Mail,
+} from 'lucide-react';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
-import { FormCard } from '@/components/marketing/HeroStoryStrip';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
 
 /* ─────────────────────────────────────────────────────────
    /features/lead-capture
-   SEO: QR code lead capture, contractor booking form,
-        lead intake for roofers, contractor lead management
+   SEO: contractor booking form, QR code for contractors,
+        lead intake for roofers / plumbers / HVAC
+   Every claim below matches lib/permissions.ts and the app today.
    ───────────────────────────────────────────────────────── */
+
+export const metadata = {
+  title: 'Booking Form & QR Code for Contractors | Lead2Project',
+  description:
+    'Your own booking link and QR code. Customers request a quote from your truck, yard sign or Google profile, and it lands in your dashboard.',
+};
+
+const D = 'font-[family-name:var(--font-display)]';
+const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
+const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BTN =
+  'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
+  D +
+  ' text-base font-bold uppercase tracking-wider';
+
+function PlanTag({ plan }: { plan: 'Basic' | 'Pro' }) {
+  return (
+    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]`}>
+      {plan}
+    </span>
+  );
+}
+
+function Bullets({ items }: { items: { text: string; plan?: 'Basic' | 'Pro' }[] }) {
+  return (
+    <ul className="mt-6 space-y-2.5">
+      {items.map((i) => (
+        <li key={i.text} className="flex items-start gap-2.5 text-[15px] font-medium text-[#1C1F23]">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={3} />
+          <span>
+            {i.text}
+            {i.plan && <PlanTag plan={i.plan} />}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/* Decorative QR-style pattern (not scannable). */
+function FakeQR({ className = '' }: { className?: string }) {
+  const n = 21;
+  const cells: boolean[] = [];
+  let seed = 11;
+  for (let i = 0; i < n * n; i++) {
+    seed = (seed * 9301 + 49297) % 233280;
+    cells.push(seed / 233280 > 0.52);
+  }
+  const finder = (r: number, c: number) => {
+    const at = (r0: number, c0: number) => {
+      const rr = r - r0;
+      const cc = c - c0;
+      if (rr < 0 || rr > 6 || cc < 0 || cc > 6) return null;
+      return rr === 0 || rr === 6 || cc === 0 || cc === 6 || (rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4);
+    };
+    return at(0, 0) ?? at(0, n - 7) ?? at(n - 7, 0);
+  };
+  return (
+    <svg viewBox={`0 0 ${n} ${n}`} className={className} shapeRendering="crispEdges" aria-hidden>
+      <rect width={n} height={n} fill="#fff" />
+      {Array.from({ length: n * n }).map((_, i) => {
+        const r = Math.floor(i / n);
+        const c = i % n;
+        const f = finder(r, c);
+        const on = f === null ? cells[i] : f;
+        return on ? <rect key={i} x={c} y={r} width={1} height={1} fill="#1C1F23" /> : null;
+      })}
+    </svg>
+  );
+}
+
+/* ── Mock: the customer's booking form on a phone ── */
+function PhoneFormMock() {
+  return (
+    <div className="mx-auto w-full max-w-[300px] rounded-[2rem] bg-[#1C1F23] p-2.5 shadow-2xl" aria-hidden>
+      <div className="overflow-hidden rounded-[1.6rem] bg-white">
+        <div className="bg-[#00828A] px-5 pt-6 pb-4 text-white">
+          <p className="text-[11px] font-semibold opacity-80">Summit Roofing</p>
+          <p className="text-base font-bold">Request a free quote</p>
+        </div>
+        <div className="space-y-2.5 p-4 text-[11px]">
+          {[
+            ['Name', 'Maria Lopez'],
+            ['Service', 'Roof repair'],
+            ['Address', '12 Oak St, Holbrook'],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <p className="mb-1 font-semibold text-slate-500">{label}</p>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 font-medium text-slate-800">{value}</div>
+            </div>
+          ))}
+          <div>
+            <p className="mb-1 font-semibold text-slate-500">Is the leak inside or outside?</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Inside, back bedroom</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
+              <Camera className="h-3.5 w-3.5 text-slate-400" /> 2 photos
+            </div>
+            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
+              <CalendarDays className="h-3.5 w-3.5 text-slate-400" /> Oct 7
+            </div>
+          </div>
+          <div className="mt-1 rounded-lg bg-[#00828A] py-2.5 text-center text-xs font-bold text-white">Send request</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mock: QR code on a truck door / yard sign ── */
+function QrSignMock() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-6 sm:p-8 shadow-lg" aria-hidden>
+      <div className="rounded-md bg-[#1C1F23] p-6 text-center text-white">
+        <p className={`${D} text-2xl sm:text-3xl font-extrabold uppercase tracking-wide`}>Summit Roofing</p>
+        <p className="mt-1 text-sm text-slate-300">Repairs · Replacements · Gutters</p>
+        <div className="mx-auto mt-5 w-36 rounded-md bg-white p-2.5">
+          <FakeQR className="h-full w-full" />
+        </div>
+        <p className={`mt-4 ${D} text-xl font-bold uppercase tracking-wider text-[#5EC4C9]`}>Scan for a free quote</p>
+      </div>
+      <p className="mt-3 text-center text-xs text-slate-500">Example yard sign. Print the same code anywhere.</p>
+    </div>
+  );
+}
+
+/* ── Mock: your link and QR code, ready to share ── */
+function LinkCardMock() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 shadow-lg" aria-hidden>
+      <p className="text-sm font-bold">Your booking link</p>
+      <div className="mt-2 flex items-center gap-2">
+        <div className="min-w-0 flex-1 truncate rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700">
+          Your link, ready to paste anywhere
+        </div>
+        <span className="shrink-0 rounded-md bg-[#00828A] px-3 py-2.5 text-sm font-bold text-white">Copy</span>
+      </div>
+      <div className="mt-5 flex items-center gap-4 rounded-md border border-slate-200 bg-[#FBF8F2] p-4">
+        <div className="w-24 shrink-0 rounded bg-white p-1.5 shadow-sm">
+          <FakeQR className="h-full w-full" />
+        </div>
+        <div>
+          <p className="text-sm font-bold">Your QR code</p>
+          <p className="mt-0.5 text-xs text-slate-500">Opens your booking form when scanned.</p>
+          <span className="mt-2 inline-block rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-bold">Download</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mock: Google Business Profile with a booking button ── */
+function GoogleProfileMock() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 shadow-lg" aria-hidden>
+      <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+        <div className="flex h-11 w-11 items-center justify-center rounded-md bg-slate-100 text-sm font-bold text-slate-600">SR</div>
+        <div>
+          <p className="text-sm font-bold">Summit Roofing</p>
+          <div className="flex items-center gap-1">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Star key={i} className="h-3 w-3 fill-amber-400 text-amber-400" />
+            ))}
+            <span className="ml-1 text-[11px] text-slate-500">Roofing contractor · Holbrook, NY</span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-3 gap-2 text-center text-[11px] font-semibold text-slate-600">
+        <div className="rounded-md border border-slate-200 py-2">Call</div>
+        <div className="rounded-md border border-slate-200 py-2">Directions</div>
+        <div className="rounded-md bg-[#00828A] py-2 text-white">Book online</div>
+      </div>
+      <p className="mt-3 text-xs text-slate-500">&ldquo;Book online&rdquo; opens your Lead2Project booking form.</p>
+    </div>
+  );
+}
+
+const STEPS = [
+  { icon: QrCode, title: 'Share your link', desc: 'You get your own booking link and QR code. Put them on your truck, yard signs, business cards and Google profile.' },
+  { icon: Smartphone, title: 'Customer fills it out', desc: 'They scan or tap, and fill out your form: what they need, where, and when, with photos if you turn them on.' },
+  { icon: LayoutDashboard, title: 'It lands on your board', desc: 'The request shows up in your dashboard with every detail, and you get an email alert. No retyping, no lost paper.' },
+];
+
+const ARRIVES = [
+  { icon: Smartphone, label: 'Name, phone and email' },
+  { icon: Wrench, label: 'Service they need' },
+  { icon: FileText, label: 'Job description' },
+  { icon: MapPin, label: 'Job address' },
+  { icon: Camera, label: 'Photos and videos' },
+  { icon: CalendarDays, label: 'Preferred date and time' },
+  { icon: HelpCircle, label: 'Your custom questions' },
+  { icon: Clock, label: 'When they submitted' },
+  { icon: Mail, label: 'An email alert to you' },
+];
 
 export default function LeadCapturePage() {
   return (
-    <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-white text-slate-900">
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>
       <Nav />
 
-      {/* ── HERO ── */}
-      <section className="relative bg-slate-950 pt-24 sm:pt-36 pb-20 sm:pb-28 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }}
-        />
-        <div
-          className="absolute top-0 left-0 w-[600px] h-[400px] opacity-10 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at top left, #10b981, transparent 70%)' }}
-        />
-
-        <div className="relative z-10 max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 text-[10px] font-black uppercase tracking-widest"
-                style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
-                <QrCode size={11} strokeWidth={2.5} />
-                Lead Capture
-              </div>
-
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[0.95] mb-6">
-                Turn every truck<br />
-                <span className="text-emerald-400">into a lead machine.</span>
-              </h1>
-
-              <p className="text-base sm:text-xl text-slate-400 font-medium leading-relaxed max-w-xl mb-10">
-                Your yard sign gets 200 looks and 3 calls. The rest drive by and forget your number. A booking link and QR code captures leads while you're on the job — no missed calls, no scrap paper.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 text-white font-black text-sm hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
-                >
-                  Start Free
-                  <ArrowRight size={15} strokeWidth={2.5} />
-                </Link>
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm text-slate-300 hover:text-white transition-colors"
-                  style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-                >
-                  See Demo
-                </Link>
-              </div>
-            </div>
-
-            {/* Right — QR Image */}
-            <div className="hidden lg:block rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-              <img
-                src="/images/qrbranded2.webp"
-                alt="Branded QR code for contractor lead capture"
-                className="w-full h-auto"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section className="bg-white py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12 sm:mb-16">
-            <p className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3">How It Works</p>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900">
-              Three steps. Zero effort.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <QrCode size={20} className="text-emerald-500" />,
-                title: 'Blast your link',
-                desc: 'Get a custom QR code and booking link instantly. Put it on your truck, yard signs, business cards, social bios, door hangers — everywhere.',
-                color: 'rgba(16,185,129,0.08)',
-                border: 'rgba(16,185,129,0.2)',
-              },
-              {
-                icon: <FormInput size={20} className="text-blue-500" />,
-                title: 'Customer fills your form',
-                desc: 'They scan or tap your link and fill out your branded form — name, phone, service needed, photos, preferred date — whatever you configure.',
-                color: 'rgba(59,130,246,0.08)',
-                border: 'rgba(59,130,246,0.2)',
-              },
-              {
-                icon: <Smartphone size={20} className="text-orange-500" />,
-                title: 'Lead hits your board',
-                desc: 'The lead lands on your dashboard instantly with every detail and photo attached. No manual entry, no lost paper, no missed jobs.',
-                color: 'rgba(249,115,22,0.08)',
-                border: 'rgba(249,115,22,0.2)',
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="rounded-2xl p-6"
-                style={{ background: item.color, border: `1px solid ${item.border}` }}
+      {/* ── Hero ── */}
+      <section
+        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="text-center sm:text-left">
+            <Eyebrow>Lead capture</Eyebrow>
+            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+              Turn your truck into a quote request.
+            </h1>
+            <p className={`mt-5 ${BODY}`}>
+              People see your truck and your yard signs every day, then forget the number. Give them a QR code and a
+              booking link, and the request comes straight to you, even while you&rsquo;re on a job.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3">
+              <Link href="/signup" className={`w-full sm:w-auto ${BTN}`}>
+                Get your link free
+              </Link>
+              <Link
+                href="/#how-it-works"
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
               >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white shadow-sm mb-4">
-                  {item.icon}
+                How it works <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <p className="mt-4 text-sm font-semibold text-[#3a3f45]">Booking link and QR code are on the free plan.</p>
+          </div>
+          <QrSignMock />
+        </div>
+      </section>
+
+      <TradesStrip />
+
+      {/* ── How it works ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Three steps. Nothing to chase.</h2>
+          </div>
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <li key={step.title} className="relative overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm">
+                  <div className="flex items-center justify-between bg-[#1C1F23] px-4 py-2 text-white">
+                    <span className={`${D} text-sm font-bold uppercase tracking-[0.14em]`}>Step</span>
+                    <span className={`${D} text-xl font-extrabold text-[#5EC4C9]`}>#{String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  <div className="border-b border-dashed border-slate-300" />
+                  <div className="p-5 sm:p-6">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{step.title}</h3>
+                    <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.desc}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </section>
+
+      <TapeDivider />
+
+      {/* ── Custom form ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>Your form</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Your brand. Your questions.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              The free form asks for name, email, phone and a description. Upgrade and make it yours: your logo and
+              colors, the fields you need, and photos of the job before you ever pick up the phone.
+            </p>
+            <Bullets
+              items={[
+                { text: 'Name, email, phone and description' },
+                { text: 'Your logo and brand colors', plan: 'Basic' },
+                { text: 'Your services, so you know what they need', plan: 'Basic' },
+                { text: 'Address, preferred date and time fields', plan: 'Basic' },
+                { text: 'Customer photo and video uploads', plan: 'Basic' },
+                { text: 'Your own questions, per service', plan: 'Basic' },
+              ]}
+            />
+          </div>
+          <div className="lg:order-first">
+            <PhoneFormMock />
+          </div>
+        </div>
+      </section>
+
+      {/* ── QR code ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>QR code</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>One code. Everywhere you work.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Your QR code opens your booking form. Print it once and put it everywhere people see your work.
+            </p>
+            <div className="mt-6 grid grid-cols-2 gap-2.5">
+              {['Truck doors', 'Yard signs', 'Business cards', 'Invoices', 'Door hangers', 'Your Instagram bio'].map((place) => (
+                <div key={place} className="flex items-center gap-2 rounded-md border border-slate-200 bg-[#FBF8F2] px-3 py-2.5">
+                  <Link2 className="h-3.5 w-3.5 shrink-0 text-[#00828A]" />
+                  <span className="text-sm font-semibold">{place}</span>
                 </div>
-                <h3 className="text-base font-black text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">{item.desc}</p>
-              </div>
-            ))}
+              ))}
+            </div>
+          </div>
+          <LinkCardMock />
+        </div>
+      </section>
+
+      {/* ── Google Business Profile ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="order-2 lg:order-1 w-full max-w-md mx-auto">
+            <GoogleProfileMock />
+          </div>
+          <div className="order-1 lg:order-2">
+            <Eyebrow>Google profile</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Get requests straight from Google.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Add your booking link to your Google Business Profile. People searching for your trade nearby can request a
+              quote right there, with no phone tag.
+            </p>
+            <Bullets
+              items={[
+                { text: 'Paste your link as the booking button on your profile' },
+                { text: 'Works from Google Search and Google Maps' },
+                { text: 'Same form and questions as everywhere else' },
+                { text: 'Requests land on your board like any other' },
+              ]}
+            />
           </div>
         </div>
       </section>
 
-      {/* ── CUSTOM FORMS ── */}
-      <section className="bg-slate-50 py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <p className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3">Custom Forms</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                Your brand.<br />
-                <span className="text-slate-400">Your questions. Your rules.</span>
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-6">
-                Every form is fully customizable — your logo, your colors, your service categories. Add custom questions, dropdown fields, and let customers attach photos or video of the job before you even pick up the phone.
-              </p>
-              <div className="space-y-3">
-                {[
-                  'Your logo and brand colors',
-                  'Custom questions and dropdowns',
-                  'Photo and video uploads',
-                  'Preferred date and time selection',
-                  'Address and service category toggle',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle size={15} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
-                    <span className="text-sm font-semibold text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — form mockup */}
-            <div className="max-w-[360px] mx-auto lg:mx-0">
-              <FormCard />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── QR CODE ── */}
-      <section className="bg-white py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <p className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3">QR Code</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                One code.<br />
-                <span className="text-slate-400">Everywhere.</span>
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-8">
-                Your custom QR code links directly to your branded booking form. Print it once, use it everywhere. Every scan is a potential job.
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  'Truck wraps',
-                  'Yard signs',
-                  'Business cards',
-                  'Social media bios',
-                  'Door hangers',
-                  'Estimate sheets',
-                ].map((place, i) => (
-                  <div key={i} className="flex items-center gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span className="text-xs font-bold text-slate-700">{place}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — image */}
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200">
-              <img
-                src="/images/qr-scan-2.webp"
-                alt="Contractor scanning QR code on work truck"
-                className="w-full h-auto"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── GOOGLE BUSINESS PROFILE ── */}
-      <section className="bg-slate-50 py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — mockup */}
-            <div className="rounded-2xl p-6 bg-white shadow-xl border border-slate-200 order-2 lg:order-1">
-              <div className="flex items-center gap-3 pb-4 mb-4 border-b border-slate-100">
-                <div className="w-10 h-10 rounded-xl bg-blue-500 flex items-center justify-center text-white font-black text-sm">G</div>
-                <div>
-                  <p className="text-xs font-black text-slate-900">Peak Pro Roofing</p>
-                  <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} size={10} className="text-amber-400 fill-amber-400" />
-                    ))}
-                    <span className="text-[10px] text-slate-400 ml-1">4.9 (128)</span>
-                  </div>
-                </div>
-              </div>
-              <p className="text-xs font-bold text-slate-500 mb-3">Booking link</p>
-              <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
-                <span className="text-xs font-bold text-emerald-700">lead2project.com/peak-pro</span>
-                <ArrowRight size={14} className="text-emerald-600" />
-              </div>
-            </div>
-
-            {/* Right — text */}
-            <div className="order-1 lg:order-2">
-              <p className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-3">Google Business Profile</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                Capture leads<br />
-                <span className="text-slate-400">straight from Google.</span>
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-6">
-                Add your booking link to your Google Business Profile so the people already searching for your service can book directly — no extra click to your website, no phone tag.
-              </p>
-              <div className="space-y-3">
-                {[
-                  'Add your link as the booking button on your profile',
-                  'Capture leads from Google Search and Maps',
-                  'Same branded form, same custom questions',
-                  'Leads land on your board exactly like any other source',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle size={15} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
-                    <span className="text-sm font-semibold text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHAT YOU GET ── */}
-      <section className="bg-slate-950 py-16 sm:py-24">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">
-              Every lead arrives complete.
-            </h2>
-            <p className="text-slate-400 font-medium text-base max-w-xl mx-auto">
-              No chasing details. No phone tag. Everything you need to quote the job lands on your board instantly.
+      {/* ── What arrives ── */}
+      <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="max-w-2xl mx-auto text-center mb-10 sm:mb-12">
+            <Eyebrow dark>Every request</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Arrives ready to quote.</h2>
+            <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
+              No calling back to ask what they need. Everything you set up on your form shows up on the job.
             </p>
           </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { icon: <Smartphone size={16} />, label: 'Full name & phone', color: '#3b82f6' },
-              { icon: <MapPin size={16} />, label: 'Job address', color: '#ef4444' },
-              { icon: <Wrench size={16} />, label: 'Service category', color: '#10b981' },
-              { icon: <FormInput size={16} />, label: 'Photos & videos', color: '#f59e0b' },
-              { icon: <FileText size={16} />, label: 'Job description', color: '#94a3b8' },
-              { icon: <CalendarDays size={16} />, label: 'Preferred date & time', color: '#3b82f6' },
-              { icon: <HelpCircle size={16} />, label: 'Custom question answers', color: '#f59e0b' },
-              { icon: <Clock size={16} />, label: 'Submission timestamp', color: '#10b981' },
-              { icon: <QrCode size={16} />, label: 'QR or link source', color: '#f59e0b' },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 p-4 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <div style={{ color: item.color }}>{item.icon}</div>
-                <span className="text-xs font-bold text-slate-300">{item.label}</span>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {ARRIVES.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3.5">
+                <Icon className="h-4 w-4 shrink-0 text-[#5EC4C9]" />
+                <span className="text-[15px] font-semibold text-slate-200">{label}</span>
               </div>
             ))}
           </div>
+          <p className="mt-5 text-center text-sm text-slate-400">Fields you don&rsquo;t turn on are simply left off the form.</p>
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="bg-white py-16 sm:py-24 border-t border-slate-100">
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 mb-4">
-            Stop losing leads to forgotten numbers.
+      {/* ── Final CTA ── */}
+      <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+            Stop losing jobs to forgotten numbers.
           </h2>
-          <p className="text-base text-slate-500 font-medium mb-8">
-            Set up in 2 minutes. Get your QR code today.
-          </p>
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-500 text-white font-black text-sm hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
-          >
-            Start Free
-            <ArrowRight size={15} strokeWidth={2.5} />
-          </Link>
-          <p className="mt-4 text-xs text-slate-400 font-medium">No credit card on free plan · Cancel anytime</p>
+          <p className="mt-4 text-base sm:text-lg text-white/85">Get your booking link and QR code today. Free.</p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/signup"
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Start free
+            </Link>
+            <Link
+              href="/pricing"
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              See pricing
+            </Link>
+          </div>
+          <p className="mt-6 text-sm font-semibold text-white/80">Free plan available · Cancel anytime</p>
         </div>
       </section>
 

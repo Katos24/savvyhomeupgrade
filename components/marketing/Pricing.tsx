@@ -46,7 +46,7 @@ const plans = [
       'One-click schedule emails',
       'Custom email templates',
       'Full email history',
-      '6 AM daily digest',
+      'Morning daily digest email',
       'AI assistant for your job data',
     ],
   },

@@ -1,458 +1,365 @@
-'use client';
+
 
 import Link from 'next/link';
-import { ArrowRight, CreditCard, FileText, Bell, CheckCircle, Download, Send, Clock, DollarSign, AlertCircle } from 'lucide-react';
+import { ArrowRight, Check, CreditCard, Banknote, Receipt, Bell, Send, CalendarClock, RotateCcw, FileText, Hash, QrCode, AlertCircle } from 'lucide-react';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
+import { InvoiceMock } from '@/components/marketing/InvoiceShowcaseSection';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow, Stamp, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
 
-export default function PaymentPage() {
+/* ─────────────────────────────────────────────────────────
+   /features/payments
+   SEO: contractor invoicing, contractor deposits, accept card payments
+        contractor, payment tracking for contractors
+   Every claim below matches lib/permissions.ts and the app today.
+   ───────────────────────────────────────────────────────── */
 
+export const metadata = {
+  title: 'Deposits, Invoices & Card Payments for Contractors | Lead2Project',
+  description:
+    'Collect the deposit before you buy materials and the balance when the job is done. Card payments through Stripe, cash and check tracked too.',
+};
+
+const D = 'font-[family-name:var(--font-display)]';
+const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
+const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BTN =
+  'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
+  D +
+  ' text-base font-bold uppercase tracking-wider';
+
+function ProTag() {
   return (
-    <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-white text-slate-900">
+    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]`}>
+      Pro
+    </span>
+  );
+}
+
+function Bullets({ items }: { items: { text: string; pro?: boolean }[] }) {
+  return (
+    <ul className="mt-6 space-y-2.5">
+      {items.map((i) => (
+        <li key={i.text} className="flex items-start gap-2.5 text-[15px] font-medium text-[#1C1F23]">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={3} />
+          <span>
+            {i.text}
+            {i.pro && <ProTag />}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+/* ── Mock: deposit + balance, like the Invoice tab ── */
+function DepositBalanceMock() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5 shadow-lg space-y-3" aria-hidden>
+      <div>
+        <div className="flex items-baseline justify-between gap-2 text-sm">
+          <p className="text-slate-600">
+            <span className="font-semibold text-[#1C1F23]">{fmt(4800)}</span> of {fmt(12000)} collected
+          </p>
+          <span className="font-semibold text-emerald-600">40% paid</span>
+        </div>
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70">
+          <div className="h-full w-[40%] rounded-full bg-emerald-500" />
+        </div>
+      </div>
+      <div className="rounded-md border border-emerald-200 bg-emerald-50/60 p-3.5">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold text-slate-500">1. Deposit (40%)</span>
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">Paid</span>
+        </div>
+        <p className="mt-1 text-xl font-extrabold text-emerald-600">{fmt(4800)}</p>
+        <p className="text-xs font-medium text-emerald-700">✓ Paid by card Sep 14</p>
+      </div>
+      <div className="rounded-md border-2 border-teal-600 p-3.5">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold">2. Remaining Balance</span>
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">Awaiting</span>
+        </div>
+        <p className="mt-1 text-2xl font-extrabold">{fmt(7200)}</p>
+        <p className="text-xs text-slate-500">Due when the job is done</p>
+        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3 text-xs font-semibold">
+          <span className="inline-flex items-center gap-1 rounded-md bg-teal-600 px-2.5 py-1.5 text-white">
+            <Send className="h-3 w-3" /> Send Invoice
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-white">+ Mark Paid</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mock: invoice email with pay button ── */
+function InvoiceEmailMock() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white shadow-lg overflow-hidden" aria-hidden>
+      <div className="h-1.5 bg-[#00828A]" />
+      <div className="p-5 sm:p-6">
+        <p className="text-xs text-slate-500">From Summit Roofing</p>
+        <p className="mt-0.5 text-base font-bold">Invoice INV-041</p>
+        <div className="mt-4 rounded-md bg-[#F4F7F6] p-4 text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Balance due</p>
+          <p className="mt-0.5 text-2xl font-extrabold">{fmt(7200)}</p>
+          <div className="mt-3 rounded-md bg-[#00828A] py-2.5 text-sm font-bold text-white">Pay with card · {fmt(7200)}</div>
+          <div className="mt-2 rounded-md border border-slate-300 bg-white py-2 text-xs font-semibold text-slate-700">Download Invoice PDF</div>
+        </div>
+        <p className="mt-4 text-sm text-slate-600">
+          Hi Mike, thanks for choosing us. Your invoice is attached. You can pay online with the button above.
+        </p>
+        <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+          Payment due: October 15, 2026
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mock: receipt email ── */
+function ReceiptMock() {
+  return (
+    <div className="relative rounded-lg border border-slate-200 bg-white p-5 sm:p-6 shadow-lg" aria-hidden>
+      <Stamp label="Paid in full" className="absolute right-5 top-5 text-lg" />
+      <p className="text-xs text-slate-500">From Summit Roofing</p>
+      <p className="mt-0.5 text-base font-bold">Paid in full — {fmt(7200)} received</p>
+      <div className="mt-4 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-center">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Amount paid</p>
+        <p className="text-2xl font-extrabold">{fmt(7200)}</p>
+        <p className="mt-1 text-xs font-semibold text-emerald-700">Paid in full — thank you!</p>
+      </div>
+      <div className="mt-3 flex items-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700">
+        <FileText className="h-4 w-4 text-[#00828A]" /> Invoice-INV-041-Paid.pdf
+      </div>
+    </div>
+  );
+}
+
+export default function PaymentsPage() {
+  return (
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>
       <Nav />
 
-      {/* ── HERO ── */}
-      <section className="relative bg-slate-950 pt-24 sm:pt-36 pb-20 sm:pb-28 overflow-hidden">
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }}
-        />
-        <div
-          className="absolute top-0 right-0 w-[600px] h-[400px] opacity-10 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at top right, #10b981, transparent 70%)' }}
-        />
-
-        <div className="relative z-10 max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 text-[10px] font-black uppercase tracking-widest"
-                style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
-                <CreditCard size={11} strokeWidth={2.5} />
-                Payments & Invoicing
-              </div>
-
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[0.95] mb-6">
-                Get paid.<br />
-                <span className="text-emerald-500">Stay on top of it.</span>
-              </h1>
-
-              <p className="text-base sm:text-xl text-slate-400 font-medium leading-relaxed max-w-xl mb-10">
-                Connect Stripe and card payments are tracked automatically —
-                or use a manual link if you prefer. Generate a branded
-                invoice PDF and email it with a payment link in one click.
-                Send reminders for anything still outstanding.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 text-white font-black text-sm hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
-                >
-                  Start Free
-                  <ArrowRight size={15} strokeWidth={2.5} />
-                </Link>
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm text-slate-300 hover:text-white transition-colors"
-                  style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-                >
-                  See Demo
-                </Link>
-              </div>
-
-              <div className="mt-6 flex items-center gap-2 text-[11px] font-bold text-slate-500">
-                <span className="text-sm font-black tracking-tight" style={{ color: '#635BFF' }}>stripe</span>
-                <span>+ Venmo, Zelle, Cash App, PayPal</span>
-              </div>
-            </div>
-
-            {/* Right — payment screen screenshot */}
-            <div className="hidden lg:block rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-              <img
-                src="/images/invoice_send.webp"
-                alt="Payment hub in Lead2Project"
-                className="w-full h-auto"
-              />
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── PAYMENT HUB ── */}
-      <section className="bg-white py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12 sm:mb-16">
-            <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-3">Payment Hub</p>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900">
-              Every job has a payment status.
-            </h2>
-            <p className="text-base text-slate-500 font-medium mt-4 max-w-2xl mx-auto">
-              Card payments through Stripe are tracked automatically. Record
-              method that used, and when it was paid. The progress bar shows
-              settlement at a glance — no digging through notes.
+      {/* ── Hero ── */}
+      <section
+        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="text-center sm:text-left">
+            <Eyebrow>Payments &amp; invoicing</Eyebrow>
+            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+              Get the deposit before you buy materials.
+            </h1>
+            <p className={`mt-5 ${BODY}`}>
+              Set a deposit on each service. Customers pay it by card, and the final invoice collects the balance when the
+              job is done. Cash and checks are tracked too.
             </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <CreditCard size={20} className="text-emerald-600" />,
-                title: 'Card, tracked automatically',
-                desc: 'Connect Stripe once. Every card payment updates the job status the moment it lands — no manual entry, nothing to reconcile.',
-                color: 'rgba(16,185,129,0.08)',
-                border: 'rgba(16,185,129,0.2)',
-              },
-              {
-                icon: <DollarSign size={20} className="text-blue-500" />,
-                title: 'Or record it yourself',
-                desc: 'Cash, check, Venmo, Zelle, Cash App — log the amount, method, and date paid. Supports partial payments too.',
-                color: 'rgba(59,130,246,0.08)',
-                border: 'rgba(59,130,246,0.2)',
-              },
-              {
-                icon: <Clock size={20} className="text-violet-500" />,
-                title: 'Set a due date',
-                desc: 'Assign a payment due date to any job. Outstanding jobs past their due date surface automatically so nothing slips through.',
-                color: 'rgba(139,92,246,0.08)',
-                border: 'rgba(139,92,246,0.2)',
-              },
-            ].map((item, i) => (
-              <div key={i} className="rounded-2xl p-6" style={{ background: item.color, border: `1px solid ${item.border}` }}>
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white shadow-sm mb-4">
-                  {item.icon}
-                </div>
-                <h3 className="text-base font-black text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── INVOICE ── */}
-      <section className="bg-slate-50 py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-3">Invoicing</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                Professional invoice.<br />
-                <span className="text-slate-400">Sent in one click.</span>
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-6">
-                Generate a branded PDF invoice from the job and email it to your customer automatically. Your logo, your colors, every line item listed cleanly. The PDF attaches to the email so they can save and pay it on their own time.
-              </p>
-              <div className="space-y-3 mb-8">
-                {[
-                  'Your logo and brand colors on every invoice',
-                  'Auto-numbered invoice IDs — INV-001, INV-002',
-                  'Full line item breakdown from your quote',
-                  'Due date shown clearly if set',
-                  'PDF attached to email for easy saving',
-                  'Pay Now button included in the email',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle size={15} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
-                    <span className="text-sm font-semibold text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — invoice PDF preview */}
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200">
-              <div className="bg-slate-800 px-5 py-3 flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                <span className="ml-3 text-xs text-slate-400 font-medium">Invoice-INV-008.pdf</span>
-                <div className="ml-auto flex items-center gap-1.5 text-xs text-slate-500">
-                  <Download size={11} />
-                  <span>Download</span>
-                </div>
-              </div>
-              {/* Invoice mockup matching real PDF style */}
-              <div className="bg-white p-6">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-2 border border-slate-200">
-                      <span className="text-xs font-black text-slate-500">LOGO</span>
-                    </div>
-                    <p className="text-sm font-black text-slate-900">Peak Pro Roofing</p>
-                    <p className="text-xs text-slate-400">(631) 555-0182</p>
-                    <p className="text-xs text-slate-400">hello@peakproroofing.com</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-slate-900 mb-2">INVOICE</p>
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-4 justify-end">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Invoice #</span>
-                        <span className="text-xs font-black text-slate-900">INV-008</span>
-                      </div>
-                      <div className="flex items-center gap-4 justify-end">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Date</span>
-                        <span className="text-xs font-bold text-slate-900">June 11, 2026</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Bill To</p>
-                  <p className="text-xs font-black text-slate-900">Sarah Johnson</p>
-                  <p className="text-[11px] text-slate-400">sarah.j@email.com</p>
-                </div>
-
-                <div className="rounded-lg overflow-hidden border border-slate-100 mb-4">
-                  <div className="grid grid-cols-12 px-3 py-2 bg-slate-50">
-                    <div className="col-span-6 text-[9px] font-black text-slate-500 uppercase tracking-wider">Description</div>
-                    <div className="col-span-2 text-[9px] font-black text-slate-500 uppercase tracking-wider text-center">Qty</div>
-                    <div className="col-span-2 text-[9px] font-black text-slate-500 uppercase tracking-wider text-right">Price</div>
-                    <div className="col-span-2 text-[9px] font-black text-slate-500 uppercase tracking-wider text-right">Total</div>
-                  </div>
-                  {[
-                    { desc: 'Roof inspection & report', qty: 1, price: '$250.00', total: '$250.00' },
-                    { desc: 'Labor — detailed scope', qty: 1, price: '$150.00', total: '$150.00' },
-                    { desc: 'Materials & supplies', qty: 1, price: '$50.00', total: '$50.00' },
-                  ].map((row, i) => (
-                    <div key={i} className="grid grid-cols-12 px-3 py-2 border-t border-slate-50">
-                      <div className="col-span-6 text-[11px] text-slate-700 font-medium">{row.desc}</div>
-                      <div className="col-span-2 text-[11px] text-slate-500 text-center">{row.qty}</div>
-                      <div className="col-span-2 text-[11px] text-slate-500 text-right">{row.price}</div>
-                      <div className="col-span-2 text-[11px] font-bold text-slate-900 text-right">{row.total}</div>
-                    </div>
-                  ))}
-                  <div className="grid grid-cols-12 px-3 py-2.5 bg-slate-900 mt-1">
-                    <div className="col-span-10 text-[10px] font-black text-white uppercase tracking-wider">Total Due</div>
-                    <div className="col-span-2 text-sm font-black text-emerald-400 text-right">$450.00</div>
-                  </div>
-                </div>
-
-                <p className="text-[10px] text-slate-400 text-center">Thank you for your business.</p>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── PAYMENT LINK IN EMAIL ── */}
-      <section className="bg-white py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — email mockup */}
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200">
-              <div className="bg-slate-800 px-5 py-3 flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                <span className="ml-3 text-xs text-slate-400 font-medium">Invoice from Peak Pro Roofing</span>
-              </div>
-              <div className="bg-white p-6">
-                <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-sm">P</div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900">Peak Pro Roofing</p>
-                    <p className="text-[11px] text-slate-400">Invoice INV-008 — $450.00</p>
-                  </div>
-                </div>
-
-                {/* Pay now button */}
-                <div className="rounded-xl p-4 text-center mb-4" style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)' }}>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Pay securely online</p>
-                  <button className="w-full py-3 rounded-xl text-sm font-black text-white mb-2" style={{ background: '#059669' }}>
-                    Pay with card — $450.00
-                  </button>
-                  <button className="w-full py-2.5 rounded-xl text-xs font-black text-slate-700" style={{ background: '#f1f5f9' }}>
-                    Download Invoice PDF
-                  </button>
-                  <p className="mt-2.5 text-[10px] font-semibold text-slate-400">
-                    Prefer Venmo, Zelle, or Cash App? That works too.
-                  </p>
-                </div>
-
-                <p className="text-xs text-slate-500 font-medium mb-1">Hi Sarah,</p>
-                <p className="text-xs text-slate-500 font-medium mb-3">Please find your invoice <strong className="text-slate-800">INV-008</strong> from Peak Pro Roofing attached below.</p>
-
-                <div className="rounded-lg px-3 py-2.5 mb-3" style={{ background: '#d1fae5', border: '1px solid #a7f3d0' }}>
-                  <p className="text-[11px] font-bold text-emerald-800">Payment Due: June 25, 2026</p>
-                </div>
-
-                <p className="text-[11px] text-slate-400">Questions? Call us at (631) 555-0182</p>
-              </div>
-            </div>
-
-            {/* Right — text */}
-            <div>
-              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-3">Get Paid Your Way</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                Card through Stripe.<br />
-                <span className="text-slate-400">Or a manual link — your call.</span>
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-6">
-                Connect Stripe and every invoice gets a Pay Now button that
-                charges a card directly — the job updates to paid the
-                instant it happens, no follow-up needed. Prefer Venmo,
-                Zelle, Cash App, or PayPal instead? Set a manual link and
-                that shows up on the invoice just the same, you&apos;ll
-                just confirm the payment yourself when it comes through.
-              </p>
-              <div className="space-y-3">
-                {[
-                  'Stripe: card payments tracked automatically',
-                  'Manual: Venmo, Zelle, Cash App, PayPal supported',
-                  'Pay button sits above the invoice in the email',
-                  'PDF invoice attached for their records',
-                  'Due date highlighted if set',
-                  'All emails tracked in your outbox',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle size={15} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
-                    <span className="text-sm font-semibold text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── PAYMENT REMINDERS ── */}
-      <section className="bg-slate-50 py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-3">Payment Reminders</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                Stop chasing payments<br />
-                <span className="text-slate-400">by text.</span>
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-6">
-                Any job that is unpaid or partial gets a one-click payment reminder. A professional email goes to the customer with the outstanding balance and your payment link. Rate limited to once every 24 hours so you never over-send.
-              </p>
-              <div className="space-y-3">
-                {[
-                  'One click sends a branded reminder email',
-                  'Shows outstanding balance clearly',
-                  'Includes payment link for instant pay',
-                  'Rate limited — max once per 24 hours per job',
-                  'Sent status tracked in your outbox',
-                  'Works from the job card or financials page',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle size={15} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
-                    <span className="text-sm font-semibold text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right — reminder email mockup */}
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200">
-              <div className="bg-slate-800 px-5 py-3 flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                <span className="ml-3 text-xs text-slate-400 font-medium">Payment Reminder</span>
-              </div>
-              <div className="bg-white p-6">
-                <div className="flex items-center gap-3 pb-4 mb-5 border-b border-slate-100">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-black text-sm">P</div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900">Peak Pro Roofing</p>
-                    <p className="text-[11px] text-slate-400">Friendly payment reminder</p>
-                  </div>
-                </div>
-
-                <div className="rounded-xl p-4 mb-4 text-center" style={{ background: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.15)' }}>
-                  <p className="text-[10px] font-black text-red-400 uppercase tracking-widest mb-1">Outstanding Balance</p>
-                  <p className="text-2xl font-black text-slate-900">$450.00</p>
-                  <p className="text-[11px] text-slate-400 mt-1">Invoice INV-008 · Due June 25, 2026</p>
-                </div>
-
-                <p className="text-xs text-slate-500 mb-3">Hi Sarah, this is a friendly reminder that your payment of <strong className="text-slate-800">$450.00</strong> for your recent service is still outstanding.</p>
-
-                <button className="w-full py-3 rounded-xl text-sm font-black text-white mb-3" style={{ background: '#059669' }}>
-                  Pay with card — $450.00
-                </button>
-
-                <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)' }}>
-                  <Bell size={12} className="text-emerald-500 shrink-0" />
-                  <p className="text-[11px] text-slate-500">Reminder sent · tracked in your outbox</p>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHAT YOU GET ── */}
-      <section className="bg-slate-950 py-16 sm:py-24">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">
-              Everything in one payment hub.
-            </h2>
-            <p className="text-slate-400 font-medium text-base max-w-xl mx-auto">
-              All payment tools live on the job card. No separate invoicing app. No chasing people by text.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {[
-              { icon: <CreditCard size={16} />, label: 'Stripe card payments, tracked automatically', color: '#10b981' },
-              { icon: <DollarSign size={16} />, label: 'Or record payment amount and method yourself', color: '#3b82f6' },
-              { icon: <Clock size={16} />, label: 'Payment due date tracking', color: '#8b5cf6' },
-              { icon: <FileText size={16} />, label: 'Branded PDF invoice generation', color: '#f97316' },
-              { icon: <Send size={16} />, label: 'One-click invoice email', color: '#8b5cf6' },
-              { icon: <Download size={16} />, label: 'PDF attached to email', color: '#10b981' },
-              { icon: <CheckCircle size={16} />, label: 'Venmo, Zelle, Cash App, PayPal — manual option', color: '#3b82f6' },
-              { icon: <Bell size={16} />, label: 'Payment reminder emails', color: '#ef4444' },
-              { icon: <AlertCircle size={16} />, label: 'Outstanding jobs surfaced automatically', color: '#f97316' },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 p-4 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3">
+              <Link href="/signup" className={`w-full sm:w-auto ${BTN}`}>
+                Start free
+              </Link>
+              <Link
+                href="/pricing"
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
               >
-                <div style={{ color: item.color }}>{item.icon}</div>
-                <span className="text-xs font-bold text-slate-300">{item.label}</span>
+                See pricing <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
+              Card payments through Stripe · Venmo, Zelle, Cash App and PayPal links · Included on Basic
+            </p>
+          </div>
+          <div className="w-full max-w-md mx-auto lg:rotate-[-1.5deg]">
+            <InvoiceMock />
+          </div>
+        </div>
+      </section>
+
+      <TradesStrip />
+
+      {/* ── Deposits & balances ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>Deposits &amp; balances</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Set it once per service. Every job follows it.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Give each service a deposit, a percent or a flat amount. Every quote for that service asks for it up front,
+              and every job shows exactly what&rsquo;s been paid and what&rsquo;s left.
+            </p>
+            <Bullets
+              items={[
+                { text: 'Deposit per service, percent or flat amount' },
+                { text: 'Deposit and balance tracked as two clear steps' },
+                { text: 'Progress bar shows how much is collected' },
+                { text: 'Partial payments handled' },
+                { text: 'Deposit and tax lock once money comes in, so terms can’t change' },
+              ]}
+            />
+          </div>
+          <DepositBalanceMock />
+        </div>
+      </section>
+
+      <TapeDivider />
+
+      {/* ── Invoice email ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="order-2 lg:order-1 w-full max-w-md mx-auto">
+            <InvoiceEmailMock />
+          </div>
+          <div className="order-1 lg:order-2">
+            <Eyebrow>Invoices</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>A real invoice. Sent in one click.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Send the invoice straight from the job. Your customer gets an email with a pay button and the PDF attached,
+              so they can pay right away or save it for later.
+            </p>
+            <Bullets
+              items={[
+                { text: 'Your logo and business details on every PDF' },
+                { text: 'Invoice numbers added for you (INV-001, INV-002…)' },
+                { text: 'Every line item from your quote' },
+                { text: 'Pay button in the email, QR code on the PDF' },
+                { text: 'Due date shown clearly when you set one' },
+                { text: 'Every invoice you send saved in your outbox', pro: true },
+              ]}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Ways to get paid ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10 sm:mb-12 text-center sm:text-left">
+            <Eyebrow>Get paid your way</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Card, cash or check. It all adds up.</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: CreditCard,
+                t: 'Card through Stripe',
+                d: 'Connect your own Stripe account once. Card payments update the job the moment they land, and the money goes to your bank.',
+              },
+              {
+                icon: QrCode,
+                t: 'Your payment link',
+                d: 'Rather use Venmo, Zelle, Cash App or PayPal? Add your link and it goes on the invoice. You confirm the payment when it comes in.',
+              },
+              {
+                icon: Banknote,
+                t: 'Cash & check',
+                d: 'Mark it paid with the amount, method and date. The balance and progress update right away.',
+              },
+            ].map(({ icon: Icon, t, d }) => (
+              <div key={t} className="rounded-lg border border-slate-200 bg-[#FBF8F2] p-6">
+                <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <p className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{t}</p>
+                <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{d}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-sm text-[#3a3f45]">
+            Stripe charges its standard processing fee on card payments. Lead2Project doesn&rsquo;t take a cut.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Receipts & reminders ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>Receipts &amp; reminders</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Customers always know where they stand.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Every payment, card or cash, sends your customer a receipt with what&rsquo;s left. When the job is paid in
+              full, the final invoice PDF goes with it. Still waiting on someone? Send a reminder in one click.
+            </p>
+            <Bullets
+              items={[
+                { text: 'Receipt emailed for every payment you record' },
+                { text: 'Final invoice PDF attached when paid in full' },
+                { text: 'One-click payment reminder with the balance and pay link' },
+                { text: 'Overdue jobs flagged so nothing slips' },
+                { text: 'Refunds recorded and shown on the job' },
+              ]}
+            />
+          </div>
+          <div className="w-full max-w-md mx-auto">
+            <ReceiptMock />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Everything ── */}
+      <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="max-w-2xl mx-auto text-center mb-10 sm:mb-12">
+            <Eyebrow dark>All in one place</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Every payment tool lives on the job.</h2>
+            <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
+              No separate invoicing app. No spreadsheet. No chasing people by text.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {[
+              { icon: CreditCard, label: 'Card payments through Stripe' },
+              { icon: Banknote, label: 'Cash, check and payment links' },
+              { icon: CalendarClock, label: 'Deposits and balances' },
+              { icon: FileText, label: 'Invoice PDFs with your logo' },
+              { icon: Hash, label: 'Invoice numbers added for you' },
+              { icon: Send, label: 'One-click invoice emails' },
+              { icon: Receipt, label: 'Automatic receipts' },
+              { icon: Bell, label: 'Payment reminders' },
+              { icon: AlertCircle, label: 'Overdue jobs flagged' },
+              { icon: RotateCcw, label: 'Refunds tracked' },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3.5">
+                <Icon className="h-4 w-4 shrink-0 text-[#5EC4C9]" />
+                <span className="text-[15px] font-semibold text-slate-200">{label}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="bg-white py-16 sm:py-24 border-t border-slate-100">
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 mb-4">
+      {/* ── Final CTA ── */}
+      <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
             Know exactly who owes you money.
           </h2>
-          <p className="text-base text-slate-500 font-medium mb-8">
-            Set up in 2 minutes. Send your first invoice today.
-          </p>
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-600 text-white font-black text-sm hover:bg-emerald-500 transition-all active:scale-95 shadow-lg shadow-emerald-600/20"
-          >
-            Start Free
-            <ArrowRight size={15} strokeWidth={2.5} />
-          </Link>
-          <p className="mt-4 text-xs text-slate-400 font-medium">No credit card on free plan · Cancel anytime</p>
+          <p className="mt-4 text-base sm:text-lg text-white/85">Set up your services and send your first invoice today.</p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/signup"
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Start free
+            </Link>
+            <Link
+              href="/pricing"
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              See pricing
+            </Link>
+          </div>
+          <p className="mt-6 text-sm font-semibold text-white/80">Free plan available · Cancel anytime</p>
         </div>
       </section>
 

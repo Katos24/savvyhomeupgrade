@@ -40,7 +40,7 @@ const PLAN_HIGHLIGHTS: Record<PlanName, string[]> = {
     'One-click schedule emails',
     'Custom email templates',
     'Full email history',
-    '6 AM daily digest',
+    'Morning daily digest email',
     'AI assistant for your job data',
   ],
 };
@@ -123,7 +123,7 @@ const FEATURE_TABLE: FeatureGroup[] = [
       { label: 'Google review request on completion', free: false, basic: true, pro: true },
       { label: 'Email history (outbox)', free: false, basic: false, pro: true },
       { label: 'Custom email templates', free: false, basic: false, pro: true },
-      { label: 'Daily digest email at 6 AM', free: false, basic: false, pro: true },
+    { label: 'Daily digest email every morning', free: false, basic: false, pro: true },
       { label: 'AI assistant for your job data', free: false, basic: false, pro: true },
     ],
   },

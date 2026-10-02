@@ -1,357 +1,352 @@
-'use client';
-
 import Link from 'next/link';
-import { ArrowRight, Calendar, Clock, User, Mail, CheckCircle, ChevronRight } from 'lucide-react';
+import { ArrowRight, Check, CalendarDays, Clock, MapPin, User, Mail, Plus, MoveRight, PlayCircle, Smartphone, LayoutGrid } from 'lucide-react';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
+
+/* ─────────────────────────────────────────────────────────
+   /features/scheduling
+   SEO: contractor scheduling app, job scheduling software,
+        crew calendar for contractors
+   Every claim below matches lib/permissions.ts and the app today.
+   ───────────────────────────────────────────────────────── */
+
+export const metadata = {
+  title: 'Job Scheduling & Crew Calendar for Contractors | Lead2Project',
+  description:
+    'Put every job on the calendar with a date, time and crew member, move jobs in a few taps, and email the customer their appointment in one click.',
+};
+
+const D = 'font-[family-name:var(--font-display)]';
+const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
+const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BTN =
+  'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
+  D +
+  ' text-base font-bold uppercase tracking-wider';
+
+function ProTag() {
+  return (
+    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]`}>
+      Pro
+    </span>
+  );
+}
+
+function Bullets({ items }: { items: { text: string; pro?: boolean }[] }) {
+  return (
+    <ul className="mt-6 space-y-2.5">
+      {items.map((i) => (
+        <li key={i.text} className="flex items-start gap-2.5 text-[15px] font-medium text-[#1C1F23]">
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={3} />
+          <span>
+            {i.text}
+            {i.pro && <ProTag />}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/* ── Mock: week calendar ── */
+const WEEK = [
+  { day: 'Mon', date: 6, jobs: [{ t: '8:00 AM', n: 'M. Johnson', s: 'Roof repair', who: 'Kevin' }] },
+  { day: 'Tue', date: 7, jobs: [] },
+  { day: 'Wed', date: 8, jobs: [{ t: '9:30 AM', n: 'R. Diaz', s: 'Deck stain', who: 'Luis' }, { t: '1:00 PM', n: 'D. Kim', s: 'Gutters', who: 'Kevin' }] },
+  { day: 'Thu', date: 9, jobs: [{ t: '8:00 AM', n: 'S. Patel', s: 'Siding', who: 'Luis' }] },
+  { day: 'Fri', date: 10, jobs: [] },
+];
+
+function CalendarMock() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-3 sm:p-4 shadow-lg" aria-hidden>
+      <div className="mb-3 flex items-center justify-between px-1">
+        <p className="text-sm font-bold">October 6 – 10</p>
+        <div className="flex gap-1 text-[10px] font-semibold text-slate-500">
+          <span className="rounded bg-[#00828A] px-1.5 py-0.5 text-white">5 days</span>
+          <span className="rounded px-1.5 py-0.5">7 days</span>
+        </div>
+      </div>
+      <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+        {WEEK.map((d) => (
+          <div key={d.day} className="min-h-[170px] min-w-0 rounded-md border border-slate-200 bg-[#FBF8F2] p-1.5">
+            <p className="text-[10px] font-bold uppercase text-slate-500">{d.day}</p>
+            <p className="text-sm font-bold">{d.date}</p>
+            <div className="mt-1.5 space-y-1.5">
+              {d.jobs.map((j) => (
+                <div key={j.n} className="rounded border-l-2 border-[#00828A] bg-white px-1.5 py-1 shadow-sm">
+                  <p className="text-[9px] font-semibold text-[#00828A]">{j.t}</p>
+                  <p className="truncate text-[10px] font-bold">{j.n}</p>
+                  <p className="truncate text-[9px] text-slate-500">
+                    {j.s} · {j.who}
+                  </p>
+                </div>
+              ))}
+              <div className="flex items-center justify-center rounded border border-dashed border-slate-300 py-1 text-slate-400">
+                <Plus className="h-3 w-3" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Mock: schedule email to the customer ── */
+function ScheduleEmailMock() {
+  const rows = [
+    { icon: CalendarDays, label: 'Date', value: 'Monday, October 6' },
+    { icon: Clock, label: 'Time', value: '8:00 AM' },
+    { icon: MapPin, label: 'Address', value: '12 Oak St, Holbrook, NY' },
+  ];
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white shadow-lg overflow-hidden" aria-hidden>
+      <div className="h-1.5 bg-[#00828A]" />
+      <div className="p-5 sm:p-6">
+        <p className="text-xs text-slate-500">From Summit Roofing</p>
+        <p className="mt-0.5 text-base font-bold">Your roof repair is scheduled</p>
+        <p className="mt-2 text-sm text-slate-600">Hi Mike, here are the details for your appointment.</p>
+        <div className="mt-4 space-y-3 rounded-md border border-slate-200 bg-slate-50 p-4">
+          {rows.map(({ icon: Icon, label, value }) => (
+            <div key={label} className="flex items-center gap-3">
+              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-white shadow-sm">
+                <Icon className="h-3.5 w-3.5 text-[#00828A]" />
+              </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
+                <p className="text-sm font-semibold">{value}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 text-xs text-slate-500">Questions? Call us at (555) 014-2290</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mock: moving a job to another day ── */
+function MoveJobMock() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-5 sm:p-6 shadow-lg" aria-hidden>
+      <div className="flex items-start gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-amber-50 text-amber-600">
+          <CalendarDays className="h-[18px] w-[18px]" />
+        </span>
+        <div>
+          <p className="text-sm font-bold">Move S. Patel?</p>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-600">
+            <span className="rounded bg-slate-100 px-2 py-0.5">Thu, Oct 9 · 8:00 AM</span>
+            <MoveRight className="h-3.5 w-3.5 text-slate-400" />
+            <span className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-700">Fri, Oct 10</span>
+          </div>
+          <p className="mt-3 text-xs leading-relaxed text-slate-500">
+            If you already sent this customer their schedule, send them the new date after you save.
+          </p>
+        </div>
+      </div>
+      <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold">
+        <span className="rounded-md border border-slate-200 py-2.5 text-center text-slate-600">Cancel</span>
+        <span className="rounded-md bg-[#00828A] py-2.5 text-center text-white">Move job</span>
+      </div>
+    </div>
+  );
+}
+
+const STEPS = [
+  { icon: CalendarDays, title: 'Pick the day and time', desc: 'Set it right on the job, or tap a day on the calendar and add the job there.' },
+  { icon: User, title: 'Assign your crew', desc: 'Pick who’s doing the job from your team, so everyone knows where they’re headed.' },
+  { icon: Mail, title: 'Let the customer know', desc: 'One click emails your customer the date, time and address, from your business name.' },
+];
 
 export default function SchedulingPage() {
-
   return (
-    <div className="min-h-screen font-sans antialiased overflow-x-hidden bg-white text-slate-900">
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>
       <Nav />
 
-      {/* ── HERO ── */}
-      <section className="relative bg-slate-950 pt-24 sm:pt-36 pb-20 sm:pb-28 overflow-hidden">
-        {/* Subtle grid */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.8) 1px, transparent 1px)`,
-            backgroundSize: '60px 60px',
-          }}
-        />
-        {/* Emerald glow */}
-        <div
-          className="absolute top-0 right-0 w-[600px] h-[400px] opacity-10 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at top right, #10b981, transparent 70%)' }}
-        />
-
-        <div className="relative z-10 max-w-6xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full mb-6 text-[10px] font-black uppercase tracking-widest"
-                style={{ background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
-                <Calendar size={11} strokeWidth={2.5} />
-                Scheduling
-              </div>
-
-              <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[0.95] mb-6">
-                Every job.<br />
-                <span className="text-emerald-400">A time and a place.</span>
-              </h1>
-
-              <p className="text-base sm:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mb-10">
-                Assign a date, time, and technician to any job in seconds. Customer gets a notification automatically. No back and forth. No missed appointments.
-              </p>
-
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/signup"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-500 text-white font-black text-sm hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
-                >
-                  Start Free
-                  <ArrowRight size={15} strokeWidth={2.5} />
-                </Link>
-                <Link
-                  href="/demo"
-                  className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl font-black text-sm text-slate-300 hover:text-white transition-colors"
-                  style={{ border: '1px solid rgba(255,255,255,0.1)' }}
-                >
-                  See Demo
-                </Link>
-              </div>
-            </div>
-
-            {/* Right — screenshot */}
-            <div className="hidden lg:block rounded-2xl overflow-hidden shadow-2xl" style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
-              <img
-                src="/images/schedule-screen.webp"
-                alt="Scheduling a job in Lead2Project"
-                className="w-full h-auto"
-              />
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHAT SCHEDULING LOOKS LIKE ── */}
-      <section className="bg-white py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12 sm:mb-16">
-            <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-3">How It Works</p>
-            <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900">
-              Schedule a job in under a minute.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                step: '1',
-                icon: <Calendar size={20} className="text-emerald-500" />,
-                title: 'Pick a date and time',
-                desc: 'Open any job card and set the scheduled date, arrival window, and estimated hours. Done in 10 seconds.',
-                color: 'rgba(16,185,129,0.08)',
-                border: 'rgba(16,185,129,0.2)',
-              },
-              {
-                step: '2',
-                icon: <User size={20} className="text-blue-500" />,
-                title: 'Assign to a tech',
-                desc: 'Pick who is doing the job from your team list. Every team member sees their assigned jobs in one place.',
-                color: 'rgba(59,130,246,0.08)',
-                border: 'rgba(59,130,246,0.2)',
-              },
-              {
-                step: '3',
-                icon: <Mail size={20} className="text-violet-500" />,
-                title: 'Customer gets notified',
-                desc: 'One click sends a branded scheduling email to the customer — date, time, who is coming. They are informed, you move on.',
-                color: 'rgba(139,92,246,0.08)',
-                border: 'rgba(139,92,246,0.2)',
-              },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="rounded-2xl p-6"
-                style={{ background: item.color, border: `1px solid ${item.border}` }}
+      {/* ── Hero ── */}
+      <section
+        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="text-center sm:text-left">
+            <Eyebrow>Scheduling</Eyebrow>
+            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+              Every job. A day, a time and a crew.
+            </h1>
+            <p className={`mt-5 ${BODY}`}>
+              Put jobs on the calendar in seconds, see your whole week at a glance, and let customers know when you&rsquo;re
+              coming, without a phone call.
+            </p>
+            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-3">
+              <Link href="/signup" className={`w-full sm:w-auto ${BTN}`}>
+                Start free
+              </Link>
+              <Link
+                href="/pricing"
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
               >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-white shadow-sm">
-                    {item.icon}
-                  </div>
-                  <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Step {item.step}</span>
-                </div>
-                <h3 className="text-base font-black text-slate-900 mb-2">{item.title}</h3>
-                <p className="text-sm text-slate-600 leading-relaxed font-medium">{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── THE NOTIFICATION EMAIL ── */}
-      <section className="bg-slate-50 py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — text */}
-            <div>
-              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-3">Customer Email</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                They know when you're coming.<br />
-                <span className="text-slate-400">Without you making a call.</span>
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-8">
-                One click sends a clean, branded notification to your customer with the job date, arrival time, and who is assigned. It comes from your business name, not a generic sender. No customer confirmation needed — it is purely informational so they are ready for you.
-              </p>
-              <div className="space-y-3">
-                {[
-                  'Branded with your company name',
-                  'Shows scheduled date and time',
-                  'Shows assigned technician name',
-                  'Sent from your outbox — fully tracked',
-                  'No customer action required',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <CheckCircle size={15} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
-                    <span className="text-sm font-semibold text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
+                See pricing <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
-
-            {/* Right — email mockup */}
-            <div className="rounded-2xl overflow-hidden shadow-xl border border-slate-200">
-              {/* Email header bar */}
-              <div className="bg-slate-800 px-5 py-3 flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
-                <span className="ml-3 text-xs text-slate-400 font-medium">Schedule Confirmation</span>
-              </div>
-              {/* Email body */}
-              <div className="bg-white p-6">
-                <div className="flex items-center gap-3 pb-4 mb-4 border-b border-slate-100">
-                  <div className="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center text-white font-black text-sm">
-                    P
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-slate-900">Peak Pro Roofing</p>
-                    <p className="text-[11px] text-slate-400">hello@peakproroofing.com</p>
-                  </div>
-                </div>
-                <p className="text-sm font-black text-slate-900 mb-1">Your appointment is confirmed</p>
-                <p className="text-xs text-slate-500 mb-5">Hi Sarah — here are the details for your upcoming service.</p>
-
-                <div className="rounded-xl p-4 space-y-3 mb-5" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
-                  {[
-                    { icon: <Calendar size={13} className="text-emerald-500" />, label: 'Date', value: 'Tuesday, June 17, 2026' },
-                    { icon: <Clock size={13} className="text-blue-500" />, label: 'Time', value: '9:00 AM – 11:00 AM' },
-                    { icon: <User size={13} className="text-violet-500" />, label: 'Technician', value: 'Mike Castellano' },
-                  ].map((row, i) => (
-                    <div key={i} className="flex items-center gap-3">
-                      <div className="w-6 h-6 rounded-lg bg-white flex items-center justify-center shadow-sm border border-slate-100">
-                        {row.icon}
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{row.label}</p>
-                        <p className="text-xs font-bold text-slate-800">{row.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-xs text-slate-400 font-medium">Questions? Call us at (631) 555-0182</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── CALENDAR VIEW ── */}
-      <section className="bg-white py-16 sm:py-24 border-b border-slate-100">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-
-            {/* Left — calendar mockup */}
-            <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-lg">
-              <div className="bg-slate-900 px-5 py-4 flex items-center justify-between">
-                <span className="text-sm font-black text-white">June 2026</span>
-                <div className="flex items-center gap-1">
-                  <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
-                    <ChevronRight size={12} className="text-white rotate-180" />
-                  </div>
-                  <div className="w-6 h-6 rounded-lg bg-white/10 flex items-center justify-center">
-                    <ChevronRight size={12} className="text-white" />
-                  </div>
-                </div>
-              </div>
-              <div className="bg-white p-4">
-                {/* Days of week */}
-                <div className="grid grid-cols-7 mb-2">
-                  {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                    <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase py-1">{d}</div>
-                  ))}
-                </div>
-                {/* Calendar grid */}
-                <div className="grid grid-cols-7 gap-1">
-                  {/* Empty first cells */}
-                  {[...Array(0)].map((_, i) => <div key={`e${i}`} />)}
-                  {[...Array(30)].map((_, i) => {
-                    const day = i + 1;
-                    const hasJob = [3, 7, 10, 11, 14, 17, 18, 22, 24, 28].includes(day);
-                    const isToday = day === 11;
-                    return (
-                      <div
-                        key={day}
-                        className={`relative aspect-square rounded-lg flex items-center justify-center text-xs font-bold cursor-pointer transition-all
-                          ${isToday ? 'bg-emerald-500 text-white' : hasJob ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'}`}
-                      >
-                        {day}
-                        {hasJob && !isToday && (
-                          <div className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-emerald-400" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-                {/* Legend */}
-                <div className="flex items-center gap-4 mt-4 pt-3 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                    <span className="text-[10px] font-bold text-slate-500">Today</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full bg-slate-900" />
-                    <span className="text-[10px] font-bold text-slate-500">Jobs scheduled</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Right — text */}
-            <div>
-              <p className="text-xs font-black text-emerald-600 uppercase tracking-widest mb-3">Calendar View</p>
-              <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-4">
-                See your whole week at a glance.
-              </h2>
-              <p className="text-base text-slate-600 font-medium leading-relaxed mb-6">
-                Switch from board view to calendar view any time. Every scheduled job shows on the date it is assigned. No more double booking. No more wondering who is where on Tuesday.
-              </p>
-              <div className="space-y-3">
-                {[
-                  'All jobs plotted by scheduled date',
-                  'Click any day to see job details',
-                  'Spot gaps and openings instantly',
-                  'Switch between board and calendar freely',
-                ].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                    <span className="text-sm font-semibold text-slate-700">{item}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHAT YOU CAN SET ── */}
-      <section className="bg-slate-950 py-16 sm:py-24">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-3">
-              Everything you need to set a job.
-            </h2>
-            <p className="text-slate-400 font-medium text-base max-w-xl mx-auto">
-              All scheduling fields live on the job card. No separate calendar app. No switching tools.
+            <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
+              Calendar view on Free · Scheduling and crew on Basic · Schedule emails on Pro
             </p>
           </div>
+          <CalendarMock />
+        </div>
+      </section>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <TradesStrip />
+
+      {/* ── How it works ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Schedule a job in under a minute.</h2>
+          </div>
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {STEPS.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <li key={step.title} className="relative overflow-hidden rounded-lg bg-white border border-slate-200 shadow-sm">
+                  <div className="flex items-center justify-between bg-[#1C1F23] px-4 py-2 text-white">
+                    <span className={`${D} text-sm font-bold uppercase tracking-[0.14em]`}>Step</span>
+                    <span className={`${D} text-xl font-extrabold text-[#5EC4C9]`}>#{String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  <div className="border-b border-dashed border-slate-300" />
+                  <div className="p-5 sm:p-6">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>
+                      {step.title}
+                      {i === 2 && <ProTag />}
+                    </h3>
+                    <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.desc}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </section>
+
+      <TapeDivider />
+
+      {/* ── Customer email ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>Customer email</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>They know when you&rsquo;re coming.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              One click sends your customer a clean email with the date, time and address. It comes from your business
+              name, so they know exactly who it&rsquo;s from.
+            </p>
+            <Bullets
+              items={[
+                { text: 'Sent from your business name', pro: true },
+                { text: 'Date, time and job address', pro: true },
+                { text: 'Edit the wording in your email templates', pro: true },
+                { text: 'Every email saved in your outbox', pro: true },
+              ]}
+            />
+          </div>
+          <div className="w-full max-w-md mx-auto">
+            <ScheduleEmailMock />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Calendar ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div className="order-2 lg:order-1 w-full max-w-md mx-auto">
+            <MoveJobMock />
+          </div>
+          <div className="order-1 lg:order-2">
+            <Eyebrow>Your calendar</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Your whole week at a glance.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              See who&rsquo;s where every day. Add a job right on a day, move one when the weather turns, and spot the open
+              days before they become lost money.
+            </p>
+            <Bullets
+              items={[
+                { text: '5-day or 7-day week, on desktop and phone' },
+                { text: 'Tap a day to add a job there' },
+                { text: 'Move a job to another day in a few taps' },
+                { text: 'Jobs move to In Progress on their scheduled day' },
+                { text: 'Switch between cards, table, board and calendar' },
+              ]}
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Everything ── */}
+      <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="max-w-2xl mx-auto text-center mb-10 sm:mb-12">
+            <Eyebrow dark>All on the job</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Everything you need to set a job.</h2>
+            <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
+              No separate calendar app. No group text to figure out who&rsquo;s where.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {[
-              { icon: <Calendar size={16} />, label: 'Scheduled Date', color: '#10b981' },
-              { icon: <Clock size={16} />, label: 'Arrival Time', color: '#3b82f6' },
-              { icon: <User size={16} />, label: 'Assigned Technician', color: '#8b5cf6' },
-              { icon: <Clock size={16} />, label: 'Estimated Hours', color: '#f59e0b' },
-              { icon: <Mail size={16} />, label: 'One-Click Customer Email', color: '#10b981' },
-              { icon: <CheckCircle size={16} />, label: 'Outbox Confirmation', color: '#3b82f6' },
-            ].map((item, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-3 p-4 rounded-xl"
-                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-              >
-                <div style={{ color: item.color }}>{item.icon}</div>
-                <span className="text-xs font-bold text-slate-300">{item.label}</span>
+              { icon: CalendarDays, label: 'Scheduled date' },
+              { icon: Clock, label: 'Start time' },
+              { icon: User, label: 'Assigned crew member' },
+              { icon: Plus, label: 'Add jobs right on the calendar' },
+              { icon: MoveRight, label: 'Move jobs to another day' },
+              { icon: PlayCircle, label: 'Auto-start on the scheduled day' },
+              { icon: Smartphone, label: 'Works on your phone' },
+              { icon: LayoutGrid, label: 'Calendar, cards, table and board' },
+              { icon: Mail, label: 'One-click schedule email (Pro)' },
+            ].map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3.5">
+                <Icon className="h-4 w-4 shrink-0 text-[#5EC4C9]" />
+                <span className="text-[15px] font-semibold text-slate-200">{label}</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── FINAL CTA ── */}
-      <section className="bg-white py-16 sm:py-24 border-t border-slate-100">
-        <div className="max-w-2xl mx-auto px-6 text-center">
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 mb-4">
+      {/* ── Final CTA ── */}
+      <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
             Stop scheduling by text.
           </h2>
-          <p className="text-base text-slate-500 font-medium mb-8">
-            Set up in 2 minutes. Your first scheduled job goes out today.
-          </p>
-          <Link
-            href="/signup"
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-emerald-500 text-white font-black text-sm hover:bg-emerald-400 transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
-          >
-            Start Free
-            <ArrowRight size={15} strokeWidth={2.5} />
-          </Link>
-          <p className="mt-4 text-xs text-slate-400 font-medium">No credit card on free plan · Cancel anytime</p>
+          <p className="mt-4 text-base sm:text-lg text-white/85">Put your first job on the calendar today.</p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/signup"
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Start free
+            </Link>
+            <Link
+              href="/pricing"
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              See pricing
+            </Link>
+          </div>
+          <p className="mt-6 text-sm font-semibold text-white/80">Free plan available · Cancel anytime</p>
         </div>
       </section>
 
