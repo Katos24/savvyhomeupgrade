@@ -1,19 +1,14 @@
 import { Check, X } from 'lucide-react';
 import Link from 'next/link';
-import { Plus_Jakarta_Sans } from 'next/font/google';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow, TapeDivider } from '@/components/marketing/marketingUI';
 
 export const metadata = {
   title: 'Pricing | Lead2Project',
   description: 'Simple pricing for contractors. Start free, upgrade when you need quotes, deposits and payments.',
 };
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-});
 
 type PlanName = 'Free' | 'Basic' | 'Pro';
 const PLANS: PlanName[] = ['Free', 'Basic', 'Pro'];
@@ -137,8 +132,8 @@ function Cell({ on }: { on: boolean }) {
   return (
     <div className="flex items-center justify-center">
       {on ? (
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#00828A]">
-          <Check className="h-3 w-3 text-white" strokeWidth={3} />
+        <span className="flex h-5 w-5 items-center justify-center bg-[#FFC72C] border-2 border-[#1C1F23]">
+          <Check className="h-3 w-3" strokeWidth={3.5} />
         </span>
       ) : (
         <X className="h-4 w-4 text-slate-300" strokeWidth={2} aria-label="Not included" />
@@ -149,19 +144,19 @@ function Cell({ on }: { on: boolean }) {
 
 export default function PricingPage() {
   return (
-    <div className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] min-h-screen bg-[#F4F7F6] text-slate-900 antialiased`}>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-[#F4EFE6] text-[#1C1F23] antialiased`}>
       <Nav />
 
       {/* ── Header ── */}
       <section className="pt-28 sm:pt-36 pb-12 sm:pb-16 px-4 text-center">
-        <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Pricing</p>
-        <h1 className="mt-3 text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
+        <Eyebrow>Pricing</Eyebrow>
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl sm:text-7xl font-extrabold uppercase tracking-tight leading-[0.9]">
           One job pays for the whole year.
         </h1>
-        <p className="mt-4 text-base sm:text-lg text-slate-600 max-w-xl mx-auto">
+        <p className="mt-4 text-base sm:text-lg text-[#3a3f45] max-w-xl mx-auto">
           Start free. Upgrade when you&rsquo;re ready to quote, collect deposits and get paid.
         </p>
-        <p className="mt-2 text-sm text-slate-500">Cancel anytime · No setup fees</p>
+        <p className="mt-2 text-sm font-semibold text-[#3a3f45]">Cancel anytime · No setup fees</p>
       </section>
 
       {/* ── Plan cards ── */}
@@ -172,31 +167,38 @@ export default function PricingPage() {
             return (
               <div
                 key={plan}
-                className={`relative flex flex-col rounded-2xl p-6 sm:p-7 ${
-                  info.highlight
-                    ? 'border-2 border-[#00828A] bg-white shadow-lg shadow-[#00828A]/10'
-                    : 'border border-slate-200 bg-white'
+                className={`relative flex flex-col border-2 border-[#1C1F23] bg-white p-6 sm:p-7 pt-8 ${
+                  info.highlight ? 'shadow-[7px_7px_0_0_#1C1F23]' : 'shadow-[4px_4px_0_0_#1C1F23]'
                 }`}
               >
+                <div
+                  className="absolute inset-x-0 top-0 h-3 border-b-2 border-[#1C1F23]"
+                  style={
+                    info.highlight
+                      ? { backgroundImage: 'repeating-linear-gradient(-45deg, #FFC72C 0 10px, #1C1F23 10px 20px)' }
+                      : { background: '#F4EFE6' }
+                  }
+                  aria-hidden
+                />
                 {info.highlight && (
-                  <span className="absolute -top-3 left-6 rounded-full bg-[#00828A] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
+                  <span className="absolute top-6 right-6 bg-[#FFC72C] border-2 border-[#1C1F23] px-2 py-0.5 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider">
                     Recommended
                   </span>
                 )}
 
-                <h2 className="text-sm font-bold">{plan}</h2>
+                <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold uppercase">{plan}</h2>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-4xl font-extrabold tracking-tight">{info.price}</span>
+                  <span className="font-[family-name:var(--font-display)] text-5xl font-extrabold tracking-tight">{info.price}</span>
                   <span className="text-sm text-slate-500">{info.period}</span>
                 </div>
-                <p className="mt-2 text-sm text-slate-600">{info.desc}</p>
+                <p className="mt-2 text-[15px] text-[#3a3f45]">{info.desc}</p>
 
                 <Link
                   href="/signup"
-                  className={`mt-6 block w-full rounded-xl py-3 text-center text-sm font-bold transition-colors ${
+                  className={`mt-6 block w-full rounded-md border-2 border-[#1C1F23] py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-all hover:translate-x-[2px] hover:translate-y-[2px] ${
                     info.highlight
-                      ? 'bg-[#00828A] text-white hover:bg-[#006e75]'
-                      : 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50'
+                      ? 'bg-[#FFC72C] shadow-[4px_4px_0_0_#1C1F23] hover:shadow-[2px_2px_0_0_#1C1F23]'
+                      : 'bg-white shadow-[3px_3px_0_0_#1C1F23] hover:shadow-[1px_1px_0_0_#1C1F23]'
                   }`}
                 >
                   {info.cta}
@@ -204,8 +206,8 @@ export default function PricingPage() {
 
                 <ul className="mt-6 space-y-2.5">
                   {PLAN_HIGHLIGHTS[plan].map((f) => (
-                    <li key={f} className="flex items-start gap-2.5 text-sm text-slate-700">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={2.5} />
+                    <li key={f} className="flex items-start gap-2.5 text-[15px]">
+                      <Check className="mt-0.5 h-4 w-4 shrink-0" strokeWidth={3} />
                       {f}
                     </li>
                   ))}
@@ -220,26 +222,26 @@ export default function PricingPage() {
       <section className="pb-16 sm:pb-24 px-4">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-8 sm:mb-10">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Compare plans</h2>
+            <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold uppercase tracking-tight">Compare plans</h2>
             <p className="mt-2 text-sm text-slate-500">Everything included in each plan.</p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden">
+          <div className="border-2 border-[#1C1F23] bg-white shadow-[5px_5px_0_0_#1C1F23] overflow-hidden">
             {/* Header row (sticks while scrolling the table) */}
-            <div className="grid grid-cols-[1.6fr_repeat(3,1fr)] border-b border-slate-200 bg-white">
+            <div className="grid grid-cols-[1.6fr_repeat(3,1fr)] border-b-2 border-[#1C1F23] bg-[#1C1F23] text-white">
               <div className="px-3 sm:px-5 py-4" />
               {PLANS.map((plan) => (
                 <div key={plan} className="px-1 sm:px-4 py-4 text-center">
-                  <p className={`text-xs font-bold ${PLAN_INFO[plan].highlight ? 'text-[#00828A]' : 'text-slate-600'}`}>{plan}</p>
-                  <p className="mt-0.5 text-sm sm:text-lg font-extrabold">{PLAN_INFO[plan].price}</p>
+                  <p className={`font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider ${PLAN_INFO[plan].highlight ? 'text-[#FFC72C]' : 'text-slate-300'}`}>{plan}</p>
+                  <p className="mt-0.5 font-[family-name:var(--font-display)] text-lg sm:text-2xl font-extrabold">{PLAN_INFO[plan].price}</p>
                 </div>
               ))}
             </div>
 
             {FEATURE_TABLE.map((group) => (
               <div key={group.group}>
-                <div className="bg-[#F8FAF9] px-3 sm:px-5 py-2.5 border-y border-slate-100">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{group.group}</p>
+                <div className="bg-[#F4EFE6] px-3 sm:px-5 py-2 border-y-2 border-[#1C1F23]/15">
+                  <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em]">{group.group}</p>
                 </div>
                 {group.rows.map((row) => (
                   <div
@@ -247,7 +249,7 @@ export default function PricingPage() {
                     className="grid grid-cols-[1.6fr_repeat(3,1fr)] border-b border-slate-100 last:border-b-0"
                   >
                     <div className="px-3 sm:px-5 py-3 flex items-center">
-                      <span className="text-xs sm:text-sm text-slate-700">{row.label}</span>
+                      <span className="text-sm sm:text-[15px]">{row.label}</span>
                     </div>
                     <div className="py-3 flex items-center justify-center"><Cell on={row.free} /></div>
                     <div className="py-3 flex items-center justify-center"><Cell on={row.basic} /></div>
@@ -262,21 +264,21 @@ export default function PricingPage() {
 
       {/* ── Final CTA ── */}
       <section className="pb-20 sm:pb-24 px-4">
-        <div className="max-w-2xl mx-auto text-center rounded-2xl bg-[#0B1520] text-white p-8 sm:p-12">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Start free today.</h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-300">
+        <div className="max-w-2xl mx-auto text-center bg-[#FFC72C] border-2 border-[#1C1F23] shadow-[6px_6px_0_0_#1C1F23] p-8 sm:p-12">
+          <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold uppercase tracking-tight">Start free today.</h2>
+          <p className="mt-3 text-base">
             Set up your services and booking link, then upgrade when you&rsquo;re ready to take payments.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/signup"
-              className="px-7 py-3.5 rounded-xl bg-[#00828A] hover:bg-[#006e75] text-white text-sm font-bold transition-colors"
+              className="px-8 py-3 rounded-md border-2 border-[#1C1F23] bg-[#1C1F23] text-[#FFC72C] font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider shadow-[4px_4px_0_0_#ffffff] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#ffffff] transition-all"
             >
               Start free
             </Link>
             <Link
               href="/login"
-              className="px-7 py-3.5 rounded-xl border border-white/20 text-white text-sm font-semibold hover:bg-white/5 transition-colors"
+              className="px-8 py-3 rounded-md border-2 border-[#1C1F23] bg-white font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider shadow-[4px_4px_0_0_#1C1F23] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0_0_#1C1F23] transition-all"
             >
               Log in
             </Link>
@@ -284,6 +286,7 @@ export default function PricingPage() {
         </div>
       </section>
 
+      <TapeDivider />
       <Footer />
     </div>
   );

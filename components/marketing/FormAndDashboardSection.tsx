@@ -1,19 +1,10 @@
 'use client';
 
+import { Eyebrow } from './marketingUI';
 import { motion } from 'framer-motion';
 import { ArrowRight, ArrowDown, Camera, CalendarDays, QrCode, Link2 } from 'lucide-react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-});
-
 // Mock data for the board preview — illustrative only.
-type MockCard = { name: string; service: string; amount: string; date: string; fresh?: boolean; paid?: string };
-
-const COLUMNS: { label: string; dot: string; cards: MockCard[] }[] = [
+const COLUMNS = [
   {
     label: 'New',
     dot: 'bg-blue-500',
@@ -37,24 +28,24 @@ const COLUMNS: { label: string; dot: string; cards: MockCard[] }[] = [
 export default function FormAndDashboardSection() {
   return (
     <section
-      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-white text-slate-900 py-16 sm:py-24 px-4 sm:px-6 lg:px-8`}
+      className={`bg-white text-[#1C1F23] py-16 sm:py-24 px-4 sm:px-6 lg:px-8`}
     >
       <div className="max-w-6xl mx-auto">
         <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
-          <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Your booking form</p>
-          <h2 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight">
+          <Eyebrow>Your booking form</Eyebrow>
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">
             Customers request a quote. It lands in your dashboard.
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
+          <p className="mt-3 text-base sm:text-lg text-[#3a3f45] leading-relaxed">
             Share your link or QR code anywhere: your Google profile, your truck, your invoices. Every request shows up
             with the details and photos you need to quote it.
           </p>
           <div className="mt-4 flex flex-wrap justify-center sm:justify-start gap-2 text-xs font-semibold text-slate-600">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-[#F8FAF9] px-3 py-1">
-              <Link2 className="w-3.5 h-3.5 text-[#00828A]" /> Booking link
+            <span className="inline-flex items-center gap-1.5 border-2 border-[#1C1F23] bg-[#FFC72C] px-2.5 py-0.5 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#1C1F23]">
+              <Link2 className="w-3.5 h-3.5" /> Booking link
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-[#F8FAF9] px-3 py-1">
-              <QrCode className="w-3.5 h-3.5 text-[#00828A]" /> QR code
+            <span className="inline-flex items-center gap-1.5 border-2 border-[#1C1F23] bg-[#FFC72C] px-2.5 py-0.5 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#1C1F23]">
+              <QrCode className="w-3.5 h-3.5" /> QR code
             </span>
           </div>
         </div>
@@ -66,7 +57,7 @@ export default function FormAndDashboardSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.5 }}
-            className="mx-auto w-full max-w-[300px] rounded-[2rem] bg-slate-900 p-2.5 shadow-2xl"
+            className="mx-auto w-full max-w-[300px] rounded-[2rem] bg-[#1C1F23] p-2.5 shadow-[6px_6px_0_0_#FFC72C]"
           >
             <div className="rounded-[1.6rem] bg-white overflow-hidden">
               <div className="bg-[#00828A] px-5 pt-6 pb-4 text-white">
@@ -107,9 +98,9 @@ export default function FormAndDashboardSection() {
           </motion.div>
 
           {/* ── Arrow ── */}
-          <div className="flex justify-center text-[#00828A]">
-            <ArrowRight className="hidden lg:block w-8 h-8" />
-            <ArrowDown className="lg:hidden w-7 h-7" />
+          <div className="flex justify-center text-[#1C1F23]">
+            <ArrowRight className="hidden lg:block w-10 h-10" strokeWidth={2.5} />
+            <ArrowDown className="lg:hidden w-9 h-9" strokeWidth={2.5} />
           </div>
 
           {/* ── Dashboard: the job board ── */}
@@ -118,7 +109,7 @@ export default function FormAndDashboardSection() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
             transition={{ duration: 0.5, delay: 0.15 }}
-            className="rounded-2xl border border-slate-200 bg-[#F4F7F6] p-3 sm:p-4 shadow-xl overflow-hidden"
+            className="rounded-md border-2 border-[#1C1F23] bg-[#F4F7F6] p-3 sm:p-4 shadow-[6px_6px_0_0_#1C1F23] overflow-hidden"
           >
             <div className="mb-3 flex items-center justify-between px-1">
               <p className="text-sm font-bold">Jobs</p>

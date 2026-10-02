@@ -1,95 +1,189 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Receipt, TrendingUp } from 'lucide-react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import { Eyebrow } from './marketingUI';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronDown, Receipt, TrendingUp } from 'lucide-react';
+// Mirrors Financials → Expenses (FinancialsExpenses.tsx). Illustrative jobs;
+// every job's line items and expenses add up to its totals.
+type Line = { description: string; amount: number; category?: string };
+type Job = { id: number; name: string; meta: string; income: Line[]; expenses: Line[] };
 
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-});
-
-// Illustrative job — numbers add up: 12,000 − 7,130 = 4,870 (about 41%).
-const EXPENSES = [
-  { label: 'Shingles & underlayment', amount: 4150 },
-  { label: 'Crew labor', amount: 2600 },
-  { label: 'Dumpster rental', amount: 380 },
+const JOBS: Job[] = [
+  {
+    id: 1,
+    name: 'M. Johnson',
+    meta: '#INV-041 · Sep 10',
+    income: [
+      { description: 'Tear-off & materials', amount: 7400 },
+      { description: 'Labor & installation', amount: 4600 },
+    ],
+    expenses: [
+      { description: 'Shingles & underlayment', category: 'Materials', amount: 4150 },
+      { description: 'Crew labor', category: 'Labor', amount: 2600 },
+      { description: 'Dumpster rental', category: 'Equipment', amount: 380 },
+    ],
+  },
+  {
+    id: 2,
+    name: 'S. Patel',
+    meta: '#INV-038 · Sep 22',
+    income: [
+      { description: 'Old siding removal', amount: 1900 },
+      { description: 'New vinyl siding', amount: 6500 },
+    ],
+    expenses: [
+      { description: 'Vinyl siding & trim', category: 'Materials', amount: 3480 },
+      { description: 'Crew labor', category: 'Labor', amount: 1550 },
+      { description: 'Disposal fee', category: 'Other', amount: 180 },
+    ],
+  },
+  {
+    id: 3,
+    name: 'D. Kim',
+    meta: '#INV-036 · Sep 18',
+    income: [
+      { description: 'Gutter cleaning', amount: 350 },
+      { description: 'Gutter guard install', amount: 600 },
+    ],
+    expenses: [{ description: 'Gutter guards', category: 'Materials', amount: 120 }],
+  },
 ];
-const TOTAL = 12000;
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+const sum = (lines: Line[]) => lines.reduce((s, l) => s + l.amount, 0);
+const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
 export default function ProfitSection() {
-  const spent = EXPENSES.reduce((s, e) => s + e.amount, 0);
-  const profit = TOTAL - spent;
-  const margin = Math.round((profit / TOTAL) * 100);
+  const [openId, setOpenId] = useState<number | null>(1);
 
   return (
     <section
-      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-white text-slate-900 py-16 sm:py-24 px-4 sm:px-6 lg:px-8`}
+      className={`bg-white text-[#1C1F23] py-16 sm:py-24 px-4 sm:px-6 lg:px-8`}
     >
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-14 items-center">
         {/* Copy */}
         <div className="text-center sm:text-left">
-          <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Expenses &amp; profit</p>
-          <h2 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight">
+          <Eyebrow>Expenses &amp; profit</Eyebrow>
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">
             Know what you actually made on every job.
           </h2>
-          <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-            Log materials, labor and other costs right on the job, with receipt photos. You see the real profit,
-            not just what you charged, and your bookkeeper gets a clean export at the end of the month.
+          <p className="mt-3 text-base sm:text-lg text-[#3a3f45] leading-relaxed">
+            Log materials, labor and other costs on the job as you go. Every job shows what came in, what went out,
+            and what you kept, and your bookkeeper gets a clean export.
           </p>
-          <ul className="mt-5 space-y-2 text-sm text-slate-700 inline-block text-left">
+          <ul className="mt-5 space-y-2 text-[15px] font-semibold text-[#1C1F23] inline-block text-left">
             <li className="flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-[#00828A]" /> Receipt photos saved on the job
+              <TrendingUp className="w-4 h-4 text-[#1C1F23]" /> Income, expenses and profit per job
             </li>
             <li className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-[#00828A]" /> Profit and margin per job
+              <Receipt className="w-4 h-4 text-[#1C1F23]" /> Overhead tracked separately from jobs
             </li>
           </ul>
+          <p className="mt-4 text-xs text-slate-400">Tap a job to see the breakdown.</p>
         </div>
 
-        {/* Mock job card */}
+        {/* Interactive mock: Financials → Expenses */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: '-60px' }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md mx-auto rounded-2xl border border-slate-200 bg-[#F8FAF9] p-5 sm:p-6 shadow-xl"
+          className="w-full max-w-xl mx-auto rounded-md bg-[#faf9f5] p-3 sm:p-4 border-2 border-[#1C1F23] shadow-[6px_6px_0_0_#1C1F23] space-y-2.5"
         >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-sm font-bold">Roof Repair</p>
-              <p className="text-xs text-slate-500">M. Johnson · Holbrook</p>
+          {/* Overhead */}
+          <div className="rounded-xl border border-stone-200 bg-white px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <Receipt className="h-4 w-4 text-stone-500 shrink-0" />
+              <p className="text-sm font-semibold text-stone-900">General Overhead</p>
+              <span className="hidden sm:inline text-xs text-stone-400">(3 not tied to a job)</span>
             </div>
-            <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700">
-              ✓ Paid in full
-            </span>
+            <span className="text-sm font-bold tabular-nums text-rose-600">{fmt(642)}</span>
           </div>
 
-          <div className="mt-5 flex items-center justify-between text-sm">
-            <span className="text-slate-600">Job total</span>
-            <span className="font-bold tabular-nums">{fmt(TOTAL)}</span>
-          </div>
+          {JOBS.map((job) => {
+            const income = sum(job.income);
+            const spent = sum(job.expenses);
+            const isOpen = openId === job.id;
+            return (
+              <div key={job.id} className="rounded-xl border border-stone-200 bg-white overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setOpenId(isOpen ? null : job.id)}
+                  aria-expanded={isOpen}
+                  className="w-full flex items-center justify-between gap-3 px-4 py-3.5 text-left hover:bg-stone-50/60 transition-colors"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-stone-900 truncate">{job.name}</p>
+                    <p className="text-xs text-stone-400">{job.meta}</p>
+                  </div>
+                  <div className="flex items-center gap-4 sm:gap-5 shrink-0">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-[10px] uppercase tracking-wide text-stone-400">Income</p>
+                      <p className="text-sm font-semibold tabular-nums text-emerald-700">{fmt(income)}</p>
+                    </div>
+                    <div className="text-right hidden sm:block">
+                      <p className="text-[10px] uppercase tracking-wide text-stone-400">Expenses</p>
+                      <p className="text-sm font-semibold tabular-nums text-rose-600">{fmt(spent)}</p>
+                    </div>
+                    <div className="text-right min-w-[84px]">
+                      <p className="text-[10px] uppercase tracking-wide text-stone-400">Profit</p>
+                      <p className="text-base font-bold tabular-nums text-stone-900">{fmt(income - spent)}</p>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 text-stone-500 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    />
+                  </div>
+                </button>
 
-          <div className="mt-3 rounded-xl border border-slate-200 bg-white divide-y divide-slate-100">
-            {EXPENSES.map((e) => (
-              <div key={e.label} className="flex items-center justify-between px-3.5 py-2.5 text-sm">
-                <span className="text-slate-600">{e.label}</span>
-                <span className="tabular-nums text-slate-700">− {fmt(e.amount)}</span>
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="border-t border-stone-100 px-4 pt-3 pb-4 space-y-4">
+                        <div>
+                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-stone-500">Income</p>
+                          <div className="space-y-1.5">
+                            {job.income.map((l) => (
+                              <div key={l.description} className="flex items-center justify-between gap-3 text-sm text-stone-900">
+                                <span>{l.description}</span>
+                                <span className="tabular-nums">{fmt(l.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Expenses</p>
+                            <span className="text-[11px] font-semibold underline text-emerald-700">Add / Edit</span>
+                          </div>
+                          <div className="space-y-1.5">
+                            {job.expenses.map((l) => (
+                              <div key={l.description} className="flex items-center justify-between gap-3 text-sm text-stone-900">
+                                <span className="min-w-0">
+                                  {l.description} <span className="text-stone-400">({l.category})</span>
+                                </span>
+                                <span className="tabular-nums shrink-0">{fmt(l.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        {/* Mobile-only totals (desktop shows them in the row) */}
+                        <div className="sm:hidden flex justify-between border-t border-stone-100 pt-3 text-xs">
+                          <span className="text-emerald-700 font-semibold">In {fmt(income)}</span>
+                          <span className="text-rose-600 font-semibold">Out {fmt(spent)}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            ))}
-          </div>
-
-          <div className="mt-4 flex items-end justify-between border-t border-slate-200 pt-4">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Profit</p>
-              <p className="text-2xl sm:text-3xl font-extrabold text-emerald-600 tabular-nums">{fmt(profit)}</p>
-            </div>
-            <span className="text-sm font-semibold text-slate-600">{margin}% margin</span>
-          </div>
+            );
+          })}
         </motion.div>
       </div>
     </section>

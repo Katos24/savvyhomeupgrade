@@ -1,25 +1,8 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import {
-  Settings2,
-  Send,
-  CreditCard,
-  QrCode,
-  FileText,
-  Receipt,
-  CalendarDays,
-  Columns3,
-  Star,
-  Mail,
-} from 'lucide-react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-});
+import { Settings2, Send, CreditCard, QrCode, FileText, Receipt, CalendarDays, Columns3, Star, Mail } from 'lucide-react';
+import { Eyebrow } from './marketingUI';
 
 // Every claim here matches what the app does today — keep it that way.
 const STEPS = [
@@ -45,7 +28,7 @@ const FEATURES = [
   { icon: FileText, title: 'Quotes from templates', desc: 'Saved line items per service. No retyping.' },
   { icon: CreditCard, title: 'Card payments through Stripe', desc: 'Deposits and balances, paid online.' },
   { icon: Receipt, title: 'Cash & check tracked too', desc: 'Record any payment and the balance updates.' },
-  { icon: Mail, title: 'Receipts sent for you', desc: 'Customers get a receipt for every payment, plus the final invoice PDF when paid in full.' },
+  { icon: Mail, title: 'Receipts sent for you', desc: 'A receipt for every payment, plus the final invoice PDF when paid in full.' },
   { icon: CalendarDays, title: 'Calendar', desc: 'Schedule jobs and move them with a tap.' },
   { icon: Columns3, title: 'Job board', desc: 'See every job by stage and drag it forward.' },
   { icon: Star, title: 'Review requests', desc: 'Ask for a Google review when you mark a job complete.' },
@@ -53,18 +36,18 @@ const FEATURES = [
 
 export default function FeaturesSection() {
   return (
-    <div className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] text-slate-900 antialiased`}>
-      {/* ── How it works ── */}
-      <section id="how-it-works" className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-20">
+    <div className="text-[#1C1F23] antialiased">
+      {/* ── How it works: three work-order tickets ── */}
+      <section id="how-it-works" className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-20">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
-            <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">How it works</p>
-            <h2 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">
               Set it up once. Every job follows the same rules.
             </h2>
           </div>
 
-          <ol className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {STEPS.map((step, i) => {
               const Icon = step.icon;
               return (
@@ -74,16 +57,28 @@ export default function FeaturesSection() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: '-60px' }}
                   transition={{ duration: 0.4, delay: i * 0.08 }}
-                  className="relative rounded-2xl border border-slate-200 bg-[#F8FAF9] p-6"
+                  className="relative bg-white border-2 border-[#1C1F23] shadow-[5px_5px_0_0_#1C1F23]"
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#00828A] text-white text-sm font-bold">
-                      {i + 1}
+                  {/* Ticket stub */}
+                  <div className="flex items-center justify-between bg-[#1C1F23] px-4 py-2 text-white">
+                    <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em]">
+                      Work order
                     </span>
-                    <Icon className="w-5 h-5 text-[#00828A]" />
+                    <span className="font-[family-name:var(--font-display)] text-xl font-extrabold text-[#FFC72C]">
+                      #{String(i + 1).padStart(2, '0')}
+                    </span>
                   </div>
-                  <h3 className="mt-4 text-lg font-bold">{step.title}</h3>
-                  <p className="mt-1.5 text-sm text-slate-600 leading-relaxed">{step.desc}</p>
+                  {/* Perforation */}
+                  <div className="border-b-2 border-dashed border-[#1C1F23]/25" />
+                  <div className="p-5 sm:p-6">
+                    <span className="flex h-10 w-10 items-center justify-center bg-[#FFC72C] border-2 border-[#1C1F23]">
+                      <Icon className="w-5 h-5" strokeWidth={2.25} />
+                    </span>
+                    <h3 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-bold uppercase leading-tight">
+                      {step.title}
+                    </h3>
+                    <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.desc}</p>
+                  </div>
                 </motion.li>
               );
             })}
@@ -92,26 +87,28 @@ export default function FeaturesSection() {
       </section>
 
       {/* ── What you get ── */}
-      <section className="bg-[#F4F7F6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10 sm:mb-12 text-center sm:text-left">
-            <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">What you get</p>
-            <h2 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight">
+            <Eyebrow>What you get</Eyebrow>
+            <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">
               Everything from first call to paid in full.
             </h2>
           </div>
 
-          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-6">
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-7">
             {FEATURES.map((f) => {
               const Icon = f.icon;
               return (
-                <li key={f.title} className="flex items-start gap-3.5">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white border border-slate-200 text-[#00828A]">
-                    <Icon className="w-4 h-4" />
+                <li key={f.title} className="flex items-start gap-4">
+                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center bg-[#1C1F23] text-[#FFC72C]">
+                    <Icon className="w-5 h-5" strokeWidth={2.25} />
                   </span>
                   <div>
-                    <h3 className="text-base font-bold">{f.title}</h3>
-                    <p className="mt-0.5 text-sm text-slate-600 leading-relaxed">{f.desc}</p>
+                    <h3 className="font-[family-name:var(--font-display)] text-xl font-bold uppercase leading-tight">
+                      {f.title}
+                    </h3>
+                    <p className="mt-1 text-[15px] text-[#3a3f45] leading-relaxed">{f.desc}</p>
                   </div>
                 </li>
               );

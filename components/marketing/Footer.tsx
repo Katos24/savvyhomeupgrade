@@ -39,7 +39,7 @@ const columns: { heading: string; links: [string, string][] }[] = [
 
 export default function Footer() {
   return (
-    <footer className="bg-[#0B1520] border-t border-white/10 py-14 px-6">
+    <footer className="bg-[#16191C] py-14 px-6">
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
@@ -47,7 +47,7 @@ export default function Footer() {
             <Link href="/" className="flex items-center gap-2.5 mb-4">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/Lead2ProjectLogo.webp" alt="" className="h-8 w-auto object-contain" />
-              <span className="font-extrabold text-white text-lg">Lead2Project</span>
+              <span className="font-[family-name:var(--font-display)] text-2xl font-extrabold uppercase tracking-wide text-white">Lead2Project</span>
             </Link>
             <p className="text-sm text-slate-400 leading-relaxed max-w-[220px]">
               Quotes, deposits and invoices for contractors. Get paid for every job.
@@ -56,7 +56,7 @@ export default function Footer() {
 
           {columns.map((col) => (
             <div key={col.heading}>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">{col.heading}</p>
+              <p className="mb-4 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em] text-[#FFC72C]">{col.heading}</p>
               <ul className="space-y-2.5">
                 {col.links.map(([label, href]) => (
                   <li key={label}>

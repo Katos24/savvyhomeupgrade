@@ -1,15 +1,8 @@
 'use client';
 
+import { Eyebrow } from './marketingUI';
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
-
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700', '800'],
-  variable: '--font-jakarta',
-});
-
 // ⚠️ Fill these in before going live — keep them exactly true.
 // If you charge a platform fee on card payments, describe it here (e.g. "plus a 1% Lead2Project fee").
 // Leave empty if you don't charge one.
@@ -50,15 +43,15 @@ export default function FAQSection() {
   return (
     <section
       id="faq"
-      className={`${jakarta.variable} font-[family-name:var(--font-jakarta)] bg-[#F4F7F6] text-slate-900 py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-20`}
+      className={`bg-[#F4EFE6] text-[#1C1F23] py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-20`}
     >
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8 sm:mb-10">
-          <p className="text-xs font-bold text-[#00828A] tracking-widest uppercase">Questions</p>
-          <h2 className="mt-2 text-2xl sm:text-4xl font-extrabold tracking-tight">Common questions</h2>
+          <Eyebrow>Questions</Eyebrow>
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">Common questions</h2>
         </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100">
+        <div className="rounded-md border-2 border-[#1C1F23] bg-white shadow-[5px_5px_0_0_#1C1F23] divide-y-2 divide-[#1C1F23]/10">
           {FAQS.map((item, i) => {
             const isOpen = open === i;
             return (
@@ -69,13 +62,13 @@ export default function FAQSection() {
                   aria-expanded={isOpen}
                   className="w-full flex items-center justify-between gap-4 px-5 sm:px-6 py-4 sm:py-5 text-left"
                 >
-                  <span className="text-sm sm:text-base font-semibold">{item.q}</span>
+                  <span className="text-base sm:text-lg font-bold">{item.q}</span>
                   <ChevronDown
                     className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
                 {isOpen && (
-                  <p className="px-5 sm:px-6 pb-5 -mt-1 text-sm text-slate-600 leading-relaxed">{item.a}</p>
+                  <p className="px-5 sm:px-6 pb-5 -mt-1 text-[15px] text-[#3a3f45] leading-relaxed">{item.a}</p>
                 )}
               </div>
             );
