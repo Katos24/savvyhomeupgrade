@@ -72,10 +72,7 @@ export default function Hero() {
                 Built for contractors
               </motion.div>
 
-              <motion.h1
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.08 }}
+              <h1
 className="font-[family-name:var(--font-display)] text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight text-[#1C1F23]"
               >
                 The easiest way to{' '}
@@ -83,18 +80,13 @@ className="font-[family-name:var(--font-display)] text-5xl sm:text-6xl lg:text-[
                   <span className="absolute inset-x-0 bottom-[0.08em] h-[0.3em] bg-[#00828A]/30" aria-hidden />
                   <span className="relative">get paid</span>
                 </span>{' '}
-                for every job.
-              </motion.h1>
+                              for every job.
+              </h1>
 
-              <motion.p
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.16 }}
-                className="text-base sm:text-lg text-[#3a3f45] leading-relaxed"
-              >
+                           <p className="text-base sm:text-lg text-[#3a3f45] leading-relaxed">
                 Set up your services once, with prices and deposits. Every quote asks for the deposit up front,
-                and the final invoice collects the balance when the job&rsquo;s done.
-              </motion.p>
+                               and the final invoice collects the balance when the job&rsquo;s done.
+              </p>
 
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
