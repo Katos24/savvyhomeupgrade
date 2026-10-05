@@ -16,6 +16,11 @@ import CompletionSummaryModal from './CompletionSummaryModal';
 import { canDeleteLead, can, type PlanTier } from '@/lib/permissions';
 import LockedTabsPreview from '@/components/dashboard/LockedTabsPreview';
 import { toLocalDate } from '@/lib/dates';
+import { useDragControls } from 'framer-motion';
+
+// Set when the modal itself pops its own history entry, so that pop isn't treated as "user pressed back".
+let ignoreNextLeadModalPop = false;
+
 
 
 type TopTab = 'overview' | 'schedule' | 'quote' | 'payment' | 'expenses' | 'tasks' | 'photos' | 'activity' | 'reminders' | 'ai';
@@ -74,7 +79,53 @@ export default function LeadModal({
 
   const [quoteDirty, setQuoteDirty] = useState(false);
   const [pendingTab, setPendingTab] = useState<TopTab | null>(null);
-  const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
+
+  // ── Closing: back gesture, swipe down (mobile), unsaved-quote guard ──
+  const dragControls = useDragControls();
+  const [swipeClosing, setSwipeClosing] = useState(false);
+  const closedByHistoryRef = useRef(false);
+
+  // OK to close unless there's an unsaved quote the user wants to keep
+  const okToClose = () =>
+    !(activeTab === 'quote' && quoteDirty) ||
+    window.confirm('You have unsaved quote changes. Discard them?');
+
+  const okToCloseRef = useRef(okToClose);
+  okToCloseRef.current = okToClose;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const requestClose = () => {
+    if (okToClose()) onClose();
+  };
+
+  // Back button / iPhone swipe-back closes the modal instead of leaving the page
+  useEffect(() => {
+    window.history.pushState({ ...window.history.state, leadModal: true }, '');
+
+    const onPop = () => {
+      if (ignoreNextLeadModalPop) {
+        ignoreNextLeadModalPop = false;
+        return;
+      }
+      if (okToCloseRef.current()) {
+        closedByHistoryRef.current = true;
+        onCloseRef.current();
+      } else {
+        window.history.pushState({ ...window.history.state, leadModal: true }, '');
+      }
+    };
+
+    window.addEventListener('popstate', onPop);
+    return () => {
+      window.removeEventListener('popstate', onPop);
+      if (!closedByHistoryRef.current && window.history.state?.leadModal) {
+        ignoreNextLeadModalPop = true;
+        window.history.back();
+      }
+    };
+  }, []);
+    const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
   const quoteSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const registerQuoteSave = (fn: (() => Promise<boolean>) | null) => { quoteSaveRef.current = fn; };
 
@@ -254,8 +305,8 @@ export default function LeadModal({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end sm:items-stretch sm:justify-end z-50"
-      onClick={onClose}
+            className="fixed inset-0 bg-black/40 backdrop-blur-[2px] flex items-end sm:items-stretch sm:justify-end z-50"
+      onClick={requestClose}
     >
       {/* ── LOCKED FEATURE MODAL ── */}
       <AnimatePresence>
@@ -312,27 +363,52 @@ export default function LeadModal({
       </AnimatePresence>
 
       {/* ── MAIN DRAWER (SLIDE-OVER ON DESKTOP) ── */}
-      <motion.div
+            <motion.div
         initial={{ x: '100%' }}
         animate={{ x: 0 }}
-        exit={{ x: '100%' }}
+        exit={swipeClosing ? { y: '100%' } : { x: '100%' }}
         transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+        drag="y"
+        dragControls={dragControls}
+        dragListener={false}
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.7 }}
+        dragSnapToOrigin
+        onDragEnd={(_, info) => {
+          if (info.offset.y > 120 || info.velocity.y > 600) {
+            if (okToClose()) {
+              setSwipeClosing(true);
+              onClose();
+            }
+          }
+        }}
         className="bg-white w-full sm:w-[650px] lg:w-[850px] xl:w-[1000px] 2xl:w-[1150px] h-[100dvh] sm:h-full sm:rounded-l-2xl shadow-2xl flex flex-col border-l border-gray-200"
                 style={{ ['--mobile-tabbar-h' as any]: `${tabBarHeight}px` }}
         onClick={e => e.stopPropagation()}
       >
-        {/* ── HEADER ── */}
+               {/* ── HEADER (drag down to close on mobile) ── */}
+        <div
+          className="shrink-0"
+          style={{ touchAction: 'pan-x' }}
+          onPointerDown={e => {
+            if (window.matchMedia('(max-width: 639px)').matches) dragControls.start(e);
+          }}
+        >
+          <div className="sm:hidden flex justify-center pt-2 pb-1">
+            <div className="h-1 w-10 rounded-full bg-gray-300" />
+          </div>
         <LeadModalHeader
           lead={{ ...lead, status: selectedStatus }}
           currentUser={currentUser}
           statusOptions={statusOptions}
           activeTab={activeTab}
-          onClose={onClose}
+          onClose={requestClose}
           onMoreMenu={canDelete ? () => setShowMoreMenu(v => !v) : undefined}
           onStatusChange={handleSaveStatusWithCheck}
-          isUpdatingStatus={isUpdatingStatus}
+                   isUpdatingStatus={isUpdatingStatus}
           companySlug={companySlug}
         />
+        </div>
 
         {/* ── MORE MENU ── */}
         <AnimatePresence>
