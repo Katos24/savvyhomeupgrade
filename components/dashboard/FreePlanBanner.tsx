@@ -155,7 +155,7 @@ description: hasCompanyInfo ? 'Logo and info added' : 'Add your logo and busines
       icon: FileText,
       done: false,
       locked: true,
-      lockedLabel: 'Basic',
+      lockedLabel: 'Pro',
     },
     {
       id: 'setup_categories',
@@ -164,7 +164,7 @@ description: hasCompanyInfo ? 'Logo and info added' : 'Add your logo and busines
       icon: Layout,
       done: false,
       locked: true,
-      lockedLabel: 'Basic',
+      lockedLabel: 'Pro',
     },
     {
       id: 'invite_team',
@@ -173,7 +173,7 @@ description: hasCompanyInfo ? 'Logo and info added' : 'Add your logo and busines
       icon: Users,
       done: false,
       locked: true,
-      lockedLabel: 'Basic',
+      lockedLabel: 'Pro',
     },
   ];
 

@@ -17,45 +17,92 @@ import { fontVars } from '@/components/marketing/marketingTheme';
 const D = 'font-[family-name:var(--font-display)]';
 
 const PLAN_NOTE: Record<string, string> = {
-  basic: 'Basic plan · 14-day free trial. You’ll add a card on the next screen.',
-  pro: 'Pro plan · 14-day free trial. You’ll add a card on the next screen.',
+  basic: 'Pro plan · 14-day free trial. You’ll add a card on the next screen.',
 };
 
-/* Typewriter brand moment shown after the account is created. */
-function LaunchScreen({ onDone, firstName }: { onDone: () => void; firstName: string }) {
-  const full = 'Lead2Project';
-  const [count, setCount] = useState(0);
+/* ==========================================================================
+   ANIMATED TYPEWRITER LOADING SCREEN
+   ========================================================================== */
+interface LoadingScreenProps {
+  onComplete: () => void;
+  speed?: number;
+}
 
+function LoadingScreen({ onComplete, speed = 70 }: LoadingScreenProps) {
+  const fullText = 'Lead2Project';
+  const [displayedText, setDisplayedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [statusIndex, setStatusIndex] = useState(0);
+
+  const statusMessages = [
+    'Building custom workspace...',
+    'Generating QR code & booking URL...',
+    'Configuring pipeline stages...',
+    'Workspace ready! Redirecting...',
+  ];
+
+  // Typewriter effect logic
   useEffect(() => {
-    if (count < full.length) {
-      const t = setTimeout(() => setCount((c) => c + 1), 70);
-      return () => clearTimeout(t);
+    if (currentIndex < fullText.length) {
+      const timeout = setTimeout(() => {
+        setDisplayedText((prev) => prev + fullText[currentIndex]);
+        setCurrentIndex((prev) => prev + 1);
+      }, speed);
+      return () => clearTimeout(timeout);
+    } else {
+      const finishTimeout = setTimeout(() => {
+        onComplete();
+      }, 800);
+      return () => clearTimeout(finishTimeout);
     }
-    const t = setTimeout(onDone, 700);
-    return () => clearTimeout(t);
-  }, [count, onDone]);
+  }, [currentIndex, fullText, speed, onComplete]);
 
-  const typed = full.slice(0, count);
-  const done = count >= full.length;
+  // Status message rotation
+  useEffect(() => {
+    const statusInterval = setInterval(() => {
+      setStatusIndex((prev) => (prev < statusMessages.length - 1 ? prev + 1 : prev));
+    }, 600);
+    return () => clearInterval(statusInterval);
+  }, [statusMessages.length]);
+
+  const leadPart = displayedText.slice(0, 5);
+  const projectPart = displayedText.slice(5);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#F4EFE6] px-6 text-[#1C1F23]">
-      <div className={`flex items-center ${D} text-5xl sm:text-7xl font-extrabold uppercase tracking-tight`}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/Lead2ProjectLogo.webp"
-          alt=""
-          className={`mr-3 h-11 w-11 sm:h-14 sm:w-14 rounded-lg bg-white object-contain p-1.5 shadow-sm transition-all duration-300 ${
-            count > 0 ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 text-slate-100 selection:bg-emerald-500/20">
+      {/* Background Ambient Glow */}
+      <div className="absolute w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+
+      {/* Main Animated Branding */}
+      <div className="relative flex items-center text-3xl sm:text-5xl font-extrabold tracking-tight select-none">
+        <div
+          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center p-1.5 mr-3.5 transition-all duration-300 ${
+            displayedText.length > 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
           }`}
-        />
-        <span>{typed.slice(0, 5)}</span>
-        <span className="text-[#00828A]">{typed.slice(5)}</span>
-        <span className={`ml-1 inline-block h-10 sm:h-14 w-1.5 bg-[#00828A] ${done ? 'opacity-0' : 'animate-pulse'}`} />
+        >
+          <img src="/Lead2ProjectLogo.webp" alt="Lead2Project Logo" className="w-full h-full object-contain" />
+        </div>
+
+        <span className="text-white">{leadPart}</span>
+        <span className="text-emerald-400 drop-shadow-[0_0_25px_rgba(52,211,153,0.4)]">
+          {projectPart}
+        </span>
+
+        <span className="inline-block w-1 h-7 sm:h-9 bg-emerald-400 ml-1.5 rounded-full animate-pulse shadow-[0_0_10px_#34d399]" />
       </div>
-      <p className={`mt-6 text-base sm:text-lg text-[#3a3f45] transition-opacity duration-300 ${done ? 'opacity-100' : 'opacity-0'}`}>
-        Welcome{firstName ? `, ${firstName}` : ''}. Your booking link is ready.
-      </p>
+
+      {/* Dynamic Status Text & Progress Bar */}
+      <div className="mt-8 flex flex-col items-center gap-3">
+        <p className="text-xs font-mono text-slate-400 tracking-wider uppercase h-4">
+          {statusMessages[statusIndex]}
+        </p>
+        <div className="w-48 h-1 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+          <div
+            className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+            style={{ width: `${Math.min(((currentIndex + 1) / fullText.length) * 100, 100)}%` }}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -119,8 +166,10 @@ function Field({
 
 function SignupForm() {
   const searchParams = useSearchParams();
-  const plan = searchParams.get('plan') || 'free';
-  const refCode = searchParams.get('ref') || '';
+  // Pro isn't offered anymore; old links with ?plan=pro become Basic.
+  const rawPlan = searchParams.get('plan') || 'free';
+  const plan = rawPlan === 'pro' ? 'basic' : rawPlan;
+    const refCode = searchParams.get('ref') || '';
 
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
@@ -205,13 +254,9 @@ function SignupForm() {
         }),
       });
       const data = await response.json();
-           if (response.ok && data.success) {
-        if (plan === 'free') {
-          setLaunchUrl(`/${data.companySlug}/home?welcome=1`);
-        } else {
-          window.location.href = `/subscribe?plan=${plan}`;
-        }
-        return; // keep the button in its loading state while the page changes
+            if (response.ok && data.success) {
+        setLaunchUrl(plan === 'free' ? `/${data.companySlug}/home?welcome=1` : `/subscribe?plan=${plan}`);
+        return; // keep the button in its loading state while the animation plays
       }
       setError(data.error || 'Something went wrong. Please try again.');
     } catch {
@@ -222,16 +267,14 @@ function SignupForm() {
 
    const slugPreview = formData.slug || 'your-business';
 
-  if (launchUrl) {
+   if (launchUrl) {
     return (
-      <div className={fontVars}>
-        <LaunchScreen
-          firstName={formData.ownerName.trim().split(' ')[0]}
-          onDone={() => {
-            window.location.href = launchUrl;
-          }}
-        />
-      </div>
+      <LoadingScreen
+        speed={70}
+        onComplete={() => {
+          window.location.href = launchUrl;
+        }}
+      />
     );
   }
 

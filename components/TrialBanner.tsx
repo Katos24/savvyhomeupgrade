@@ -14,8 +14,8 @@ type TrialBannerProps = {
 
 const PLAN_LABELS: Record<string, string> = {
   free: 'Free',
-  basic: 'Basic',
-  pro: 'Pro',
+  basic: 'Pro',
+  pro: 'Crew',
 };
 
 export default function TrialBanner({

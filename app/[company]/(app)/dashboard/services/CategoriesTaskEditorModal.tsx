@@ -87,7 +87,7 @@ export function CategoriesLockedSection({ companySlug, isDark }: { companySlug: 
               <div className={`rounded-2xl ${t.cardBg} px-6 py-12 sm:px-10 text-center`}>
           <Lock className={`mx-auto mb-4 h-6 w-6 ${t.subText}`} />
           <p className={`text-lg sm:text-xl font-bold ${t.cardText}`}>Set your prices once. Every quote uses them.</p>
-          <p className={`mt-2 text-sm ${t.subText}`}>Services &amp; pricing is on the Basic plan.</p>
+          <p className={`mt-2 text-sm ${t.subText}`}>Services &amp; pricing is on the Pro plan.</p>
           <ul className="mx-auto mt-6 max-w-sm space-y-2.5 text-left">
             {[
               'Each service with its line items and prices',

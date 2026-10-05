@@ -43,7 +43,7 @@ export type IndustryContent = {
 // Shared feature cards. Each industry adds its own first card.
 const QUOTE = {
   title: 'Quote, deposit, invoice',
-  description: 'Build the quote from your saved services, take a deposit, then invoice the balance. Card payments through Stripe on Basic.',
+  description: 'Build the quote from your saved services, take a deposit, then invoice the balance. Card payments through Stripe on Pro.',
 };
 const BOARD = {
   title: 'Every lead on one board',
@@ -51,7 +51,7 @@ const BOARD = {
 };
 const CREW = {
   title: 'Schedule your crew',
-  description: 'Give each job a date, a time and a crew member, then see the week on your calendar. Scheduling is on Basic.',
+  description: 'Give each job a date, a time and a crew member, then see the week on your calendar. Scheduling is on Pro.',
 };
 const PROFIT = {
   title: 'Know what you made',
@@ -59,7 +59,7 @@ const PROFIT = {
 };
 const REVIEWS = {
   title: 'Ask for the review',
-  description: 'When the job is done, send the customer your Google review link in one click. On Basic.',
+  description: 'When the job is done, send the customer your Google review link in one click. On Pro.',
 };
 
 export const industryContent: Record<string, IndustryContent> = {
@@ -91,7 +91,7 @@ export const industryContent: Record<string, IndustryContent> = {
       ],
     },
     features: [
-      { title: 'See the damage first', description: 'Address and a description of the damage come with every request. On Basic, customers can attach photos and video, and you see them on the lead card.' },
+      { title: 'See the damage first', description: 'Address and a description of the damage come with every request. On Pro, customers can attach photos and video, and you see them on the lead card.' },
       BOARD,
       QUOTE,
       CREW,
@@ -142,7 +142,7 @@ export const industryContent: Record<string, IndustryContent> = {
       ],
     },
     features: [
-      { title: 'See the space first', description: 'Size, condition and special requests come with every request. On Basic, add your own questions and let clients attach photos of the rooms.' },
+      { title: 'See the space first', description: 'Size, condition and special requests come with every request. On Pro, add your own questions and let clients attach photos of the rooms.' },
       BOARD,
       QUOTE,
       CREW,
@@ -193,10 +193,10 @@ export const industryContent: Record<string, IndustryContent> = {
       ],
     },
     features: [
-      { title: 'Know before you roll', description: 'Address and a description of the problem come with every request. On Basic, customers can attach photos of the unit and the data plate.' },
+      { title: 'Know before you roll', description: 'Address and a description of the problem come with every request. On Pro, customers can attach photos of the unit and the data plate.' },
       BOARD,
       QUOTE,
-      { title: 'Schedule your techs', description: 'Give each call a date, a time and a tech, then see the week on your calendar. Scheduling is on Basic.' },
+      { title: 'Schedule your techs', description: 'Give each call a date, a time and a tech, then see the week on your calendar. Scheduling is on Pro.' },
       { title: 'See who still owes you', description: 'Deposits, balances and what’s outstanding on every job, so nothing goes unpaid.' },
       REVIEWS,
     ],
@@ -244,7 +244,7 @@ export const industryContent: Record<string, IndustryContent> = {
       ],
     },
     features: [
-      { title: 'See the problem first', description: 'Address and a description of the problem come with every request. On Basic, customers can attach photos and video of the leak or clog.' },
+      { title: 'See the problem first', description: 'Address and a description of the problem come with every request. On Pro, customers can attach photos and video of the leak or clog.' },
       BOARD,
       QUOTE,
       CREW,
@@ -295,7 +295,7 @@ export const industryContent: Record<string, IndustryContent> = {
       ],
     },
     features: [
-      { title: 'See the panel first', description: 'Address and a description of the problem come with every request. On Basic, customers can attach photos of the panel, outlet or wiring.' },
+      { title: 'See the panel first', description: 'Address and a description of the problem come with every request. On Pro, customers can attach photos of the panel, outlet or wiring.' },
       BOARD,
       QUOTE,
       CREW,

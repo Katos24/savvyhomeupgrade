@@ -31,7 +31,7 @@ export type FieldConfig = {
 // toggle them off and on" bug.
 export const DEFAULT_FIELD_CONFIG: FieldConfig = defaultFieldConfig(null);
 
-export const REQUIRED_PLAN = { label: 'Basic', price: '$49.99/mo' };
+export const REQUIRED_PLAN = { label: 'Pro', price: '$49.99/mo' };
 
 export function useFormTabLogic(company: any) {
   // FIXED: defaulted to 'basic' (a paid plan) when plan_tier was missing,

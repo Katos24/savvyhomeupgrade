@@ -1395,15 +1395,15 @@ export async function sendWelcomeEmail({
   const planDetails = {
 
    basic: {
-  label: 'Basic',
+  label: 'Pro',
   price: '$49.99/mo',
   features: ['Everything in Free', 'Accept online payments (Stripe)', 'Send invoices & payment reminders', 'Job categories & pricing templates', 'CSV export'],
   color: '#2563eb', // Deeper Blue
 },
     pro: {
-      label: 'Pro',
-      price: '$79.99/mo',
-      features: ['Everything in Basic', 'One-click emails', 'AI quote generator', 'Daily digest', 'Email outbox'],
+      label: 'Crew',
+      price: '$49.99/mo',
+      features: ['Quotes customers accept online', 'Deposits and card payments', 'Email history', 'Daily digest'],
       color: '#0f172a', // Professional Slate
     },
   }[plan];
@@ -2239,7 +2239,7 @@ export async function sendPlanChangedEmail({
   const PLAN_ORDER = ['free', 'basic', 'pro'];
   const isUpgrade = PLAN_ORDER.indexOf(newPlan) > PLAN_ORDER.indexOf(previousPlan);
   const planLabel = (p: string) =>
-    ({ free: 'Free', basic: 'Basic', pro: 'Pro' }[p] || p);
+    ({ free: 'Free', basic: 'Pro', pro: 'Crew' }[p] || p);
 
   const subject = isUpgrade
     ? `Plan upgraded to ${planLabel(newPlan)} — Lead2Project`
@@ -2252,7 +2252,7 @@ export async function sendPlanChangedEmail({
   const featuresByPlan: Record<string, string[]> = {
     free:    ['Booking link & QR code', 'Basic form', 'Lead dashboard', 'Create leads manually'],
     basic:   ['Everything in Free', 'Custom form & branding', 'Scheduling and quotes', 'Job categories and tasks', 'CSV export'],
-    pro:     ['Everything in Basic', 'One-click emails (quote, schedule, reminder)', 'AI quote generator and brief', 'Daily digest email', 'Email outbox'],
+    pro:     ['Quotes customers accept online', 'Deposits and card payments', 'Email history', 'Daily digest email'],
   };
 
   await resend.emails.send({
@@ -2528,7 +2528,7 @@ export async function sendFreeWelcomeEmail({
                   <td style="padding:0 40px 16px;">
                     <div style="background:#ffffff;border:2px dashed #cbd5e1;border-radius:20px;padding:28px;">
                       <p style="margin:0 0 4px 0;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:1px;color:#64748b;">When You're Ready to Grow</p>
-                      <p style="margin:8px 0 16px 0;font-size:15px;color:#0f172a;font-weight:800;line-height:1.4;">Unlock the full workflow on Basic or Pro.</p>
+                      <p style="margin:8px 0 16px 0;font-size:15px;color:#0f172a;font-weight:800;line-height:1.4;">Unlock the full workflow on Pro.</p>
 
                       <table cellpadding="0" cellspacing="0" width="100%">
                         <tr>
@@ -2579,7 +2579,7 @@ export async function sendFreeWelcomeEmail({
                         <a href="${dashboardUrl.replace('/dashboard', '/admin/settings?tab=billing')}" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 28px;border-radius:12px;font-weight:800;font-size:14px;box-shadow:0 4px 10px rgba(59,130,246,0.2);">
                           Explore Pro Features
                         </a>
-                        <p style="margin:12px 0 0 0;font-size:12px;color:#94a3b8;">Basic from $49.99/mo · Pro from $79.99/mo · No contracts</p>
+                        <p style="margin:12px 0 0 0;font-size:12px;color:#94a3b8;">Pro $49.99/mo · 14-day free trial · No contracts</p>
                       </div>
                     </div>
                   </td>

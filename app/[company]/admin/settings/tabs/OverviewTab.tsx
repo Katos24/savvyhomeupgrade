@@ -740,7 +740,7 @@ export default function OverviewTab({
                       onClick={() => onNavigateSection('billing')}
                       className="inline-flex items-center gap-1 rounded-lg bg-slate-100 border border-slate-300 px-2.5 py-1 text-sm font-semibold text-slate-800 hover:bg-slate-200 transition shrink-0 cursor-pointer"
                     >
-                      <Sparkles className="h-3.5 w-3.5 text-slate-600" /> Pro
+                      <Sparkles className="h-3.5 w-3.5 text-slate-600" /> Upgrade
                     </button>
                   )}
                 </div>
@@ -761,7 +761,7 @@ export default function OverviewTab({
 
         {isFreePlan && (
           <SettingsUpgradeBanner
-            planLabel="Basic Plan"
+            planLabel="Pro Plan"
             price="$49.99/mo"
             message="Upgrade to remove Lead2Project branding, send custom invoices, and configure automated workflows."
             companySlug={company.slug}

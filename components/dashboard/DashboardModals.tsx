@@ -375,7 +375,7 @@ const FEATURE_INFO: Record<string, { icon: React.ElementType; title: string; des
     icon: Plus,
     title: 'Create Leads Manually',
     desc: 'A customer calls, walks in, or sends a text — add them to your board in seconds without waiting for a form submission.',
-    plan: 'Basic',
+    plan: 'Pro',
     bullets: ['Add leads from phone calls or walk-ins', 'Assign to team members instantly', 'Track every opportunity in one place'],
   },
   ai_chat: {
@@ -389,7 +389,7 @@ const FEATURE_INFO: Record<string, { icon: React.ElementType; title: string; des
     icon: Download,
     title: 'CSV Export',
     desc: 'Download all your leads and job data as a spreadsheet for bookkeeping, reporting, or importing elsewhere.',
-    plan: 'Basic',
+    plan: 'Pro',
     bullets: ['All lead fields included', 'Filter before exporting', 'Works with Excel, Sheets, QuickBooks'],
   },
 };
@@ -401,7 +401,7 @@ export function LockedFeatureModal({ featureKey, companySlug, onClose, isDark = 
     icon: Lock,
     title: 'Premium Feature',
     desc: 'This feature requires a higher plan.',
-    plan: 'Basic',
+    plan: 'Pro',
     bullets: [],
   };
   const FeatureIcon = info.icon;

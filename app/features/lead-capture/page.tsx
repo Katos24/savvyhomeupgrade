@@ -42,7 +42,7 @@ const BTN =
   D +
   ' text-base font-bold uppercase tracking-wider';
 
-function PlanTag({ plan }: { plan: 'Basic' | 'Pro' }) {
+function PlanTag({ plan }: { plan: 'Pro' | 'Pro' }) {
   return (
     <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]`}>
       {plan}
@@ -50,7 +50,7 @@ function PlanTag({ plan }: { plan: 'Basic' | 'Pro' }) {
   );
 }
 
-function Bullets({ items }: { items: { text: string; plan?: 'Basic' | 'Pro' }[] }) {
+function Bullets({ items }: { items: { text: string; plan?: 'Pro' }[] }) {
   return (
     <ul className="mt-6 space-y-2.5">
       {items.map((i) => (
@@ -312,11 +312,11 @@ export default function LeadCapturePage() {
             <Bullets
               items={[
                 { text: 'Name, email, phone and description' },
-                { text: 'Your logo and brand colors', plan: 'Basic' },
-                { text: 'Your services, so you know what they need', plan: 'Basic' },
-                { text: 'Address, preferred date and time fields', plan: 'Basic' },
-                { text: 'Customer photo and video uploads', plan: 'Basic' },
-                { text: 'Your own questions, per service', plan: 'Basic' },
+                { text: 'Your logo and brand colors', plan: 'Pro' },
+                { text: 'Your services, so you know what they need', plan: 'Pro' },
+                { text: 'Address, preferred date and time fields', plan: 'Pro' },
+                { text: 'Customer photo and video uploads', plan: 'Pro' },
+                { text: 'Your own questions, per service', plan: 'Pro' },
               ]}
             />
           </div>

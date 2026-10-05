@@ -19,7 +19,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const digestRequiredPlan = FEATURE_PLAN_MAP['daily_digest'];
 
     const companies = await sql`
       SELECT id, name, slug, email, reminder_settings, notification_preferences
@@ -29,7 +28,7 @@ export async function GET(request: NextRequest) {
         OR (notification_preferences->'daily_digest'->>'enabled')::boolean = true
       )
       AND subscription_status IN ('active', 'trialing')
-      AND plan_tier = ${digestRequiredPlan}
+      AND plan_tier IN ('basic', 'pro')
     `;
 
     let sent = 0;

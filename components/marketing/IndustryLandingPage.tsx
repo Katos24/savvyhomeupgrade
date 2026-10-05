@@ -160,7 +160,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
               ready to quote.
             </p>
             <ul className="mt-6 space-y-2.5">
-              {['Booking link and QR code on Free', 'Your own questions and branding on Basic', 'Every request saved, nothing lost in a text thread'].map(
+              {['Booking link and QR code on Free', 'Your own questions and branding on Pro', 'Every request saved, nothing lost in a text thread'].map(
                 (t) => (
                   <li key={t} className="flex items-start gap-2.5 text-[15px] font-medium">
                     <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={3} />

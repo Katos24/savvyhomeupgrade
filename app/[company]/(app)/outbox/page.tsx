@@ -4,6 +4,8 @@ import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import OutboxClient from './OutboxClient';
+import { can, type PlanTier } from '@/lib/permissions';
+import { Lock } from 'lucide-react';
 
 type PageProps = {
   params: Promise<{ company: string }>;
@@ -14,6 +16,7 @@ type Company = {
   name: string;
   slug: string;
   logo_url: string | null;
+  plan_tier?: string | null;
 };
 
 type CurrentUser = {
@@ -25,7 +28,7 @@ type CurrentUser = {
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   const companies = await sql`
-    SELECT id, name, slug, logo_url
+        SELECT id, name, slug, logo_url, plan_tier
     FROM companies
     WHERE slug = ${slug}
   `;
@@ -176,6 +179,40 @@ export default async function OutboxPage({ params }: PageProps) {
   const decoded = await verifyAuth(companySlug);
   const company = await getCompany(companySlug);
   if (!company) notFound();
+
+  // Outbox is a paid feature. Show an upgrade screen instead of loading any emails.
+  if (!can((company.plan_tier || 'free') as PlanTier, 'outbox')) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
+          <div className="rounded-2xl border border-slate-200 bg-white px-6 py-12 sm:px-10 text-center shadow-xs">
+            <Lock className="mx-auto mb-4 h-6 w-6 text-slate-400" />
+            <p className="text-lg sm:text-xl font-bold text-slate-900">Every email you send, in one place.</p>
+            <p className="mt-2 text-sm text-slate-500">The outbox is on the Pro plan.</p>
+            <ul className="mx-auto mt-6 max-w-sm space-y-2.5 text-left">
+              {[
+                'Every quote, schedule, invoice and reminder you send',
+                'Search by customer name or email',
+                'See exactly what was sent, and who sent it',
+                'Failed sends and duplicates flagged',
+              ].map((item) => (
+                <li key={item} className="flex items-start gap-2.5 text-sm text-slate-700">
+                  <span className="mt-0.5 font-bold text-blue-600">✓</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+            <a
+              href={`/${companySlug}/home?section=billing`}
+              className="mt-7 inline-block rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            >
+              Upgrade to Pro
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const [currentUser, outboxData] = await Promise.all([
     getCurrentUser(decoded.userId),

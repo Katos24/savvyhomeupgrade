@@ -13,11 +13,11 @@ export default function LockedTabsPreview({ companySlug, activeTab }: LockedTabs
   const [activePreview, setActivePreview] = useState(activeTab || 'schedule');
 
   const previewTabs = [
-    { id: 'schedule', icon: Calendar,    label: 'Schedule',  plan: 'Basic', desc: 'Set job dates, arrival windows, and manage your crew calendar.' },
-    { id: 'quote',    icon: FileText,    label: 'Quote',     plan: 'Basic', desc: 'Build professional quotes with line items and send them in one click.' },
-    { id: 'payment',  icon: CreditCard,  label: 'Billing',   plan: 'Basic', desc: 'Track payments, send reminders, and mark jobs as paid.' },
-    { id: 'tasks',    icon: CheckSquare, label: 'Tasks',     plan: 'Basic', desc: 'Create task checklists for each job and track completion.' },
-    { id: 'photos',   icon: Image,       label: 'Media',     plan: 'Basic', desc: 'Upload before & after photos and attach job documents.' },
+    { id: 'schedule', icon: Calendar,    label: 'Schedule',  plan: 'Pro', desc: 'Set job dates and times, and manage your crew calendar.' },
+    { id: 'quote',    icon: FileText,    label: 'Quote',     plan: 'Pro', desc: 'Build professional quotes with line items and send them in one click.' },
+    { id: 'payment',  icon: CreditCard,  label: 'Billing',   plan: 'Pro', desc: 'Track payments, send reminders, and mark jobs as paid.' },
+    { id: 'tasks',    icon: CheckSquare, label: 'Tasks',     plan: 'Pro', desc: 'Create task checklists for each job and track completion.' },
+    { id: 'photos',   icon: Image,       label: 'Media',     plan: 'Pro', desc: 'Upload before & after photos and attach job documents.' },
     { id: 'ai',       icon: Sparkles,    label: 'AI',        plan: 'Pro',   desc: 'Get AI-generated job summaries, scope analysis, and smart suggestions.' },
   ];
 

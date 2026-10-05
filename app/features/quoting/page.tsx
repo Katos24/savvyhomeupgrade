@@ -238,7 +238,7 @@ export default function QuotingPage() {
               </Link>
             </div>
             <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
-              Quote builder and templates on Basic · Email quotes with online accept on Pro
+              Quote builder, saved services and emailed quotes with online accept, all on Pro
             </p>
           </div>
           <QuoteBuilderMock />

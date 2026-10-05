@@ -194,13 +194,13 @@ export default function LeadModal({
     if (activeTab === 'overview' || activeTab === 'activity' || activeTab === 'ai' || !isProject) return null;
 
     const lockedInfo: Record<string, { title: string; description: string; plan: string }> = {
-      schedule:  { title: 'Job Scheduling',      description: 'Schedule jobs, set arrival times, and manage your crew calendar.', plan: 'Basic' },
-      quote:     { title: 'Quote Builder',       description: 'Build professional quotes with line items and send them in one click.', plan: 'Basic' },
-      payment:   { title: 'Payment Tracking',    description: 'Track payments, send reminders, and mark jobs as paid.', plan: 'Basic' },
-      expenses:  { title: 'Expense Tracking',   description: 'Log project expenses, track material and labor costs, and monitor job profitability.', plan: 'Basic' },
-      tasks:     { title: 'Task Lists',          description: 'Build task checklists for each job and track completion.', plan: 'Basic' },
-      photos:    { title: 'Media & Documents',   description: 'Upload before/after photos and job documents.', plan: 'Basic' },
-      reminders: { title: 'Follow-up Reminders', description: 'Set follow-up dates and get reminded to check in.', plan: 'Basic' },
+      schedule:  { title: 'Job Scheduling',      description: 'Schedule jobs, set times, and manage your crew calendar.', plan: 'Pro' },
+      quote:     { title: 'Quote Builder',       description: 'Build professional quotes with line items and send them in one click.', plan: 'Pro' },
+      payment:   { title: 'Payment Tracking',    description: 'Track payments, send reminders, and mark jobs as paid.', plan: 'Pro' },
+      expenses:  { title: 'Expense Tracking',   description: 'Log project expenses, track material and labor costs, and monitor job profitability.', plan: 'Pro' },
+      tasks:     { title: 'Task Lists',          description: 'Build task checklists for each job and track completion.', plan: 'Pro' },
+      photos:    { title: 'Media & Documents',   description: 'Upload before/after photos and job documents.', plan: 'Pro' },
+      reminders: { title: 'Follow-up Reminders', description: 'Set follow-up dates and get reminded to check in.', plan: 'Pro' },
     };
 
     const tabs: Record<string, { locked: boolean }> = {
@@ -214,7 +214,7 @@ export default function LeadModal({
     };
 
     if (tabs[activeTab]?.locked) {
-      const info = lockedInfo[activeTab] || { title: 'Upgrade Required', description: 'This feature requires a higher plan.', plan: 'Basic' };
+      const info = lockedInfo[activeTab] || { title: 'Upgrade Required', description: 'This feature requires a higher plan.', plan: 'Pro' };
       return (
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
           <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
@@ -261,16 +261,16 @@ export default function LeadModal({
       <AnimatePresence>
         {lockedFeatureModal && (() => {
           const featureInfo: Record<string, { title: string; desc: string; plan: string }> = {
-            schedule:  { title: 'Job Scheduling',    desc: 'Set job dates, arrival windows, and manage your crew calendar.', plan: 'Basic' },
-            quote:     { title: 'Quote Builder',     desc: 'Build professional quotes with line items and send them in one click.', plan: 'Basic' },
-            payment:   { title: 'Payment Tracking',  desc: 'Track payments, send reminders, and mark jobs as paid.', plan: 'Basic' },
-            expenses:  { title: 'Expense Tracking', desc: 'Log project costs, receipt items, and manage material budgets.', plan: 'Basic' },
-            tasks:     { title: 'Task Management',   desc: 'Create task checklists for each job type and track completion.', plan: 'Basic' },
-            photos:    { title: 'Media & Documents', desc: 'Upload before & after photos and attach job documents.', plan: 'Basic' },
-            reminders: { title: 'Follow-up Reminders', desc: 'Set follow-up dates and get reminded to check in.', plan: 'Basic' },
+            schedule:  { title: 'Job Scheduling',    desc: 'Set job dates and times, and manage your crew calendar.', plan: 'Pro' },
+            quote:     { title: 'Quote Builder',     desc: 'Build professional quotes with line items and send them in one click.', plan: 'Pro' },
+            payment:   { title: 'Payment Tracking',  desc: 'Track payments, send reminders, and mark jobs as paid.', plan: 'Pro' },
+            expenses:  { title: 'Expense Tracking', desc: 'Log project costs, receipt items, and manage material budgets.', plan: 'Pro' },
+            tasks:     { title: 'Task Management',   desc: 'Create task checklists for each job type and track completion.', plan: 'Pro' },
+            photos:    { title: 'Media & Documents', desc: 'Upload before & after photos and attach job documents.', plan: 'Pro' },
+            reminders: { title: 'Follow-up Reminders', desc: 'Set follow-up dates and get reminded to check in.', plan: 'Pro' },
             ai:        { title: 'AI Assistant',      desc: 'Get AI-generated job summaries, scope analysis, and smart suggestions.', plan: 'Pro' },
           };
-          const info = featureInfo[lockedFeatureModal] || { title: 'Premium Feature', desc: 'This feature requires a higher plan.', plan: 'Basic' };
+          const info = featureInfo[lockedFeatureModal] || { title: 'Premium Feature', desc: 'This feature requires a higher plan.', plan: 'Pro' };
           return (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}

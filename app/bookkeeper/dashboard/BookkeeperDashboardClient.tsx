@@ -198,7 +198,7 @@ useEffect(() => {
                      
                      {client.plan_tier === 'free' ? (
                        <span
-                          title="This client is on the free plan. Ask them to upgrade to Basic to see their financial data."
+                          title="This client is on the free plan. Ask them to upgrade to Pro to see their financial data."
                           className="text-xs font-black px-3 py-2 rounded-xl cursor-help"
                           style={{ background: 'rgba(245,158,11,0.08)', color: '#f59e0b', border: '1px solid rgba(245,158,11,0.15)' }}
                         >

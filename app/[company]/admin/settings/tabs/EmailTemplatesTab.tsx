@@ -214,7 +214,7 @@ export default function EmailTemplatesTab({
         {(company.plan_tier === 'free' || company.plan_tier === 'basic') && (
           <SettingsUpgradeBanner
             planLabel="Pro"
-            price="$79.99/mo"
+            price="$49.99/mo"
             message="Customize your automated email templates — upgrade to Pro to start sending."
             companySlug={company.slug}
           />

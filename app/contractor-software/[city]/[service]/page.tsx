@@ -106,7 +106,7 @@ const BTN =
   D +
   ' text-base font-bold uppercase tracking-wider';
 
-function PlanTag({ plan }: { plan: 'Basic' | 'Pro' }) {
+function PlanTag({ plan }: { plan: 'Pro' | 'Pro' }) {
   return (
     <span
       className={`ml-1.5 rounded px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider align-middle ${
@@ -150,7 +150,7 @@ export default async function CityServicePage({
     },
   ];
 
-  const features: { icon: typeof QrCode; title: string; desc: string; plan?: 'Basic' | 'Pro' }[] = [
+  const features: { icon: typeof QrCode; title: string; desc: string; plan?: 'Pro' }[] = [
     {
       icon: Smartphone,
       title: 'Customers book you directly',
@@ -165,13 +165,13 @@ export default async function CityServicePage({
       icon: FileText,
       title: 'Quotes from saved services',
       desc: 'Save your services and prices once, then build each quote in a few taps. The deposit is already on it.',
-      plan: 'Basic',
+      plan: 'Pro',
     },
     {
       icon: CreditCard,
       title: 'Deposits and card payments',
       desc: 'Customers pay the deposit and the balance by card through Stripe, and you see what’s paid on every job.',
-      plan: 'Basic',
+      plan: 'Pro',
     },
   ];
 
@@ -190,7 +190,7 @@ export default async function CityServicePage({
     },
     {
       q: 'How much does it cost?',
-      a: 'The Free plan covers your booking link, QR code and job board. Basic is $49.99 a month and adds quotes, deposits, invoices and card payments. Pro is $79.99 a month and adds one-click quote and schedule emails, your email history and the daily digest. No setup fees, cancel anytime.',
+      a: 'The Free plan covers your booking link, QR code and job board. Pro is $49.99 a month and adds everything else: quotes your customers accept online, deposits, invoices, card payments, scheduling emails, your email history and the daily digest. No setup fees, cancel anytime.',
     },
     {
       q: 'I tried Jobber and Housecall Pro but they were too much.',

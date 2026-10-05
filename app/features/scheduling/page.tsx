@@ -198,7 +198,7 @@ export default function SchedulingPage() {
               </Link>
             </div>
             <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
-              Calendar view on Free · Scheduling and crew on Basic · Schedule emails on Pro
+              Calendar view on Free · Scheduling, crew and schedule emails on Pro
             </p>
           </div>
           <CalendarMock />

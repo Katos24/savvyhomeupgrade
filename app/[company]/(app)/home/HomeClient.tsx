@@ -381,7 +381,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
       return [
         logo,
         firstLead,
-        { label: 'Start quoting and taking deposits', description: 'Basic adds quotes, deposits, invoices and card payments. 14-day free trial', done: false, kind: 'section', section: 'billing' },
+        { label: 'Start quoting and taking deposits', description: 'Pro adds quotes, deposits, invoices and card payments. 14-day free trial', done: false, kind: 'section', section: 'billing' },
       ];
     }
 

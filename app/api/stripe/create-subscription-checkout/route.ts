@@ -28,10 +28,14 @@ export async function POST(req: NextRequest) {
     const companyId = decoded.companyId;
     if (!companyId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { plan = 'basic' } = await req.json();
-    const priceId = PLAN_PRICE_IDS[plan];
-    if (!priceId) {
-      return NextResponse.json({ error: `No price configured for plan: ${plan}` }, { status: 500 });
+    // One paid plan now: 'basic' internally, shown to customers as "Pro" ($49.99).
+// Any old link or button that still sends 'pro' gets the same plan, so
+// nobody can be charged the retired $79.99 price.
+await req.json().catch(() => ({}));
+const plan = 'basic';
+const priceId = PLAN_PRICE_IDS.basic;
+if (!priceId) {
+return NextResponse.json({ error: 'No price configured for the paid plan' }, { status: 500 });
     }
 
     const sql = neon(process.env.DATABASE_URL!);

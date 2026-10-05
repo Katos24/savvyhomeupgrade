@@ -176,7 +176,7 @@ export default function PaymentsPage() {
               </Link>
             </div>
             <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
-              Card payments through Stripe · Venmo, Zelle, Cash App and PayPal links · Included on Basic
+              Card payments through Stripe · Venmo, Zelle, Cash App and PayPal links · Included on Pro
             </p>
           </div>
           <div className="w-full max-w-md mx-auto lg:rotate-[-1.5deg]">

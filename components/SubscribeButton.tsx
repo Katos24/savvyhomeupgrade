@@ -16,8 +16,8 @@ type SubscribeButtonProps = {
 };
 
 const PLAN_META: Record<string, { label: string; price: string }> = {
-  basic:   { label: 'Basic',   price: '$49.99/month' },
-  pro:     { label: 'Pro',     price: '$79.99/month' },
+  basic:   { label: 'Pro',   price: '$49.99/month' },
+  pro:     { label: 'Crew',     price: '$49.99/month' },
 };
 
 export default function SubscribeButton({

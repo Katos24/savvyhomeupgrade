@@ -821,7 +821,7 @@ else if (action === 'mark_quote_accepted') {
   const lead = leadCheck[0];
 
   // Server-side plan check
-  if (!can((lead.plan_tier ?? 'basic') as PlanTier, 'send_quote_email')) {
+  if (!can((lead.plan_tier ?? 'free') as PlanTier, 'send_quote_email')) {
     return NextResponse.json({
       success: false,
       error: 'One-click emails are available on the Pro plan',
@@ -977,7 +977,7 @@ const result = await sql`
   const lead = result[0];
 
   // Server-side plan check
-  if (!can((lead.plan_tier ?? 'basic') as PlanTier, 'send_schedule_email')) {
+  if (!can((lead.plan_tier ?? 'free') as PlanTier, 'send_schedule_email')) {
     return NextResponse.json({
       success: false,
       error: 'One-click emails are available on the Pro plan',
@@ -1311,7 +1311,7 @@ const leadCheck = await sql`
 
   const lead = leadCheck[0];
 
-  if (!can((lead.plan_tier ?? 'basic') as PlanTier, 'send_invoice_email')) {
+  if (!can((lead.plan_tier ?? 'free') as PlanTier, 'send_invoice_email')) {
     return NextResponse.json({
       success: false,
       error: 'Sending invoices is available on the Pro plan',

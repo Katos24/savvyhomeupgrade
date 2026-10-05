@@ -48,7 +48,7 @@ const WHAT_CHANGES = [
   {
     icon: FileSpreadsheet,
     title: 'QuickBooks-format export',
-    desc: 'A CSV laid out for QuickBooks import: invoice numbers, line items, tax and payment status. CSV export is on the Basic plan.',
+    desc: 'A CSV laid out for QuickBooks import: invoice numbers, line items, tax and payment status. CSV export is on the Pro plan.',
   },
   {
     icon: LayoutDashboard,
