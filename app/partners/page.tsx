@@ -1,264 +1,278 @@
 import Link from 'next/link';
+import { ArrowRight, Check, X, FileSpreadsheet, Receipt, Briefcase, LayoutDashboard } from 'lucide-react';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
-import { ArrowRight, CheckCircle, FileText, Download, Receipt, TrendingUp } from 'lucide-react';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow, TapeDivider } from '@/components/marketing/marketingUI';
+
+/* ─────────────────────────────────────────────────────────
+   /partners: bookkeeper and CPA partner program.
+   Matches the app today: partner codes, partner dashboard with
+   referred clients, QuickBooks-format CSV export (Basic), expenses
+   per job. Referred clients get the standard 14-day trial.
+   ───────────────────────────────────────────────────────── */
 
 export const metadata = {
   title: 'Bookkeeper Partner Program | Lead2Project',
-  description: 'Refer your contractor clients to Lead2Project. They get organized. You get clean records every month — not a shoebox in April.',
+  description:
+    'Refer your contractor clients to Lead2Project. They track every job, payment and expense. You get a QuickBooks-format export instead of a shoebox in April.',
 };
+
+const D = 'font-[family-name:var(--font-display)]';
+const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
+const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BTN =
+  'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
+  D +
+  ' text-base font-bold uppercase tracking-wider';
 
 const PAIN_POINTS = [
   'Chasing receipts every month',
   'Clients with no idea what they spent on each job',
-  'Shoebox of documents at tax time',
-  'No way to see job-level profitability',
-  'Manual data entry into QuickBooks',
+  'A shoebox of paperwork at tax time',
+  'No way to see profit job by job',
+  'Typing invoices into QuickBooks by hand',
 ];
 
-const WHAT_THEY_GET = [
-  { icon: <Receipt className="w-5 h-5" />, title: 'Receipts per job', desc: 'Contractors attach receipts directly to each job as they go. No more hunting.' },
-  { icon: <Download className="w-5 h-5" />, title: 'QuickBooks export', desc: 'Pull a clean, formatted export whenever you need it. Monthly, not annually.' },
-  { icon: <TrendingUp className="w-5 h-5" />, title: 'Job-level records', desc: 'Every job has quotes, payment status, expenses and documents in one place.' },
-  { icon: <FileText className="w-5 h-5" />, title: 'Clean data, always', desc: 'Invoices, payment dates, amounts — all tracked and exportable.' },
+const WHAT_CHANGES = [
+  {
+    icon: Briefcase,
+    title: 'Every job in one place',
+    desc: 'Quotes, invoices, payments and documents live on the job they belong to, not in a text thread.',
+  },
+  {
+    icon: Receipt,
+    title: 'Expenses per job',
+    desc: 'Your client logs materials and labor costs on each job as they go, so you can see what each job actually made.',
+  },
+  {
+    icon: FileSpreadsheet,
+    title: 'QuickBooks-format export',
+    desc: 'A CSV laid out for QuickBooks import: invoice numbers, line items, tax and payment status. CSV export is on the Basic plan.',
+  },
+  {
+    icon: LayoutDashboard,
+    title: 'Your partner dashboard',
+    desc: 'See every client who signed up with your code and open their records from one login.',
+  },
 ];
 
-const HOW_IT_WORKS = [
-  { step: '01', title: 'You refer a client', desc: 'Share your partner code with a contractor client who needs to get organized.' },
-  { step: '02', title: 'They get 3 months free', desc: 'Your client signs up and gets full access. No credit card. No friction.' },
-  { step: '03', title: 'They track every job', desc: 'Leads, quotes, schedules, payments and receipts — all in one place.' },
-  { step: '04', title: 'You get clean records', desc: 'Pull their QuickBooks export anytime. Stop chasing. Start advising.' },
+const STEPS = [
+  { title: 'Get your partner code', desc: 'Create a free partner account. Your code is ready as soon as you sign up.' },
+  { title: 'Share it with a client', desc: 'Your client enters the code when they sign up. You both get an email when they connect.' },
+  { title: 'They run their jobs in it', desc: 'Leads, quotes, payments and expenses, all tracked as the work happens.' },
+  { title: 'You pull clean records', desc: 'Open the client from your dashboard and export what you need, any month.' },
 ];
 
-export default function BookkeepersPage() {
+const SAMPLE = [
+  { inv: 'INV-001', customer: 'John Smith', desc: 'Diagnostic & Trip Fee', type: 'labor', account: 'Services', qty: 1, price: '$109.00', amount: '$109.00', status: 'Paid' },
+  { inv: 'INV-001', customer: 'John Smith', desc: 'Dual Run Capacitor', type: 'materials', account: 'Job Supplies', qty: 1, price: '$185.00', amount: '$185.00', status: 'Paid' },
+  { inv: 'INV-001', customer: 'John Smith', desc: 'Standard Labor (per hour)', type: 'labor', account: 'Services', qty: 2, price: '$150.00', amount: '$300.00', status: 'Paid' },
+  { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Condensing Unit', type: 'materials', account: 'Job Supplies', qty: 1, price: '$4,500.00', amount: '$4,500.00', status: 'Partial' },
+  { inv: 'INV-002', customer: 'Sarah Torres', desc: 'System Installation', type: 'labor', account: 'Services', qty: 1, price: '$1,800.00', amount: '$1,800.00', status: 'Partial' },
+  { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Permits & Testing Fees', type: 'other', account: 'Review', qty: 1, price: '$450.00', amount: '$450.00', status: 'Partial' },
+];
+
+export default function PartnersPage() {
   return (
-    <>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>
       <Nav />
 
-      <main className="bg-white">
-
-        {/* HERO */}
-        <section className="bg-slate-900 pt-32 pb-20 px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            <p className="inline-block text-xs font-black uppercase tracking-widest text-emerald-400 border border-emerald-400/30 bg-emerald-400/10 px-4 py-1.5 rounded-full mb-6">
-              For Bookkeepers & CPAs
-            </p>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight mb-6">
-              Your contractor clients,<br />
-              <span className="text-emerald-400">finally organized.</span>
-            </h1>
-            <p className="text-lg text-slate-400 font-bold max-w-2xl mx-auto mb-10 leading-relaxed">
-              Stop chasing receipts. Stop reconciling shoeboxes every April. Refer your contractor clients to Lead2Project and get clean, job-level records every month.
-            </p>
-           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/bookkeeper/signup"
-                className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-emerald-500 text-white font-black text-sm shadow-xl hover:bg-emerald-600 transition-all active:scale-95 border-2 border-slate-700"
-              >
-                Become a Partner
-                <ArrowRight size={16} strokeWidth={3} />
-              </Link>
-              <Link
-  href="/bookkeeper/login"
-  className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 text-white font-black text-sm hover:bg-black transition-all"
->
-  Partner Login
-</Link>
-              <Link
-                href="/book-demo"
-                className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-700 text-white font-black text-sm hover:bg-slate-800 transition-all"
-              >
-                See the Product
-              </Link>
-            </div>
+      {/* ── Hero ── */}
+      <section
+        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <Eyebrow>For bookkeepers &amp; CPAs</Eyebrow>
+          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            Your contractor clients, finally organized.
+          </h1>
+          <p className={`mt-5 max-w-2xl mx-auto ${BODY}`}>
+            Refer your contractor clients to Lead2Project. They track every job, payment and expense as they go. You get
+            records you can actually work with, every month.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/bookkeeper/signup" className={`w-full sm:w-auto ${BTN}`}>
+              Become a partner <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/book-demo"
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+            >
+              See the product
+            </Link>
           </div>
-        </section>
-
-        {/* PAIN POINTS */}
-        <section className="py-20 px-6 bg-slate-50 border-b-2 border-slate-100">
-          <div className="max-w-3xl mx-auto">
-            <p className="text-xs font-black uppercase tracking-widest text-slate-400 text-center mb-10">
-              Sound familiar?
-            </p>
-            <div className="space-y-4">
-              {PAIN_POINTS.map((point, i) => (
-                <div key={i} className="flex items-center gap-4 bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 shadow-sm">
-                  <div className="w-8 h-8 rounded-full bg-red-50 border-2 border-red-100 flex items-center justify-center shrink-0">
-                    <span className="text-red-400 font-black text-xs">✕</span>
-                  </div>
-                  <p className="text-sm font-black text-slate-700">{point}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-center text-slate-500 font-bold text-sm mt-8">
-              These aren't your clients' fault. They don't have a system. Lead2Project is that system.
-            </p>
-          </div>
-        </section>
-
-        {/* WHAT THEY GET */}
-        <section className="py-20 px-6">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-14">
-              <p className="text-xs font-black uppercase tracking-widest text-emerald-600 mb-3">What changes</p>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                Clean records. Every month.
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {WHAT_THEY_GET.map((item, i) => (
-                <div key={i} className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-6 hover:border-emerald-300 hover:bg-emerald-50/30 transition-all">
-                  <div className="w-10 h-10 bg-emerald-500 text-white rounded-xl flex items-center justify-center mb-4 shadow-lg">
-                    {item.icon}
-                  </div>
-                  <h3 className="text-sm font-black text-slate-900 mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-500 font-bold leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-    {/* SAMPLE EXPORT */}
-        <section className="py-20 px-6 bg-slate-900">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12">
-              <p className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-3">What you actually get</p>
-              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
-                Every line item. Already mapped.
-              </h2>
-              <p className="text-slate-400 font-bold max-w-2xl mx-auto">
-                Every quote line item is automatically classified and mapped to your QuickBooks Chart of Accounts. Import in 60 seconds — not 60 minutes.
-              </p>
-            </div>
-            <div className="overflow-x-auto rounded-2xl border-2 border-slate-700">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="bg-slate-800 border-b-2 border-slate-700">
-                    {['Invoice No.', 'Customer', 'Item Description', 'Item Type', 'QBO Account', 'Qty', 'Unit Price', 'Line Amount', 'Payment Status'].map((h, i) => (
-                      <th key={i} className="px-4 py-3 text-left font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { inv: 'INV-001', customer: 'John Smith', desc: 'Diagnostic & Trip Fee', type: 'labor', account: 'Services', qty: '1', price: '$109.00', amount: '$109.00', status: 'Paid' },
-                    { inv: 'INV-001', customer: 'John Smith', desc: 'Dual Run Capacitor', type: 'materials', account: 'Job Supplies', qty: '1', price: '$185.00', amount: '$185.00', status: 'Paid' },
-                    { inv: 'INV-001', customer: 'John Smith', desc: 'Standard Labor (Per Hour)', type: 'labor', account: 'Services', qty: '2', price: '$150.00', amount: '$300.00', status: 'Paid' },
-                    { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Equipment: Condensing Unit', type: 'materials', account: 'Job Supplies', qty: '1', price: '$4,500.00', amount: '$4,500.00', status: 'Partial' },
-                    { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Labor: System Installation', type: 'labor', account: 'Services', qty: '1', price: '$1,800.00', amount: '$1,800.00', status: 'Partial' },
-                    { inv: 'INV-002', customer: 'Sarah Torres', desc: 'Permits & HERS Testing Fees', type: 'permit', account: 'REVIEW_REQUIRED', qty: '1', price: '$450.00', amount: '$450.00', status: 'Partial' },
-                  ].map((row, i) => (
-                    <tr key={i} className={`border-b border-slate-700 ${i % 2 === 0 ? 'bg-slate-800/50' : 'bg-slate-800/20'}`}>
-                      <td className="px-4 py-3 font-black text-emerald-400 whitespace-nowrap">{row.inv}</td>
-                      <td className="px-4 py-3 font-bold text-white whitespace-nowrap">{row.customer}</td>
-                      <td className="px-4 py-3 font-bold text-slate-300">{row.desc}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-lg text-xs font-black ${row.type === 'labor' ? 'bg-blue-900 text-blue-300' : row.type === 'materials' ? 'bg-amber-900 text-amber-300' : 'bg-slate-700 text-slate-400'}`}>
-                          {row.type}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-bold whitespace-nowrap">
-                        <span className={row.account === 'REVIEW_REQUIRED' ? 'text-red-400 font-black' : 'text-emerald-400'}>
-                          {row.account}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 font-bold text-slate-300 text-center">{row.qty}</td>
-                      <td className="px-4 py-3 font-bold text-slate-300 whitespace-nowrap">{row.price}</td>
-                      <td className="px-4 py-3 font-black text-white whitespace-nowrap">{row.amount}</td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-1 rounded-lg text-xs font-black ${row.status === 'Paid' ? 'bg-emerald-900 text-emerald-300' : 'bg-yellow-900 text-yellow-300'}`}>
-                          {row.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-center text-slate-500 font-bold text-xs mt-4">
-              Items flagged REVIEW_REQUIRED are highlighted for your attention. Everything else imports directly.
-            </p>
+          <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
+            Already a partner?{' '}
+            <Link href="/bookkeeper/login" className="text-[#00828A] underline underline-offset-2">
+              Log in
+            </Link>
+          </p>
         </div>
-        </section>
+      </section>
 
-        {/* HOW IT WORKS */}
-        <section className="py-20 px-6 bg-slate-900">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-14">
-              <p className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-3">The partnership</p>
-              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                Simple referral. Real results.
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {HOW_IT_WORKS.map((item, i) => (
-                <div key={i} className="bg-slate-800 border-2 border-slate-700 rounded-2xl p-6">
-                  <p className="text-xs font-black text-emerald-400 tracking-widest mb-3">{item.step}</p>
-                  <h3 className="text-sm font-black text-white mb-2">{item.title}</h3>
-                  <p className="text-sm text-slate-400 font-bold leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
+      {/* ── Pain ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <Eyebrow>Sound familiar?</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>It&rsquo;s not their fault. They don&rsquo;t have a system.</h2>
           </div>
-        </section>
+          <ul className="space-y-3">
+            {PAIN_POINTS.map((p) => (
+              <li key={p} className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500">
+                  <X className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
+                <p className="text-[15px] font-medium">{p}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-        {/* OFFER */}
-        <section className="py-20 px-6 border-b-2 border-slate-100">
-          <div className="max-w-3xl mx-auto">
-            <div className="bg-emerald-50 border-2 border-emerald-200 rounded-3xl p-10 text-center">
-              <p className="text-xs font-black uppercase tracking-widest text-emerald-700 mb-4">The offer</p>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
-                Costs you nothing.<br />Your clients get 3 months free.
-              </h2>
-              <p className="text-slate-600 font-bold mb-8 leading-relaxed">
-                Refer a contractor client using your partner code. They sign up free for 3 months. You get cleaner records immediately. No contracts, no commitments.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center mb-8">
-                {['No fees to join', 'No contract required', '3 months free for your clients', 'QuickBooks export included'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm font-black text-emerald-800">
-                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                    {item}
-                  </div>
-                ))}
+      <TapeDivider />
+
+      {/* ── What changes ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="max-w-2xl mb-10 text-center sm:text-left">
+            <Eyebrow>What changes</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Clean records. Every month.</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {WHAT_CHANGES.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{title}</h3>
+                <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{desc}</p>
               </div>
-            </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* CTA */}
-        <section className="py-20 px-6">
-          <div className="max-w-2xl mx-auto text-center">
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-4">
-              Ready to stop chasing receipts?
-            </h2>
-            <p className="text-slate-500 font-bold mb-8">
-              Create your free partner account in 60 seconds. Get your referral code instantly.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/bookkeeper/signup"
-                className="flex items-center gap-2 px-8 py-4 rounded-2xl bg-emerald-500 text-white font-black text-sm shadow-xl hover:bg-emerald-600 transition-all active:scale-95 border-2 border-slate-900"
-              >
-                Create Partner Account
-                <ArrowRight size={16} strokeWidth={3} />
-              </Link>
-              <Link
-                href="/bookkeeper/login"
-                className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-200 text-slate-700 font-black text-sm hover:bg-slate-50 transition-all"
-              >
-                Sign In
-              </Link>
-            </div>
-            <p className="text-xs text-slate-400 font-bold mt-4">
-              Already a partner? <Link href="/bookkeeper/login" className="text-emerald-600 hover:text-emerald-700">Sign in here</Link>
+      {/* ── Sample export ── */}
+      <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="max-w-2xl mx-auto text-center mb-10">
+            <Eyebrow dark>The export</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Every line item, ready to import.</h2>
+            <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
+              Line items come sorted into labor, materials and other, with a suggested account. Anything unclear is marked
+              for your review instead of guessed.
             </p>
           </div>
-        </section>
+          <div className="overflow-x-auto rounded-lg border border-white/10 bg-white text-[#1C1F23]">
+            <table className="w-full min-w-[760px] text-xs">
+              <thead>
+                <tr className="bg-slate-100">
+                  {['Invoice No.', 'Customer', 'Item', 'Type', 'QBO Account', 'Qty', 'Unit Price', 'Amount', 'Payment'].map((h) => (
+                    <th key={h} className="px-3 py-2.5 text-left font-bold uppercase tracking-wider text-[10px] text-slate-500 whitespace-nowrap">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {SAMPLE.map((r, i) => (
+                  <tr key={i} className="border-t border-slate-100">
+                    <td className="px-3 py-2.5 font-semibold whitespace-nowrap">{r.inv}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">{r.customer}</td>
+                    <td className="px-3 py-2.5">{r.desc}</td>
+                    <td className="px-3 py-2.5 text-slate-500">{r.type}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      {r.account === 'Review' ? (
+                        <span className="rounded bg-amber-50 px-1.5 py-0.5 font-bold text-amber-700">Review</span>
+                      ) : (
+                        r.account
+                      )}
+                    </td>
+                    <td className="px-3 py-2.5 text-center">{r.qty}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">{r.price}</td>
+                    <td className="px-3 py-2.5 font-bold whitespace-nowrap">{r.amount}</td>
+                    <td className="px-3 py-2.5 whitespace-nowrap">
+                      <span
+                        className={`rounded px-1.5 py-0.5 font-bold ${
+                          r.status === 'Paid' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {r.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-3 text-center text-xs text-slate-400">Sample data.</p>
+        </div>
+      </section>
 
-      </main>
+      {/* ── How it works ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Simple referral. Real records.</h2>
+          </div>
+          <ol className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between bg-[#1C1F23] px-4 py-2 text-white">
+                  <span className={`${D} text-sm font-bold uppercase tracking-[0.14em]`}>Step</span>
+                  <span className={`${D} text-xl font-extrabold text-[#5EC4C9]`}>#{String(i + 1).padStart(2, '0')}</span>
+                </div>
+                <div className="border-b border-dashed border-slate-300" />
+                <div className="p-5">
+                  <h3 className={`${D} text-xl font-bold uppercase leading-tight`}>{s.title}</h3>
+                  <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{s.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <ul className="mt-10 flex flex-col sm:flex-row flex-wrap gap-x-8 gap-y-2.5 justify-center">
+            {['Free to join', 'No contract', 'Clients get the standard 14-day free trial'].map((t) => (
+              <li key={t} className="flex items-center gap-2 text-[15px] font-semibold">
+                <Check className="h-4 w-4 text-[#00828A]" strokeWidth={3} /> {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+            Stop chasing receipts.
+          </h2>
+          <p className="mt-4 text-base sm:text-lg text-white/85">Create a free partner account and get your code.</p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/bookkeeper/signup"
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Become a partner
+            </Link>
+            <Link
+              href="/bookkeeper/login"
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Partner log in
+            </Link>
+          </div>
+        </div>
+      </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

@@ -1,176 +1,137 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Clock, ArrowRight } from 'lucide-react';
+import Nav from '@/components/marketing/Nav';
+import Footer from '@/components/marketing/Footer';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow } from '@/components/marketing/marketingUI';
 import { getAllPosts, BLOG_CATEGORIES } from '@/lib/blog-posts';
-import { Clock, ArrowRight, ChevronRight } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Blog — Lead2Project | Tips for Home Service Contractors',
-  description: 'Practical advice for contractors, landscapers, and home service pros. Learn how to get more leads, send better quotes, and grow your business.',
+  title: 'Blog | Lead2Project | Tips for Home Service Contractors',
+  description:
+    'Practical advice for contractors and home service pros: getting more leads, sending better quotes, collecting deposits and getting paid.',
   openGraph: {
-    title: 'Lead2Project Blog — Grow Your Contracting Business',
-    description: 'Practical advice for contractors, landscapers, and home service pros.',
+    title: 'Lead2Project Blog | Grow Your Contracting Business',
+    description: 'Practical advice for contractors and home service pros.',
     type: 'website',
     url: 'https://lead2project.com/blog',
   },
-  alternates: {
-    canonical: 'https://lead2project.com/blog',
-  },
+  alternates: { canonical: 'https://lead2project.com/blog' },
 };
+
+const D = 'font-[family-name:var(--font-display)]';
+
+const categoryLabel = (cat: string) => (BLOG_CATEGORIES.find((c) => c.value === cat) || BLOG_CATEGORIES[0]).label;
+
+function Meta({ category, readTime }: { category: string; readTime: number }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className={`rounded bg-[#00828A]/10 px-2 py-0.5 ${D} text-[11px] font-bold uppercase tracking-wider text-[#00828A]`}>
+        {categoryLabel(category)}
+      </span>
+      <span className="flex items-center gap-1 text-xs font-semibold text-slate-500">
+        <Clock className="h-3 w-3" /> {readTime} min read
+      </span>
+    </div>
+  );
+}
 
 export default function BlogPage() {
   const posts = getAllPosts();
   const featured = posts[0];
   const rest = posts.slice(1);
 
-  const getCategoryConfig = (cat: string) =>
-    BLOG_CATEGORIES.find(c => c.value === cat) || BLOG_CATEGORIES[0];
-
   return (
-    <div className="min-h-screen bg-[#080C14] text-white">
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>
+      <Nav />
 
-      {/* Nav */}
-      <header className="border-b border-white/[0.06] sticky top-0 z-50 bg-[#080C14]/90 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center p-1">
-              <img src="/Lead2ProjectLogo.webp" alt="Lead2Project" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-lg font-black tracking-tighter text-white">Lead2Project</span>
-          </Link>
-          <nav className="flex items-center gap-6">
-            <Link href="/pricing" className="text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest hidden sm:block">
-              Pricing
-            </Link>
-            <Link href="/book-demo" className="text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest hidden sm:block">
-              Demo
-            </Link>
-            <Link href="/signup" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-lg transition">
-              Start Free Trial
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-
-        {/* Hero */}
-        <div className="py-16 sm:py-24 text-center">
-          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400 mb-4 block">
-            The Lead2Project Blog
-          </span>
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tighter leading-none mb-6">
-            Grow your contracting<br />
-            <span className="text-slate-500">business.</span>
+      {/* ── Hero ── */}
+      <section
+        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-3xl mx-auto text-center">
+          <Eyebrow>The Lead2Project blog</Eyebrow>
+          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            Run a tighter business.
           </h1>
-          <p className="text-slate-400 text-lg font-medium max-w-xl mx-auto">
-            Practical advice for contractors who want more leads, faster payments, and less chaos.
+          <p className="mt-5 text-base sm:text-lg text-[#3a3f45] leading-relaxed">
+            Practical advice for contractors who want more jobs, faster payments and less chaos.
           </p>
         </div>
+      </section>
 
-        {/* Featured Post */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+        {/* ── Featured ── */}
         {featured && (
-          <Link
-            href={`/blog/${featured.slug}`}
-            className="block mb-16 group"
-          >
-            <article className="rounded-3xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.15] transition-all duration-300 overflow-hidden p-8 sm:p-12">
-              <div className="flex items-center gap-3 mb-6">
-                <span
-                  className="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full"
-                  style={{
-                    background: `${getCategoryConfig(featured.category).color}15`,
-                    color: getCategoryConfig(featured.category).color,
-                    border: `1px solid ${getCategoryConfig(featured.category).color}30`,
-                  }}
-                >
-                  {getCategoryConfig(featured.category).label}
+          <Link href={`/blog/${featured.slug}`} className="group block mb-10">
+            <article className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-shadow group-hover:shadow-lg">
+              <div className="h-1.5 bg-[#00828A]" />
+              <div className="p-6 sm:p-10">
+                <Meta category={featured.category} readTime={featured.readTime} />
+                <h2 className={`mt-4 ${D} text-3xl sm:text-4xl font-extrabold uppercase leading-[0.95] tracking-tight group-hover:text-[#00828A] transition-colors`}>
+                  {featured.title}
+                </h2>
+                <p className="mt-3 max-w-2xl text-base sm:text-lg text-[#3a3f45] leading-relaxed">{featured.excerpt}</p>
+                <span className={`mt-5 inline-flex items-center gap-2 ${D} text-sm font-bold uppercase tracking-wider text-[#00828A]`}>
+                  Read the article <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
-                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
-                  <Clock className="w-3 h-3" />
-                  {featured.readTime} min read
-                </span>
-              </div>
-              <h2 className="text-2xl sm:text-4xl font-black tracking-tight leading-tight mb-4 group-hover:text-blue-400 transition-colors">
-                {featured.title}
-              </h2>
-              <p className="text-slate-400 text-base sm:text-lg font-medium mb-6 max-w-2xl">
-                {featured.excerpt}
-              </p>
-              <div className="flex items-center gap-2 text-blue-400 text-sm font-black uppercase tracking-widest">
-                Read Article <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </div>
             </article>
           </Link>
         )}
 
-        {/* Post Grid */}
-        <div className="grid sm:grid-cols-2 gap-6 mb-24">
-          {rest.map((post) => {
-            const cat = getCategoryConfig(post.category);
-            return (
-              <Link
-                key={post.slug}
-                href={`/blog/${post.slug}`}
-                className="group"
-              >
-                <article className="h-full rounded-2xl border border-white/[0.08] bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/[0.15] transition-all duration-300 p-6 sm:p-8 flex flex-col">
-                  <div className="flex items-center gap-3 mb-4">
-                    <span
-                      className="text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full"
-                      style={{
-                        background: `${cat.color}15`,
-                        color: cat.color,
-                        border: `1px solid ${cat.color}30`,
-                      }}
-                    >
-                      {cat.label}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-600 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {post.readTime} min
-                    </span>
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-black tracking-tight leading-tight mb-3 group-hover:text-blue-400 transition-colors">
-                    {post.title}
-                  </h3>
-                  <p className="text-slate-500 text-sm font-medium leading-relaxed flex-1">
-                    {post.excerpt}
-                  </p>
-                  <div className="flex items-center gap-1.5 text-blue-400 text-xs font-black uppercase tracking-widest mt-6">
-                    Read <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                </article>
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* CTA */}
-        <div className="text-center pb-24">
-          <div className="rounded-3xl border border-white/[0.08] bg-white/[0.02] p-12 sm:p-16">
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tighter mb-4">
-              Ready to stop losing leads?
-            </h2>
-            <p className="text-slate-400 text-lg font-medium mb-8 max-w-lg mx-auto">
-              Try Lead2Project free for 14 days. No website needed — just a booking link, a dashboard, and more customers.
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <Link
-                href="/book-demo"
-                className="px-6 py-3.5 rounded-xl border border-white/10 text-white font-bold text-sm hover:bg-white/5 transition"
-              >
-                Try the Demo
-              </Link>
-              <Link
-                href="/signup"
-                className="px-6 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-sm shadow-lg shadow-blue-600/20 transition"
-              >
-                Start Free Trial
-              </Link>
-            </div>
-          </div>
+        {/* ── Grid ── */}
+        <div className="grid sm:grid-cols-2 gap-5">
+          {rest.map((post) => (
+            <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
+              <article className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow group-hover:shadow-md">
+                <Meta category={post.category} readTime={post.readTime} />
+                <h3 className={`mt-3 ${D} text-2xl font-bold uppercase leading-tight group-hover:text-[#00828A] transition-colors`}>
+                  {post.title}
+                </h3>
+                <p className="mt-2 flex-1 text-[15px] text-[#3a3f45] leading-relaxed">{post.excerpt}</p>
+                <span className={`mt-4 inline-flex items-center gap-1.5 ${D} text-sm font-bold uppercase tracking-wider text-[#00828A]`}>
+                  Read <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </article>
+            </Link>
+          ))}
         </div>
       </div>
+
+      {/* ── CTA ── */}
+      <section className="bg-[#00828A] text-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className={`${D} text-4xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+            Ready to stop losing jobs?
+          </h2>
+          <p className="mt-4 text-base sm:text-lg text-white/85">
+            Start free with a booking link and job board. Paid plans come with a 14-day free trial.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/signup"
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Start free
+            </Link>
+            <Link
+              href="/book-demo"
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Book a demo
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }

@@ -7,8 +7,10 @@ const columns: { heading: string; links: [string, string][] }[] = [
   {
     heading: 'Product',
     links: [
-      ['Pricing', '/#pricing'],
+           ['Pricing', '/#pricing'],
       ['How it works', '/#how-it-works'],
+      ['Blog', '/blog'],
+      ['Book a demo', '/book-demo'],
       ['Sign up', '/signup'],
       ['Log in', '/login'],
     ],

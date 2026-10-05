@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
 import { INDEXED_CITIES, SERVICES } from '@/lib/cities';
 import { industryList } from '@/lib/industry-content';
+import { getAllPosts } from '@/lib/blog-posts';
 
 const BASE = 'https://lead2project.com';
 
@@ -32,6 +33,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
+  const blog: MetadataRoute.Sitemap = [
+    { url: `${BASE}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.6 },
+    ...getAllPosts().map((post) => ({
+      url: `${BASE}/blog/${post.slug}`,
+      lastModified: new Date(post.updatedAt || post.publishedAt),
+      changeFrequency: 'monthly' as const,
+      priority: 0.6,
+    })),
+  ];
+
   // Only the indexed cities. Noindexed pages don't belong in the sitemap.
   const cityPages: MetadataRoute.Sitemap = Array.from(INDEXED_CITIES).flatMap((city) =>
     SERVICES.map((service) => ({
@@ -42,5 +53,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   );
 
-  return [...core, ...features, ...solutions, ...cityPages];
+  return [...core, ...features, ...solutions, ...blog, ...cityPages];
 }
