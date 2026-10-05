@@ -135,9 +135,9 @@ export default function BookDemoForm() {
           find a time that works.
         </p>
 
-        <Link href="/demo">
+        <Link href="/">
           <span className="inline-flex items-center gap-2 bg-teal-700 hover:bg-teal-600 text-white font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition-colors">
-            Look around in the meantime
+            Back to the site
             <ArrowRight size={15} />
           </span>
         </Link>
@@ -177,7 +177,7 @@ export default function BookDemoForm() {
           value={form.name}
           onChange={set('name')}
           className={inputClass}
-          placeholder="Alex Katos"
+          placeholder="Mike Torres"
         />
       </div>
 

@@ -65,7 +65,7 @@ export default function BookkeepersPage() {
   Partner Login
 </Link>
               <Link
-                href="/demo"
+                href="/book-demo"
                 className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-700 text-white font-black text-sm hover:bg-slate-800 transition-all"
               >
                 See the Product

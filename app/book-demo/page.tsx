@@ -67,13 +67,7 @@ export default function BookDemoPage() {
             ))}
           </ul>
 
-          <p className="mt-8 pt-6 border-t border-slate-300 text-sm font-semibold text-slate-500 leading-relaxed">
-            Would rather just poke around?{' '}
-            <a href="/demo" className="text-teal-700 font-black underline underline-offset-2">
-              Try the live demo
-            </a>{' '}
-            — no form, no email.
-          </p>
+     
         </div>
 
         <div className="lg:col-span-7">

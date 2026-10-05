@@ -24,7 +24,7 @@ import {
 import Link from 'next/link';
 // Your demo booking link (e.g. your own Lead2Project booking form).
 // Leave empty to hide the "Book a demo" link.
-const DEMO_URL = '';
+const DEMO_URL = '/book-demo';
 
 // Mock numbers — they add up: 40% of $12,000 = $4,800 deposit, $7,200 balance.
 const SIDEBAR = [

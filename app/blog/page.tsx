@@ -41,7 +41,7 @@ export default function BlogPage() {
             <Link href="/pricing" className="text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest hidden sm:block">
               Pricing
             </Link>
-            <Link href="/demo" className="text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest hidden sm:block">
+            <Link href="/book-demo" className="text-xs font-bold text-slate-400 hover:text-white transition uppercase tracking-widest hidden sm:block">
               Demo
             </Link>
             <Link href="/signup" className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-black uppercase tracking-widest rounded-lg transition">
@@ -156,7 +156,7 @@ export default function BlogPage() {
             </p>
             <div className="flex items-center justify-center gap-4">
               <Link
-                href="/demo"
+                href="/book-demo"
                 className="px-6 py-3.5 rounded-xl border border-white/10 text-white font-bold text-sm hover:bg-white/5 transition"
               >
                 Try the Demo
