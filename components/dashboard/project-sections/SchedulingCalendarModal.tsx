@@ -153,6 +153,8 @@ export default function SchedulingCalendarModal({
   // ── TIME MODE STATE ──
   const [pickedTime, setPickedTime] = useState('');
   const [pickedEndTime, setPickedEndTime] = useState('');
+  const [showCustomTime, setShowCustomTime] = useState(false);
+  const [showCustomEnd, setShowCustomEnd] = useState(false);
 
   // ── PEOPLE MODE STATE ──
   const [localAssignees, setLocalAssignees] = useState<string[]>(selectedAssignees);
@@ -177,8 +179,12 @@ export default function SchedulingCalendarModal({
       setPickedDate(null);
       setCurrentMonth(new Date());
     }
-    setPickedTime(currentScheduledTime || '');
-    setPickedEndTime(currentScheduledEndTime || '');
+       // DB stores "08:00:00"; the chips use "08:00"
+    const startHHMM = (currentScheduledTime || '').slice(0, 5);
+    setPickedTime(startHHMM);
+    setPickedEndTime((currentScheduledEndTime || '').slice(0, 5));
+    setShowCustomTime(!!startHHMM && !TIME_SLOTS.includes(startHHMM));
+    setShowCustomEnd(false);
     setLocalAssignees(selectedAssignees);
     setShowCustomNameInput(false);
     setCustomNameInput('');
@@ -186,8 +192,8 @@ export default function SchedulingCalendarModal({
 
   // Month-grid "busy day" dots — only needed in date mode.
   useEffect(() => {
-    if (!isOpen || mode !== 'date') return;
-    setLoadingJobs(true);
+    if (!isOpen || (mode !== 'date' && !(mode === 'time' && currentScheduledDate))) return;
+        setLoadingJobs(true);
     fetch(`/api/company/${companySlug}/leads?calendarAll=true`)
       .then((r) => r.json())
       .then((data) => {
@@ -196,7 +202,7 @@ export default function SchedulingCalendarModal({
       })
       .catch(() => toast.error('Failed to sync schedule'))
       .finally(() => setLoadingJobs(false));
-  }, [isOpen, mode, companySlug, currentLeadId]);
+  }, [isOpen, mode, companySlug, currentLeadId, currentScheduledDate]);
 
   // Availability — only needed in people mode, and only once a date+time
   // already exist (set independently, via the Date/Time pickers). This
@@ -323,26 +329,65 @@ export default function SchedulingCalendarModal({
       </ModalShell>
     );
   }
-
   // ══════════════════════════ TIME MODE ══════════════════════════
   if (mode === 'time') {
+    const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
+    const fromMins = (n: number) => `${String(Math.floor(n / 60)).padStart(2, '0')}:${String(n % 60).padStart(2, '0')}`;
     const canConfirm = !!pickedTime && (!showEndTime || !!pickedEndTime);
+
+    const dateLabel = currentScheduledDate
+      ? (() => {
+          const [y, m, d] = currentScheduledDate.split('-').map(Number);
+          return formatDateDisplay(new Date(y, m - 1, d));
+        })()
+      : null;
+
+    const groups = [
+      { label: 'Morning', slots: TIME_SLOTS.filter((t) => t < '12:00') },
+      { label: 'Afternoon', slots: TIME_SLOTS.filter((t) => t >= '12:00' && t < '17:00') },
+      { label: 'Evening', slots: TIME_SLOTS.filter((t) => t >= '17:00') },
+    ];
+
+    // Other jobs already on this day (same calendar data the date picker uses)
+    const dayJobs = currentScheduledDate
+      ? jobsByDay(currentScheduledDate)
+          .filter((j) => j.scheduled_time)
+          .sort((a, b) => String(a.scheduled_time).localeCompare(String(b.scheduled_time)))
+      : [];
+
+    const busyAt = (slot: string) => {
+      const s = toMins(slot);
+      return dayJobs.some((j) => {
+        const start = toMins(String(j.scheduled_time).slice(0, 5));
+        const end = j.scheduled_end_time ? toMins(String(j.scheduled_end_time).slice(0, 5)) : start + 60;
+        return s >= start && s < end;
+      });
+    };
+
+    const durations = [1, 2, 3, 4, 6, 8]
+      .map((h) => ({ h, end: pickedTime ? toMins(pickedTime) + h * 60 : 0 }))
+      .filter((d) => pickedTime && d.end <= 23 * 60 + 59);
+
+    const chipClass = (selected: boolean) =>
+      `relative h-11 rounded-xl text-sm font-semibold transition active:scale-95 touch-manipulation ${
+        selected
+          ? 'bg-[#00828A] text-white shadow-md shadow-[#00828A]/25'
+          : 'bg-gray-50 border border-gray-200 text-gray-700 hover:border-[#00828A]/40 hover:bg-[#00828A]/5'
+      }`;
+
     return (
       <ModalShell
         title="Set Time"
-        subtitle={currentScheduledDate ? `For ${currentScheduledDate}` : 'Pick a start time'}
+        subtitle={dateLabel ? `For ${dateLabel}` : 'Pick a start time'}
         onClose={onClose}
         footer={
           <ConfirmButton
             label={pickedTime ? `Confirm ${formatTime(pickedTime)}${showEndTime && pickedEndTime ? ` – ${formatTime(pickedEndTime)}` : ''}` : 'Select a time'}
             disabled={!canConfirm}
             onClick={() => {
-              if (showEndTime && pickedEndTime) {
-                const toMins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + m; };
-                if (toMins(pickedEndTime) <= toMins(pickedTime)) {
-                  toast.error('End time must be after start time');
-                  return;
-                }
+              if (showEndTime && pickedEndTime && toMins(pickedEndTime) <= toMins(pickedTime)) {
+                toast.error('End time must be after start time');
+                return;
               }
               onConfirmTime(pickedTime, showEndTime ? pickedEndTime : undefined);
               onClose();
@@ -350,45 +395,115 @@ export default function SchedulingCalendarModal({
           />
         }
       >
-        <div className="pt-2">
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">Start time</p>
-          <div className="flex flex-wrap gap-2">
-            {TIME_SLOTS.map((time) => (
-              <button
-                key={time}
-                onClick={() => { setPickedTime(time); setPickedEndTime(''); }}
-                className={`px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95 ${
-                  pickedTime === time ? 'bg-[#1a6645] text-white shadow-lg shadow-[#1a6645]/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {formatTime(time)}
-              </button>
-            ))}
-          </div>
+        <div className="pt-3 space-y-5">
+          {/* Already booked that day */}
+          {dayJobs.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/70 px-3 py-2.5">
+              <p className="text-[11px] font-semibold text-amber-800">Already booked {dateLabel}</p>
+              <p className="mt-0.5 text-xs text-amber-900/80">
+                {dayJobs
+                  .slice(0, 4)
+                  .map((j) => `${formatTime(String(j.scheduled_time).slice(0, 5))} · ${j.name || 'Job'}${j.category ? ` (${formatCategoryLabel(j.category)})` : ''}`)
+                  .join('  ·  ')}
+                {dayJobs.length > 4 ? `  +${dayJobs.length - 4} more` : ''}
+              </p>
+            </div>
+          )}
 
-          {showEndTime && pickedTime && (
-            <div className="mt-5">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2">End time</p>
-              <div className="flex flex-wrap gap-2">
-                {TIME_SLOTS.filter((t) => t > pickedTime).map((time) => (
-                  <button
-                    key={time}
-                    onClick={() => setPickedEndTime(time)}
-                    className={`px-4 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-wide transition-all active:scale-95 ${
-                      pickedEndTime === time ? 'bg-[#1a6645] text-white shadow-lg shadow-[#1a6645]/20' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                    }`}
-                  >
-                    {formatTime(time)}
-                  </button>
-                ))}
+          {/* Start time */}
+          {!showCustomTime ? (
+            groups.map((g) => (
+              <div key={g.label}>
+                <p className="mb-2 text-xs font-semibold text-gray-500">{g.label}</p>
+                <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                  {g.slots.map((time) => {
+                    const busy = busyAt(time);
+                    return (
+                      <button
+                        key={time}
+                        type="button"
+                        onClick={() => { setPickedTime(time); setPickedEndTime(''); }}
+                        className={chipClass(pickedTime === time)}
+                      >
+                        {formatTime(time)}
+                        {busy && (
+                          <span
+                            className={`absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full ${pickedTime === time ? 'bg-white/80' : 'bg-amber-400'}`}
+                            aria-label="Another job at this time"
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
+            ))
+          ) : (
+            <div>
+              <p className="mb-2 text-xs font-semibold text-gray-500">Start time</p>
+              <input
+                type="time"
+                step={300}
+                value={pickedTime}
+                onChange={(e) => { setPickedTime(e.target.value); setPickedEndTime(''); }}
+                className="w-full h-12 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-[16px] font-semibold text-gray-900 outline-none focus:border-[#00828A] focus:bg-white"
+              />
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setShowCustomTime((v) => !v)}
+            className="w-full py-2 text-xs font-semibold text-[#00828A] hover:underline"
+          >
+            {showCustomTime ? 'Back to quick times' : 'Need a different time? Enter it exactly'}
+          </button>
+
+          {/* End time (only for businesses that use it) */}
+          {showEndTime && pickedTime && (
+            <div className="border-t border-gray-100 pt-4">
+              <p className="mb-2 text-xs font-semibold text-gray-500">How long?</p>
+              {!showCustomEnd ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {durations.map(({ h, end }) => {
+                    const endStr = fromMins(end);
+                    return (
+                      <button
+                        key={h}
+                        type="button"
+                        onClick={() => setPickedEndTime(endStr)}
+                        className={`${chipClass(pickedEndTime === endStr)} flex flex-col items-center justify-center !h-14`}
+                      >
+                        <span>{h} hr{h > 1 ? 's' : ''}</span>
+                        <span className={`text-[10px] font-medium ${pickedEndTime === endStr ? 'text-white/80' : 'text-gray-400'}`}>
+                          until {formatTime(endStr)}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <input
+                  type="time"
+                  step={300}
+                  value={pickedEndTime}
+                  onChange={(e) => setPickedEndTime(e.target.value)}
+                  className="w-full h-12 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-[16px] font-semibold text-gray-900 outline-none focus:border-[#00828A] focus:bg-white"
+                />
+              )}
+              <button
+                type="button"
+                onClick={() => setShowCustomEnd((v) => !v)}
+                className="mt-2 w-full py-2 text-xs font-semibold text-[#00828A] hover:underline"
+              >
+                {showCustomEnd ? 'Back to durations' : 'Set an exact end time'}
+              </button>
             </div>
           )}
         </div>
       </ModalShell>
     );
   }
-
   // ══════════════════════════ PEOPLE MODE ══════════════════════════
   return (
     <ModalShell
