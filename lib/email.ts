@@ -1379,8 +1379,9 @@ export async function sendWelcomeEmail({
   companyName,
   companySlug,
   dashboardUrl,
-  formUrl,
+   formUrl,
   plan = 'basic',
+  isTrialing = true,
 }: {
   userEmail: string;
   userName: string;
@@ -1389,6 +1390,7 @@ export async function sendWelcomeEmail({
   dashboardUrl: string;
   formUrl: string;
   plan?: 'basic' | 'pro';
+  isTrialing?: boolean;
 }) {
   const planDetails = {
 
@@ -1442,7 +1444,7 @@ export async function sendWelcomeEmail({
                             <p style="margin:0;font-size:20px;font-weight:900;color:#0f172a;">${planDetails.label} <span style="font-size:14px;font-weight:500;color:#94a3b8;">${planDetails.price}</span></p>
                           </td>
                           <td style="text-align:right;vertical-align:middle;">
-                            <span style="display:inline-block;background:#0f172a;color:#fff;padding:8px 16px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;">14-day trial</span>
+                            <span style="display:inline-block;background:#0f172a;color:#fff;padding:8px 16px;border-radius:12px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;">${isTrialing ? '14-day trial' : 'Active'}</span>
                           </td>
                         </tr>
                       </table>

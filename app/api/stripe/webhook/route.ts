@@ -41,21 +41,33 @@ export async function POST(req: NextRequest) {
     case 'checkout.session.completed': {
       const session = event.data.object;
       const companyId = session.metadata?.companyId;
-const plan = (session.metadata?.plan || 'basic') as 'free' | 'basic' | 'pro';
+      const plan = (session.metadata?.plan || 'basic') as 'free' | 'basic' | 'pro';
 
-      if (!companyId) {
+           if (!companyId) {
         console.error('No companyId in session metadata');
         break;
       }
 
-      // Update subscription status
+      // Only subscription checkouts belong here.
+      if (session.mode !== 'subscription' || !session.subscription) break;
+
+      // Read the real status from Stripe instead of assuming a trial.
+      // A returning customer who already used their trial is charged right
+      // away: status 'active' and no trial_end.
+      const checkoutSub = await stripe.subscriptions.retrieve(session.subscription as string);
+      const trialEnd = checkoutSub.trial_end
+        ? new Date(checkoutSub.trial_end * 1000).toISOString()
+        : null;
+
+      // COALESCE keeps the old trial_ends_at when there's no new trial, so
+      // checkout still knows this company already used theirs.
       await sql`
-        UPDATE companies 
-        SET 
+        UPDATE companies
+        SET
           stripe_customer_id = ${session.customer as string},
-          stripe_subscription_id = ${session.subscription as string},
-          subscription_status = 'trialing',
-          trial_ends_at = NOW() + INTERVAL '14 days',
+          stripe_subscription_id = ${checkoutSub.id},
+          subscription_status = ${checkoutSub.status},
+          trial_ends_at = COALESCE(${trialEnd}::timestamptz, trial_ends_at),
           plan_tier = ${plan}
         WHERE id = ${parseInt(companyId)}
       `;
@@ -77,6 +89,7 @@ const plan = (session.metadata?.plan || 'basic') as 'free' | 'basic' | 'pro';
             dashboardUrl: `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}/dashboard`,
             formUrl:      `${process.env.NEXT_PUBLIC_APP_URL}/${company[0].slug}`,
             plan: plan === 'free' ? 'basic' : plan,
+            isTrialing: checkoutSub.status === 'trialing',
           });
           console.log('✅ Welcome email sent after payment for:', company[0].email);
         }

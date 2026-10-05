@@ -84,14 +84,29 @@ export function CategoriesLockedSection({ companySlug, isDark }: { companySlug: 
   return (
     <div className={`min-h-screen ${t.bg} transition-colors`}>
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-        <div className={`rounded-2xl ${t.cardBg} py-16 text-center`}>
-          <Lock className={`mx-auto mb-3 h-6 w-6 ${t.subText}`} />
-          <p className={`text-sm font-semibold ${t.cardText}`}>Services &amp; pricing is on the Basic plan</p>
+              <div className={`rounded-2xl ${t.cardBg} px-6 py-12 sm:px-10 text-center`}>
+          <Lock className={`mx-auto mb-4 h-6 w-6 ${t.subText}`} />
+          <p className={`text-lg sm:text-xl font-bold ${t.cardText}`}>Set your prices once. Every quote uses them.</p>
+          <p className={`mt-2 text-sm ${t.subText}`}>Services &amp; pricing is on the Basic plan.</p>
+          <ul className="mx-auto mt-6 max-w-sm space-y-2.5 text-left">
+            {[
+              'Each service with its line items and prices',
+              'A default deposit, percent or flat amount',
+              'A task checklist for every job of that type',
+              'Loads into the quote on any job in one tap',
+            ].map((item) => (
+              <li key={item} className={`flex items-start gap-2.5 text-sm ${t.cardText}`}>
+                <span className="mt-0.5 font-bold text-blue-600">✓</span>
+                {item}
+              </li>
+            ))}
+          </ul>
           <a
             href={`/${companySlug}/home?section=billing`}
-            className="mt-4 inline-block rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+            className="mt-7 inline-block rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
           >
-            Upgrade to Basic
+                        Start 14-day free trial
+
           </a>
         </div>
       </div>

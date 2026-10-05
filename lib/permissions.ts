@@ -95,7 +95,7 @@ export const FEATURE_PLAN_MAP = {
 
   settings_team:            'basic',
   settings_pipeline:        'basic',
-  settings_categories:      'free',
+  settings_categories:      'basic',
   settings_email_templates: 'free',
   settings_notifications:   'pro',
 
