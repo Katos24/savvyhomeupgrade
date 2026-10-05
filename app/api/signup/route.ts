@@ -119,8 +119,8 @@ export async function POST(req: NextRequest) {
         ${plan === 'free' ? 'free' : 'inactive'},
         true,
         ${addressConfig.show},
-        ${addressConfig.required},
-        ${plan},
+               ${addressConfig.required},
+        'free',   // never trust the signup request; the Stripe webhook sets the paid plan after checkout
         ${initialFieldConfig}::jsonb,
         ${referred_by_code || null}
       )
