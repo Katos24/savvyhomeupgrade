@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation';
 import LeadModal from '@/components/dashboard/LeadModal';
 import { Toaster, toast } from 'sonner';
 import TrialBanner from '@/components/TrialBanner';
-import { type PlanTier } from '@/lib/permissions';
+import { can, type PlanTier } from '@/lib/permissions';
 import CreateLeadModal from '@/components/dashboard/CreateLeadModal';
 import DashboardTour from '@/components/dashboard/DashboardTour';
 import DashboardFilters from '@/components/dashboard/DashboardFilters';
@@ -160,7 +160,7 @@ export default function LeadsClient({
   const { data: currentUser } = useCurrentUser();
   const { data: teamMembers } = useTeamMembers(company.slug);
     // Loads quote templates while the list is showing, so the Quote tab has them instantly.
-  useQuoteTemplates(company.slug);
+  useQuoteTemplates(company.slug, { enabled: can((company.plan_tier || 'free') as PlanTier, 'quote_templates') });
 
   // Tour
   const [tourActive, setTourActive] = useState(false);

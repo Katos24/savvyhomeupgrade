@@ -20,6 +20,9 @@ export type QuoteTemplate = {
 
 async function fetchQuoteTemplates(companySlug: string): Promise<QuoteTemplate[]> {
   const res = await fetch(`/api/company/${companySlug}/quote-templates`);
+  // 403 = this plan doesn't include templates. Treat it as "none" so
+  // React Query doesn't count it as an error and retry it.
+  if (res.status === 403) return [];
   const data = await res.json();
   if (!data.success) throw new Error(data.error || 'Failed to load templates');
   return data.templates;
@@ -28,12 +31,12 @@ async function fetchQuoteTemplates(companySlug: string): Promise<QuoteTemplate[]
 // Shared by CategoriesTab.tsx (Services) and QuoteSection.tsx's "Browse
 // Templates" — same company-wide list, two different screens. Both now
 // read from one cache entry instead of two independent fetches.
-export function useQuoteTemplates(companySlug: string) {
+export function useQuoteTemplates(companySlug: string, opts?: { enabled?: boolean }) {
   return useQuery({
-queryKey: ['quoteTemplates', companySlug],
-queryFn: () => fetchQuoteTemplates(companySlug),
-enabled: !!companySlug,
-staleTime: 5 * 60 * 1000,
+    queryKey: ['quoteTemplates', companySlug],
+    queryFn: () => fetchQuoteTemplates(companySlug),
+    enabled: !!companySlug && (opts?.enabled ?? true),
+    staleTime: 5 * 60 * 1000,
   });
 }
 

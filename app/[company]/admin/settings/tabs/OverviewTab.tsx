@@ -757,7 +757,7 @@ export default function OverviewTab({
           </div>
         </div>
 
-        <ServicesSummaryCard company={company} />
+        {can(planTier, 'quote_templates') && <ServicesSummaryCard company={company} />}
 
         {isFreePlan && (
           <SettingsUpgradeBanner

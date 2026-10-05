@@ -8,6 +8,8 @@ import BookingFormConfig from './BookingFormConfig';
 import { useFormTabLogic } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
 import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+import { can, type PlanTier } from '@/lib/permissions';
+
 
 type View = 'landing' | 'services' | 'form';
 
@@ -47,7 +49,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
 
   const t = themeTokens(isDark);
   const formLogic = useFormTabLogic(company);
-  const { data: templates = [], isLoading: templatesLoading } = useQuoteTemplates(company?.slug);
+  const { data: templates = [], isLoading: templatesLoading } = useQuoteTemplates(company?.slug, { enabled: can((company?.plan_tier || 'free') as PlanTier, 'quote_templates') });
 
   // ── Services summary: every service + whether it has a pricing template ──
   const services = useMemo(() => {

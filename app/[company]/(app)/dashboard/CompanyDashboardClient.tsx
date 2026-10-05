@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, X, Zap } from 'lucide-react';
 import { Toaster } from 'sonner';
-import { type PlanTier } from '@/lib/permissions';
+import { can, type PlanTier } from '@/lib/permissions';
 import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useTeamMembers } from '@/hooks/useTeamMembers';
@@ -375,7 +375,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
   const { data: currentUser } = useCurrentUser();
   const { data: teamMembers } = useTeamMembers(company.slug);
     // Loads quote templates while the list is showing, so the Quote tab has them instantly.
-  useQuoteTemplates(company.slug);
+  useQuoteTemplates(company.slug, { enabled: can((company.plan_tier || 'free') as PlanTier, 'quote_templates') });
 
   const handleLogout = useCallback(async () => {
     await fetch('/api/auth/logout', { method: 'POST' });

@@ -84,7 +84,7 @@ export default function CategoriesTab({
 
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
 
-   const { data: quoteTemplates = [] } = useQuoteTemplates(company.slug);
+   const { data: quoteTemplates = [] } = useQuoteTemplates(company.slug, { enabled: can((company.plan_tier || 'free') as PlanTier, 'quote_templates') });
   const { mutateAsync: mutateTemplates } = useQuoteTemplateMutation(company.slug);
 
   const [customQuestions, setCustomQuestions] = useState<CustomQuestion[]>(() => {
