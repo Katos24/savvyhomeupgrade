@@ -15,9 +15,9 @@
 //   Update PLAN_CONFIG prices. Done.
 //
 // Plans:
-//   free    → $0     — booking link + basic form + view leads + create leads
-//   basic   → $49.99 — full workflow, no emails, no AI
-//   pro     → $79.99 — everything + one-click emails + AI
+//   free    → $0     — booking link + basic form + cards/table/board/calendar + create leads
+//   basic   → $49.99 — full workflow: quotes, deposits, invoices, Stripe, reviews, team
+//   pro     → $79.99 — one-click quote/schedule emails, outbox, templates, digest, AI chat
 // ============================================================
 
 // ── Plan types ────────────────────────────────────────────────
@@ -37,9 +37,9 @@ export function planMeetsRequirement(
 // THIS is the single source of truth for what each plan gets.
 // Change a value here — it propagates everywhere automatically.
 //
-// free    → booking link + basic form + view leads + create leads (card view only)
-// basic   → full workflow, manual emails
-// pro     → automation + AI on top of basic
+// free    → booking link + basic form + all board views + create leads
+// basic   → full workflow incl. invoice + payment reminder emails
+// pro     → one-click quote/schedule emails, outbox, templates, digest, AI chat
 export const FEATURE_PLAN_MAP = {
   // ── Customer form ──────────────────────────────────────────
   basic_form:               'free',    // name, email, phone, description only
@@ -126,7 +126,7 @@ export const PLAN_CONFIG = {
     features: [
       'Booking link & QR code',
       'Basic form (name, email, phone, description)',
-      'Lead dashboard (card view)',
+      'Lead dashboard: cards, table, board & calendar',
       'View lead details',
       'Create leads manually',
     ],
@@ -140,12 +140,14 @@ export const PLAN_CONFIG = {
     features: [
       'Custom booking form & branding',
       'Customer photo & video uploads on form',
-      'CSV export for bookkeeping',
+      'CSV export, including QuickBooks format',
       'Build professional quote templates',
       'Job categories & task templates',
       'Photo & doc uploads on cards',
-      'Accept online payments (Stripe)',
+            'Accept online payments (Stripe)',
+      'Deposits & balance invoices',
       'Send invoices & payment reminders',
+      'Google review requests',
       'Custom pipeline stages',
       'Job scheduling & quote builder',
       'Unlimited team members',
@@ -155,7 +157,7 @@ export const PLAN_CONFIG = {
     label:        'Pro',
     price:        79.99,
     priceLabel:   '$79.99/mo',
-    description:  'Automation + AI for serious contractors',
+    description:  'One-click emails, full email history and a morning digest',
     stripePriceId: process.env.STRIPE_PRO_PRICE_ID || '',
     features: [
       'Everything in Basic',
@@ -178,14 +180,6 @@ export const UPGRADE_PROMPTS: Record<string, {
     title: 'Customize your booking form',
     description: 'Add your logo, categories, address fields, photos, and custom questions to your form.',
   },
-  table_view: {
-    title: 'Table & calendar views',
-    description: 'Sort, filter, and bulk-manage leads in table view. See your schedule at a glance in calendar view.',
-  },
-  calendar_view: {
-    title: 'Calendar view',
-    description: 'See all your scheduled jobs on a calendar at a glance.',
-  },
   photos_on_card: {
     title: 'See customer photos',
     description: 'Customers can upload job site photos on your booking form and you\'ll see them right on the lead card.',
@@ -200,7 +194,7 @@ export const UPGRADE_PROMPTS: Record<string, {
   },
   google_reviews: {
   title: 'Turn finished jobs into 5-star reviews',
-  description: 'The moment a job is marked complete, your happy customer gets a one-click email asking for a Google review — automatically, every time. More reviews means more visibility on Google, which means more leads finding you first.',
+  description: 'When you mark a job complete, send your customer a one-click email asking for a Google review. More reviews means more visibility on Google, and more leads finding you first.',
 },
   team_members: {
     title: 'Team members',
@@ -279,7 +273,7 @@ export const UPGRADE_PROMPTS: Record<string, {
   // Instead of just "One-click emails"
 send_quote_email: {
   title: 'Stop typing the same emails',
-  description: 'Send professional quotes and updates in a single click. Save 5+ hours a week on repetitive office work.',
+  description: 'Email your quote in one click. Your customer can accept it online, and every email is saved in your outbox.',
 },
 outbox: {
   title: 'Never lose track of a conversation',
@@ -319,7 +313,7 @@ stripe_connect: {
   },
   daily_digest: {
     title: 'Daily digest',
-    description: 'Get a morning email summary of open leads, follow-ups, and scheduled jobs.',
+    description: 'One email every morning with today’s jobs, quotes waiting on an answer, overdue payments and balances still owed.',
   },
 };
 

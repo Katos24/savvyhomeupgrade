@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProjectSection from '@/components/dashboard/ProjectSection';
-import AiBriefTab from '@/components/dashboard/AiBriefTab';
 import LeadModalHeader from '@/components/dashboard/LeadModalHeader';
 import MobileTabBar from '@/components/dashboard/MobileTabBar';
 import DesktopSidebarNav from '@/components/dashboard/DesktopSidebarNav';

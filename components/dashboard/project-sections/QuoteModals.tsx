@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { X, Mail, Loader2, Sparkles, CheckCircle2, ArrowRightLeft, FileText, Trash2, Search, Plus, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
-import AIQuoteGenerator from '../AIQuoteGenerator';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
@@ -282,59 +281,7 @@ export default function QuoteModals({
         )}
       </AnimatePresence>
 
-      {/* AI GENERATOR MODAL */}
-      <AnimatePresence>
-        {showAI && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center"
-          >
-            <motion.div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={() => setShowAI(false)} />
-            <motion.div
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="relative bg-white w-full sm:max-w-md sm:mx-4 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden"
-              style={{ maxHeight: '90vh' }}
-            >
-              <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
-                <div className="w-10 h-1.5 rounded-full bg-slate-200" />
-              </div>
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-                    <Sparkles className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900 leading-tight">AI Quote Draft</p>
-                    <p className="text-[11px] text-slate-400">
-                      {leadPhotos.length > 0
-                        ? `Analysing description + ${leadPhotos.length} photo${leadPhotos.length > 1 ? 's' : ''}`
-                        : 'Generating estimate from job details'}
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => setShowAI(false)} className="p-1.5 hover:bg-slate-100 rounded-lg transition cursor-pointer">
-                  <X className="w-4 h-4 text-slate-500" />
-                </button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-6" style={{ WebkitOverflowScrolling: 'touch' }}>
-                <AIQuoteGenerator
-                  leadDescription={lead?.description || ''}
-                  leadCategory={lead?.category || ''}
-                  leadInternalNotes={lead?.project_internal_notes || ''}
-                  leadPhotos={leadPhotos}
-                  onAddItems={handleAddItems}
-                  companySlug={companySlug}
-                />
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+ 
 
       {/* PENDING AI ITEMS CONFIRMATION MODAL */}
       <AnimatePresence>
