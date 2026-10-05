@@ -62,3 +62,20 @@ export const cities = [
   'virginia-beach-va',
   'baltimore-md',
 ];
+
+// Only the cities we actually sell in get indexed by Google. The rest stay
+// live but noindex, so ~2,300 near-identical pages don't drag down the site.
+// Add a city here once you're actively working that area.
+export const INDEXED_CITIES = new Set<string>(['long-island-ny', 'queens-ny']);
+
+export const SERVICES = [
+  'hvac', 'electrical', 'plumbing', 'roofing', 'painting',
+  'handyman', 'landscaping', 'cleaning', 'moving', 'locksmith',
+  'fencing', 'concrete', 'flooring', 'siding', 'gutters',
+  'pressure-washing', 'tree-service', 'pest-control', 'garage-door',
+  'window-installation', 'drywall', 'demolition', 'excavation',
+  'septic', 'paving', 'masonry', 'welding', 'insulation',
+  'solar', 'pool-service', 'irrigation', 'appliance-repair',
+  'chimney', 'waterproofing', 'foundation-repair', 'junk-removal',
+  'carpet-cleaning', 'auto-detailing', 'towing',
+];

@@ -2,157 +2,67 @@
 
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { cities } from '@/lib/cities';
+import { ArrowRight, Check, QrCode, Inbox, CreditCard, Smartphone, UserPlus, FileText, Sunrise } from 'lucide-react';
+import Nav from '@/components/marketing/Nav';
+import Footer from '@/components/marketing/Footer';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow, TapeDivider } from '@/components/marketing/marketingUI';
+import { cities, INDEXED_CITIES, SERVICES } from '@/lib/cities';
 import { serviceDetails } from '@/lib/serviceDetails';
+
+/* ─────────────────────────────────────────────────────────
+   City × service SEO pages. Every claim matches lib/permissions.ts
+   and the app today. No invented interviews, no "2 minutes",
+   no "6 AM", no trial length.
+   ───────────────────────────────────────────────────────── */
 
 // ─── STATIC PARAMS ───
 
+
+
 export async function generateStaticParams() {
-  const services = [
-    'hvac', 'electrical', 'plumbing', 'roofing', 'painting',
-    'handyman', 'landscaping', 'cleaning', 'moving', 'locksmith',
-    'fencing', 'concrete', 'flooring', 'siding', 'gutters',
-    'pressure-washing', 'tree-service', 'pest-control', 'garage-door',
-    'window-installation', 'drywall', 'demolition', 'excavation',
-    'septic', 'paving', 'masonry', 'welding', 'insulation',
-    'solar', 'pool-service', 'irrigation', 'appliance-repair',
-    'chimney', 'waterproofing', 'foundation-repair', 'junk-removal',
-    'carpet-cleaning', 'auto-detailing', 'towing',
-  ];
-
-  const params = [];
-
+  const params: { city: string; service: string }[] = [];
   for (const city of cities) {
-    for (const service of services) {
-      params.push({
-        city,
-        service,
-      });
+    for (const service of SERVICES) {
+      params.push({ city, service });
     }
   }
-
   return params;
 }
 
 // ─── HELPERS ───
 
-function formatCity(slug: string) {
-  const specialCases: Record<string, string> = {
-    dc: 'DC',
-    nj: 'NJ',
-    ct: 'CT',
-    pa: 'PA',
-    ma: 'MA',
-    ca: 'CA',
-    tx: 'TX',
-    fl: 'FL',
-    il: 'IL',
-    oh: 'OH',
-    ga: 'GA',
-    nc: 'NC',
-    va: 'VA',
-    md: 'MD',
-    mi: 'MI',
-    az: 'AZ',
-    co: 'CO',
-    wa: 'WA',
-    or: 'OR',
-    nv: 'NV',
-    tn: 'TN',
-    mn: 'MN',
-    wi: 'WI',
-    in: 'IN',
-    mo: 'MO',
-    sc: 'SC',
-    al: 'AL',
-    la: 'LA',
-    ky: 'KY',
-    ok: 'OK',
-    ia: 'IA',
-    ks: 'KS',
-    ne: 'NE',
-    ar: 'AR',
-    ms: 'MS',
-    ut: 'UT',
-    nm: 'NM',
-    id: 'ID',
-    mt: 'MT',
-    wy: 'WY',
-    nd: 'ND',
-    sd: 'SD',
-    wv: 'WV',
-    nh: 'NH',
-    vt: 'VT',
-    me: 'ME',
-    ri: 'RI',
-    de: 'DE',
-    st: 'St.',
-  };
+const STATE_CODES = new Set([
+  'dc', 'nj', 'ct', 'pa', 'ma', 'ca', 'tx', 'fl', 'il', 'oh', 'ga', 'nc', 'va', 'md', 'mi', 'az', 'co', 'wa',
+  'or', 'nv', 'tn', 'mn', 'wi', 'in', 'mo', 'sc', 'al', 'la', 'ky', 'ok', 'ia', 'ks', 'ne', 'ar', 'ms', 'ut',
+  'nm', 'id', 'mt', 'wy', 'nd', 'sd', 'wv', 'nh', 'vt', 'me', 'ri', 'de',
+]);
 
+function formatCity(slug: string) {
   return slug
     .split('-')
-    .map(word => {
-      if (specialCases[word]) return specialCases[word];
+    .map((word) => {
+      if (STATE_CODES.has(word)) return word.toUpperCase();
+      if (word === 'st') return 'St.';
       return word.charAt(0).toUpperCase() + word.slice(1);
     })
     .join(' ');
 }
 
-function formatService(slug: string) {
-  const serviceNames: Record<string, string> = {
-    hvac: 'HVAC',
-    electrical: 'Electrical',
-    plumbing: 'Plumbing',
-    roofing: 'Roofing',
-    painting: 'Painting',
-    handyman: 'Handyman',
-    landscaping: 'Landscaping',
-    cleaning: 'Cleaning',
-    moving: 'Moving',
-    locksmith: 'Locksmith',
-    fencing: 'Fencing',
-    concrete: 'Concrete',
-    flooring: 'Flooring',
-    siding: 'Siding',
-    gutters: 'Gutter',
-    'pressure-washing': 'Pressure Washing',
-    'tree-service': 'Tree Service',
-    'pest-control': 'Pest Control',
-    'garage-door': 'Garage Door',
-    'window-installation': 'Window Installation',
-    drywall: 'Drywall',
-    demolition: 'Demolition',
-    excavation: 'Excavation',
-    septic: 'Septic',
-    paving: 'Paving',
-    masonry: 'Masonry',
-    welding: 'Welding',
-    insulation: 'Insulation',
-    solar: 'Solar',
-    'pool-service': 'Pool Service',
-    irrigation: 'Irrigation',
-    'appliance-repair': 'Appliance Repair',
-    chimney: 'Chimney',
-    waterproofing: 'Waterproofing',
-    'foundation-repair': 'Foundation Repair',
-    'junk-removal': 'Junk Removal',
-    'carpet-cleaning': 'Carpet Cleaning',
-    'auto-detailing': 'Auto Detailing',
-    towing: 'Towing',
-  };
+const SERVICE_NAMES: Record<string, string> = {
+  hvac: 'HVAC',
+  gutters: 'Gutter',
+};
 
+function formatService(slug: string) {
   return (
-    serviceNames[slug] ||
+    SERVICE_NAMES[slug] ||
     slug
       .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ')
   );
 }
-
-// ─── SERVICE DETAILS ───
-// Keep your full serviceDetails object here exactly as built
-// (No changes needed)
 
 // ─── METADATA ───
 
@@ -162,32 +72,53 @@ export async function generateMetadata({
   params: Promise<{ city: string; service: string }>;
 }): Promise<Metadata> {
   const { city: citySlug, service: serviceSlug } = await params;
-
   const city = formatCity(citySlug);
   const service = formatService(serviceSlug);
+  const url = `https://lead2project.com/contractor-software/${citySlug}/${serviceSlug}`;
 
   return {
     title: `${service} Software for ${city} Contractors | Lead2Project`,
-    description: `${city} ${service.toLowerCase()} contractors: get a booking link and QR code your customers can use to submit jobs with photos. Add leads yourself or let them come to you. Quote, schedule, and track every job from one dashboard. Try Lead2Project free for 14 days.`,
-    alternates: {
-      canonical: `https://lead2project.com/contractor-software/${citySlug}/${serviceSlug}`,
-    },
+    description: `${city} ${service.toLowerCase()} contractors: a booking link and QR code for job requests, one board for every lead, plus quotes, deposits and card payments. Free plan available.`,
+    alternates: { canonical: url },
+    robots: INDEXED_CITIES.has(citySlug) ? undefined : { index: false, follow: true },
     openGraph: {
       title: `${service} Job Management in ${city} | Lead2Project`,
-      description: `Stop losing ${service.toLowerCase()} leads in ${city}. One booking link, one dashboard. Customers submit jobs with photos, you quote and schedule from your phone.`,
-      url: `https://lead2project.com/contractor-software/${citySlug}/${serviceSlug}`,
+      description: `Stop losing ${service.toLowerCase()} leads in ${city}. One booking link, one board, and deposits collected before you start.`,
+      url,
       siteName: 'Lead2Project',
       type: 'website',
     },
     twitter: {
       card: 'summary_large_image',
       title: `${service} Software for ${city} Contractors | Lead2Project`,
-      description: `${city} ${service.toLowerCase()} pros: one booking link, one dashboard. Capture leads, send quotes, schedule jobs.`,
+      description: `${city} ${service.toLowerCase()} pros: one booking link, one board, quotes and payments in one place.`,
     },
   };
 }
 
-// ─── PAGE COMPONENT ───
+// ─── STYLE ───
+
+const D = 'font-[family-name:var(--font-display)]';
+const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
+const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BTN =
+  'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
+  D +
+  ' text-base font-bold uppercase tracking-wider';
+
+function PlanTag({ plan }: { plan: 'Basic' | 'Pro' }) {
+  return (
+    <span
+      className={`ml-1.5 rounded px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider align-middle ${
+        plan === 'Pro' ? 'bg-[#1C1F23] text-[#5EC4C9]' : 'bg-[#00828A]/10 text-[#00828A]'
+      }`}
+    >
+      {plan}
+    </span>
+  );
+}
+
+// ─── PAGE ───
 
 export default async function CityServicePage({
   params,
@@ -195,327 +126,289 @@ export default async function CityServicePage({
   params: Promise<{ city: string; service: string }>;
 }) {
   const { city: citySlug, service: serviceSlug } = await params;
-
   const city = formatCity(citySlug);
   const service = formatService(serviceSlug);
+  const s = service.toLowerCase();
   const detail = serviceDetails[serviceSlug] || serviceDetails.hvac;
+  const jobs: string[] = detail.jobs;
+
+  const steps = [
+    {
+      icon: QrCode,
+      title: 'Share your link',
+      desc: `Every account gets a booking link and a QR code. Put it on your truck, yard signs, cards and your Google profile.`,
+    },
+    {
+      icon: Inbox,
+      title: 'Leads land on your board',
+      desc: `Customers in ${city} send their ${s} job through your form. Got a call instead? Add the lead yourself.`,
+    },
+    {
+      icon: CreditCard,
+      title: 'Quote it and get paid',
+      desc: 'Send the quote, collect a deposit before you start, and invoice the balance when the job is done.',
+    },
+  ];
+
+  const features: { icon: typeof QrCode; title: string; desc: string; plan?: 'Basic' | 'Pro' }[] = [
+    {
+      icon: Smartphone,
+      title: 'Customers book you directly',
+      desc: `No app to download. They scan your QR code or tap your link and describe the ${s} job they need done.`,
+    },
+    {
+      icon: UserPlus,
+      title: 'Add leads yourself',
+      desc: 'A neighbor flags you down or a buddy sends a number. Add it to your board so you don’t forget to call back.',
+    },
+    {
+      icon: FileText,
+      title: 'Quotes from saved services',
+      desc: 'Save your services and prices once, then build each quote in a few taps. The deposit is already on it.',
+      plan: 'Basic',
+    },
+    {
+      icon: CreditCard,
+      title: 'Deposits and card payments',
+      desc: 'Customers pay the deposit and the balance by card through Stripe, and you see what’s paid on every job.',
+      plan: 'Basic',
+    },
+  ];
+
+  const faqs = [
+    {
+      q: 'I already have a system that works. Why switch?',
+      a: 'If your system is texts, calls and notes on your phone, it works until it doesn’t. One missed callback is one lost job. Lead2Project doesn’t change how leads come in. It gives you one place to see all of them.',
+    },
+    {
+      q: 'I’m not great with technology. Is this complicated?',
+      a: 'If you can use your phone, you can use Lead2Project. Sign up, add your business name, and your booking link and QR code are ready to share.',
+    },
+    {
+      q: 'What if my customers aren’t tech-savvy?',
+      a: 'Your booking form is a simple web page with no app to download. They scan your QR code, fill it in and hit submit. If they’d rather call, add the lead yourself.',
+    },
+    {
+      q: 'How much does it cost?',
+      a: 'The Free plan covers your booking link, QR code and job board. Basic is $49.99 a month and adds quotes, deposits, invoices and card payments. Pro is $79.99 a month and adds one-click quote and schedule emails, your email history and the daily digest. No setup fees, cancel anytime.',
+    },
+    {
+      q: 'I tried Jobber and Housecall Pro but they were too much.',
+      a: 'Those tools are built for bigger operations with dispatchers. Lead2Project is built for solo contractors and small crews who need to capture leads, send quotes and get paid without a lot of setup.',
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>
+      <Nav />
 
-      {/* Hero */}
-      <section className="py-20 px-4">
-        <div className="max-w-5xl mx-auto text-center">
-          <p className="text-blue-400 font-semibold text-sm tracking-wide uppercase mb-4">
-            {service} Software for {city}
-          </p>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight">
-            Stop Losing {service} Leads in {city}
+      {/* ── Hero ── */}
+      <section
+        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <Eyebrow>
+            {service} software for {city}
+          </Eyebrow>
+          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            Stop losing {s} leads in {city}.
           </h1>
-          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto mb-4">
-            You run a {service.toLowerCase()} business in {city}. Leads come in from texts, calls, 
-            social media, word of mouth. You lose track. Jobs slip through the cracks.
+          <p className={`mt-5 max-w-2xl mx-auto ${BODY}`}>
+            Leads come in from texts, calls, Facebook and word of mouth, and some of them get lost. Lead2Project gives you
+            one booking link and one board, so every job request lands in the same place.
           </p>
-          <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto mb-10">
-            Lead2Project gives you one booking link and one dashboard. Your customers submit 
-            job requests with photos, or you add leads yourself. Everything in one place. 
-            No more sticky notes and forgotten callbacks.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
-              href="/signup"
-              className="px-8 py-4 bg-blue-600 text-white rounded-lg font-bold text-lg hover:bg-blue-700 transition"
-            >
-              Start Free Trial
-            </a>
-            <a
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/signup" className={`w-full sm:w-auto ${BTN}`}>
+              Start free
+            </Link>
+            <Link
               href="/"
-              className="px-8 py-4 bg-white/10 border border-white/20 text-white rounded-lg font-bold text-lg hover:bg-white/20 transition"
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
             >
-              See How It Works
-            </a>
+              See how it works <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <p className="text-sm text-gray-500 mt-4">14-day free trial. Cancel anytime.</p>
+          <p className="mt-4 text-sm font-semibold text-[#3a3f45]">Free plan available · Cancel anytime</p>
         </div>
       </section>
 
-      {/* The Problem */}
-      <section className="py-16 px-4">
+      {/* ── Problem ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6 text-center">
-            Sound Familiar?
-          </h2>
-          <p className="text-gray-400 text-center text-lg max-w-3xl mx-auto mb-12">
-            We talked to {service.toLowerCase()} contractors in {city} and heard the same thing 
-            over and over.
-          </p>
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-white mb-4">
-                How leads come in now
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                A homeowner texts you from a friend&apos;s referral. Someone DMs you on Instagram. 
-                Your buddy sends you a number. A customer calls while you are on a job. 
-                You scribble it on a napkin, tell yourself you will call back later, and forget. 
-                By the time you remember, they already called someone else.
+          <div className="max-w-2xl mx-auto text-center mb-10">
+            <Eyebrow>Sound familiar?</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>The napkin always gets lost.</h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <h3 className={`${D} text-2xl font-bold uppercase`}>How leads come in now</h3>
+              <p className="mt-3 text-[15px] text-[#3a3f45] leading-relaxed">
+                A homeowner texts you from a referral. Someone messages you on Facebook. A customer calls while you&rsquo;re on
+                a job. You tell yourself you&rsquo;ll call back later, and by the time you remember, they&rsquo;ve hired
+                someone else.
               </p>
             </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-white mb-4">
-                What {service.toLowerCase()} pros actually need
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                One place where every lead lands. A booking link you can put on 
-                your truck, your cards, your lawn sign, your Instagram bio. Customers fill out 
-                what they need, upload photos of the job, and it shows up on your dashboard. 
-                You open your phone, see every lead, send a quote, schedule the job. Done.
+            <div className="rounded-lg border border-[#00828A]/30 bg-[#00828A]/[0.04] p-6 shadow-sm">
+              <h3 className={`${D} text-2xl font-bold uppercase`}>What you actually need</h3>
+              <p className="mt-3 text-[15px] text-[#3a3f45] leading-relaxed">
+                One place where every lead lands. A link on your truck and your cards. Customers say what they need, it shows
+                up on your board, and you quote it from your phone.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* How It Works */}
-      <section className="py-16 px-4 bg-white/[0.02]">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center">
-            How Lead2Project Works for {city} {service} Contractors
-          </h2>
-          <p className="text-gray-400 text-center text-lg max-w-2xl mx-auto mb-12">
-            Set up takes two minutes. Here is what happens next.
-          </p>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600/20 border border-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-blue-400 font-bold text-lg">1</span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">
-                Get Your Booking Link and QR Code
-              </h3>
-              <p className="text-gray-400">
-                Every Lead2Project account comes with a custom booking link and a downloadable 
-                QR code. Put the QR code on your truck, yard signs, business cards, flyers. 
-                Share the link on social media. Customers scan it or tap it and land on your 
-                custom form.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600/20 border border-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-blue-400 font-bold text-lg">2</span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">
-                Leads Land on Your Dashboard
-              </h3>
-              <p className="text-gray-400">
-                When a customer submits a request through your link, it shows up on your 
-                dashboard instantly. They pick their service category, describe the job, 
-                and upload photos. You can also add leads yourself when someone calls or texts 
-                you directly. Either way, everything is in one place.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-12 h-12 bg-blue-600/20 border border-blue-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-blue-400 font-bold text-lg">3</span>
-              </div>
-              <h3 className="text-xl font-bold text-white mb-3">
-                Quote, Schedule, and Get Paid
-              </h3>
-              <p className="text-gray-400">
-                Review the job details, send a quote with one tap, schedule the work, and 
-                track the whole thing from start to finish. Every morning at 6AM you get a 
-                summary email with new leads, today&apos;s schedule, and payment status. No more 
-                guessing what is on your plate.
-              </p>
-            </div>
+      <TapeDivider />
+
+      {/* ── How it works ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>
+              How Lead2Project works for {city} {s} contractors
+            </h2>
           </div>
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {steps.map((step, i) => {
+              const Icon = step.icon;
+              return (
+                <li key={step.title} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                  <div className="flex items-center justify-between bg-[#1C1F23] px-4 py-2 text-white">
+                    <span className={`${D} text-sm font-bold uppercase tracking-[0.14em]`}>Step</span>
+                    <span className={`${D} text-xl font-extrabold text-[#5EC4C9]`}>#{String(i + 1).padStart(2, '0')}</span>
+                  </div>
+                  <div className="border-b border-dashed border-slate-300" />
+                  <div className="p-5 sm:p-6">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{step.title}</h3>
+                    <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.desc}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         </div>
       </section>
 
-      {/* Service Specific Section */}
-      <section className="py-16 px-4">
+      {/* ── Service specific ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center">
-            Built for {service} Contractors Who Are Tired of the Chaos
-          </h2>
-          <p className="text-gray-400 text-center text-lg max-w-3xl mx-auto mb-12">
-            Whether you are handling {detail.jobs.slice(0, 3).join(', ')}, or {detail.jobs[detail.jobs.length - 1]}, 
-            you know the pain of {detail.pain}. Lead2Project keeps it all organized so nothing falls through the cracks.
-          </p>
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-white mb-3">
-                Your Customers Can Book You Directly
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                No app download required. Your customer scans your QR code or clicks your 
-                booking link, picks the type of {service.toLowerCase()} work they need, writes a 
-                description, and uploads photos. You get it instantly. They do not have to 
-                call, text, or DM you. It just works.
-              </p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-white mb-3">
-                You Can Add Leads Yourself Too
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                Not every lead comes through your booking link. Someone calls you on the 
-                job site. A neighbor flags you down. Your buddy sends you a number. Open 
-                Lead2Project, add the lead in 30 seconds, and it is on your board. 
-                No more forgetting to follow up.
-              </p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-white mb-3">
-                Send Quotes Without the Back and Forth
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                The customer already told you what they need and showed you photos. 
-                Review the details, build your quote, and send it. They get a professional 
-                email with your company branding. No more scribbling estimates on the back 
-                of a business card.
-              </p>
-            </div>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6">
-              <h3 className="text-xl font-bold text-white mb-3">
-                Look Like a Real Company
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                Set up your company identity once. Your logo, your colors, your info. It 
-                flows through every customer email, your booking form, and your QR code. 
-                Homeowners in {city} trust a {service.toLowerCase()} contractor who looks professional 
-                and organized.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Daily Workflow */}
-      <section className="py-16 px-4 bg-white/[0.02]">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4 text-center">
-            What Your Morning Looks Like with Lead2Project
-          </h2>
-          <p className="text-gray-400 text-center text-lg max-w-3xl mx-auto mb-12">
-            Every day at 6AM, you get one email. Here is what is in it.
-          </p>
-          <div className="bg-white/5 border border-white/10 rounded-xl p-8 max-w-2xl mx-auto">
-            <div className="space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 shrink-0"></div>
-                <p className="text-gray-300">
-                  <span className="text-white font-semibold">New leads overnight.</span> Two 
-                  homeowners in {city} submitted {service.toLowerCase()} requests through your booking link while 
-                  you were asleep. Photos included.
-                </p>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-2 h-2 bg-green-400 rounded-full mt-2 shrink-0"></div>
-                <p className="text-gray-300">
-                  <span className="text-white font-semibold">Today&apos;s schedule.</span> You have three 
-                  jobs lined up. Addresses, customer info, and job details all in one place.
-                </p>
-              </div>
-              <div className="flex items-start gap-4">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2 shrink-0"></div>
-                <p className="text-gray-300">
-                  <span className="text-white font-semibold">Payment status.</span> One invoice 
-                  is overdue. One got paid yesterday.
-                </p>
-              </div>
-            </div>
-            <p className="text-gray-500 text-sm mt-6">
-              You have not even left the house yet and you already know exactly what your day looks like.
+          <div className="max-w-3xl mx-auto text-center mb-10">
+            <Eyebrow>Built for {s}</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Built for {s} contractors.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Whether it&rsquo;s {jobs.slice(0, 3).join(', ')} or {jobs[jobs.length - 1]}, you know the pain of {detail.pain}.
+              Lead2Project keeps every job in one place.
             </p>
           </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-16 px-4">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-12 text-center">
-            Questions {city} {service} Contractors Ask Us
-          </h2>
-          <div className="space-y-8">
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                I already have a system that works. Why switch?
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                If your system is texts, calls, and notes on your phone, it works until it 
-                does not. One missed callback is one lost job. Lead2Project does not replace 
-                how leads come in. It gives you one place to see all of them so nothing 
-                gets lost.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                I am not great with technology. Is this complicated?
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                If you can use your phone, you can use Lead2Project. Sign up, add your 
-                company name and logo, and your booking link and QR code are ready in two 
-                minutes. No training needed. No complicated setup.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                What if my customers are not tech-savvy?
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                Your booking form is just a simple web page. No app download. They scan your 
-                QR code, fill in what they need, take a photo, and hit submit. If your customer 
-                can use Facebook, they can use this. And if they would rather just call you, 
-                that is fine too. You add the lead yourself in 30 seconds.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                How much does it cost?
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                Simple monthly pricing. No setup fees, no contracts. Start with a 14-day free 
-                trial. If one saved lead pays for a year of Lead2Project, it pays for itself 
-                on day one.
-              </p>
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-white mb-2">
-                I tried Jobber and Housecall Pro but they were too much.
-              </h3>
-              <p className="text-gray-400 leading-relaxed">
-                Those tools are built for big operations with fleets and dispatchers. 
-                Lead2Project is built for contractors who work solo or with a small crew 
-                and just need a simple way to capture leads, send quotes, and stay organized. 
-                No bloat. No features you will never use.
-              </p>
-            </div>
+          <div className="grid md:grid-cols-2 gap-5">
+            {features.map(({ icon: Icon, title, desc, plan }) => (
+              <div key={title} className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
+                  <Icon className="h-5 w-5" />
+                </span>
+                <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>
+                  {title}
+                  {plan && <PlanTag plan={plan} />}
+                </h3>
+                <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-12">
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-            Stop Letting {service} Leads Slip Through the Cracks
-          </h2>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
-            Get your booking link and QR code in two minutes. Start capturing every lead 
-            in {city} today.
-          </p>
-          <a
-            href="/signup"
-            className="inline-block px-10 py-4 bg-white text-blue-700 rounded-lg font-bold text-lg hover:shadow-2xl transition"
-          >
-            Start Your Free 14-Day Trial
-          </a>
-          <p className="text-sm text-white/60 mt-4">Cancel anytime.</p>
+      {/* ── Daily digest ── */}
+      <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <Eyebrow dark>Daily digest</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>
+              Your day, before you leave the house.
+              <PlanTag plan="Pro" />
+            </h2>
+            <p className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
+              Turn it on and you get one email every morning with what needs you today.
+            </p>
+          </div>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              'Today’s jobs and who’s on them',
+              'Leads that have gone quiet',
+              'Quotes still waiting on an answer',
+              'Overdue payments and what’s due this week',
+              'Deposits paid with a balance still owed',
+              'Follow-ups you set for today',
+            ].map((t) => (
+              <li key={t} className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.04] px-4 py-3.5">
+                <Sunrise className="h-4 w-4 shrink-0 text-[#5EC4C9]" />
+                <span className="text-[15px] font-semibold text-slate-200">{t}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
+      {/* ── FAQ ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <Eyebrow>FAQ</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>
+              Questions {city} {s} contractors ask
+            </h2>
+          </div>
+          <div className="divide-y divide-slate-200 border-y border-slate-200">
+            {faqs.map((f) => (
+              <div key={f.q} className="py-6">
+                <h3 className="flex items-start gap-2.5 text-lg font-bold">
+                  <Check className="mt-1 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={3} />
+                  {f.q}
+                </h3>
+                <p className="mt-2 pl-[26px] text-[15px] text-[#3a3f45] leading-relaxed">{f.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+            Stop letting {s} leads slip.
+          </h2>
+          <p className="mt-4 text-base sm:text-lg text-white/85">
+            Get your booking link and QR code and start catching every lead in {city}.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/signup"
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              Start free
+            </Link>
+            <Link
+              href="/pricing"
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+            >
+              See pricing
+            </Link>
+          </div>
+          <p className="mt-6 text-sm font-semibold text-white/80">Free plan available · Cancel anytime</p>
+        </div>
+      </section>
+
+      <Footer />
     </div>
   );
 }

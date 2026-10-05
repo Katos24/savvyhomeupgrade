@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 const POINTS = [
   'A walkthrough of your booking form and QR code',
-  'How leads land on the board with photos attached',
+  'How leads land on your board, ready to quote',
   'Quotes, scheduling, and payments in one place',
   'Straight answers on whether it fits how you work',
 ];
