@@ -198,14 +198,14 @@ function CancelledScreen({ companySlug }: { companySlug?: string }) {
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
               <X className="h-6 w-6 text-slate-500" />
             </div>
-            <h1 className={`${D} text-3xl font-extrabold uppercase tracking-tight`}>Checkout cancelled</h1>
-            <p className="mt-2 text-[#3a3f45]">No problem. Nothing was charged.</p>
+                        <h1 className={`${D} text-3xl font-extrabold uppercase tracking-tight`}>Not ready yet?</h1>
+            <p className="mt-2 text-[#3a3f45]">No problem. Nothing was charged. Your account is on the Free plan.</p>
             <div className="mt-7 flex flex-col gap-3">
               <button
                 onClick={() => router.push('/subscribe')}
                 className={`w-full rounded-md bg-[#00828A] py-3 text-white hover:bg-[#006e75] ${D} text-base font-bold uppercase tracking-wider`}
               >
-                Try again
+                              See the Pro plan
               </button>
               {companySlug && (
                 <button

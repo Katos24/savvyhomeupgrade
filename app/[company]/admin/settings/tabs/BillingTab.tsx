@@ -62,7 +62,7 @@ export default function BillingTab({
       const res = await fetch('/api/stripe/create-subscription-checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: 'basic' }),
+        body: JSON.stringify({ plan: 'basic', returnTo: 'billing' }),
       });
       const data = await res.json();
       if (data.url) {

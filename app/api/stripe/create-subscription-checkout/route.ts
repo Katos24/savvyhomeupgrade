@@ -31,7 +31,9 @@ export async function POST(req: NextRequest) {
     // One paid plan now: 'basic' internally, shown to customers as "Pro" ($49.99).
 // Any old link or button that still sends 'pro' gets the same plan, so
 // nobody can be charged the retired $79.99 price.
-await req.json().catch(() => ({}));
+const body = await req.json().catch(() => ({} as any));
+// Where to send them if they leave Stripe without paying.
+const returnTo: 'billing' | 'subscribe' = body?.returnTo === 'billing' ? 'billing' : 'subscribe';
 const plan = 'basic';
 const priceId = PLAN_PRICE_IDS.basic;
 if (!priceId) {
@@ -63,8 +65,11 @@ return NextResponse.json({ error: 'No price configured for the paid plan' }, { s
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: `${baseUrl}/subscribe?subscription=success`,
-      cancel_url:  `${baseUrl}/subscribe?subscription=cancelled`,
-      client_reference_id: companyId.toString(),
+cancel_url:
+  returnTo === 'billing'
+    ? `${baseUrl}/${company.slug}/home?section=billing`
+    : `${baseUrl}/subscribe?subscription=cancelled`,
+          client_reference_id: companyId.toString(),
       ...(company.stripe_customer_id
         ? { customer: company.stripe_customer_id }
         : { customer_email: company.email }),
