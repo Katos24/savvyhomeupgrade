@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   Mail, Phone, MessageSquare, Navigation, Edit2,
   Calendar, Clock, Image as ImageIcon, Lock, History, UserCircle,
   MessageCircle, NotebookPen, ChevronDown, ChevronUp,
   Sparkles, MapPin, Tag, Check, X, FileText, AlertCircle,
-  Layers, HelpCircle
+  Layers, HelpCircle, Star, CreditCard, PartyPopper
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButton';
@@ -60,6 +60,52 @@ export default function LeadOverviewTab({
 
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const isProject = !!lead.project_id;
+   const [sendingReview, setSendingReview] = useState(false);
+  const [reviewSentAt, setReviewSentAt] = useState<string | null>(lead.review_request_sent_at ?? null);
+  useEffect(() => {
+    if (lead.review_request_sent_at) setReviewSentAt(lead.review_request_sent_at);
+  }, [lead.review_request_sent_at]);
+
+  const isCompletedJob = isProject && lead.status === 'completed';
+  const canReview = can(planTier, 'google_reviews');
+    // Same math as BillingSection so the two never disagree
+  const completedAt = (lead as { job_completed_at?: string | null }).job_completed_at ?? null;
+  const jobTotal = parseFloat(String((lead as { quote_total?: number | string | null }).quote_total ?? '0')) || 0;
+  const amountPaid = parseFloat(String((lead as { payment_amount?: number | string | null }).payment_amount ?? '0')) || 0;
+  const amountLeft = Math.max(jobTotal - amountPaid, 0);
+  const paymentStatus: 'paid' | 'partial' | 'unpaid' | null =
+    jobTotal > 0 ? (amountLeft <= 0 ? 'paid' : amountPaid > 0 ? 'partial' : 'unpaid') : null;
+  const paidPct = jobTotal > 0 ? Math.min((amountPaid / jobTotal) * 100, 100) : 0;
+  const money = (n: number) =>
+    n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: n % 1 === 0 ? 0 : 2 });
+
+  const handleSendReview = async () => {
+    setSendingReview(true);
+    try {
+      const res = await fetch('/api/leads/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: lead.id,
+          action: 'send_review_request',
+          user_name: currentUser?.name || currentUser?.email,
+          user_email: currentUser?.email,
+        }),
+      });
+      const data = await res.json();
+           if (res.ok && data.success) {
+        setReviewSentAt(data.review_request_sent_at || new Date().toISOString());
+        toast.success('Review request sent');
+        await onRefresh();
+      } else {
+        toast.error(data.error || 'Could not send the review request');
+      }
+    } catch {
+      toast.error('Could not send the review request');
+    } finally {
+      setSendingReview(false);
+    }
+  };
 
   const customerPhotos = useMemo(() =>
     Array.isArray(lead.file_urls)
@@ -79,7 +125,7 @@ export default function LeadOverviewTab({
   const customAnswerEntries = useMemo(() => Object.entries(customAnswersObj), [customAnswersObj]);
 
   const formatPhoneNumber = (value: string): string => {
-    const phoneNumber = value.replace(/\D/g, '').slice(0, 10);
+    const phoneNumber = (value ?? '').replace(/\D/g, '').slice(0, 10);
     if (!phoneNumber.length) return '';
     if (phoneNumber.length <= 3) return `(${phoneNumber}`;
     if (phoneNumber.length <= 6) return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
@@ -238,6 +284,140 @@ export default function LeadOverviewTab({
           startIndex={lightbox.index}
           onClose={() => setLightbox(null)}
         />
+      )}
+            {/* Job wrap-up (completed jobs) */}
+      {isCompletedJob && (
+        <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs">
+          <div className="absolute inset-y-0 left-0 w-1 bg-[#00828A]" />
+          <div className="p-4 pl-5">
+                      {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00828A]/10">
+                  <PartyPopper className="h-4 w-4 text-[#00828A]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">Job complete</p>
+                  <p className="text-xs text-gray-500">
+                    {completedAt
+                      ? `Finished ${new Date(completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · `
+                      : ''}
+                    {paymentStatus === 'paid' && (reviewSentAt || !canReview)
+                      ? 'All wrapped up.'
+                      : 'A couple of things to close out.'}
+                  </p>
+                </div>
+              </div>
+              {jobTotal > 0 && (
+                <div className="text-right">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Job total</p>
+                  <p className="text-base font-bold tabular-nums text-gray-900">
+                    {money(jobTotal)}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Tiles */}
+            <div className={`mt-4 grid gap-3 ${paymentStatus && canReview ? 'sm:grid-cols-2' : ''}`}>
+              {/* Payment */}
+              {paymentStatus && (
+                <div
+                  className={`rounded-xl border p-3.5 ${
+                    paymentStatus === 'paid'
+                      ? 'border-emerald-200 bg-emerald-50/50'
+                      : paymentStatus === 'partial'
+                      ? 'border-amber-200 bg-amber-50/50'
+                      : 'border-gray-200 bg-gray-50/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <CreditCard
+                      className={`h-4 w-4 ${
+                        paymentStatus === 'paid'
+                          ? 'text-emerald-600'
+                          : paymentStatus === 'partial'
+                          ? 'text-amber-600'
+                          : 'text-gray-400'
+                      }`}
+                    />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Payment</span>
+                  </div>
+                  <p
+                    className={`mt-2 text-sm font-semibold ${
+                      paymentStatus === 'paid'
+                        ? 'text-emerald-700'
+                        : paymentStatus === 'partial'
+                        ? 'text-amber-700'
+                        : 'text-gray-700'
+                    }`}
+                  >
+                    {paymentStatus === 'paid' ? 'Paid in full' : paymentStatus === 'partial' ? 'Balance due' : 'Not paid yet'}
+                  </p>
+                                   <p className="mt-0.5 text-xs text-gray-500">
+                    {paymentStatus === 'paid'
+                      ? `${money(amountPaid)} collected`
+                      : paymentStatus === 'partial'
+                      ? `${money(amountPaid)} of ${money(jobTotal)} · ${money(amountLeft)} left`
+                      : `${money(jobTotal)} to collect`}
+                  </p>
+                  <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        paymentStatus === 'paid' ? 'bg-emerald-500' : paymentStatus === 'partial' ? 'bg-amber-400' : 'bg-gray-300'
+                      }`}
+                      style={{ width: `${paidPct}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Google review */}
+              {canReview && (
+                <div
+                  className={`rounded-xl border p-3.5 ${
+                    reviewSentAt ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/50'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <Star
+                      className={`h-4 w-4 ${reviewSentAt ? 'text-emerald-600' : 'text-amber-500'}`}
+                      fill={reviewSentAt ? 'currentColor' : 'none'}
+                    />
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Google review</span>
+                  </div>
+
+                  {reviewSentAt ? (
+                    <>
+                      <p className="mt-2 text-sm font-semibold text-emerald-700">Request sent</p>
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        Sent{' '}
+                        {new Date(reviewSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        {lead.email ? ` to ${lead.email}` : ''}
+                      </p>
+                    </>
+                  ) : lead.email ? (
+                    <>
+                      <p className="mt-2 text-sm font-semibold text-amber-700">Not asked yet</p>
+                      <button
+                        onClick={handleSendReview}
+                        disabled={sendingReview}
+                        className="mt-2.5 w-full rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
+                      >
+                        {sendingReview ? 'Sending…' : 'Send review request'}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="mt-2 text-sm font-semibold text-amber-700">Not asked yet</p>
+                      <p className="mt-0.5 text-xs text-gray-500">Add their email in Client Info to send one.</p>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Convert to Project banner */}

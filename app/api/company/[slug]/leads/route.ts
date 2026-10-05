@@ -164,7 +164,7 @@ export async function GET(request: Request, { params }: Props) {
           p.documents, p.completed_at as job_completed_at,
           p.notes as project_notes, p.tasks as project_tasks,
           p.follow_up_date, p.internal_notes as project_internal_notes,
-          p.follow_up_notes
+          p.follow_up_notes, p.review_request_sent_at
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
@@ -220,7 +220,7 @@ export async function GET(request: Request, { params }: Props) {
           p.documents, p.completed_at as job_completed_at,
           p.notes as project_notes, p.tasks as project_tasks,
           p.follow_up_date, p.internal_notes as project_internal_notes,
-          p.follow_up_notes
+          p.follow_up_notes, p.review_request_sent_at
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}
@@ -249,7 +249,7 @@ export async function GET(request: Request, { params }: Props) {
           p.documents, p.completed_at as job_completed_at,
           p.notes as project_notes, p.tasks as project_tasks,
           p.follow_up_date, p.internal_notes as project_internal_notes,
-          p.follow_up_notes
+          p.follow_up_notes, p.review_request_sent_at
         FROM leads l
         LEFT JOIN projects p ON l.id = p.lead_id
         WHERE l.company_id = ${companyId}

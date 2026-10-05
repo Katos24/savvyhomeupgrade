@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Phone,
   Mail,
+  Star,
 } from 'lucide-react';
 import { toLocalDate } from '@/lib/dates';
 
@@ -218,8 +219,23 @@ export default function UltraReadableCardsView({
                 {statusConfig.label}
               </span>
 
-              <div className="flex items-center gap-2">
-                {pastDue ? (
+                            <div className="flex items-center gap-2">
+                {isCompleted ? (
+                  lead.review_request_sent_at ? (
+                    <span
+                      title={`Review request sent ${new Date(lead.review_request_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
+                      className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md ${
+                        isDark ? 'text-slate-400 bg-slate-500/10' : 'text-[#57534e] bg-[#f5f1e8]'
+                      }`}
+                    >
+                      <Star className="w-3 h-3" /> Review sent
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                      <Star className="w-3 h-3" /> Ask for review
+                    </span>
+                  )
+                ) : pastDue ? (
                   <span className="flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md">
                     <AlertCircle className="w-3 h-3" /> Payment Past Due
                   </span>

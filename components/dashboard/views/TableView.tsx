@@ -365,9 +365,14 @@ export default function TableView({
                         style={{ backgroundColor: `${statusHex}18`, color: statusTextHex }}
                       >
                         <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
-                        {updatingStatusFor === lead.id ? 'Updating…' : statusConfig.label}
+                                             {updatingStatusFor === lead.id ? 'Updating…' : statusConfig.label}
                         <ChevronDown className="w-3 h-3 opacity-60" />
                       </button>
+                      {lead.status === 'completed' && (
+                        <div className={`mt-1 text-[11px] font-medium ${lead.review_request_sent_at ? 'text-[#a8a29e]' : 'text-amber-600'}`}>
+                          {lead.review_request_sent_at ? '★ Review sent' : '★ Ask for review'}
+                        </div>
+                      )}
                       {statusPickerFor === lead.id && (
                         <>
                           <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setStatusPickerFor(null); }} />

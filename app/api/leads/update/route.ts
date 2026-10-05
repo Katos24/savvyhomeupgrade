@@ -1808,6 +1808,69 @@ else if (action === 'save_tax_rate') {
 
 
 // ==================== SAVE AI BRIEF ====================
+else if (action === 'send_review_request') {
+  // Manual send for completed jobs where the automatic review email
+  // didn't go out (no email at the time, switched off in the completion
+  // modal, or completed before reviews were set up). Same email and the
+  // same "never send twice" rule as the automatic one in update_status.
+  const rows = await sql`
+    SELECT l.id, l.status, l.email AS customer_email, l.name AS customer_name, l.category,
+           p.id AS project_id, p.review_request_sent_at,
+           c.id AS company_id, c.plan_tier
+    FROM leads l
+    LEFT JOIN projects p ON l.project_id = p.id
+    LEFT JOIN companies c ON l.company_id = c.id
+    WHERE l.id = ${id}
+  `;
+  const r = rows[0];
+
+  if (!r) {
+    return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
+  }
+  if (!can((r.plan_tier ?? 'free') as PlanTier, 'google_reviews')) {
+    return NextResponse.json(
+      { success: false, error: 'Review requests are available on the Pro plan', upgrade_required: true },
+      { status: 403 }
+    );
+  }
+  if (r.status !== 'completed') {
+    return NextResponse.json({ success: false, error: 'Mark the job complete first.' }, { status: 400 });
+  }
+  if (!r.customer_email) {
+    return NextResponse.json({ success: false, error: 'Add the customer’s email first.' }, { status: 400 });
+  }
+  if (!r.project_id) {
+    return NextResponse.json({ success: false, error: 'Job not found.' }, { status: 400 });
+  }
+  if (r.review_request_sent_at) {
+    return NextResponse.json({ success: false, error: 'A review request was already sent for this job.' }, { status: 409 });
+  }
+
+  const { sendGoogleReviewRequestEmail } = await import('@/lib/email');
+  await sendGoogleReviewRequestEmail({
+    customerEmail: r.customer_email,
+    customerName: r.customer_name,
+    companyId: r.company_id,
+    jobCategory: r.category,
+  });
+
+  const updated = await sql`
+    UPDATE projects SET review_request_sent_at = NOW()
+    WHERE id = ${r.project_id}
+    RETURNING review_request_sent_at
+  `;
+
+  await addActivityToProject(id, {
+    type: 'review_request_sent',
+    text: `Google review request sent to ${r.customer_email}`,
+    user_name: body.user_name || 'Team',
+    user_email: body.user_email || '',
+    timestamp: new Date().toISOString(),
+  });
+
+  return NextResponse.json({ success: true, review_request_sent_at: updated[0]?.review_request_sent_at });
+}
+
 else if (action === 'save_ai_brief') {
 
   const projects = await sql`

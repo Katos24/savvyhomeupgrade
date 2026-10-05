@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { CalendarDays, AlertCircle, CheckCircle2, ChevronRight } from 'lucide-react';
+import { CalendarDays, AlertCircle, CheckCircle2, ChevronRight, Star } from 'lucide-react';
 import { toLocalDate } from '@/lib/dates';
 
 // End-of-road stages start collapsed — they only ever grow.
@@ -222,11 +222,24 @@ export default function BoardView({
                       {lead.category?.replace(/_/g, ' ') || 'General Project'}
                     </p>
 
-                    <div className="flex items-center justify-between gap-2 mt-2">
-                      <span className={`inline-flex items-center gap-1 text-[11px] ${scheduled ? textSub : textFaint}`}>
-                        <CalendarDays className="w-3 h-3" />
-                        {scheduled ? scheduled.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unscheduled'}
-                      </span>
+                                       <div className="flex items-center justify-between gap-2 mt-2">
+                      {col.value === 'completed' ? (
+                        // Finished jobs: show the review status instead of the date.
+                        lead.review_request_sent_at ? (
+                          <span className={`inline-flex items-center gap-1 text-[11px] ${textFaint}`}>
+                            <Star className="w-3 h-3" /> Review sent
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-600">
+                            <Star className="w-3 h-3" /> Ask for review
+                          </span>
+                        )
+                      ) : (
+                        <span className={`inline-flex items-center gap-1 text-[11px] ${scheduled ? textSub : textFaint}`}>
+                          <CalendarDays className="w-3 h-3" />
+                          {scheduled ? scheduled.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Unscheduled'}
+                        </span>
+                      )}
                       {isPaid ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-500">
                           <CheckCircle2 className="w-3 h-3" /> Paid
