@@ -1,4 +1,3 @@
-'use client';
 
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
@@ -25,9 +24,9 @@ export default function NewHome() {
       <FormAndDashboardSection />
       <TapeDivider />
       <FeaturesSection />
-      <ProfitSection />
       <InvoiceShowcaseSection />
       <PaymentsReviewsSection />
+            <ProfitSection />
       <TapeDivider />
       <Pricing />
       <FAQSection />

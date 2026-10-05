@@ -1,358 +1,272 @@
-'use client';
-
 import Link from 'next/link';
+import { ArrowRight, Check, X, QrCode, Bell } from 'lucide-react';
 import type { IndustryContent } from '@/lib/industry-content';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
+import Pricing from '@/components/marketing/Pricing';
+import { fontVars } from '@/components/marketing/marketingTheme';
+import { Eyebrow, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
+
+/* ─────────────────────────────────────────────────────────
+   Shared layout for /solutions/[industry]
+   Copy comes from lib/industry-content.ts. Pricing reuses the
+   home page <Pricing /> so plans stay true to permissions.ts.
+   ───────────────────────────────────────────────────────── */
+
+const D = 'font-[family-name:var(--font-display)]';
+const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
+const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BTN =
+  'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
+  D +
+  ' text-base font-bold uppercase tracking-wider';
+
+/* ── Mock: the customer's request form ── */
+function FormMock({ content }: { content: IndustryContent }) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white shadow-lg overflow-hidden" aria-hidden>
+      <div className="h-1.5 bg-[#00828A]" />
+      <div className="p-5">
+        <p className="text-[11px] text-slate-400">lead2project.com/your-business</p>
+        <p className="mt-0.5 text-base font-bold">New {content.name} request</p>
+        <div className="mt-4 space-y-3">
+          {content.formFields.map((f) => (
+            <div key={f.label}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">{f.label}</p>
+              <div
+                className={`mt-1 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-400 ${
+                  f.type === 'textarea' ? 'min-h-[56px] leading-relaxed' : ''
+                }`}
+              >
+                {f.placeholder}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 rounded-md bg-[#00828A] py-2.5 text-center text-xs font-bold text-white">Submit request</div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Mock: the card that lands on your board ── */
+function NewLeadMock({ content }: { content: IndustryContent }) {
+  const first = content.formFields[0]?.placeholder ?? 'New customer';
+  const last = content.formFields[content.formFields.length - 1]?.placeholder ?? '';
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-lg" aria-hidden>
+      <div className="flex items-center justify-between">
+        <span className="flex items-center gap-1.5 rounded bg-[#00828A]/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#00828A]">
+          <Bell className="h-3 w-3" /> New lead
+        </span>
+        <span className="text-[10px] text-slate-400">just now</span>
+      </div>
+      <p className="mt-3 text-sm font-bold">{first}</p>
+      <p className="mt-1 text-xs leading-relaxed text-slate-500">
+        {last.length > 90 ? `${last.slice(0, 90)}…` : last}
+      </p>
+      <div className="mt-3 border-t border-slate-100 pt-3 text-[11px] font-semibold text-slate-500">{content.name}</div>
+    </div>
+  );
+}
+
+/* ── Mock: confirmation email the customer gets ── */
+function ConfirmEmailMock({ content }: { content: IndustryContent }) {
+  const e = content.emailPreview;
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white shadow-lg overflow-hidden" aria-hidden>
+      <div className="h-1.5 bg-[#00828A]" />
+      <div className="p-5 sm:p-6">
+        <p className="text-xs text-slate-500">From {e.business}</p>
+        <p className="mt-0.5 text-base font-bold">{e.subject}</p>
+        <div className="mt-3 space-y-2">
+          {e.bodyLines.map((l) => (
+            <p key={l} className="text-sm text-slate-600 leading-relaxed">
+              {l}
+            </p>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function IndustryLandingPage({ content }: { content: IndustryContent }) {
   return (
-    <>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>
       <Nav />
 
-      <main style={{ fontFamily: 'Inter, sans-serif' }}>
-
-        {/* HERO */}
-        <section className="bg-slate-900 pt-32 pb-20 px-6">
-          <div className="max-w-4xl mx-auto text-center">
-            <p
-              className="inline-block text-xs font-black uppercase tracking-widest px-4 py-1.5 rounded-full mb-6 border"
-              style={{ color: content.color, borderColor: `${content.color}40`, background: `${content.color}15` }}
+      {/* ── Hero ── */}
+      <section
+        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
+          backgroundSize: '32px 32px',
+        }}
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <Eyebrow>{content.badge}</Eyebrow>
+          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            {content.hero.headline}
+          </h1>
+          <p className={`mt-5 max-w-2xl mx-auto ${BODY}`}>{content.hero.sub}</p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link href="/signup" className={`w-full sm:w-auto ${BTN}`}>
+              {content.hero.cta}
+            </Link>
+            <Link
+              href="#how-it-works"
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
             >
-              {content.badge}
+              How it works <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <TradesStrip />
+
+      {/* ── Pain points ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-10">
+            <Eyebrow>Sound familiar?</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>{content.pain.headline}</h2>
+          </div>
+          <ul className="space-y-3">
+            {content.pain.points.map((point) => (
+              <li key={point} className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-5 py-4 shadow-sm">
+                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-500">
+                  <X className="h-3.5 w-3.5" strokeWidth={3} />
+                </span>
+                <p className="text-[15px] font-medium">{point}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <TapeDivider />
+
+      {/* ── Form → board ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>Your booking link</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>They fill it out. It lands on your board.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Share your link or QR code. Customers send the details you need, and every request shows up as a new lead,
+              ready to quote.
             </p>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-white leading-tight tracking-tight mb-6">
-              {content.hero.headline}
-            </h1>
-            <p className="text-lg text-slate-400 font-bold max-w-2xl mx-auto mb-10 leading-relaxed">
-              {content.hero.sub}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/signup"
-                className="flex items-center gap-2 px-8 py-4 rounded-2xl text-white font-black text-sm shadow-xl transition-all active:scale-95 border-2 border-slate-700"
-                style={{ background: content.color }}
-              >
-                {content.hero.cta}
-              </Link>
-              <a
-                href="#how-it-works"
-                className="flex items-center gap-2 px-8 py-4 rounded-2xl border-2 border-slate-700 text-white font-black text-sm hover:bg-slate-800 transition-all"
-              >
-                {content.hero.demoLabel}
-              </a>
+            <ul className="mt-6 space-y-2.5">
+              {['Booking link and QR code on Free', 'Your own questions and branding on Basic', 'Every request saved, nothing lost in a text thread'].map(
+                (t) => (
+                  <li key={t} className="flex items-start gap-2.5 text-[15px] font-medium">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={3} />
+                    {t}
+                  </li>
+                ),
+              )}
+            </ul>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <FormMock content={content} />
+            <div className="space-y-4 sm:pt-16">
+              <NewLeadMock content={content} />
+              <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-hidden>
+                <QrCode className="h-8 w-8 text-[#1C1F23]" />
+                <p className="text-xs font-semibold text-slate-600">Print the QR code on your truck, yard signs and invoices.</p>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* STATS */}
-        <section className="bg-slate-800 border-y-2 border-slate-700">
-          <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4">
-            {content.stats.map((stat, i) => (
-              <div
-                key={i}
-                className={`py-8 px-6 text-center ${i < content.stats.length - 1 ? 'border-r border-slate-700' : ''}`}
-              >
-                <div
-                  className="text-3xl font-black mb-1 tracking-tight"
-                  style={{ color: content.color }}
-                >
-                  {stat.value}
+      {/* ── How it works ── */}
+      <section id="how-it-works" className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8 scroll-mt-20">
+        <div className="max-w-6xl mx-auto">
+          <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Three steps.</h2>
+          </div>
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {content.howItWorks.map((step, i) => (
+              <li key={step.title} className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                <div className="flex items-center justify-between bg-[#1C1F23] px-4 py-2 text-white">
+                  <span className={`${D} text-sm font-bold uppercase tracking-[0.14em]`}>Step</span>
+                  <span className={`${D} text-xl font-extrabold text-[#5EC4C9]`}>#{String(i + 1).padStart(2, '0')}</span>
                 </div>
-                <div className="text-xs font-bold text-slate-300 mb-1">{stat.label}</div>
-                {stat.note && <div className="text-xs text-slate-500 font-bold">{stat.note}</div>}
+                <div className="border-b border-dashed border-slate-300" />
+                <div className="p-5 sm:p-6">
+                  <h3 className={`${D} text-2xl font-bold uppercase leading-tight`}>{step.title}</h3>
+                  <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.description}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      {/* ── Features ── */}
+      <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="max-w-2xl mx-auto text-center mb-10 sm:mb-12">
+            <Eyebrow dark>Built for {content.name.toLowerCase()}</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Built for how you work.</h2>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {content.features.map((f) => (
+              <div key={f.title} className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
+                <h3 className={`${D} text-xl font-bold uppercase leading-tight text-white`}>{f.title}</h3>
+                <p className="mt-2 text-sm text-slate-300 leading-relaxed">{f.description}</p>
               </div>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* PAIN POINTS */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight text-center mb-12">
-              {content.pain.headline}
-            </h2>
-            <div className="space-y-4">
-              {content.pain.points.map((point, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-4 bg-white border-2 border-slate-200 rounded-2xl px-6 py-4 shadow-sm"
-                >
-                  <div className="w-7 h-7 rounded-full bg-red-50 border-2 border-red-100 flex items-center justify-center shrink-0">
-                    <span className="text-red-400 font-black text-xs">x</span>
-                  </div>
-                  <p className="text-sm font-bold text-slate-700">{point}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-center text-slate-500 font-bold text-sm mt-8">
-              Lead2Project fixes all of this. With one link.
+      {/* ── Confirmation email ── */}
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>Customer email</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>They know you got it.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              When a customer sends a request, they get an email from your business name letting them know you received
+              it. No more &ldquo;did my message go through?&rdquo; calls.
             </p>
           </div>
-        </section>
-
-        {/* FORM DEMO */}
-        <section className="py-20 px-6 bg-slate-900">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-12">
-              <p
-                className="text-xs font-black uppercase tracking-widest mb-3"
-                style={{ color: content.color }}
-              >
-                What your customers see
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                They fill it out. You see it instantly.
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-3xl mx-auto items-start">
-              {/* Form mockup */}
-              <div className="bg-slate-800 border-2 border-slate-700 rounded-2xl p-6">
-                <p className="text-xs font-black text-slate-500 uppercase tracking-widest mb-1">
-                  lead2project.com/your-business
-                </p>
-                <p className="text-sm font-black text-white mb-6">New {content.name} Request</p>
-                {content.formFields.map((field, i) => (
-                  <div key={i} className="mb-4">
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-1">
-                      {field.label}
-                    </p>
-                    {field.type === 'textarea' ? (
-                      <div className="bg-slate-700 border border-slate-600 rounded-xl px-3 py-2 text-xs text-slate-400 min-h-16 leading-relaxed">
-                        {field.placeholder}
-                      </div>
-                    ) : (
-                      <div className="bg-slate-700 border border-slate-600 rounded-xl px-3 py-2 text-xs text-slate-400">
-                        {field.placeholder}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div
-                  className="w-full py-3 rounded-xl text-center text-xs font-black text-white mt-2"
-                  style={{ background: content.color }}
-                >
-                  Submit Request
-                </div>
-              </div>
-
-              {/* Board card mockup */}
-              <div className="bg-slate-800 border-2 rounded-2xl p-6" style={{ borderColor: `${content.color}40` }}>
-                <div className="flex items-center justify-between mb-4">
-                  <span
-                    className="text-xs font-black px-3 py-1 rounded-full border"
-                    style={{ color: content.color, borderColor: `${content.color}40`, background: `${content.color}15` }}
-                  >
-                    NEW LEAD
-                  </span>
-                  <span className="text-xs text-slate-500 font-bold">just now</span>
-                </div>
-                <p className="text-base font-black text-white mb-2">
-                  {content.formFields[0].placeholder}
-                </p>
-                <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                  {content.formFields[content.formFields.length - 1].placeholder.slice(0, 80)}...
-                </p>
-                <div className="border-t border-slate-700 pt-4 flex items-center justify-between">
-                  <span className="text-xs text-slate-500 font-bold">{content.name}</span>
-                  <span
-                    className="text-xs font-black px-3 py-1 rounded-lg text-white"
-                    style={{ background: '#7c3aed' }}
-                  >
-                    AI Brief
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="w-full max-w-md mx-auto">
+            <ConfirmEmailMock content={content} />
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* HOW IT WORKS */}
-        <section id="how-it-works" className="py-20 px-6 bg-white">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-14">
-              <p
-                className="text-xs font-black uppercase tracking-widest mb-3"
-                style={{ color: content.color }}
-              >
-                How it works
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                Up and running in 3 steps.
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {content.howItWorks.map((step, i) => (
-                <div key={i}>
-                  <p
-                    className="text-4xl font-black mb-4 opacity-30"
-                    style={{ color: content.color }}
-                  >
-                    {step.step}
-                  </p>
-                  <h3 className="text-base font-black text-slate-900 mb-2">{step.title}</h3>
-                  <p className="text-sm text-slate-500 font-bold leading-relaxed">{step.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+      <Pricing />
 
-        {/* FEATURES */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-5xl mx-auto">
-            <div className="text-center mb-14">
-              <p
-                className="text-xs font-black uppercase tracking-widest mb-3"
-                style={{ color: content.color }}
-              >
-                Everything included
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-                Built for how you actually work.
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-              {content.features.map((feature, i) => (
-                <div
-                  key={i}
-                  className="bg-white border-2 border-slate-200 rounded-2xl p-6 hover:border-emerald-300 transition-all"
-                >
-                  <h3 className="text-sm font-black text-slate-900 mb-2">{feature.title}</h3>
-                  <p className="text-sm text-slate-500 font-bold leading-relaxed">{feature.description}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* EMAIL PREVIEW */}
-        <section className="py-20 px-6 bg-white">
-          <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <p
-                className="text-xs font-black uppercase tracking-widest mb-3"
-                style={{ color: content.color }}
-              >
-                Branded emails
-              </p>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight mb-4">
-                Customers think you have a whole office.
-              </h2>
-              <p className="text-slate-500 font-bold leading-relaxed">
-                Every submission triggers a professional confirmation email with your business name. No extra setup required.
-              </p>
-            </div>
-            <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-6">
-              <p className="text-xs font-bold text-slate-400 mb-4">
-                <span className="text-slate-900 font-black">Subject:</span> {content.emailPreview.subject}
-              </p>
-              <div className="border-t border-slate-200 pt-4 space-y-2">
-                {content.emailPreview.bodyLines.map((line, i) => (
-                  <p key={i} className={`text-sm font-bold leading-relaxed ${i === 0 ? 'text-slate-900' : 'text-slate-500'}`}>
-                    {line}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* PRICING */}
-        <section className="py-20 px-6 bg-slate-50">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-12">
-              <p
-                className="text-xs font-black uppercase tracking-widest mb-3"
-                style={{ color: content.color }}
-              >
-                Pricing
-              </p>
-              <h2 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2">
-                {content.pricing.headline}
-              </h2>
-              <p className="text-slate-500 font-bold">{content.pricing.sub}</p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
-              {[
-                {
-                  name: 'Basic',
-                  price: '$49.99',
-                  desc: 'Full job management for growing crews',
-                  features: ['Booking link and QR code', 'Unlimited leads', 'Job board and calendar', 'Quote builder', 'CSV export for bookkeeping', 'Unlimited team members'],
-                  highlight: false,
-                },
-                {
-                  name: 'Pro',
-                  price: '$79.99',
-                  desc: 'Automation and AI for serious contractors',
-                  features: ['Everything in Basic', 'One-click emails', 'Full email outbox', 'Daily 6AM digest', 'AI job briefs', 'AI quote generator'],
-                  highlight: true,
-                },
-              ].map((plan) => (
-                <div
-                  key={plan.name}
-                  className={`rounded-2xl p-6 border-2 ${plan.highlight ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}
-                >
-                  {plan.highlight && (
-                    <p
-                      className="text-xs font-black uppercase tracking-widest mb-3"
-                      style={{ color: content.color }}
-                    >
-                      Most Popular
-                    </p>
-                  )}
-                  <p className={`text-sm font-black mb-1 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                    {plan.name}
-                  </p>
-                  <p className={`text-3xl font-black tracking-tight mb-1 ${plan.highlight ? 'text-white' : 'text-slate-900'}`}>
-                    {plan.price}<span className={`text-sm font-bold ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>/mo</span>
-                  </p>
-                  <p className={`text-xs font-bold mb-6 ${plan.highlight ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {plan.desc}
-                  </p>
-                  <ul className="space-y-2 mb-6">
-                    {plan.features.map((f, i) => (
-                      <li key={i} className={`text-xs font-bold flex items-center gap-2 ${plan.highlight ? 'text-slate-300' : 'text-slate-600'}`}>
-                        <span className="text-emerald-500">✓</span> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href="/signup"
-                    className={`block text-center py-3 rounded-xl text-xs font-black transition-all ${plan.highlight ? 'text-white' : 'text-white'}`}
-                    style={{ background: plan.highlight ? content.color : '#0f172a' }}
-                  >
-                    Start Free
-                  </Link>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* FINAL CTA */}
-        <section className="py-20 px-6 bg-slate-900 text-center">
-          <div className="max-w-2xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
-              Ready to stop losing leads?
-            </h2>
-            <p className="text-slate-400 font-bold mb-10 leading-relaxed">
-              Set up your {content.name.toLowerCase()} booking link in 60 seconds. Free to start.
-            </p>
+      {/* ── Final CTA ── */}
+      <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-2xl mx-auto text-center">
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+            Stop losing jobs to missed calls.
+          </h2>
+          <p className="mt-4 text-base sm:text-lg text-white/85">
+            Get your {content.name.toLowerCase()} booking link today. Free to start.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl text-white font-black text-sm shadow-xl transition-all active:scale-95 border-2 border-slate-700"
-              style={{ background: content.color }}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
             >
-              Get Your Free Booking Link
+              Get your free booking link
             </Link>
           </div>
-        </section>
-
-      </main>
+          <p className="mt-6 text-sm font-semibold text-white/80">Free plan available · Cancel anytime</p>
+        </div>
+      </section>
 
       <Footer />
-    </>
+    </div>
   );
 }

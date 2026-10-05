@@ -199,8 +199,7 @@ export default function PaymentsPage() {
             </p>
             <Bullets
               items={[
-                { text: 'Deposit per service, percent or flat amount' },
-                { text: 'Deposit and balance tracked as two clear steps' },
+                { text: 'Set the deposit once per service, or one default for every job' },                { text: 'Deposit and balance tracked as two clear steps' },
                 { text: 'Progress bar shows how much is collected' },
                 { text: 'Partial payments handled' },
                 { text: 'Deposit and tax lock once money comes in, so terms can’t change' },
