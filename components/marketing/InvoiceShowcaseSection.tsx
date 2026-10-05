@@ -339,6 +339,20 @@ export default function InvoiceShowcaseSection() {
         : 'Start over';
   const ActionIcon = waiting ? Loader2 : step === 4 ? RotateCcw : Send;
 
+  // One line that tells the story of the job at each step.
+  const stepNote =
+    step === 0
+      ? hasDeposit
+        ? 'Step 1: Send the deposit invoice before you start.'
+        : 'Job done? Send the invoice.'
+      : step === 1
+        ? 'Waiting on your customer to pay the deposit…'
+        : step === 2
+          ? 'Deposit’s in. Buy materials and do the job. Step 2: send the balance.'
+          : step === 3
+            ? 'Waiting on your customer to pay the balance…'
+            : 'Paid in full. That’s the whole job.';
+
   return (
     <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
@@ -455,12 +469,13 @@ export default function InvoiceShowcaseSection() {
                 ))}
             </div>
 
+                      <p className={`mt-5 text-sm font-semibold ${step === 4 ? 'text-[#5EC4C9]' : 'text-slate-200'}`}>{stepNote}</p>
             <button
               type="button"
               onClick={action}
               disabled={waiting}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-[#006e75] disabled:cursor-wait disabled:opacity-80"
-            >
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-[#006e75] disabled:cursor-wait disabled:opacity-80"
+                        >
               <ActionIcon className={`h-4 w-4 ${waiting ? 'animate-spin' : ''}`} />
               {actionLabel}
             </button>
