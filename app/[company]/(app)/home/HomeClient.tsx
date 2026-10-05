@@ -136,8 +136,11 @@ function SectionRailItem({ icon: Icon, imageUrl, label, active, locked, accentCo
 export default function HomeClient({ company: initialCompany, currentUser }: { company: Company; currentUser?: any }) {
   const [company, setCompany] = useState(initialCompany);
   const searchParams = useSearchParams();
-  const initialSection = (searchParams.get('section') as SectionKey) || 'overview';
-  const [activeSection, setActiveSection] = useState<SectionKey>(initialSection);
+  // New accounts open on the setup checklist until their first real request lands.
+  const initialSection =
+    (searchParams.get('section') as SectionKey) ||
+    (searchParams.get('welcome') || !company.hasRealLead ? 'setup' : 'overview');
+      const [activeSection, setActiveSection] = useState<SectionKey>(initialSection);
 
   const [publicLink, setPublicLink] = useState('');
   const [qrCodeUrl, setQrCodeUrl] = useState('');
@@ -369,12 +372,26 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     qrImg.src = qrCodeUrl;
   };
 
-   const checklistSteps: ChecklistStep[] = useMemo(() => [
-    { label: 'Upload your logo', description: 'Make your booking page and emails look professional', done: !!company.logo_url, kind: 'section', section: 'overview' },
-    { label: 'Set up a service with pricing', description: 'Build your first pricing template so quotes are one click', done: !!company.hasServicePricing, kind: 'link', href: `/${company.slug}/dashboard/services` },
-    { label: 'Connect payments', description: 'So customers can actually pay you online', done: company.stripe_payment_status === 'active', kind: 'section', section: 'payments' },
-    { label: 'Get your first lead', description: 'Share your booking link to get started', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` },
-  ], [company]);
+  const checklistSteps: ChecklistStep[] = useMemo(() => {
+    const logo: ChecklistStep = { label: 'Upload your logo', description: 'It goes on your booking page, quotes and invoices', done: !!company.logo_url, kind: 'section', section: 'overview' };
+    const firstLead: ChecklistStep = { label: 'Get your first request', description: 'Share your link or QR code. Tip: fill out your own form once to see how it works', done: company.hasRealLead, kind: 'link', href: `/${company.slug}/dashboard` };
+
+    // Free can't quote or take payments, so don't send them into locked screens.
+    if (!can(planTier, 'quotes')) {
+      return [
+        logo,
+        firstLead,
+        { label: 'Start quoting and taking deposits', description: 'Basic adds quotes, deposits, invoices and card payments. 14-day free trial', done: false, kind: 'section', section: 'billing' },
+      ];
+    }
+
+    return [
+      logo,
+      { label: 'Add your first service', description: 'Set your prices and deposit once, and every quote uses them', done: !!company.hasServicePricing, kind: 'link', href: `/${company.slug}/dashboard/services` },
+      { label: 'Connect Stripe', description: 'So customers can pay deposits and invoices by card', done: company.stripe_payment_status === 'active', kind: 'section', section: 'payments' },
+      firstLead,
+    ];
+  }, [company, planTier]);
 
   const isAdminForSections = currentUser?.role === 'owner' || currentUser?.role === 'admin';
   const isOwner = currentUser?.role === 'owner';
