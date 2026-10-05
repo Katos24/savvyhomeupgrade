@@ -17,7 +17,7 @@ import { fontVars } from '@/components/marketing/marketingTheme';
 const D = 'font-[family-name:var(--font-display)]';
 
 const PLAN_NOTE: Record<string, string> = {
-  basic: 'Pro plan · 14-day free trial. You’ll add a card on the next screen.',
+  basic: 'Pro plan · Create your account first, then start your 14-day free trial. Nothing is charged for 14 days.',
 };
 
 /* ==========================================================================
