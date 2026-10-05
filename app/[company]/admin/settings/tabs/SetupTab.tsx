@@ -25,6 +25,7 @@ type ChecklistStep =
 interface SetupTabProps {
   checklistSteps: ChecklistStep[];
   onNavigateSection: (section: string) => void;
+  onShowQrModal?: () => void;
   companySlug?: string;
 }
 
@@ -81,7 +82,8 @@ function GuideCard({ topic, isOpen, onToggle }: { topic: GuideTopic; isOpen: boo
 
 export default function SetupTab({
   checklistSteps,
-  onNavigateSection,
+   onNavigateSection,
+  onShowQrModal,
   companySlug: propSlug,
 }: SetupTabProps) {
     const params = useParams();
@@ -303,8 +305,15 @@ export default function SetupTab({
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
                 >
-                  <LinkIcon className="h-4 w-4" /> Open your booking page
+                                  <LinkIcon className="h-4 w-4" /> Open your booking page
                 </a>
+                <button
+                  type="button"
+                                   onClick={() => (onShowQrModal ? onShowQrModal() : onNavigateSection('overview'))}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+                >
+                  <QrCode className="h-4 w-4" /> Get QR code
+                </button>
               </div>
               <p className="mt-3 text-sm text-slate-600">
                 Send it to your next customer, or fill it out yourself to see a request land on your board.

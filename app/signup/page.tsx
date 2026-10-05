@@ -311,14 +311,15 @@ function SignupForm() {
 
             {step === 1 ? (
               <form onSubmit={goNext} className="mt-6 space-y-4" noValidate>
-                <Field
-                  label="Email"
+                              <Field
+                  label="Work email"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                  placeholder="you@yourbusiness.com"
+                                   placeholder="summitroofing@gmail.com"
                   value={formData.email}
                   onChange={set('email')}
+                  hint="The email you check for work. Gmail is fine. New requests, payments and your daily digest go here."
                 />
                 <Field
                   label="Password"

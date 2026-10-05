@@ -243,7 +243,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
       // tab is even mounted. Exempt categories are skipped and kept at
       // 0%, matched by category value against company.form_categories,
       // which is already available on this same company object.
-      if (taxRateChanged) {
+           if (taxRateChanged && can(planTier, 'quote_templates')) {
         try {
           const tplRes = await fetch(`/api/company/${company.slug}/quote-templates`);
           const tplData = await tplRes.json();
@@ -525,8 +525,12 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
                    {/* Main Workspace Area (Renders dynamically) */}
           <main className="flex-1 min-w-0">
             {activeSection === 'setup' && (
-              <SetupTab checklistSteps={checklistSteps} onNavigateSection={(section) => setActiveSection(section as SectionKey)} />
-            )}
+              <SetupTab
+                checklistSteps={checklistSteps}
+                onNavigateSection={(section) => setActiveSection(section as SectionKey)}
+                onShowQrModal={() => setShowQrModal(true)}
+              />
+                          )}
 
             {activeSection === 'overview' && (
               <OverviewTab
