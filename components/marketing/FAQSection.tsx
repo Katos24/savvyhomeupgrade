@@ -2,13 +2,14 @@
 
 import { Eyebrow } from './marketingUI';
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 // ⚠️ Fill these in before going live — keep them exactly true.
 // If you charge a platform fee on card payments, describe it here (e.g. "plus a 1% Lead2Project fee").
 // Leave empty if you don't charge one.
 const PLATFORM_FEE_NOTE = '';
 
-const FAQS: { q: string; a: string }[] = [
+const FAQS: { q: string; a: string; link?: { href: string; label: string } }[] = [
   {
     q: 'What does it cost to take card payments?',
     a:
@@ -25,7 +26,8 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: 'Can you help me get set up?',
-    a: 'Yes. Book a quick call and I’ll help set up your services, deposits and booking form, and bring over your customer list.',
+       a: 'Yes. Book a quick call and I’ll help set up your services, deposits and booking form, and bring over your customer list.',
+    link: { href: '/book-demo', label: 'Book a demo' },
   },
   {
     q: 'How do customers find my booking form?',
@@ -67,8 +69,19 @@ export default function FAQSection() {
                     className={`w-4 h-4 shrink-0 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                   />
                 </button>
-                {isOpen && (
-                  <p className="px-5 sm:px-6 pb-5 -mt-1 text-[15px] text-[#3a3f45] leading-relaxed">{item.a}</p>
+                                {isOpen && (
+                  <div className="px-5 sm:px-6 pb-5 -mt-1">
+                    <p className="text-[15px] text-[#3a3f45] leading-relaxed">{item.a}</p>
+                    {item.link && (
+                      <Link
+                        href={item.link.href}
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[#1C1F23] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-black"
+                      >
+                        {item.link.label}
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    )}
+                  </div>
                 )}
               </div>
             );

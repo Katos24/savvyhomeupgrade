@@ -63,15 +63,7 @@ export default function Hero() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 lg:gap-8 items-center">
             {/* ── Copy ── */}
             <div className="lg:col-span-5 space-y-7 sm:space-y-6 text-center sm:text-left">
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="inline-flex items-center gap-2 bg-[#1C1F23] px-2.5 py-1 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em] text-[#5EC4C9]"
-              >
-                <HardHat className="w-4 h-4" strokeWidth={2.25} />
-                Built for contractors
-              </motion.div>
+          
 
               <h1
 className="font-[family-name:var(--font-display)] text-[44px] sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.95] sm:leading-[0.9] tracking-tight text-[#1C1F23]"
@@ -84,7 +76,7 @@ className="font-[family-name:var(--font-display)] text-[44px] sm:text-6xl lg:tex
                               for every job.
               </h1>
 
-              <p className="text-[17px] sm:text-lg text-[#3a3f45] leading-[1.65] sm:leading-relaxed max-w-[34ch] mx-auto sm:mx-0 sm:max-w-none">
+               <p className="text-[17px] sm:text-lg text-[#3a3f45] leading-[1.65] sm:leading-relaxed max-w-[34ch] mx-auto sm:mx-0 sm:max-w-none">
                 Set up your services once, with prices and deposits. Every quote asks for the deposit up front,
                                and the final invoice collects the balance when the job&rsquo;s done.
               </p>
