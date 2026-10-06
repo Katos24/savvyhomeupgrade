@@ -18,9 +18,10 @@ import {
   Bell,
   MessageCircle,
   MoreVertical,
+  MoreHorizontal,
   X,
   Download,
-  Wrench
+  Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -39,6 +40,15 @@ const SIDEBAR = [
   { icon: ImageIcon, label: 'Media' },
   { icon: Bell, label: 'Reminders' },
   { icon: MessageCircle, label: 'Activity' },
+];
+
+// Mobile: same bottom tab bar as the real app
+const MOBILE_TABS = [
+  { icon: User, label: 'Overview' },
+  { icon: FileText, label: 'Quote' },
+  { icon: CalendarDays, label: 'Schedule' },
+  { icon: CreditCard, label: 'Invoice', active: true },
+  { icon: MoreHorizontal, label: 'More' },
 ];
 
 // 0: Deposit Due · 1: Deposit Sent · 2: Customer Paying · 3: Deposit Secured
@@ -150,12 +160,12 @@ export function JobDemo() {
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<Phase>(0);
   const [showSuccess, setShowSuccess] = useState<boolean>(false);
-  
+
   // Interactions
   const [cursor, setCursor] = useState({ x: 0, y: 0, show: false });
   const [pressing, setPressing] = useState(false); // Contractor mouse press
   const [phonePressing, setPhonePressing] = useState(false); // Customer finger tap
-  
+
   const [phoneVisible, setPhoneVisible] = useState(false);
   const [phonePaid, setPhonePaid] = useState(false);
 
@@ -198,7 +208,7 @@ export function JobDemo() {
       rest();
 
       at(500, () => setCursor((p) => ({ ...p, show: true })));
-      
+
       // 1. Contractor clicks deposit send button
       at(1000, () => pointAt(depositBtnRef.current));
       at(2100, () => setPressing(true));
@@ -219,7 +229,7 @@ export function JobDemo() {
         setPhonePressing(false);
         setPhonePaid(true);
       });
-      
+
       // 3. Phone slides out, UI updates to success
       at(6000, () => {
         setPhoneVisible(false);
@@ -229,12 +239,12 @@ export function JobDemo() {
         setPhase(3);
         setShowSuccess(true);
       });
-      
-      // Big center modal disappears
+
+      // Success pop-up disappears
       at(9000, () => setShowSuccess(false));
 
-      // 4. Restart loop after a pause so the user can read the green card state
-      at(10500, runSequence);
+      // 4. Restart loop after a pause so the user can read the updated card
+      at(11500, runSequence);
     };
 
     runSequence();
@@ -256,10 +266,17 @@ export function JobDemo() {
     'inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 font-semibold text-slate-700 whitespace-nowrap';
   const BTN_PDF = `ml-auto ${BTN_LIGHT}`;
 
+  const steps = [
+    { label: 'Quote Accepted', state: 'done' as const },
+    { label: 'Deposit Secured', state: depositPaid ? ('done' as const) : ('todo' as const) },
+    { label: 'Ready to Work', state: depositPaid ? ('current' as const) : ('todo' as const) },
+    { label: 'Balance Collected', state: 'todo' as const },
+  ];
+
   return (
     <div>
       {/* Caption */}
-      <div className="mb-3 h-6 text-center px-2">
+      <div className="mb-3 min-h-6 text-center px-2">
         <AnimatePresence mode="wait">
           <motion.p
             key={phase}
@@ -321,7 +338,7 @@ export function JobDemo() {
               >
                 {/* Customer Label Badge */}
                 <div className="absolute -top-7 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#1C1F23] px-3 py-1 text-[10px] font-semibold text-white shadow-md border border-white/10 flex items-center gap-1.5">
-                  <User className="w-3 h-3 text-sky-400" /> Customer's Phone
+                  <User className="w-3 h-3 text-sky-400" /> Customer&rsquo;s Phone
                 </div>
 
                 <div className="rounded-[1.25rem] bg-white overflow-hidden text-[10px]">
@@ -342,10 +359,8 @@ export function JobDemo() {
                           <p className="font-bold text-slate-900">Secure Payment Request</p>
                           <p className="text-slate-500">Deposit (40%)</p>
                         </div>
-                        <p className="text-base sm:text-lg font-extrabold tabular-nums text-slate-900">
-                          $4,800.00
-                        </p>
-                        
+                        <p className="text-base sm:text-lg font-extrabold tabular-nums text-slate-900">$4,800.00</p>
+
                         {/* Mobile Pay Button + Touch Ripple */}
                         <motion.div
                           animate={{ scale: phonePressing && !phonePaid ? 0.93 : 1 }}
@@ -381,9 +396,7 @@ export function JobDemo() {
                           <Check className="h-5 w-5" strokeWidth={3} />
                         </span>
                         <p className="font-bold text-slate-900">Payment Successful!</p>
-                        <p className="tabular-nums text-slate-500 text-[9px]">
-                          $4,800.00 charged · Receipt sent
-                        </p>
+                        <p className="tabular-nums text-slate-500 text-[9px]">$4,800.00 charged · Receipt sent</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -393,23 +406,32 @@ export function JobDemo() {
           </AnimatePresence>
         </div>
 
-        {/* Central Success Modal */}
+        {/* Central Success Pop-up — centered by a full-size wrapper so it fits on phones */}
         <AnimatePresence>
           {showSuccess && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.8, x: '-50%', y: '-30%' }}
-              animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
-              exit={{ opacity: 0, scale: 0.8, x: '-50%', y: '-30%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="pointer-events-none absolute left-1/2 top-1/2 z-40 flex w-64 -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-3 rounded-2xl border border-white/10 bg-[#1C1F23] px-6 py-5 text-center text-white shadow-2xl"
+              key="success"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="pointer-events-none absolute inset-0 z-40 flex items-center justify-center p-4"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-inner">
-                <Check className="h-6 w-6" strokeWidth={3} />
-              </div>
-              <div>
-                <p className="text-lg font-bold">Deposit Secured!</p>
-                <p className="mt-1 text-xs text-slate-300">You are clear to begin work.</p>
-              </div>
+              <motion.div
+                initial={{ scale: 0.85, y: 12 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.85, y: 12 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                className="flex w-full max-w-[15rem] sm:max-w-[16rem] flex-col items-center gap-2.5 sm:gap-3 rounded-2xl border border-white/10 bg-[#1C1F23] px-5 py-4 sm:px-6 sm:py-5 text-center text-white shadow-2xl"
+              >
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-inner">
+                  <Check className="h-5 w-5 sm:h-6 sm:w-6" strokeWidth={3} />
+                </div>
+                <div>
+                  <p className="text-base sm:text-lg font-bold">Deposit Secured!</p>
+                  <p className="mt-1 text-[11px] sm:text-xs text-slate-300">You are clear to begin work.</p>
+                </div>
+              </motion.div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -444,9 +466,7 @@ export function JobDemo() {
             <div className="px-2">
               <p className="text-slate-400">Payment</p>
               <p className="font-semibold">{depositPaid ? 'Balance due' : 'Deposit due'}</p>
-              <p className={depositPaid ? 'text-slate-300' : 'text-rose-300'}>
-                {depositPaid ? '$7,200.00' : '$4,800.00'}
-              </p>
+              <p className={depositPaid ? 'text-slate-300' : 'text-rose-300'}>{depositPaid ? '$7,200.00' : '$4,800.00'}</p>
             </div>
             <div className="px-2">
               <p className="text-slate-400">Scheduled</p>
@@ -456,9 +476,7 @@ export function JobDemo() {
             <div className="hidden sm:block pl-2">
               <p className="text-slate-400">Invoice</p>
               <p className="font-semibold text-sky-300">#INV-041</p>
-              <p className="text-slate-400">
-                {depositPaid ? 'Deposit paid' : depositSent ? 'Deposit sent' : 'Draft'}
-              </p>
+              <p className="text-slate-400">{depositPaid ? 'Deposit paid' : depositSent ? 'Deposit sent' : 'Draft'}</p>
             </div>
           </div>
         </div>
@@ -484,43 +502,48 @@ export function JobDemo() {
 
           <div className="flex-1 min-w-0 bg-slate-50/60 p-3 sm:p-4 space-y-3">
             {/* Steps */}
-            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5 grid grid-cols-3 gap-1 text-center">
-              <div className="flex flex-col items-center gap-1 min-w-0">
-                <span className="flex h-4 w-4 items-center justify-center rounded-full transition-colors duration-500 bg-teal-600 text-white">
-                  <Check className="h-2.5 w-2.5" strokeWidth={3} />
-                </span>
-                <span className="truncate w-full font-semibold text-slate-800">Quote Accepted</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 min-w-0">
-                <span className={`flex h-4 w-4 items-center justify-center rounded-full transition-colors duration-500 ${depositPaid ? 'bg-teal-600 text-white' : 'border border-slate-300 bg-white'}`}>
-                  {depositPaid && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
-                </span>
-                <span className={`truncate w-full ${depositPaid ? 'font-semibold text-slate-800' : 'text-slate-400'}`}>Deposit Secured</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 min-w-0">
-                <span className={`flex h-4 w-4 items-center justify-center rounded-full transition-colors duration-500 ${depositPaid ? 'border-teal-600 border-2 bg-white' : 'border border-slate-300 bg-white'}`}>
-                  {depositPaid && <span className="h-1.5 w-1.5 rounded-full bg-teal-600" />}
-                </span>
-                <span className={`truncate w-full ${depositPaid ? 'font-semibold text-teal-700' : 'text-slate-400'}`}>Ready to Work</span>
-              </div>
+            <div className="rounded-lg border border-slate-200 bg-white px-2 sm:px-3 py-2.5 grid grid-cols-4 gap-1 text-center">
+              {steps.map((s) => (
+                <div key={s.label} className="flex flex-col items-center gap-1 min-w-0">
+                  <span
+                    className={`flex h-4 w-4 items-center justify-center rounded-full transition-colors duration-500 ${
+                      s.state === 'done'
+                        ? 'bg-teal-600 text-white'
+                        : s.state === 'current'
+                        ? 'border-2 border-teal-600 bg-white'
+                        : 'border border-slate-300 bg-white'
+                    }`}
+                  >
+                    {s.state === 'done' && <Check className="h-2.5 w-2.5" strokeWidth={3} />}
+                    {s.state === 'current' && <span className="h-1.5 w-1.5 rounded-full bg-teal-600" />}
+                  </span>
+                  <span
+                    className={`w-full leading-tight ${
+                      s.state === 'done'
+                        ? 'font-semibold text-slate-800'
+                        : s.state === 'current'
+                        ? 'font-semibold text-teal-700'
+                        : 'text-slate-400'
+                    }`}
+                  >
+                    {s.label}
+                  </span>
+                </div>
+              ))}
             </div>
 
             {/* Progress */}
             <div className="rounded-lg border border-slate-200 bg-white px-3 py-2.5">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-slate-600">
-                  <span className="font-bold text-slate-900 tabular-nums">
-                    {depositPaid ? '$4,800.00' : '$0.00'}
-                  </span>{' '}
-                  of $12,000.00 collected
+                  <span className="font-bold text-slate-900 tabular-nums">{depositPaid ? '$4,800.00' : '$0.00'}</span> of
+                  $12,000.00 collected
                 </p>
-                <span className={`font-semibold shrink-0 text-slate-700`}>
-                  {pct}%
-                </span>
+                <span className="font-semibold shrink-0 text-slate-700">{pct}%</span>
               </div>
               <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100 overflow-hidden">
                 <motion.div
-                  className={`h-full rounded-full bg-slate-900`}
+                  className="h-full rounded-full bg-slate-900"
                   initial={false}
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 0.9, ease: EASE }}
@@ -556,8 +579,8 @@ export function JobDemo() {
               </p>
               <div className={ROW}>
                 {depositPaid ? (
-                  <span className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold">
-                    <Wrench className="h-3.5 w-3.5" /> Deposit secured. You are clear to begin work.
+                  <span className="inline-flex items-center gap-1.5 text-emerald-700 font-semibold truncate">
+                    <Wrench className="h-3.5 w-3.5 shrink-0" /> Clear to begin work
                   </span>
                 ) : depositSent ? (
                   <span className="inline-flex items-center gap-1 font-semibold text-slate-600 whitespace-nowrap">
@@ -584,27 +607,62 @@ export function JobDemo() {
               </div>
             </div>
 
-            {/* 2. Remaining balance - Static State */}
-            <div className="rounded-lg px-3 py-2.5 border border-dashed border-slate-300 bg-slate-50/70 opacity-60">
+            {/* 2. Remaining balance — locked until the deposit is paid, then "next up" */}
+            <div
+              className={`rounded-lg px-3 py-2.5 transition-all duration-500 ${
+                depositPaid ? 'border border-slate-300 bg-white' : 'border border-dashed border-slate-300 bg-slate-50/70 opacity-60'
+              }`}
+            >
               <div className="flex items-center justify-between">
-                <span className="font-bold text-slate-500">
-                  2. Remaining Balance
-                </span>
-                <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-semibold text-slate-600">
-                  <Lock className="h-2.5 w-2.5" /> Locked
-                </span>
+                <span className={`font-bold ${depositPaid ? 'text-slate-900' : 'text-slate-500'}`}>2. Remaining Balance</span>
+                {depositPaid ? (
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[9px] font-semibold text-amber-800">Next up</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-semibold text-slate-600">
+                    <Lock className="h-2.5 w-2.5" /> Locked
+                  </span>
+                )}
               </div>
-              <p className="mt-1 text-sm sm:text-base font-extrabold tabular-nums text-slate-400">
+              <p className={`mt-1 text-sm sm:text-base font-extrabold tabular-nums ${depositPaid ? 'text-slate-900' : 'text-slate-400'}`}>
                 $7,200.00
               </p>
               <p className="text-slate-500">
-                Unlocks when you finish the job
+                {depositPaid ? 'Send the final invoice when the job’s done' : 'Unlocks once the deposit is paid'}
               </p>
               <div className={ROW}>
-                <span className="text-slate-400 truncate">Send the final invoice when the job is done</span>
+                {depositPaid ? (
+                  <>
+                    <span className={BTN_LIGHT}>
+                      <Send className="h-3 w-3" /> Send Invoice
+                    </span>
+                    <span className={BTN_PDF}>
+                      <Download className="h-3 w-3" /> Balance PDF
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-slate-400 truncate">Collect the balance when the job is done</span>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Mobile bottom tabs — same as the real app on a phone */}
+        <div className="sm:hidden grid grid-cols-5 gap-1 bg-[#111827] px-1.5 py-1.5">
+          {MOBILE_TABS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <div
+                key={t.label}
+                className={`flex flex-col items-center gap-0.5 rounded-lg py-1.5 ${
+                  t.active ? 'bg-white/10 text-blue-300' : 'text-slate-400'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                <span className="text-[9px] font-medium">{t.label}</span>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
