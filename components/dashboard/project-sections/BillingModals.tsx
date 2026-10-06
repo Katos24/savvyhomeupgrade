@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   X,
   Loader2,
@@ -86,6 +86,8 @@ type BillingModalsProps = {
   reverseNoteDraft: string;
   setReverseNoteDraft: React.Dispatch<React.SetStateAction<string>>;
   handleReversePayment: (paymentId: number, amount: number, note: string) => Promise<void>;
+  reverseMax: number;
+  reverseAlreadyReversed: number;
 
   // Record Payment
   showRecordPayment: boolean;
@@ -192,7 +194,9 @@ export default function BillingModals({
   setReverseAmountDraft,
   reverseNoteDraft,
   setReverseNoteDraft,
-  handleReversePayment,
+   handleReversePayment,
+  reverseMax,
+  reverseAlreadyReversed,
   showRecordPayment,
   setShowRecordPayment,
   savingPayment,
@@ -249,6 +253,26 @@ export default function BillingModals({
    previewHtml,
   setPreviewHtml,
 }: BillingModalsProps) {
+  // Digits and one decimal point only, max 2 decimals — strips $, commas, letters, spaces
+  const cleanMoneyInput = (raw: string) => {
+    let v = raw.replace(/[^0-9.]/g, '');
+    const firstDot = v.indexOf('.');
+    if (firstDot !== -1) v = v.slice(0, firstDot + 1) + v.slice(firstDot + 1).replace(/\./g, '');
+    const [whole, dec] = v.split('.');
+    return dec !== undefined ? `${whole}.${dec.slice(0, 2)}` : whole;
+  };
+
+  const reverseAmt = parseFloat(reverseAmountDraft || '0') || 0;
+  const reverseTooMuch = reverseAmt > reverseMax + 0.001;
+  const reverseValid = reverseAmt > 0 && !reverseTooMuch;
+
+  // Each time the reverse popup opens: pre-fill what's left, clear the old reason
+  useEffect(() => {
+    if (!confirmDeletePayment) return;
+    setReverseAmountDraft(reverseMax > 0 ? reverseMax.toFixed(2) : '');
+    setReverseNoteDraft('');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmDeletePayment?.id]);
   const [showInvoicePreview, setShowInvoicePreview] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
   const [loadingPreviewPdf, setLoadingPreviewPdf] = useState(false);
@@ -586,16 +610,55 @@ export default function BillingModals({
               </div>
 
               <div className="space-y-3 mb-4">
-                <div>
+                               <div>
                   <label className="block text-xs font-medium text-[#57534e] mb-1">Amount to reverse</label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={reverseAmountDraft}
-                    onChange={(e) => setReverseAmountDraft(e.target.value)}
-                    className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
-                  />
-                  <p className="mt-1 text-[11px] text-[#a8a29e]">Full amount by default — edit for a partial correction.</p>
+                  <div
+                    className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 focus-within:border-brand-700 ${
+                      reverseTooMuch ? 'border-rose-300 bg-rose-50/40' : 'border-[#e7e2d8]'
+                    }`}
+                  >
+                    <span className="text-sm font-semibold text-[#a8a29e]">$</span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      autoComplete="off"
+                      value={reverseAmountDraft}
+                      onChange={(e) => setReverseAmountDraft(cleanMoneyInput(e.target.value))}
+                      onPaste={(e) => {
+                        e.preventDefault();
+                        setReverseAmountDraft(cleanMoneyInput(e.clipboardData.getData('text')));
+                      }}
+                      placeholder="0.00"
+                      className="w-full min-w-0 bg-transparent text-[16px] sm:text-sm font-semibold tabular-nums outline-none"
+                    />
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setReverseAmountDraft(reverseMax.toFixed(2))}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        reverseAmt === reverseMax
+                          ? 'border-amber-500 bg-amber-500 text-white'
+                          : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
+                      }`}
+                    >
+                      Full amount · {fmt(reverseMax)}
+                    </button>
+                                       {reverseAlreadyReversed > 0 && (
+                      <span className="text-[11px] text-[#a8a29e]">
+                        {fmt(reverseAlreadyReversed)} already reversed
+                      </span>
+                    )}
+                  </div>
+
+                  {reverseTooMuch ? (
+                    <p className="mt-1.5 text-[11px] font-medium text-rose-600">
+                      Can&rsquo;t reverse more than {fmt(reverseMax)}.
+                    </p>
+                  ) : (
+                    <p className="mt-1.5 text-[11px] text-[#a8a29e]">Tap the full amount, or type a smaller one for a partial correction.</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-[#57534e] mb-1">Reason</label>
@@ -628,12 +691,13 @@ export default function BillingModals({
                 </button>
                 <button
                   type="button"
-                  onClick={async () => {
-                    const amt = parseFloat(reverseAmountDraft || '0');
+                                   onClick={async () => {
+                    if (!reverseValid) return;
+                    const amt = Math.round(reverseAmt * 100) / 100;
                     await handleReversePayment(confirmDeletePayment.id, amt, reverseNoteDraft);
                     setConfirmDeletePayment(null);
                   }}
-                  disabled={deletingPaymentId !== null || !reverseAmountDraft}
+                  disabled={deletingPaymentId !== null || !reverseValid}
                   className="flex-1 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
                 >
                   {deletingPaymentId !== null ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Reverse Payment'}

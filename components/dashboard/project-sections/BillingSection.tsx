@@ -229,10 +229,15 @@ export default function BillingSection({
     : 0;
   const defaultBalanceDueDays = company?.default_balance_due_days ?? 14;
 
-  const reversedAmountFor = (paymentId: number) =>
+    const reversedAmountFor = (paymentId: number) =>
     payments
       .filter((p2: any) => p2.kind === 'refund' && p2.reversed_payment_id === paymentId)
       .reduce((s: number, p2: any) => s + Math.abs(p2.amount), 0);
+
+  // What's still reversible on a payment (original minus earlier reversals), in cents-safe dollars
+  const maxReversibleFor = (p: any) =>
+    p ? Math.round(Math.max(Math.abs(Number(p.amount) || 0) - reversedAmountFor(p.id), 0) * 100) / 100 : 0;
+
 
   useEffect(() => {
     setDueDate(lead?.payment_due_date ? String(lead.payment_due_date).split('T')[0] : '');
@@ -742,7 +747,7 @@ export default function BillingSection({
                 Overdue
               </span>
             ) : depositPaid ? (
-              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-teal-50 text-teal-700 border border-teal-200">
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                 Deposit Paid
               </span>
             ) : anyRequestSent ? (
@@ -768,13 +773,13 @@ export default function BillingSection({
               <div className="flex items-center w-full">
                 <div
                   className={`h-0.5 flex-1 transition-colors ${
-                    idx === 0 ? 'bg-transparent' : step.done ? 'bg-teal-600' : 'bg-slate-200'
+                    idx === 0 ? 'bg-transparent' : step.done ? 'bg-slate-900' : 'bg-slate-200'
                   }`}
                 />
                 <div
                   className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition shrink-0 ${
                     step.done
-                      ? 'bg-teal-600 text-white'
+                      ? 'bg-slate-900 text-white'
                       : 'bg-white border-2 border-slate-200 text-slate-400'
                   }`}
                 >
@@ -785,14 +790,14 @@ export default function BillingSection({
                     idx === steps.length - 1
                       ? 'bg-transparent'
                       : steps[idx + 1]?.done
-                      ? 'bg-teal-600'
+                      ? 'bg-slate-900'
                       : 'bg-slate-200'
                   }`}
                 />
               </div>
               <span
                 className={`text-[10px] sm:text-xs mt-1 leading-tight px-0.5 ${
-                  step.done ? 'text-teal-900 font-semibold' : 'text-slate-400 font-medium'
+                  step.done ? 'text-slate-900 font-semibold' : 'text-slate-400 font-medium'
                 }`}
               >
                 {step.label}
@@ -828,21 +833,26 @@ export default function BillingSection({
               );
             }
 
-            if (paidInFull) {
+                     if (paidInFull) {
               return (
-                              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 flex items-center justify-between gap-3">
+                <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-base font-bold text-emerald-700">✓ Paid in full</p>
-                    <p className="text-xs text-emerald-700/80 mt-0.5 tabular-nums">
+                    <p className="flex items-center gap-2 text-base font-bold text-slate-900">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                        <Check className="h-3 w-3 text-white stroke-[3]" />
+                      </span>
+                      Paid in full
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1 tabular-nums">
                       {fmt(paidAmount)} collected{taxNote ? ` · ${taxNote}` : ''}
                     </p>
                   </div>
                   <button
                     onClick={() => handleDownload('balance')}
                     disabled={downloading}
-                    className="shrink-0 px-3 py-2 sm:py-1.5 bg-white border border-emerald-200 hover:bg-emerald-100/60 text-emerald-800 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-50"
+                    className="shrink-0 px-3 py-2 sm:py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 disabled:opacity-50"
                   >
-                    <Download className="w-3.5 h-3.5" />
+                    <Download className="w-3.5 h-3.5 text-slate-500" />
                     Invoice PDF
                   </button>
                 </div>
@@ -850,18 +860,35 @@ export default function BillingSection({
             }
 
             return (
-              <div className="px-1">
-                <div className="flex items-baseline justify-between gap-3 text-xs">
-                  <p className="text-slate-600 tabular-nums">
-                    <span className="font-semibold text-slate-900">{fmt(paidAmount)}</span> of {fmt(total)} collected
-                    {taxNote && <span className="text-slate-400"> · {taxNote}</span>}
-                  </p>
-                  <span className={`font-semibold shrink-0 ${nothingPaid ? 'text-slate-400' : 'text-emerald-600'}`}>
+              <div className="rounded-xl border border-slate-200 bg-white p-4 sm:p-5 shadow-xs">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Collected</p>
+                    <p className="mt-1 text-base sm:text-2xl font-bold tabular-nums text-slate-900 truncate">
+                      {fmt(paidAmount)}
+                    </p>
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Remaining</p>
+                    <p className="mt-1 text-base sm:text-2xl font-bold tabular-nums text-slate-900 truncate">
+                      {fmt(remaining)}
+                    </p>
+                  </div>
+                  <div className="min-w-0 text-right">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Job total</p>
+                    <p className="mt-1 text-base sm:text-2xl font-bold tabular-nums text-slate-500 truncate">
+                      {fmt(total)}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 h-2.5 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-slate-900 transition-all" style={{ width: `${pct}%` }} />
+                </div>
+                <div className="mt-2 flex items-center justify-between gap-3 text-xs">
+                  <span className="font-semibold text-slate-700">
                     {nothingPaid ? 'Not paid yet' : `${Math.round(pct)}% paid`}
                   </span>
-                </div>
-                <div className="mt-2 h-1.5 w-full rounded-full bg-slate-200/70 overflow-hidden">
-                  <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                  {taxNote && <span className="text-slate-400">{taxNote}</span>}
                 </div>
               </div>
             );
@@ -872,8 +899,8 @@ export default function BillingSection({
             <div
               className={`rounded-xl border transition-all ${
                 depositPaid
-                  ? 'p-3 sm:p-4 bg-emerald-50/60 border-emerald-200'
-                                    : 'p-4 sm:p-5 bg-white border-2 border-teal-600 shadow-xs'
+                  ? 'p-3 sm:p-4 bg-white border-slate-200'
+                                    : 'p-4 sm:p-5 bg-white border-2 border-slate-900 shadow-xs'
               }`}
             >
               <div className="flex items-center justify-between gap-2">
@@ -892,7 +919,7 @@ export default function BillingSection({
                   ) : (
                     <button
                       onClick={openDepositEditor}
-                      className="text-xs text-teal-700 hover:underline font-medium"
+                      className="text-xs text-slate-900 underline underline-offset-2 hover:text-slate-600 font-medium"
                     >
                       Edit
                     </button>
@@ -917,13 +944,13 @@ export default function BillingSection({
               <div className="mt-2.5">
                                <div
                   className={`font-extrabold tabular-nums ${
-                    depositPaid ? 'text-lg sm:text-xl text-emerald-600' : 'text-xl sm:text-2xl text-slate-900'
+                    depositPaid ? 'text-lg sm:text-xl text-slate-500' : 'text-xl sm:text-2xl text-slate-900'
                   }`}
                 >
                   {fmt(depositAmount)}
                 </div>
                 {!depositPaid && depositCollected > 0 && (
-                  <div className="text-xs text-teal-700 font-medium mt-0.5">
+                  <div className="text-xs text-slate-600 font-medium mt-0.5">
                     {fmt(depositCollected)} collected · {fmt(depositRemaining)} left
                   </div>
                 )}
@@ -960,7 +987,7 @@ export default function BillingSection({
                 {canSendInvoice && (
                   <button
                     onClick={() => setShowSendConfirm(true)}
-                    className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
+                    className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
                   >
                     <Send className="w-3.5 h-3.5" />
                     {depositRequestSent ? 'Resend Request' : 'Send Deposit Request'}
@@ -978,7 +1005,7 @@ export default function BillingSection({
                 {!depositPaid && (
                   <button
                     onClick={openRecordPaymentModal}
-                    className="w-full sm:w-auto px-3 py-2 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                    className="w-full sm:w-auto px-3 py-2 sm:py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Mark Paid
@@ -1001,10 +1028,10 @@ export default function BillingSection({
           <div
             className={`rounded-xl p-4 sm:p-5 border transition-all ${
                            isPaid
-                ? 'bg-emerald-50/60 border-emerald-200'
+                ? 'bg-white border-slate-200'
                 : hasDepositTerms && !depositPaid
                 ? 'bg-slate-50/70 border-2 border-dashed border-slate-200 opacity-75'
-                : 'bg-white border-2 border-teal-600 shadow-xs'
+                : 'bg-white border-2 border-slate-900 shadow-xs'
             }`}
           >
             <div className="flex items-center justify-between gap-2">
@@ -1038,7 +1065,7 @@ export default function BillingSection({
               <div
                                className={`font-extrabold tabular-nums ${
                   isPaid
-                    ? 'text-lg sm:text-xl text-emerald-600'
+                    ? 'text-lg sm:text-xl text-slate-500'
                     : hasDepositTerms && !depositPaid
                     ? 'text-xl sm:text-2xl text-slate-400'
                     : 'text-xl sm:text-2xl text-slate-900'
@@ -1088,7 +1115,7 @@ export default function BillingSection({
                   {canSendInvoice && (
                     <button
                       onClick={() => setShowSendConfirm(true)}
-                      className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
+                      className="flex-1 sm:flex-none px-3 py-2 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-xs"
                     >
                       <Send className="w-3.5 h-3.5" />
                       {balanceRequestSent ? 'Resend Invoice' : 'Send Invoice'}
@@ -1105,7 +1132,7 @@ export default function BillingSection({
                   )}
                   <button
                     onClick={openRecordPaymentModal}
-                    className="w-full sm:w-auto px-3 py-2 sm:py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
+                    className="w-full sm:w-auto px-3 py-2 sm:py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     Mark Paid
@@ -1207,7 +1234,7 @@ export default function BillingSection({
                 ) : (
                   <button
                     onClick={openDepositEditor}
-                    className="font-semibold text-slate-900 hover:text-teal-700 underline"
+                    className="font-semibold text-slate-900 hover:text-slate-600 underline"
                   >
                     {hasDepositTerms
                       ? `${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)} (${fmt(depositAmount)})`
@@ -1229,7 +1256,7 @@ export default function BillingSection({
                 ) : (
                   <button
                     onClick={openTaxEditor}
-                    className="font-semibold text-slate-900 hover:text-teal-700 underline"
+                    className="font-semibold text-slate-900 hover:text-slate-600 underline"
                   >
                     {invoiceTaxRate > 0 ? `${invoiceTaxRate}%` : 'Exempt / Add Tax'}
                   </button>
@@ -1262,7 +1289,7 @@ export default function BillingSection({
                   >
                     <div className="flex items-center justify-between gap-2 text-xs font-semibold text-slate-800">
                       <span className="flex items-center gap-1.5 truncate">
-                        <span className="w-2 h-2 rounded-full bg-teal-500 shrink-0" />
+                        <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
                         <span className="truncate">{entry.title || entry.type || 'Invoice Sent'}</span>
                       </span>
                       <button
@@ -1330,7 +1357,9 @@ export default function BillingSection({
         reverseNoteDraft={reverseNoteDraft}
         setReverseNoteDraft={setReverseNoteDraft}
         handleReversePayment={handleReversePayment}
-        showRecordPayment={showRecordPayment}
+        reverseMax={maxReversibleFor(confirmDeletePayment)}
+        reverseAlreadyReversed={confirmDeletePayment ? reversedAmountFor(confirmDeletePayment.id) : 0}
+                showRecordPayment={showRecordPayment}
         setShowRecordPayment={setShowRecordPayment}
         savingPayment={savingPayment}
         paymentAmount={paymentAmount}

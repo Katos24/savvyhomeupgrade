@@ -248,7 +248,7 @@ export async function POST(
         WHERE reversed_payment_id = ${paymentId} AND company_id = ${auth.company.id}
       `;
       const alreadyReversed = Number(alreadyReversedRows[0]?.reversed) || 0;
-      const remainingReversible = Math.max(originalAmount - alreadyReversed, 0);
+      const remainingReversible = Math.round(Math.max(originalAmount - alreadyReversed, 0) * 100) / 100;
 
       if (remainingReversible <= 0) {
         return NextResponse.json(
@@ -257,8 +257,9 @@ export async function POST(
         );
       }
 
-      const requestedAmount = body.amount !== undefined ? parseFloat(body.amount) : remainingReversible;
-      if (Number.isNaN(requestedAmount) || requestedAmount <= 0) {
+      const requestedAmount =
+        body.amount !== undefined ? Math.round(parseFloat(body.amount) * 100) / 100 : remainingReversible;
+              if (Number.isNaN(requestedAmount) || requestedAmount <= 0) {
         return NextResponse.json({ success: false, error: 'Enter an amount greater than zero.' }, { status: 400 });
       }
       if (requestedAmount > remainingReversible) {
