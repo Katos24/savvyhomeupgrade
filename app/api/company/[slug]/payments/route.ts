@@ -324,8 +324,10 @@ export async function POST(
         depositType: refreshed?.deposit_type,
         depositValue: refreshed?.deposit_value,
       });
-      const depositStillSatisfied = depositAmount <= 0 || collected >= depositAmount;
-
+      // If nothing is left collected, there's no deposit money behind the timestamp,
+      // whether or not deposit terms happen to be set right now.
+      const depositStillSatisfied = collected > 0 && (depositAmount <= 0 || collected >= depositAmount);
+      
       if (depositStillSatisfied) {
         await sql`
           UPDATE projects SET

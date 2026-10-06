@@ -394,8 +394,8 @@ export default function LeadModal({
             if (window.matchMedia('(max-width: 639px)').matches) dragControls.start(e);
           }}
         >
-          <div className="sm:hidden flex justify-center pt-2 pb-1">
-            <div className="h-1 w-10 rounded-full bg-gray-300" />
+                   <div className="sm:hidden flex justify-center pt-2 pb-0.5" style={{ background: '#0f172a' }}>
+            <div className="h-1 w-10 rounded-full bg-white/25" />
           </div>
         <LeadModalHeader
           lead={{ ...lead, status: selectedStatus }}

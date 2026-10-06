@@ -3,7 +3,7 @@ import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { headers } from 'next/headers';
 import { parseAccountStatus } from '@/lib/stripe/parseAccountStatus';
-import { getCollectionKind } from '@/lib/billing';
+import { getCollectionKind, getDepositAmount } from '@/lib/billing';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -359,17 +359,29 @@ RETURNING id
       // payments_sync_project has recomputed projects.payment_amount from the
       // sum, negatives included. Read it back rather than inferring status
       // from a single charge.
-      const afterRefund = await sql`
-        SELECT COALESCE(payment_amount, 0) AS net_paid
+          const afterRefund = await sql`
+        SELECT COALESCE(payment_amount, 0) AS net_paid, quote_total, deposit_type, deposit_value
         FROM projects WHERE id = ${refundProjectId} LIMIT 1
       `;
       const netPaid = parseFloat(afterRefund[0]?.net_paid || '0');
- 
+
+      // Same rule as manual reversals (payments route): deposit_paid_at is sticky,
+      // but not once the money behind it has been refunded. Fully refunded → reopen;
+      // refunded below the deposit target → reopen; otherwise keep it.
+      const refundDepositAmount = getDepositAmount({
+        total: Number(afterRefund[0]?.quote_total) || 0,
+        depositType: afterRefund[0]?.deposit_type,
+        depositValue: afterRefund[0]?.deposit_value,
+      });
+      const depositStillSatisfied =
+        netPaid > 0 && (refundDepositAmount <= 0 || netPaid >= refundDepositAmount);
+
       await sql`
         UPDATE projects
         SET payment_status  = ${netPaid <= 0 ? 'refunded' : 'partially_refunded'},
             refunded_amount = COALESCE(refunded_amount, 0) + ${recordedTotal},
-            refunded_at     = NOW()
+            refunded_at     = NOW(),
+            deposit_paid_at = CASE WHEN ${!depositStillSatisfied}::boolean THEN NULL ELSE deposit_paid_at END
         WHERE id = ${refundProjectId}
       `;
  

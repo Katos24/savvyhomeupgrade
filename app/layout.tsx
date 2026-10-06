@@ -7,24 +7,22 @@ import QueryProvider from "@/app/QueryProvider";
 
 export const metadata: Metadata = {
   title: {
-    default: "Lead2Project | Stop losing leads in your text threads.",
+    default: "Lead2Project | Quotes, Deposits & Invoices for Contractors",
     template: "%s | Lead2Project",
   },
   description:
-    "Stop losing leads in your text threads. Blast your link, get better leads with photos, and run your jobs from your phone. Built for the guys in the field.",
- keywords: [
-  "contractor lead management",
-  "QR code for plumbers",
-  "landscaping job tracking",
-  "hvac business dashboard",
-  "service business outbox",
-  "construction quote app",
-  "job management for trades",
-  "small business booking link",
-  "contractor CRM",
-  "field service software",
-  "lead tracking for contractors"
-],
+    "The easiest way for contractors to get paid for every job. A booking link for requests, quotes that collect the deposit up front, scheduling, and a final invoice for the balance — all on one card per job. Free plan available.",
+  keywords: [
+    "contractor software",
+    "contractor invoicing",
+    "deposit invoices for contractors",
+    "contractor quotes and estimates",
+    "job scheduling for contractors",
+    "contractor booking link",
+    "Jobber alternative",
+    "field service software",
+    "contractor CRM",
+  ],
   authors: [{ name: "Lead2Project" }],
   creator: "Lead2Project",
   publisher: "Lead2Project",
@@ -35,16 +33,16 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://lead2project.com",
     siteName: "Lead2Project",
-    title: "Lead2Project | Stop losing leads in your text threads.",
+    title: "Lead2Project | The easiest way to get paid for every job",
     description:
-      "One link to capture leads. One link to run the job. No more digging through texts — quote, schedule, and track jobs right from your phone.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lead2Project Dashboard Preview" }],
+      "Requests come in through your booking link. Quotes collect the deposit up front, and the final invoice collects the balance. One card per job, from request to paid.",
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Lead2Project — quotes, deposits and invoices for contractors" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Lead2Project | Field Command Center",
+    title: "Lead2Project | The easiest way to get paid for every job",
     description:
-      "Blast your link. Get better leads. The command center for your field operation.",
+      "Quotes that collect the deposit up front, scheduling, and a final invoice for the balance. One card per job. Built for contractors.",
     images: ["/og-image.png"],
   },
   robots: {
