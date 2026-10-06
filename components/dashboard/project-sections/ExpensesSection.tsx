@@ -118,6 +118,9 @@ export default function ExpensesSection({
   }, [load]);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
+  // Same job total the Invoice tab uses (quote_total). Profit = job total − expenses.
+  const jobTotal = Number(lead?.quote_total) || 0;
+  const profit = jobTotal - total;
 
   const openAdd = () => {
     setForm(emptyForm());
@@ -212,36 +215,54 @@ export default function ExpensesSection({
 
   return (
     <div className="p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total spent on this job</p>
-          <p className="text-2xl font-bold text-gray-900 tabular-nums mt-0.5">{fmt(total)}</p>
-        </div>
+      {/* Job total / Expenses / Profit */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
+        {[
+          { label: 'Job total', value: jobTotal > 0 ? fmt(jobTotal) : '—', tone: 'text-slate-900' },
+          { label: 'Expenses', value: fmt(total), tone: 'text-slate-900' },
+          {
+            label: 'Profit',
+            value: jobTotal > 0 ? fmt(profit) : '—',
+            tone: jobTotal > 0 && profit < 0 ? 'text-red-600' : 'text-slate-900',
+          },
+        ].map((t) => (
+          <div key={t.label} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-center">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{t.label}</p>
+            <p className={`mt-0.5 text-sm sm:text-lg font-bold tabular-nums ${t.tone}`}>{t.value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Expenses</p>
         <button
           onClick={openAdd}
-          className="flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition active:scale-95"
+          className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-semibold shadow-sm transition active:scale-95"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Expense
         </button>
       </div>
+      {jobTotal <= 0 && (
+        <p className="-mt-1 mb-3 text-xs text-slate-400">Add a quote to see profit for this job.</p>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center py-14 text-gray-400">
           <Loader2 className="w-5 h-5 animate-spin" />
         </div>
       ) : expenses.length === 0 ? (
-        <div className="text-center py-14 bg-gray-50 rounded-xl border border-gray-100">
+        <div className="text-center py-14 bg-slate-50 rounded-xl border border-dashed border-slate-300">
           <Receipt className="w-8 h-8 text-gray-300 mx-auto mb-2" />
           <p className="text-sm text-gray-400">No expenses logged for this job yet.</p>
         </div>
       ) : (
-        <div className="border border-gray-100 rounded-xl overflow-hidden divide-y divide-gray-100">
+        <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 bg-white">
           {expenses.map((e) => (
             <div
               key={e.id}
               onClick={() => openEdit(e)}
-              className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-gray-50"
+              className="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-slate-50"
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
@@ -335,7 +356,7 @@ export default function ExpensesSection({
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   placeholder="Shingles & underlayment"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-slate-900"
                 />
               </div>
 
@@ -347,7 +368,7 @@ export default function ExpensesSection({
                     step="0.01"
                     value={form.quantity}
                     onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
+                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-slate-900"
                   />
                 </div>
                 <div>
@@ -360,7 +381,7 @@ export default function ExpensesSection({
                       value={form.unit_price}
                       onChange={(e) => setForm((f) => ({ ...f, unit_price: e.target.value }))}
                       placeholder="0.00"
-                      className="w-full rounded-lg border border-gray-200 bg-white pl-6 pr-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
+                      className="w-full rounded-lg border border-gray-200 bg-white pl-6 pr-3 py-2 text-sm text-gray-900 outline-none focus:border-slate-900"
                     />
                   </div>
                 </div>
@@ -372,7 +393,7 @@ export default function ExpensesSection({
                   value={form.vendor}
                   onChange={(e) => setForm((f) => ({ ...f, vendor: e.target.value }))}
                   placeholder="Home Depot"
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-slate-900"
                 />
               </div>
 
@@ -382,7 +403,7 @@ export default function ExpensesSection({
                   type="date"
                   value={form.expense_date}
                   onChange={(e) => setForm((f) => ({ ...f, expense_date: e.target.value }))}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-emerald-500"
+                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-slate-900"
                 />
               </div>
 
@@ -396,14 +417,14 @@ export default function ExpensesSection({
               <button
                 onClick={() => setShowForm(false)}
                 disabled={saving}
-                className="py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium text-xs rounded-xl transition disabled:opacity-50"
+                className="py-2.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-medium text-xs rounded-xl transition disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-xl transition disabled:opacity-50"
+                className="py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-medium text-xs rounded-xl transition disabled:opacity-50"
               >
                 {saving ? 'Saving...' : form.id ? 'Save changes' : 'Add expense'}
               </button>

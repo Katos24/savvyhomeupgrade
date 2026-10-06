@@ -24,6 +24,7 @@ import {
   Wrench,
 } from 'lucide-react';
 import Link from 'next/link';
+import QuoteBuilderDemo from '@/components/marketing/QuoteBuilderDemo';
 
 // Your demo booking link. Leave empty to hide the "Book a demo" button.
 const DEMO_URL = '/book-demo';
@@ -145,8 +146,8 @@ export default function Hero() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.15 }}
             >
-              <JobDemo />
-            </motion.div>
+              <QuoteBuilderDemo />
+                          </motion.div>
           </div>
         </div>
       </section>

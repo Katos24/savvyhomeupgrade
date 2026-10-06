@@ -59,7 +59,55 @@ function FakeQR() {
 
 type Item = { description: string; qty: number; price: number };
 export type InvoiceView = 'deposit' | 'balance' | 'paid';
-type Custom = { items: Item[]; total: number; deposit: number; view: InvoiceView };
+// The made-up business on the invoice. Changes with the job so it's clear the PDF carries the contractor's brand.
+type Brand = { name: string; initials: string; color: string; phone: string; email: string; mark: Mark };
+type Mark = 'roof' | 'deck' | 'hvac' | 'remodel';
+
+// Simple made-up logo marks, drawn in white on the brand color.
+function BrandMark({ mark }: { mark: Mark }) {
+  const common = { fill: 'none', stroke: 'white', strokeWidth: 2.2, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const };
+  return (
+    <svg viewBox="0 0 24 24" className="h-[55%] w-[55%]" aria-hidden>
+      {mark === 'roof' && (
+        <>
+          <path d="M2.5 14 12 5.5l9.5 8.5" {...common} />
+          <path d="M6.5 11.5V19h11v-7.5" {...common} />
+          <path d="M16 8.5V5.5h2.5v5" {...common} />
+        </>
+      )}
+      {mark === 'deck' && (
+        <>
+          <path d="M3.5 7h17M3.5 12h17M3.5 17h17" {...common} />
+          <path d="M9 7v5M15 12v5" {...common} strokeWidth={1.6} />
+        </>
+      )}
+      {mark === 'hvac' && (
+        <>
+          <path d="M12 3.5v17M4.6 7.75l14.8 8.5M4.6 16.25l14.8-8.5" {...common} />
+          <path d="M10 5.5 12 7l2-1.5M10 18.5 12 17l2 1.5" {...common} strokeWidth={1.6} />
+        </>
+      )}
+      {mark === 'remodel' && (
+        <>
+          <path d="M3.5 11.5 12 4.5l8.5 7V20h-17z" {...common} />
+          <path
+            d="M12 18c-1.6 0-2.6-1-2.6-2.4 0-1.5 1.3-2.1 1.7-3.4 1 .6 1.5 1.5 1.5 2.1.3-.4.5-.9.5-1.3 1 .7 1.5 1.7 1.5 2.6 0 1.4-1 2.4-2.6 2.4z"
+            fill="white"
+          />
+        </>
+      )}
+    </svg>
+  );
+}
+const SUMMIT: Brand = {
+  name: 'Summit Roofing',
+  initials: 'SR',
+  color: '#d97706',
+  phone: '(555) 014-2290',
+  email: 'office@summitroofing.co',
+  mark: 'roof',
+};
+type Custom = { items: Item[]; total: number; deposit: number; view: InvoiceView; brand?: Brand };
 
 // No props: the fixed roofing example mid-job (used on /features/payments).
 // With `custom`: the visitor's job from the home page demo, at one of three
@@ -69,6 +117,7 @@ export function InvoiceMock({ custom }: { custom?: Custom } = {}) {
   const total = custom ? custom.total : ITEMS.reduce((s, i) => s + i.qty * i.price, 0);
   const deposit = custom ? custom.deposit : DEPOSIT;
   const view: InvoiceView = custom ? custom.view : 'balance';
+  const brand = custom?.brand ?? SUMMIT;
   const balance = Math.max(0, total - deposit);
 
   const dueLabel = view === 'deposit' ? 'DEPOSIT DUE' : 'BALANCE DUE';
@@ -79,16 +128,20 @@ export function InvoiceMock({ custom }: { custom?: Custom } = {}) {
     <div className="relative w-full bg-white text-[#1f2937] rounded-sm overflow-hidden border border-slate-200 shadow-2xl text-[7px] sm:text-[8.5px] leading-snug">
       {stamp && <Stamp label={stamp} className="absolute right-[8%] top-[40%] text-base sm:text-xl" />}
       {/* Header */}
-      <div className="h-1 bg-[#f59e0b]" />
+      <div className="h-1 transition-colors" style={{ background: brand.color }} />
       <div className="bg-[#1f2937] text-white px-[6%] py-[5%] flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center bg-white shrink-0">
-            <span className="text-[11px] sm:text-sm font-extrabold text-[#1f2937]">SR</span>
+          <div
+            className="flex h-10 w-10 sm:h-12 sm:w-12 flex-col items-center justify-center gap-px rounded-md shrink-0 ring-2 ring-white/90 transition-colors"
+            style={{ background: brand.color }}
+          >
+            <BrandMark mark={brand.mark} />
+            <span className="text-[6px] sm:text-[7px] font-extrabold leading-none tracking-wider text-white">{brand.initials}</span>
           </div>
           <div>
-            <p className="text-[10px] sm:text-xs font-extrabold tracking-wide">SUMMIT ROOFING</p>
-            <p className="mt-0.5 text-slate-300">(555) 014-2290</p>
-            <p className="text-slate-300">office@summitroofing.co</p>
+            <p className="text-[10px] sm:text-xs font-extrabold tracking-wide uppercase">{brand.name}</p>
+            <p className="mt-0.5 text-slate-300">{brand.phone}</p>
+            <p className="text-slate-300">{brand.email}</p>
           </div>
         </div>
         <div className="text-right">
@@ -201,7 +254,7 @@ export function InvoiceMock({ custom }: { custom?: Custom } = {}) {
 
       {/* Footer */}
       <div className="bg-[#1f2937] px-[6%] py-2 text-slate-400">
-        Thank you for your business · Questions? (555) 014-2290
+        Thank you for your business · Questions? {brand.phone}
       </div>
     </div>
   );
@@ -217,10 +270,18 @@ const cents = (n: number) => Math.round(n * 100) / 100;
 // when the visitor changes the price, labor absorbs the difference so the
 // materials stay realistic. If the price drops below the materials, every
 // line scales down instead.
-const PRESETS: { job: string; mode: 'percent' | 'amount'; deposit: string; items: Item[] }[] = [
-  { job: 'Roof replacement', mode: 'percent', deposit: '40', items: ITEMS },
+const PRESETS: { job: string; mode: 'percent' | 'amount'; deposit: string; items: Item[]; brand: Brand }[] = [
+  { job: 'Roof replacement', mode: 'percent', deposit: '40', items: ITEMS, brand: SUMMIT },
   {
     job: 'Deck stain',
+    brand: {
+      name: 'Oak & Grain Decks',
+      initials: 'OG',
+      color: '#7c5a3a',
+      phone: '(555) 019-4471',
+      email: 'hello@oakandgraindecks.co',
+      mark: 'deck',
+    },
     mode: 'amount',
     deposit: '500',
     items: [
@@ -232,6 +293,14 @@ const PRESETS: { job: string; mode: 'percent' | 'amount'; deposit: string; items
   },
   {
     job: 'AC install',
+    brand: {
+      name: 'Coolside HVAC',
+      initials: 'CH',
+      color: '#0284c7',
+      phone: '(555) 012-8830',
+      email: 'service@coolsidehvac.co',
+      mark: 'hvac',
+    },
     mode: 'percent',
     deposit: '30',
     items: [
@@ -244,6 +313,14 @@ const PRESETS: { job: string; mode: 'percent' | 'amount'; deposit: string; items
   },
   {
     job: 'Kitchen remodel',
+    brand: {
+      name: 'Hearth Remodeling',
+      initials: 'HR',
+      color: '#7c3aed',
+      phone: '(555) 016-3105',
+      email: 'projects@hearthremodeling.co',
+      mark: 'remodel',
+    },
     mode: 'percent',
     deposit: '25',
     items: [
@@ -332,10 +409,10 @@ export default function InvoiceShowcaseSection() {
     ? 'Waiting for payment…'
     : step === 0
       ? hasDeposit
-        ? 'Send deposit invoice'
-        : 'Send invoice'
+        ? `Send deposit invoice · ${fmt(deposit)}`
+        : `Send invoice · ${fmt(balance)}`
       : step === 2
-        ? 'Send balance invoice'
+        ? `Send balance invoice · ${fmt(balance)}`
         : 'Start over';
   const ActionIcon = waiting ? Loader2 : step === 4 ? RotateCcw : Send;
 
@@ -439,24 +516,50 @@ export default function InvoiceShowcaseSection() {
 
             <div className="mt-4 grid grid-cols-2 gap-3 border-t border-white/10 pt-4">
               {[
-                { label: 'Deposit', amount: deposit, paid: depositPaid, hide: !hasDeposit },
-                { label: 'Balance', amount: balance, paid: fullyPaid, hide: false },
+                {
+                  label: 'Deposit',
+                  amount: deposit,
+                  paid: depositPaid,
+                  next: step === 0 && hasDeposit,
+                  sent: step === 1,
+                  hide: !hasDeposit,
+                },
+                {
+                  label: 'Balance',
+                  amount: balance,
+                  paid: fullyPaid,
+                  next: step === 2 || (step === 0 && !hasDeposit),
+                  sent: step === 3,
+                  hide: false,
+                },
               ]
                 .filter((b) => !b.hide)
                 .map((b) => (
-                  <div
+                  <motion.div
                     key={b.label}
-                    className={`rounded-md border px-3 py-2.5 transition-colors ${
-                      b.paid ? 'border-[#5EC4C9]/60 bg-[#00828A]/20' : 'border-white/10'
+                    animate={{ scale: b.paid ? [1, 1.04, 1] : 1 }}
+                    transition={{ duration: 0.35 }}
+                    className={`relative rounded-md border px-3 py-2.5 transition-colors ${
+                      b.paid
+                        ? 'border-[#5EC4C9]/60 bg-[#00828A]/20'
+                        : b.next || b.sent
+                          ? 'border-[#5EC4C9] bg-white/[0.06] ring-2 ring-[#5EC4C9]/30'
+                          : 'border-white/10 opacity-60'
                     } ${!hasDeposit ? 'col-span-2' : ''}`}
                   >
                     <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                       {b.label}
-                      {b.paid && (
+                      {b.paid ? (
                         <span className="flex items-center gap-0.5 text-[#5EC4C9]">
                           <Check className="h-3 w-3" strokeWidth={3} /> Paid
                         </span>
-                      )}
+                      ) : b.sent ? (
+                        <span className="flex items-center gap-1 normal-case tracking-normal text-[#5EC4C9]">
+                          <Loader2 className="h-3 w-3 animate-spin" /> Sent
+                        </span>
+                      ) : b.next && b.label === 'Balance' ? (
+                        <span className="rounded bg-[#5EC4C9] px-1.5 py-px text-[9px] font-bold text-[#1C1F23]">Next</span>
+                      ) : null}
                     </p>
                     <p
                       className={`font-[family-name:var(--font-display)] text-2xl sm:text-3xl font-extrabold ${
@@ -465,7 +568,7 @@ export default function InvoiceShowcaseSection() {
                     >
                       {fmt(b.amount)}
                     </p>
-                  </div>
+                  </motion.div>
                 ))}
             </div>
 
@@ -492,7 +595,7 @@ export default function InvoiceShowcaseSection() {
           aria-label="Example Lead2Project invoice"
         >
           <div className="relative">
-            <InvoiceMock custom={{ items, total, deposit, view }} />
+            <InvoiceMock custom={{ items, total, deposit, view, brand: PRESETS[presetIdx].brand }} />
             <AnimatePresence>
               {toast && (
                 <motion.div

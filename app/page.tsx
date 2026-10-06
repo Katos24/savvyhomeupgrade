@@ -1,8 +1,7 @@
-
 import Nav from '@/components/marketing/Nav';
 import NewHero from '@/components/marketing/NewHero';
 import FormAndDashboardSection from '@/components/marketing/FormAndDashboardSection';
-import FeaturesSection from '@/components/marketing/FeaturesSection';
+import FeaturesSection, { WhatYouGetSection } from '@/components/marketing/FeaturesSection';
 import ProfitSection from '@/components/marketing/ProfitSection';
 import InvoiceShowcaseSection from '@/components/marketing/InvoiceShowcaseSection';
 import PaymentsReviewsSection from '@/components/marketing/PaymentsReviewsSection';
@@ -27,7 +26,8 @@ export default function NewHome() {
       <FeaturesSection />
       <InvoiceShowcaseSection />
       <PaymentsReviewsSection />
-            <ProfitSection />
+      <ProfitSection />
+      <WhatYouGetSection />
       <TapeDivider />
       <Pricing />
       <FAQSection />

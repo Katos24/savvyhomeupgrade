@@ -20,6 +20,7 @@ import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
 import { fontVars } from '@/components/marketing/marketingTheme';
 import { Eyebrow, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
+import LeadFormDemo from '@/components/marketing/LeadFormDemo';
 
 /* ─────────────────────────────────────────────────────────
    /features/lead-capture
@@ -95,45 +96,6 @@ function FakeQR({ className = '' }: { className?: string }) {
         return on ? <rect key={i} x={c} y={r} width={1} height={1} fill="#1C1F23" /> : null;
       })}
     </svg>
-  );
-}
-
-/* ── Mock: the customer's booking form on a phone ── */
-function PhoneFormMock() {
-  return (
-    <div className="mx-auto w-full max-w-[300px] rounded-[2rem] bg-[#1C1F23] p-2.5 shadow-2xl" aria-hidden>
-      <div className="overflow-hidden rounded-[1.6rem] bg-white">
-        <div className="bg-[#00828A] px-5 pt-6 pb-4 text-white">
-          <p className="text-[11px] font-semibold opacity-80">Summit Roofing</p>
-          <p className="text-base font-bold">Request a free quote</p>
-        </div>
-        <div className="space-y-2.5 p-4 text-[11px]">
-          {[
-            ['Name', 'Maria Lopez'],
-            ['Service', 'Roof repair'],
-            ['Address', '12 Oak St, Holbrook'],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <p className="mb-1 font-semibold text-slate-500">{label}</p>
-              <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 font-medium text-slate-800">{value}</div>
-            </div>
-          ))}
-          <div>
-            <p className="mb-1 font-semibold text-slate-500">Is the leak inside or outside?</p>
-            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">Inside, back bedroom</div>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
-              <Camera className="h-3.5 w-3.5 text-slate-400" /> 2 photos
-            </div>
-            <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
-              <CalendarDays className="h-3.5 w-3.5 text-slate-400" /> Oct 7
-            </div>
-          </div>
-          <div className="mt-1 rounded-lg bg-[#00828A] py-2.5 text-center text-xs font-bold text-white">Send request</div>
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -321,7 +283,7 @@ export default function LeadCapturePage() {
             />
           </div>
           <div className="lg:order-first">
-            <PhoneFormMock />
+            <LeadFormDemo />
           </div>
         </div>
       </section>

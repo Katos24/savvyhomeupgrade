@@ -86,8 +86,15 @@ export default function FeaturesSection() {
         </div>
       </section>
 
+    </div>
+  );
+}
+// Rendered on its own further down the home page, as the recap before pricing.
+export function WhatYouGetSection() {
+  return (
+    <div className="text-[#1C1F23] antialiased">
       {/* ── What you get ── */}
-      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10 sm:mb-12 text-center sm:text-left">
             <Eyebrow>What you get</Eyebrow>

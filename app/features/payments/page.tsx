@@ -1,10 +1,9 @@
-
-
 import Link from 'next/link';
 import { ArrowRight, Check, CreditCard, Banknote, Receipt, Bell, Send, CalendarClock, RotateCcw, FileText, Hash, QrCode, AlertCircle } from 'lucide-react';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
 import { InvoiceMock } from '@/components/marketing/InvoiceShowcaseSection';
+import { JobDemo } from '@/components/marketing/NewHero';
 import { fontVars } from '@/components/marketing/marketingTheme';
 import { Eyebrow, Stamp, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
 
@@ -54,47 +53,6 @@ function Bullets({ items }: { items: { text: string; pro?: boolean }[] }) {
 }
 
 const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
-
-/* ── Mock: deposit + balance, like the Invoice tab ── */
-function DepositBalanceMock() {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 sm:p-5 shadow-lg space-y-3" aria-hidden>
-      <div>
-        <div className="flex items-baseline justify-between gap-2 text-sm">
-          <p className="text-slate-600">
-            <span className="font-semibold text-[#1C1F23]">{fmt(4800)}</span> of {fmt(12000)} collected
-          </p>
-          <span className="font-semibold text-emerald-600">40% paid</span>
-        </div>
-        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-200/70">
-          <div className="h-full w-[40%] rounded-full bg-emerald-500" />
-        </div>
-      </div>
-      <div className="rounded-md border border-emerald-200 bg-emerald-50/60 p-3.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-bold text-slate-500">1. Deposit (40%)</span>
-          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">Paid</span>
-        </div>
-        <p className="mt-1 text-xl font-extrabold text-emerald-600">{fmt(4800)}</p>
-        <p className="text-xs font-medium text-emerald-700">✓ Paid by card Sep 14</p>
-      </div>
-      <div className="rounded-md border-2 border-teal-600 p-3.5">
-        <div className="flex items-center justify-between">
-          <span className="text-sm font-bold">2. Remaining Balance</span>
-          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-800">Awaiting</span>
-        </div>
-        <p className="mt-1 text-2xl font-extrabold">{fmt(7200)}</p>
-        <p className="text-xs text-slate-500">Due when the job is done</p>
-        <div className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3 text-xs font-semibold">
-          <span className="inline-flex items-center gap-1 rounded-md bg-teal-600 px-2.5 py-1.5 text-white">
-            <Send className="h-3 w-3" /> Send Invoice
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-md bg-slate-900 px-2.5 py-1.5 text-white">+ Mark Paid</span>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ── Mock: invoice email with pay button ── */
 function InvoiceEmailMock() {
@@ -179,8 +137,9 @@ export default function PaymentsPage() {
               Card payments through Stripe · Venmo, Zelle, Cash App and PayPal links · Included on Pro
             </p>
           </div>
-          <div className="w-full max-w-md mx-auto lg:rotate-[-1.5deg]">
-            <InvoiceMock />
+          {/* Animated job card: deposit request sent → customer pays on their phone → deposit secured */}
+          <div className="w-full">
+            <JobDemo />
           </div>
         </div>
       </section>
@@ -199,14 +158,18 @@ export default function PaymentsPage() {
             </p>
             <Bullets
               items={[
-                { text: 'Set the deposit once per service, or one default for every job' },                { text: 'Deposit and balance tracked as two clear steps' },
+                { text: 'Set the deposit once per service, or one default for every job' },
+                { text: 'Deposit and balance tracked as two clear steps' },
                 { text: 'Progress bar shows how much is collected' },
                 { text: 'Partial payments handled' },
                 { text: 'Deposit and tax lock once money comes in, so terms can’t change' },
               ]}
             />
           </div>
-          <DepositBalanceMock />
+          {/* The customer's invoice PDF, mid-job with the deposit paid */}
+          <div className="w-full max-w-md mx-auto lg:rotate-[-1.5deg]">
+            <InvoiceMock />
+          </div>
         </div>
       </section>
 

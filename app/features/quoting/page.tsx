@@ -4,6 +4,7 @@ import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
 import { fontVars } from '@/components/marketing/marketingTheme';
 import { Eyebrow, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
+import QuoteBuilderDemo from '@/components/marketing/QuoteBuilderDemo';
 
 /* ─────────────────────────────────────────────────────────
    /features/quoting
@@ -241,7 +242,7 @@ export default function QuotingPage() {
               Quote builder, saved services and emailed quotes with online accept, all on Pro
             </p>
           </div>
-          <QuoteBuilderMock />
+                 <QuoteBuilderDemo />
         </div>
       </section>
 
