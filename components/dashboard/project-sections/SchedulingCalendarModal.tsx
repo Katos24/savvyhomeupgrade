@@ -90,7 +90,7 @@ function ModalShell({
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full sm:max-w-md bg-white rounded-t-[2rem] sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col"
+          className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col"
           style={{ maxHeight: '85vh' }}
         >
           <div className="flex justify-center pt-3 pb-1 sm:hidden">
@@ -98,8 +98,8 @@ function ModalShell({
           </div>
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <div>
-              <p className="text-[11px] font-black text-[#0F1F3D] uppercase tracking-widest">{title}</p>
-              {subtitle && <p className="text-[9px] text-slate-400 font-bold">{subtitle}</p>}
+              <p className="text-sm font-semibold text-slate-900">{title}</p>
+              {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
             </div>
             <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-400">
               <X size={18} />
@@ -118,7 +118,7 @@ function ConfirmButton({ label, onClick, disabled }: { label: string; onClick: (
     <button
       onClick={onClick}
       disabled={disabled}
-      className="w-full py-4 bg-[#0F1F3D] text-white rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:active:scale-100"
+      className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-xl active:scale-[0.98] transition-all disabled:opacity-40 disabled:active:scale-100"
     >
       <Check size={14} strokeWidth={3} />
       {label}
@@ -273,7 +273,7 @@ export default function SchedulingCalendarModal({
           <button onClick={() => setCurrentMonth(new Date(year, month - 1, 1))} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
             <ChevronLeft size={18} className="text-slate-600" />
           </button>
-          <span className="text-sm font-black text-[#0F1F3D] uppercase tracking-widest">
+          <span className="text-sm font-semibold text-slate-900">
             {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
           </span>
           <button onClick={() => setCurrentMonth(new Date(year, month + 1, 1))} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
@@ -283,13 +283,13 @@ export default function SchedulingCalendarModal({
 
         <div className="grid grid-cols-7 mb-1">
           {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-            <div key={i} className="text-center text-[9px] font-black text-slate-400 uppercase py-1">{d}</div>
+            <div key={i} className="text-center text-[11px] font-semibold text-slate-400 uppercase py-1">{d}</div>
           ))}
         </div>
 
         {loadingJobs ? (
           <div className="flex items-center justify-center h-40">
-            <div className="w-8 h-8 border-2 border-[#0F1F3D] border-t-transparent rounded-full animate-spin" />
+            <div className="w-8 h-8 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : (
           <div className="grid grid-cols-7 gap-1 mb-2">
@@ -307,14 +307,14 @@ export default function SchedulingCalendarModal({
                   key={day}
                   disabled={isPast}
                   onClick={() => setPickedDate(date)}
-                  className={`relative flex flex-col items-center justify-center aspect-square rounded-xl text-sm font-black transition-all active:scale-95 ${
+                  className={`relative flex flex-col items-center justify-center aspect-square rounded-xl text-sm font-semibold transition-all active:scale-95 ${
                     isPast
                       ? 'text-slate-200 cursor-not-allowed'
                       : isSelected
-                      ? 'bg-[#0F1F3D] text-white shadow-lg'
+                      ? 'bg-slate-900 text-white shadow-lg'
                       : isToday
-                      ? 'bg-blue-50 text-blue-600 border-2 border-blue-300'
-                      : 'hover:bg-slate-100 text-[#0F1F3D]'
+                      ? 'bg-white text-slate-900 border-2 border-slate-300'
+                      : 'hover:bg-slate-100 text-slate-900'
                   }`}
                 >
                   {day}
@@ -371,8 +371,8 @@ export default function SchedulingCalendarModal({
     const chipClass = (selected: boolean) =>
       `relative h-11 rounded-xl text-sm font-semibold transition active:scale-95 touch-manipulation ${
         selected
-          ? 'bg-[#00828A] text-white shadow-md shadow-[#00828A]/25'
-          : 'bg-gray-50 border border-gray-200 text-gray-700 hover:border-[#00828A]/40 hover:bg-[#00828A]/5'
+          ? 'bg-slate-900 text-white shadow-xs'
+          : 'bg-gray-50 border border-gray-200 text-gray-700 hover:border-slate-400 hover:bg-slate-100'
       }`;
 
     return (
@@ -446,7 +446,7 @@ export default function SchedulingCalendarModal({
                 step={300}
                 value={pickedTime}
                 onChange={(e) => { setPickedTime(e.target.value); setPickedEndTime(''); }}
-                className="w-full h-12 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-[16px] font-semibold text-gray-900 outline-none focus:border-[#00828A] focus:bg-white"
+                className="w-full h-12 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-[16px] font-semibold text-gray-900 outline-none focus:border-slate-900 focus:bg-white"
               />
             </div>
           )}
@@ -454,7 +454,7 @@ export default function SchedulingCalendarModal({
           <button
             type="button"
             onClick={() => setShowCustomTime((v) => !v)}
-            className="w-full py-2 text-xs font-semibold text-[#00828A] hover:underline"
+            className="w-full py-2 text-xs font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900"
           >
             {showCustomTime ? 'Back to quick times' : 'Need a different time? Enter it exactly'}
           </button>
@@ -488,13 +488,13 @@ export default function SchedulingCalendarModal({
                   step={300}
                   value={pickedEndTime}
                   onChange={(e) => setPickedEndTime(e.target.value)}
-                  className="w-full h-12 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-[16px] font-semibold text-gray-900 outline-none focus:border-[#00828A] focus:bg-white"
+                  className="w-full h-12 px-3.5 rounded-xl border border-gray-200 bg-gray-50 text-[16px] font-semibold text-gray-900 outline-none focus:border-slate-900 focus:bg-white"
                 />
               )}
               <button
                 type="button"
                 onClick={() => setShowCustomEnd((v) => !v)}
-                className="mt-2 w-full py-2 text-xs font-semibold text-[#00828A] hover:underline"
+                className="mt-2 w-full py-2 text-xs font-semibold text-slate-700 underline underline-offset-2 hover:text-slate-900"
               >
                 {showCustomEnd ? 'Back to durations' : 'Set an exact end time'}
               </button>
@@ -527,7 +527,7 @@ export default function SchedulingCalendarModal({
       <div className="pt-4">
         <div className="flex items-center gap-1.5 mb-2.5">
           <User size={12} className="text-slate-400" />
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Team</p>
+          <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Team</p>
           {loadingAvailability && <Loader2 size={11} className="animate-spin text-slate-400 ml-1" />}
         </div>
 
@@ -550,7 +550,7 @@ export default function SchedulingCalendarModal({
                   checked
                     ? isBusy
                       ? 'border-amber-300 bg-amber-50/70'
-                      : 'border-blue-300 bg-blue-50/60'
+                      : 'border-slate-900 bg-slate-50'
                     : isBusy
                     ? 'border-slate-100 bg-slate-50/60 opacity-60 hover:opacity-90'
                     : 'border-slate-200 hover:bg-slate-50'
@@ -558,7 +558,7 @@ export default function SchedulingCalendarModal({
               >
                 <div className={`w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${
                   checked
-                    ? isBusy ? 'bg-amber-500 text-white' : 'bg-blue-600 text-white'
+                    ? isBusy ? 'bg-amber-500 text-white' : 'bg-slate-900 text-white'
                     : isBusy ? 'bg-slate-200 text-slate-400' : 'bg-slate-100 text-slate-600'
                 }`}>
                   {m.name?.charAt(0).toUpperCase()}
@@ -577,7 +577,7 @@ export default function SchedulingCalendarModal({
                     {avail.available ? 'Available' : 'Busy'}
                   </span>
                 )}
-                {checked && <CheckCircle2 size={15} className={`shrink-0 ${isBusy ? 'text-amber-600' : 'text-blue-600'}`} />}
+                {checked && <CheckCircle2 size={15} className={`shrink-0 ${isBusy ? 'text-amber-600' : 'text-slate-900'}`} />}
               </button>
             );
           })}
@@ -585,8 +585,8 @@ export default function SchedulingCalendarModal({
           {localAssignees
             .filter((name) => !teamMembers.some((m: any) => m.name === name))
             .map((name) => (
-              <div key={name} className="w-full flex items-center gap-3 p-3 rounded-xl border border-blue-300 bg-blue-50/60">
-                <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold bg-blue-600 text-white">
+              <div key={name} className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-900 bg-slate-50">
+                <div className="w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-bold bg-slate-900 text-white">
                   {name.charAt(0).toUpperCase()}
                 </div>
                 <p className="flex-1 min-w-0 text-sm font-semibold text-slate-900 truncate">{name}</p>
@@ -606,14 +606,14 @@ export default function SchedulingCalendarModal({
               value={customNameInput}
               onChange={(e) => setCustomNameInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && addCustomName()}
-              className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[16px] sm:text-xs font-medium text-slate-900 outline-none focus:border-blue-400"
+              className="flex-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[16px] sm:text-xs font-medium text-slate-900 outline-none focus:border-slate-900"
             />
             <button type="button" onClick={addCustomName} className="px-3.5 py-2.5 bg-slate-900 text-white rounded-lg text-xs font-semibold hover:bg-slate-800 transition touch-manipulation">
               Add
             </button>
           </div>
         ) : (
-          <button type="button" onClick={() => setShowCustomNameInput(true)} className="w-full mt-2.5 py-2.5 text-[11px] font-semibold text-blue-600 hover:bg-blue-50/60 rounded-lg transition touch-manipulation">
+          <button type="button" onClick={() => setShowCustomNameInput(true)} className="w-full mt-2.5 py-2.5 text-[11px] font-semibold text-slate-900 hover:bg-slate-100 rounded-lg transition touch-manipulation">
             + Add someone not listed
           </button>
         )}

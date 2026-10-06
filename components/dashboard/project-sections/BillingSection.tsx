@@ -773,13 +773,13 @@ export default function BillingSection({
               <div className="flex items-center w-full">
                 <div
                   className={`h-0.5 flex-1 transition-colors ${
-                    idx === 0 ? 'bg-transparent' : step.done ? 'bg-slate-900' : 'bg-slate-200'
+                    idx === 0 ? 'bg-transparent' : step.done ? 'bg-teal-600' : 'bg-slate-200'
                   }`}
                 />
                 <div
                   className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition shrink-0 ${
                     step.done
-                      ? 'bg-slate-900 text-white'
+                      ? 'bg-teal-600 text-white'
                       : 'bg-white border-2 border-slate-200 text-slate-400'
                   }`}
                 >
@@ -790,14 +790,14 @@ export default function BillingSection({
                     idx === steps.length - 1
                       ? 'bg-transparent'
                       : steps[idx + 1]?.done
-                      ? 'bg-slate-900'
+                      ? 'bg-teal-600'
                       : 'bg-slate-200'
                   }`}
                 />
               </div>
               <span
                 className={`text-[10px] sm:text-xs mt-1 leading-tight px-0.5 ${
-                  step.done ? 'text-slate-900 font-semibold' : 'text-slate-400 font-medium'
+                  step.done ? 'text-teal-900 font-semibold' : 'text-slate-400 font-medium'
                 }`}
               >
                 {step.label}
