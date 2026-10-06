@@ -42,7 +42,10 @@ export default function JobProgress({ lead, canReview, reviewSentAt, sendingRevi
   const hasDeposit = !!depositType && depositValue > 0;
   const depositAmount = depositType === 'percent' ? (jobTotal * depositValue) / 100 : depositValue;
   const depositPaidAt = lead.inv_deposit_paid_at || lead.deposit_paid_at || null;
-  const finalInvoiceSentAt = lead.inv_id ? lead.inv_sent_at || null : lead.invoice_sent_at || null;
+  const depositInvoiceSentAt = lead.deposit_invoice_sent_at || lead.inv_deposit_sent_at || null;
+  // Most explicit first: projects.balance_invoice_sent_at, then invoices.sent_at, then the legacy field
+  const finalInvoiceSentAt =
+    lead.balance_invoice_sent_at || (lead.inv_id ? lead.inv_sent_at : lead.invoice_sent_at) || null;
 
   const completed = lead.status === 'completed' || !!lead.job_completed_at;
   const scheduledDate = lead.scheduled_date ? String(lead.scheduled_date).split('T')[0] : '';
@@ -78,7 +81,9 @@ export default function JobProgress({ lead, canReview, reviewSentAt, sendingRevi
            done: !!depositPaidAt,
       detail: depositPaidAt
         ? `${money(depositAmount)} paid ${fmtDate(depositPaidAt)}`
-        : `${money(depositAmount)} · waiting`,
+               : depositInvoiceSentAt
+        ? `${money(depositAmount)} · invoice sent ${fmtDate(depositInvoiceSentAt)}, waiting`
+        : `${money(depositAmount)} · not sent yet`,
     });
   }
 
