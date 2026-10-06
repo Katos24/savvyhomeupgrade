@@ -20,6 +20,7 @@ export default function NewHome() {
     >
       <Nav />
       <NewHero />
+
       <TradesStrip />
       <FormAndDashboardSection />
       <TapeDivider />
