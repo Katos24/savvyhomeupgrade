@@ -12,6 +12,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButton';
 import LeadLightbox from '@/components/dashboard/LeadLightbox';
+import JobProgress from '@/components/dashboard/JobProgress';
 import { can, type PlanTier } from '@/lib/permissions';
 
 type LeadOverviewTabProps = {
@@ -285,6 +286,17 @@ export default function LeadOverviewTab({
           onClose={() => setLightbox(null)}
         />
       )}
+      {/* Job progress (jobs only) — tap for full summary */}
+      {isProject && (
+        <JobProgress
+          lead={lead}
+          canReview={canReview}
+          reviewSentAt={reviewSentAt}
+          sendingReview={sendingReview}
+          onSendReview={handleSendReview}
+        />
+      )}
+
             {/* Job wrap-up (completed jobs) */}
       {isCompletedJob && (
         <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs">
@@ -826,8 +838,9 @@ export default function LeadOverviewTab({
                 </button>
                 <button onClick={async () => {
                     const items = pendingCategoryChange?.template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
+                                       const rate = pendingCategoryChange?.template.tax_rate ?? 0;
                     setPendingCategoryChange(null);
-                    await executeSaveDetails(items);
+                    await executeSaveDetails(items, rate);
                   }}
                   className="py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition text-xs shadow-2xs">
                   Use template
