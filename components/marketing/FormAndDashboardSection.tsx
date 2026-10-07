@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Eyebrow } from './marketingUI';
 import { motion } from 'framer-motion';
 import {
@@ -28,29 +30,46 @@ import {
   Mail,
   Clock,
   Users,
+  ChevronDown,
 } from 'lucide-react';
 
 // Mock data for the board preview — illustrative only.
 type MockCard = { name: string; service: string; amount: string; date: string; fresh?: boolean; paid?: string };
 
-const COLUMNS: { label: string; dot: string; cards: MockCard[] }[] = [
+const COLUMNS: { label: string; dot: string; cards: MockCard[]; hideOnPhone?: boolean }[] = [
   {
     label: 'New',
     dot: 'bg-blue-500',
     cards: [
       { name: 'Maria Lopez', service: 'Roof repair', amount: '', date: 'Unscheduled', fresh: true },
       { name: 'Dan Kim', service: 'Gutter cleaning', amount: '', date: 'Unscheduled' },
+      { name: 'L. Chen', service: 'Skylight leak', amount: '', date: 'Unscheduled' },
     ],
   },
   {
     label: 'Quoted',
     dot: 'bg-purple-500',
-    cards: [{ name: 'S. Patel', service: 'Siding', amount: '$8,400', date: 'Unscheduled' }],
+    cards: [
+      { name: 'S. Patel', service: 'Siding', amount: '$8,400', date: 'Unscheduled' },
+      { name: 'T. Brooks', service: 'Gutter install', amount: '$2,850', date: 'Unscheduled' },
+    ],
   },
   {
     label: 'Scheduled',
     dot: 'bg-amber-500',
-    cards: [{ name: 'M. Johnson', service: 'Roof repair', amount: '$12,000', date: 'Oct 9', paid: 'Deposit paid' }],
+    cards: [
+      { name: 'M. Johnson', service: 'Roof repair', amount: '$12,000', date: 'Oct 9', paid: 'Deposit paid' },
+      { name: 'K. Nguyen', service: 'Chimney flashing', amount: '$1,900', date: 'Oct 14', paid: 'Deposit paid' },
+    ],
+  },
+  {
+    label: 'Completed',
+    dot: 'bg-emerald-500',
+    hideOnPhone: true,
+    cards: [
+      { name: 'J. Rivera', service: 'Roof repair', amount: '$4,200', date: 'Oct 2', paid: 'Paid in full' },
+      { name: 'A. Moore', service: 'Gutter guards', amount: '$950', date: 'Sep 29', paid: 'Paid in full' },
+    ],
   },
 ];
 
@@ -111,12 +130,25 @@ function TabBody({ tab }: { tab: Tab }) {
           <p className={LABEL}>Request · Sep 8</p>
           <p className="mt-1 font-semibold text-slate-900">Roof repair</p>
           <p className="mt-0.5 text-slate-600">Leak over the back bedroom after the last storm.</p>
+          <div className="mt-2.5 rounded-md border border-slate-200 divide-y divide-slate-100">
+            {[
+              ['What’s the problem?', 'Leak'],
+              ['Roof type', 'Shingle'],
+              ['Roof age', '15–20 yrs'],
+              ['Stories', '2'],
+            ].map(([q, a]) => (
+              <div key={q} className="flex items-center justify-between gap-3 px-2.5 py-1.5">
+                <span className="text-slate-500">{q}</span>
+                <span className="font-semibold text-slate-900">{a}</span>
+              </div>
+            ))}
+          </div>
           <div className="mt-2 flex flex-wrap gap-2">
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-2 py-0.5 text-slate-700">
-              Inside or outside? <b className="font-semibold text-slate-900">Inside</b>
+              <Camera className="h-3 w-3" /> 2 photos
             </span>
             <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-2 py-0.5 text-slate-700">
-              <Camera className="h-3 w-3" /> 2 photos
+              <CalendarDays className="h-3 w-3" /> Prefers Oct 7
             </span>
           </div>
         </div>
@@ -295,9 +327,20 @@ function TabBody({ tab }: { tab: Tab }) {
   if (tab === 'Media')
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+        {/* The customer's photos, sent with the request (second one is a close-up crop of the same shot) */}
+        {['object-center', 'object-[38%_50%] scale-[1.8]'].map((crop) => (
+          <div key={crop} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-slate-200">
+            <Image
+              src="/images/roof-damage.webp"
+              alt="Customer photo of storm-damaged roof shingles"
+              fill
+              sizes="(min-width: 640px) 160px, 45vw"
+              className={`object-cover ${crop}`}
+            />
+            <span className="absolute bottom-1 left-1 rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-semibold text-white">From customer</span>
+          </div>
+        ))}
         {[
-          { l: 'From customer', g: 'linear-gradient(135deg,#cbd5e1,#64748b)' },
-          { l: 'From customer', g: 'linear-gradient(135deg,#94a3b8,#334155)' },
           { l: 'Before', g: 'linear-gradient(135deg,#e2e8f0,#94a3b8)' },
           { l: 'Before', g: 'linear-gradient(135deg,#a8a29e,#57534e)' },
           { l: 'Materials', g: 'linear-gradient(135deg,#d6d3d1,#78716c)' },
@@ -506,7 +549,8 @@ export default function FormAndDashboardSection() {
   return (
     <section className="bg-white text-[#1C1F23] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <div className="max-w-2xl mb-8 sm:mb-10 text-center sm:text-left">
+        <div className="mb-10 sm:mb-14 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+        <div className="text-center sm:text-left">
           <Eyebrow>Your booking form</Eyebrow>
           <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">
             Customers request a quote. It lands in your dashboard.
@@ -529,6 +573,27 @@ export default function FormAndDashboardSection() {
               <QrCode className="w-3.5 h-3.5" /> QR code
             </span>
           </div>
+          <div>
+            <Link
+            href="/features/lead-capture"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00828A] hover:underline underline-offset-4"
+          >
+            More on your booking form <ArrowRight className="h-4 w-4" />
+          </Link>
+          </div>
+        </div>
+
+        {/* The customer's side: snapping the damage before requesting a quote */}
+        <div className="overflow-hidden rounded-xl border border-slate-200 shadow-lg">
+          <Image
+            src="/images/homeowner-photo-roof.webp"
+            alt="A homeowner takes a photo of storm damage on her roof with her phone"
+            width={1200}
+            height={896}
+            sizes="(min-width: 1024px) 560px, 100vw"
+            className="h-auto w-full"
+          />
+        </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[300px_auto_1fr] items-center gap-6 lg:gap-8">
@@ -563,25 +628,50 @@ export default function FormAndDashboardSection() {
                     Leak over the back bedroom after the last storm.
                   </div>
                 </div>
-                <div>
-                  <div className="mb-1 flex items-center justify-between gap-2">
-                    <p className="font-semibold text-slate-500">Is the leak inside or outside?</p>
-                    <span className="shrink-0 rounded bg-[#00828A]/10 px-1.5 py-px text-[9px] font-bold text-[#00828A]">
-                      Your question
-                    </span>
+                {/* Your own questions for this service */}
+                <div className="rounded-xl border border-[#00828A]/30 bg-[#00828A]/[0.03] p-2.5 space-y-2">
+                  <span className="inline-block rounded bg-[#00828A]/10 px-1.5 py-px text-[9px] font-bold text-[#00828A]">
+                    Your questions for Roof repair
+                  </span>
+                  <div>
+                    <p className="mb-1 font-semibold text-slate-500">What&rsquo;s the problem?</p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <span className="rounded-lg border border-[#00828A] bg-white py-1.5 text-center font-semibold text-[#00828A]">Leak</span>
+                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Storm</span>
+                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Shingles</span>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <span className="rounded-lg border border-[#00828A] bg-[#00828A]/5 py-1.5 text-center font-semibold text-[#00828A]">
-                      Inside
-                    </span>
-                    <span className="rounded-lg border border-slate-200 bg-slate-50 py-1.5 text-center text-slate-500">
-                      Outside
-                    </span>
+                  <div>
+                    <p className="mb-1 font-semibold text-slate-500">Roof type</p>
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <span className="rounded-lg border border-[#00828A] bg-white py-1.5 text-center font-semibold text-[#00828A]">Shingle</span>
+                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Metal</span>
+                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Flat</span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div>
+                      <p className="mb-1 font-semibold text-slate-500">Roof age</p>
+                      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-800">
+                        15–20 yrs <ChevronDown className="h-3 w-3 text-slate-400" />
+                      </div>
+                    </div>
+                    <div>
+                      <p className="mb-1 font-semibold text-slate-500">Stories</p>
+                      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-800">
+                        2 <ChevronDown className="h-3 w-3 text-slate-400" />
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
-                    <Camera className="w-3.5 h-3.5 text-slate-400" /> 2 photos
+                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-700">
+                    {['object-center', 'object-[38%_50%] scale-[1.8]'].map((crop) => (
+                      <span key={crop} className="relative h-6 w-6 shrink-0 overflow-hidden rounded">
+                        <Image src="/images/roof-damage.webp" alt="" fill sizes="24px" className={`object-cover ${crop}`} />
+                      </span>
+                    ))}
+                    <span className="ml-0.5">2 photos</span>
                   </div>
                   <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
                     <CalendarDays className="w-3.5 h-3.5 text-slate-400" /> Oct 7
@@ -608,13 +698,28 @@ export default function FormAndDashboardSection() {
             transition={{ duration: 0.5, delay: 0.15 }}
             className="rounded-md border border-slate-200 bg-[#F4F7F6] p-3 sm:p-4 shadow-lg overflow-hidden"
           >
+            {/* The email alert that comes with every new request */}
+            <div className="mb-3 flex items-center gap-2.5 rounded-lg bg-[#1C1F23] px-3 py-2.5 text-white shadow-md">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10">
+                <Mail className="h-3.5 w-3.5 text-[#5EC4C9]" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[12px] font-semibold">New request: Maria Lopez</p>
+                <p className="truncate text-[10px] text-slate-300">Roof repair · 2 photos · emailed to you</p>
+              </div>
+              <span className="shrink-0 text-[10px] font-semibold text-[#5EC4C9]">Just now</span>
+            </div>
+
             <div className="mb-3 flex items-center justify-between px-1">
               <p className="text-sm font-bold">Jobs</p>
               <span className="text-[11px] font-semibold text-slate-500">Board view</span>
             </div>
-            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
               {COLUMNS.map((col) => (
-                <div key={col.label} className="rounded-xl bg-white/70 border border-slate-200 p-2 space-y-2 min-w-0">
+                <div
+                  key={col.label}
+                  className={`rounded-xl bg-white/70 border border-slate-200 p-2 space-y-2 min-w-0 ${col.hideOnPhone ? 'hidden sm:block' : ''}`}
+                >
                   <div className="flex items-center gap-1.5 px-1">
                     <span className={`w-1.5 h-1.5 rounded-full ${col.dot}`} />
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 truncate">{col.label}</span>

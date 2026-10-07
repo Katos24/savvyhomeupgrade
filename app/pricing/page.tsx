@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react';
+import { Check, X, Users } from 'lucide-react';
 import Link from 'next/link';
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
@@ -29,19 +29,20 @@ const PLAN_INFO: Record<PlanName, { price: string; period: string; desc: string;
 };
 
 const PLAN_HIGHLIGHTS: Record<PlanName, string[]> = {
-  Free: ['Booking link and QR code', 'Lead dashboard and job board', 'Table and calendar views', 'Add jobs by hand'],
+  Free: ['Booking link and QR code', 'Lead dashboard and job board', 'Table and calendar views', 'Add jobs from calls and walk-ins'],
   Pro: [
     'Everything in Free',
+    'Unlimited users: your whole crew, one price',
     'Services with prices and default deposits',
     'Email quotes customers accept online',
     'Deposits and balance invoices',
     'Card payments through Stripe',
+    'Expenses and profit per job',
     'Scheduling and one-click schedule emails',
     'Invoice and payment reminder emails',
     'Google review requests',
     'Custom booking form and branding',
     'Email history, custom templates and a morning digest',
-    'Unlimited team members',
     'CSV export, including QuickBooks format',
   ],
 };
@@ -51,6 +52,13 @@ type FeatureGroup = { group: string; rows: FeatureRow[] };
 
 // Pro includes every row, so only Free needs a flag.
 const FEATURE_TABLE: FeatureGroup[] = [
+  {
+    group: 'Team',
+    rows: [
+      { label: 'Unlimited users (no per-seat fees)', free: false },
+      { label: 'Role-based permissions', free: false },
+    ],
+  },
   {
     group: 'Getting requests',
     rows: [
@@ -66,7 +74,7 @@ const FEATURE_TABLE: FeatureGroup[] = [
     rows: [
       { label: 'Card view and job board', free: true },
       { label: 'Table and calendar views', free: true },
-      { label: 'Add jobs by hand', free: true },
+      { label: 'Add jobs from calls and walk-ins', free: true },
       { label: 'Custom pipeline stages', free: false },
       { label: 'Services with task checklists', free: false },
       { label: 'Assign jobs to team members', free: false },
@@ -110,13 +118,6 @@ const FEATURE_TABLE: FeatureGroup[] = [
       { label: 'CSV export, including QuickBooks format', free: false },
       { label: 'Expenses and profit per job', free: false },
       { label: 'Receipt and document uploads per job', free: false },
-    ],
-  },
-  {
-    group: 'Team',
-    rows: [
-      { label: 'Unlimited team members', free: false },
-      { label: 'Role-based permissions', free: false },
     ],
   },
   {
@@ -185,6 +186,11 @@ export default function PricingPage() {
                   <span className="font-[family-name:var(--font-display)] text-5xl font-extrabold tracking-tight">{info.price}</span>
                   <span className="text-sm text-slate-500">{info.period}</span>
                 </div>
+                {info.highlight && (
+                  <p className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-md bg-[#00828A]/10 px-2.5 py-1 text-sm font-bold text-[#00828A]">
+                    <Users className="h-4 w-4" /> Unlimited users included. No per-seat fees.
+                  </p>
+                )}
                 <p className="mt-2 text-[15px] text-[#3a3f45]">{info.desc}</p>
 
                 <Link

@@ -61,19 +61,23 @@ export function TradesStrip() {
         <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.18em] text-[#5EC4C9]">
           Built for
         </span>
-        {TRADES.map(({ icon: Icon, label }) => (
+        {TRADES.map(({ icon: Icon, label }, i) => (
           <span
             key={label}
-            className="inline-flex items-center gap-1.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wider text-slate-200"
+            className={`${i >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'} items-center gap-1.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wider text-slate-200`}
           >
             <Icon className="h-4 w-4 text-[#5EC4C9]" strokeWidth={2} />
             {label}
           </span>
         ))}
+        <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#5EC4C9]">
+          And more
+        </span>
       </div>
     </div>
   );
 }
+
 
 /** Small uppercase label above section headings. */
 export function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boolean }) {

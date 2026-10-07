@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   ArrowRight,
   Check,
@@ -96,23 +97,6 @@ function FakeQR({ className = '' }: { className?: string }) {
         return on ? <rect key={i} x={c} y={r} width={1} height={1} fill="#1C1F23" /> : null;
       })}
     </svg>
-  );
-}
-
-/* ── Mock: QR code on a truck door / yard sign ── */
-function QrSignMock() {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-white p-6 sm:p-8 shadow-lg" aria-hidden>
-      <div className="rounded-md bg-[#1C1F23] p-6 text-center text-white">
-        <p className={`${D} text-2xl sm:text-3xl font-extrabold uppercase tracking-wide`}>Summit Roofing</p>
-        <p className="mt-1 text-sm text-slate-300">Repairs · Replacements · Gutters</p>
-        <div className="mx-auto mt-5 w-36 rounded-md bg-white p-2.5">
-          <FakeQR className="h-full w-full" />
-        </div>
-        <p className={`mt-4 ${D} text-xl font-bold uppercase tracking-wider text-[#5EC4C9]`}>Scan for a free quote</p>
-      </div>
-      <p className="mt-3 text-center text-xs text-slate-500">Example yard sign. Print the same code anywhere.</p>
-    </div>
   );
 }
 
@@ -222,7 +206,17 @@ export default function LeadCapturePage() {
             </div>
             <p className="mt-4 text-sm font-semibold text-[#3a3f45]">Booking link and QR code are on the free plan.</p>
           </div>
-          <QrSignMock />
+          <div className="overflow-hidden rounded-xl border border-slate-200 shadow-lg">
+            <Image
+              src="/images/qr-scan-2.webp"
+              alt="A customer scans the QR code on a contractor's truck with their phone"
+              width={900}
+              height={900}
+              priority
+              sizes="(min-width: 1024px) 540px, 100vw"
+              className="h-auto w-full"
+            />
+          </div>
         </div>
       </section>
 
@@ -281,6 +275,20 @@ export default function LeadCapturePage() {
                 { text: 'Your own questions, per service', plan: 'Pro' },
               ]}
             />
+            <figure className="mt-6 flex items-center gap-4 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+              <Image
+                src="/images/roof-damage.webp"
+                alt="A customer's photo of a broken backyard fence, sent with their request"
+                width={800}
+                height={800}
+                sizes="112px"
+                className="h-24 w-24 sm:h-28 sm:w-28 shrink-0 rounded-md object-cover"
+              />
+              <figcaption className="text-sm text-[#3a3f45] leading-snug">
+                <span className="block font-bold text-[#1C1F23]">Photos come with the request</span>
+                See the damage before you call back, and show up with the right materials.
+              </figcaption>
+            </figure>
           </div>
           <div className="lg:order-first">
             <LeadFormDemo />
@@ -306,7 +314,19 @@ export default function LeadCapturePage() {
               ))}
             </div>
           </div>
-          <LinkCardMock />
+          <div className="space-y-5">
+            <div className="overflow-hidden rounded-xl border border-slate-200 shadow-lg">
+              <Image
+                src="/images/qrbranded2.webp"
+                alt="A roofing company's booking link and QR code on its truck, a yard sign and a social post"
+                width={1200}
+                height={900}
+                sizes="(min-width: 1024px) 540px, 100vw"
+                className="h-auto w-full"
+              />
+            </div>
+            <LinkCardMock />
+          </div>
         </div>
       </section>
 

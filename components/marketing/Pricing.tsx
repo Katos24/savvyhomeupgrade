@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Eyebrow } from './marketingUI';
 
@@ -15,27 +15,29 @@ const plans = [
     highlight: false,
     cta: 'Start free',
     href: '/signup',
-    features: ['Booking link and QR code', 'Lead dashboard and job board', 'Table and calendar views', 'Add jobs by hand'],
+    features: ['Booking link and QR code', 'Lead dashboard and job board', 'Table and calendar views', 'Add jobs from calls and walk-ins'],
   },
   {
     name: 'Pro',
     price: '49.99',
     desc: 'Everything you need to quote, schedule and get paid.',
     highlight: true,
+    note: 'Unlimited users included. No per-seat fees.',
     cta: 'Start 14-day free trial',
     href: '/signup?plan=basic',
     features: [
       'Everything in Free',
+      'Unlimited users: your whole crew, one price',
       'Services with prices and default deposits',
       'Email quotes customers accept online',
       'Deposits and balance invoices',
       'Card payments through Stripe',
+      'Expenses and profit per job',
       'Scheduling and one-click schedule emails',
       'Invoice and payment reminder emails',
       'Google review requests',
       'Custom booking form and branding',
       'Email history, custom templates and a morning digest',
-      'Unlimited team members',
       'CSV export, including QuickBooks format',
     ],
   },
@@ -73,6 +75,11 @@ export default function Pricing() {
                   <span className="font-[family-name:var(--font-display)] text-5xl font-extrabold tracking-tight">${plan.price}</span>
                   <span className="text-sm font-semibold text-[#3a3f45]">/mo</span>
                 </div>
+                {'note' in plan && plan.note && (
+                  <p className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-md bg-[#00828A]/10 px-2.5 py-1 text-sm font-bold text-[#00828A]">
+                    <Users className="h-4 w-4" /> {plan.note}
+                  </p>
+                )}
                 <p className="mt-2 text-[15px] text-[#3a3f45]">{plan.desc}</p>
 
                 <ul className="mt-6 space-y-2.5 flex-1">

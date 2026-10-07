@@ -20,12 +20,15 @@ export default function NewHome() {
       <Nav />
       <NewHero />
 
-      <TradesStrip />
+<TradesStrip />
+      
       <FormAndDashboardSection />
       <TapeDivider />
-      <FeaturesSection />
-      <InvoiceShowcaseSection />
+            <FeaturesSection />
+
       <PaymentsReviewsSection />
+            <InvoiceShowcaseSection />
+
       <ProfitSection />
       <WhatYouGetSection />
       <TapeDivider />

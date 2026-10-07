@@ -1,8 +1,9 @@
 'use client';
 
 import { Eyebrow } from './marketingUI';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Lock, Star, Landmark, CheckCircle2 } from 'lucide-react';
+import { Lock, Star, Landmark, CheckCircle2, ArrowRight } from 'lucide-react';
 // Two call-outs side by side: card payments through Stripe, and Google review requests.
 // Brand names are shown as plain text on purpose (no third-party logos).
 export default function PaymentsReviewsSection() {
@@ -57,6 +58,14 @@ export default function PaymentsReviewsSection() {
               <CheckCircle2 className="w-4 h-4 text-[#1C1F23]" /> Balance and receipt update automatically
             </li>
           </ul>
+          <div className="mt-auto">
+            <Link
+            href="/features/payments"
+            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00828A] hover:underline underline-offset-4"
+          >
+            See how payments work <ArrowRight className="h-4 w-4" />
+          </Link>
+          </div>
         </motion.div>
 
         {/* ── Google reviews ── */}
