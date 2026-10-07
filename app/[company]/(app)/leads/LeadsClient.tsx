@@ -274,6 +274,33 @@ export default function LeadsClient({
   }, [allLeads]);
 
   const lastPollCount = useRef<number | null>(null);
+  // How many new leads we've already chimed for, so the chime plays once per new lead.
+  const chimedFor = useRef(0);
+
+  // Short two-note chime made by the browser (no sound file). Browsers only
+  // allow sound after you've clicked on the page once; if blocked, it stays silent.
+  const playChime = () => {
+    try {
+      const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      [880, 1175].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.value = freq;
+        const t = ctx.currentTime + i * 0.15;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.15, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.35);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.4);
+      });
+      setTimeout(() => ctx.close(), 1000);
+    } catch {}
+  };
+
   useEffect(() => {
     if (isInitialLoad) return;
     let stopped = false;
@@ -292,9 +319,13 @@ export default function LeadsClient({
           return;
         }
         const diff = data.count - lastPollCount.current;
-        if (diff > 0) {
+              if (diff > 0) {
           setNewLeadCount(diff);
           document.title = `(${diff}) ${baseTitle}`; // shows in the browser tab
+          if (diff > chimedFor.current) {
+            chimedFor.current = diff;
+            playChime();
+          }
         }
       } catch {}
     };
@@ -488,10 +519,11 @@ export default function LeadsClient({
   const handleDismissNewLeads = useCallback(() => {
     setNewLeadCount(0);
     lastPollCount.current = null;
+    chimedFor.current = 0;
     document.title = document.title.replace(/^\(\d+\) /, '');
     fetchLeads(1);
   }, [fetchLeads]);
-  
+
   const handleToastSelectLead = useCallback((leadId: number) => {
     const lead = allLeads.find((l) => l.id === leadId);
     if (lead) openLead(lead);
