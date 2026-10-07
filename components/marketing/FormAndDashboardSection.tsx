@@ -31,6 +31,9 @@ import {
   Clock,
   Users,
   ChevronDown,
+  Search,
+  Star,
+  ArrowUp,
 } from 'lucide-react';
 
 // Mock data for the board preview — illustrative only.
@@ -583,16 +586,59 @@ export default function FormAndDashboardSection() {
           </div>
         </div>
 
-        {/* The customer's side: snapping the damage before requesting a quote */}
-        <div className="overflow-hidden rounded-xl border border-slate-200 shadow-lg">
-          <Image
-            src="/images/homeowner-photo-roof.webp"
-            alt="A homeowner takes a photo of storm damage on her roof with her phone"
-            width={1200}
-            height={896}
-            sizes="(min-width: 1024px) 560px, 100vw"
-            className="h-auto w-full"
-          />
+        {/* Your Google Business Profile, with your booking link behind the button */}
+        <div className="mx-auto w-full max-w-md" aria-hidden>
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg text-[13px]">
+            {/* Search bar */}
+            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
+              <Search className="h-4 w-4 text-slate-400" />
+              <span className="text-slate-600">roofer near me</span>
+            </div>
+
+            <div className="p-4 sm:p-5">
+              <div className="flex items-start gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#1C1F23] text-sm font-extrabold text-white">
+                  SR
+                </div>
+                <div className="min-w-0">
+                  <p className="text-base font-bold text-slate-900">Summit Roofing</p>
+                  <div className="mt-0.5 flex items-center gap-1">
+                    {[0, 1, 2, 3, 4].map((i) => (
+                      <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    ))}
+                    <span className="ml-1 text-xs text-slate-500">Roofing contractor</span>
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Holbrook, NY · <span className="font-semibold text-emerald-700">Open</span> · Closes 6 PM
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+                <span className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 py-2 text-slate-600">
+                  <Phone className="h-4 w-4" /> Call
+                </span>
+                <span className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 py-2 text-slate-600">
+                  <MapPin className="h-4 w-4" /> Directions
+                </span>
+                {/* The button your booking link sits behind */}
+                <span className="relative flex flex-col items-center gap-1 rounded-lg bg-[#00828A] py-2 text-white shadow-md">
+<span className="absolute inset-0 rounded-lg ring-2 ring-inset ring-white/70 motion-safe:animate-pulse" />
+                  <CalendarDays className="relative h-4 w-4" />
+                  <span className="relative">Request quote</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Callout pointing at the button */}
+          <div className="mt-3 flex items-start justify-end gap-2 pr-2 text-right">
+            <p className="text-sm font-semibold text-[#1C1F23] leading-snug">
+              Paste your booking link here.
+              <span className="block font-normal text-[#3a3f45]">Every tap lands on your board.</span>
+            </p>
+            <ArrowUp className="mt-0.5 h-5 w-5 shrink-0 text-[#00828A]" strokeWidth={2.5} />
+          </div>
         </div>
         </div>
 
