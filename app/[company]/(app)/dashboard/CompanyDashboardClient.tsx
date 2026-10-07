@@ -117,17 +117,26 @@ const fmtShortDate = (d: string | null | undefined) => {
 function readableTextColor(hex: string, isDark: boolean): string {
   const clean = hex.replace('#', '');
   if (clean.length !== 6) return hex;
-  const r = parseInt(clean.slice(0, 2), 16);
-  const g = parseInt(clean.slice(2, 4), 16);
-  const b = parseInt(clean.slice(4, 6), 16);
+  let r = parseInt(clean.slice(0, 2), 16);
+  let g = parseInt(clean.slice(2, 4), 16);
+  let b = parseInt(clean.slice(4, 6), 16);
   const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-  const tooLight = !isDark && brightness > 200;
-  const tooDark = isDark && brightness < 55;
-  if (!tooLight && !tooDark) return hex;
-  const factor = tooLight ? 0.55 : 1.8;
-  const adjust = (c: number) => Math.min(255, Math.max(0, Math.round(c * factor)));
+
+  if (!isDark && brightness > 190) {
+    // Light mode: Darken overly bright colors (e.g., #FFFFFF -> #8C8C8C)
+    const factor = 0.55;
+    r = Math.round(r * factor);
+    g = Math.round(g * factor);
+    b = Math.round(b * factor);
+  } else if (isDark && brightness < 80) {
+    // Dark mode: Lift pitch-black or very dark colors toward white (e.g., #000000 -> #B2B2B2)
+    r = Math.min(255, Math.round(r + (255 - r) * 0.7));
+    g = Math.min(255, Math.round(g + (255 - g) * 0.7));
+    b = Math.min(255, Math.round(b + (255 - b) * 0.7));
+  }
+
   const toHex = (c: number) => c.toString(16).padStart(2, '0');
-  return `#${toHex(adjust(r))}${toHex(adjust(g))}${toHex(adjust(b))}`;
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -314,6 +323,7 @@ function StatusBreakdown({
     </div>
   );
 }
+
 
 // ---------------------------------------------------------------------------
 // Main Component
@@ -580,28 +590,37 @@ export default function CompanyDashboardClient({ company }: { company: Company }
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0">
-            <div
-              className="inline-flex items-center gap-2 rounded-full pl-2 pr-3.5 py-1.5 max-w-[160px] sm:max-w-none"
-              style={{ background: `${accentColor}1a`, border: `1px solid ${accentColor}33` }}
-            >
-              {company.logo_url ? (
-                <img
-                  src={company.logo_url}
-                  alt={company.name}
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-contain bg-white shrink-0"
-                />
-              ) : (
-                <div
-                  className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-white text-[10px] sm:text-[11px] font-black shrink-0"
-                  style={{ background: accentColor }}
-                >
-                  {company.name?.charAt(0) || 'C'}
-                </div>
-              )}
-              <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate" style={{ color: accentColor }}>
-                {company.name}
-              </span>
-            </div>
+<div
+  className="inline-flex items-center gap-2 rounded-full pl-2 pr-3.5 py-1.5 max-w-[160px] sm:max-w-none transition-colors"
+  style={{ 
+    background: `${accentTextColor}1a`, 
+    border: `1px solid ${accentTextColor}33` 
+  }}
+>
+  {company.logo_url ? (
+    <img
+      src={company.logo_url}
+      alt={company.name}
+      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-contain bg-white shrink-0"
+    />
+  ) : (
+    <div
+      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-[11px] font-black shrink-0 transition-colors"
+      style={{ 
+        background: accentTextColor,
+        color: isDark ? '#0b0f17' : '#ffffff' 
+      }}
+    >
+      {company.name?.charAt(0) || 'C'}
+    </div>
+  )}
+  <span 
+    className="text-[11px] sm:text-xs font-bold uppercase tracking-wider truncate transition-colors" 
+    style={{ color: accentTextColor }}
+  >
+    {company.name}
+  </span>
+</div>
 
             <div className="flex items-center gap-1.5 sm:gap-2">
               <button
