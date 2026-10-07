@@ -2,39 +2,56 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Check, CheckCircle2, FileText, Plus, Send, User, Layers } from 'lucide-react';
+import { Check, CheckCircle2, FileText, Plus, Send, User, Layers, CalendarDays, CreditCard, Receipt, ImageIcon, Lock, Download, RotateCcw } from 'lucide-react';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-// Adds up: 2,125 + 4,125 + 5,750 = 12,000 subtotal; 8.625% tax = 1,035; total 13,035; 40% deposit = 5,214.
+// The template loads with 22 squares (t); the demo bumps both to 25 (q) for this roof.
+// Final: 2,125 + 4,125 + 5,750 = 12,000 subtotal; 8.625% tax = 1,035; total 13,035; 40% deposit = 5,214.
 const ITEMS = [
-  { d: 'Tear-off & disposal', q: 25, p: 85 },
-  { d: 'Architectural shingles', q: 25, p: 165 },
-  { d: 'Labor & installation', q: 1, p: 5750 },
+  { d: 'Tear-off & disposal', t: 22, q: 25, p: 85 },
+  { d: 'Architectural shingles', t: 22, q: 25, p: 165 },
+  { d: 'Labor & installation', t: 1, q: 1, p: 5750 },
 ];
 const TAX_RATE = 8.625;
 const SUBTOTAL = ITEMS.reduce((s, i) => s + i.q * i.p, 0);
 const TAX = Math.round(SUBTOTAL * TAX_RATE) / 100;
 const TOTAL = SUBTOTAL + TAX;
 const DEPOSIT = Math.round(TOTAL * 40) / 100;
+const TEMPLATE_SUBTOTAL = ITEMS.reduce((s, i) => s + i.t * i.p, 0);
+const TEMPLATE_TOTAL = TEMPLATE_SUBTOTAL + Math.round(TEMPLATE_SUBTOTAL * TAX_RATE) / 100;
+const START_QTY = ITEMS.map((i) => i.t);
+const FINAL_QTY = ITEMS.map((i) => i.q);
+
+// Job card tabs, like the real app. The demo stays on Quote.
+const TABS = [
+  { label: 'Overview', icon: User },
+  { label: 'Quote', icon: FileText },
+  { label: 'Schedule', icon: CalendarDays },
+  { label: 'Invoice', icon: CreditCard },
+  { label: 'Expenses', icon: Receipt },
+  { label: 'Media', icon: ImageIcon },
+];
 
 // The saved price templates shown in the picker. The demo picks "Roof Repair".
 const TEMPLATES = [
-  { name: 'Roof Repair', items: 3, total: TOTAL, pick: true },
+  { name: 'Roof Repair', items: 3, total: TEMPLATE_TOTAL, pick: true },
   { name: 'Gutter Install', items: 4, total: 2850 },
   { name: 'Skylight Replacement', items: 3, total: 3400 },
   { name: 'Siding Repair', items: 5, total: 6200 },
 ];
 
-// 0 empty · 1 template loaded · 2 sent, customer reading · 3 accepted
-type Phase = 0 | 1 | 2 | 3;
+// 0 empty · 1 template loaded · 2 sent, customer reading · 3 accepted · 4 on the Invoice tab
+type Phase = 0 | 1 | 2 | 3 | 4;
 const CAPTIONS: Record<Phase, string> = {
   0: 'Pick one of your saved price templates',
   1: 'Line items, total and deposit, already on the quote',
   2: 'Your customer gets the estimate by email',
-  3: 'Accepted. Next: collect the deposit ↓',
+  3: 'Accepted! Your customer said yes',
+  4: 'Next: send the deposit invoice from the same card',
 };
+type Tab = 'Quote' | 'Invoice';
 
 export default function QuoteBuilderDemo() {
   const reduceMotion = useReducedMotion();
@@ -48,17 +65,26 @@ export default function QuoteBuilderDemo() {
   const [phonePressing, setPhonePressing] = useState(false);
   const [accepted, setAccepted] = useState(false);
   const [toast, setToast] = useState(false);
+  const [qty, setQty] = useState<number[]>(START_QTY);
+  const [editing, setEditing] = useState<number | null>(null); // which row's quantity is being changed
+  const [adjusting, setAdjusting] = useState(false); // shows the "change quantities" caption
+  const [tab, setTab] = useState<Tab>('Quote');
+  const [done, setDone] = useState(false); // played once; show Replay
+  const [runId, setRunId] = useState(0); // bump to replay
 
   const cardRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLSpanElement>(null);
   const templateRef = useRef<HTMLDivElement>(null);
   const sendBtnRef = useRef<HTMLSpanElement>(null);
+  const qtyRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   useEffect(() => {
     if (reduceMotion) {
-      setPhase(3);
+      setPhase(4);
       setShown(ITEMS.length);
+      setQty(FINAL_QTY);
       setAccepted(true);
+      setTab('Invoice');
       return;
     }
 
@@ -89,6 +115,11 @@ export default function QuoteBuilderDemo() {
       setPhoneVisible(false);
       setAccepted(false);
       setToast(false);
+      setQty(START_QTY);
+      setEditing(null);
+      setAdjusting(false);
+      setTab('Quote');
+      setDone(false);
       rest();
 
       at(500, () => setCursor((p) => ({ ...p, show: true })));
@@ -114,29 +145,57 @@ export default function QuoteBuilderDemo() {
       at(4900, () => setShown(1));
       at(5200, () => setShown(2));
       at(5500, () => setShown(3));
-      at(5800, rest);
+      // Change the quantities for this roof: 22 -> 25 squares on the first two lines
+      at(5900, () => {
+        setAdjusting(true);
+        pointAt(qtyRefs.current[0]);
+      });
+      at(6800, () => setPressing(true));
+      at(7000, () => {
+        setPressing(false);
+        setEditing(0);
+      });
+      at(7400, () => setQty((q) => [25, q[1], q[2]]));
+      at(7900, () => pointAt(qtyRefs.current[1]));
+      at(8600, () => setPressing(true));
+      at(8800, () => {
+        setPressing(false);
+        setEditing(1);
+      });
+      at(9200, () => setQty((q) => [q[0], 25, q[2]]));
+      at(9700, () => {
+        setEditing(null);
+        setAdjusting(false);
+        rest();
+      });
       // Send Estimate
-      at(6800, () => pointAt(sendBtnRef.current));
-      at(7800, () => setPressing(true));
-      at(8000, () => {
+      at(10300, () => pointAt(sendBtnRef.current));
+      at(11300, () => setPressing(true));
+      at(11500, () => {
         setPressing(false);
         setPhase(2);
         setCursor((p) => ({ ...p, show: false }));
       });
       // Customer accepts on their phone
-      at(8400, () => setPhoneVisible(true));
-      at(10200, () => setPhonePressing(true));
-      at(10400, () => {
+      at(11900, () => setPhoneVisible(true));
+      at(13700, () => setPhonePressing(true));
+      at(13900, () => {
         setPhonePressing(false);
         setAccepted(true);
       });
-      at(11500, () => setPhoneVisible(false));
-      at(11800, () => {
+      at(15000, () => setPhoneVisible(false));
+      at(15300, () => {
         setPhase(3);
         setToast(true);
       });
-      at(14300, () => setToast(false));
-      at(16000, run);
+      // Move to the Invoice tab: the deposit is ready to send
+      at(17300, () => {
+        setToast(false);
+        setTab('Invoice');
+        setPhase(4);
+      });
+      // Play once, then stop on this frame with a Replay button
+      at(18800, () => setDone(true));
     };
 
     run();
@@ -144,28 +203,28 @@ export default function QuoteBuilderDemo() {
       active = false;
       timers.forEach(clearTimeout);
     };
-  }, [reduceMotion]);
+  }, [reduceMotion, runId]);
 
   const loaded = shown > 0;
-  const subtotal = ITEMS.slice(0, shown).reduce((s, i) => s + i.q * i.p, 0);
+  const subtotal = ITEMS.slice(0, shown).reduce((s, i, idx) => s + qty[idx] * i.p, 0);
   const tax = loaded ? Math.round(subtotal * TAX_RATE) / 100 : 0;
   const total = subtotal + tax;
   const depositDue = Math.round(total * 40) / 100;
 
   return (
-    <div className="w-full max-w-lg mx-auto">
+    <div className="w-full max-w-2xl mx-auto lg:ml-0">
       {/* Caption */}
       <div className="mb-3 min-h-6 text-center">
         <AnimatePresence mode="wait">
           <motion.p
-            key={phase}
+            key={adjusting ? 'adjust' : phase}
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.25 }}
             className="text-sm font-semibold text-[#1C1F23]"
           >
-            {CAPTIONS[phase]}
+            {adjusting ? 'Change anything for this job: 22 squares becomes 25' : CAPTIONS[phase]}
           </motion.p>
         </AnimatePresence>
       </div>
@@ -357,6 +416,57 @@ export default function QuoteBuilderDemo() {
           )}
         </AnimatePresence>
 
+        {/* Job header, like the real job card */}
+        <div className="flex items-center justify-between gap-3 bg-[#111827] px-4 py-2.5 text-white">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="truncate text-sm font-bold">Maria Lopez</span>
+            <span
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${
+                phase >= 2 ? 'border-purple-400/40 bg-purple-500/15 text-purple-300' : 'border-blue-400/40 bg-blue-500/15 text-blue-300'
+              }`}
+            >
+              <span className={`h-1 w-1 rounded-full ${phase >= 2 ? 'bg-purple-300' : 'bg-blue-300'}`} />
+              {phase >= 2 ? 'Quoted' : 'New'}
+            </span>
+          </div>
+          <span className="shrink-0 text-[10px] text-slate-400">Roof repair · #58</span>
+        </div>
+
+        {/* Tabs on phones */}
+        <div className="sm:hidden flex gap-1.5 overflow-hidden border-b border-slate-100 px-3 py-2">
+          {TABS.slice(0, 4).map(({ label, icon: Icon }) => (
+            <span
+              key={label}
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
+                label === tab ? 'bg-slate-900 text-white' : 'border border-slate-200 text-slate-500'
+              }`}
+            >
+              <Icon className="h-3 w-3" /> {label}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex">
+          {/* Sidebar tabs */}
+          <div className="hidden sm:block w-[100px] shrink-0 space-y-0.5 border-r border-slate-100 px-1.5 py-2.5 text-[11px]">
+            {TABS.map(({ label, icon: Icon }) => (
+              <div
+                key={label}
+                className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 ${
+                  label === tab ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-500'
+                }`}
+              >
+                <Icon className="h-3 w-3 shrink-0" />
+                {label}
+              </div>
+            ))}
+          </div>
+
+          <div className="min-w-0 flex-1">
+        {tab === 'Invoice' ? (
+          <InvoiceView />
+        ) : (
+        <>
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-4 py-3">
           <div className="flex items-center gap-2">
@@ -373,7 +483,7 @@ export default function QuoteBuilderDemo() {
           </div>
           <motion.span
             ref={sendBtnRef}
-            animate={{ scale: pressing && phase === 1 ? 0.92 : 1, opacity: loaded ? 1 : 0.4 }}
+            animate={{ scale: pressing && phase === 1 && !adjusting ? 0.92 : 1, opacity: loaded ? 1 : 0.4 }}
             transition={{ duration: 0.15 }}
             className="inline-flex items-center gap-1.5 rounded-md bg-[#00828A] px-2.5 py-1 text-xs font-bold text-white"
           >
@@ -392,7 +502,7 @@ export default function QuoteBuilderDemo() {
             {shown === 0 ? (
               <p className="px-3 py-8 text-center text-slate-400">No line items yet</p>
             ) : (
-              ITEMS.slice(0, shown).map((i) => (
+              ITEMS.slice(0, shown).map((i, idx) => (
                 <motion.div
                   key={i.d}
                   initial={{ opacity: 0, y: -6, backgroundColor: 'rgba(0,130,138,0.10)' }}
@@ -401,10 +511,23 @@ export default function QuoteBuilderDemo() {
                   className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-slate-100 px-3 py-2 last:border-b-0"
                 >
                   <span className="truncate font-medium">{i.d}</span>
-                  <span className="text-right text-slate-500 tabular-nums">
-                    {fmt(i.p)} × {i.q}
+                  <span className="flex items-center justify-end gap-1 text-slate-500 tabular-nums">
+                    {fmt(i.p)} ×
+                    <motion.span
+                      ref={(el) => {
+                        qtyRefs.current[idx] = el;
+                      }}
+                      key={qty[idx]}
+                      initial={{ scale: idx < 2 && qty[idx] !== i.t ? 1.25 : 1 }}
+                      animate={{ scale: 1 }}
+                      className={`inline-block min-w-[2.1em] rounded border px-1 text-center font-semibold transition-colors ${
+                        editing === idx ? 'border-slate-900 bg-white text-slate-900 ring-2 ring-slate-900/15' : 'border-slate-200 bg-white text-slate-700'
+                      }`}
+                    >
+                      {qty[idx]}
+                    </motion.span>
                   </span>
-                  <span className="w-20 text-right font-semibold tabular-nums">{fmt(i.q * i.p)}</span>
+                  <span className="w-20 text-right font-semibold tabular-nums">{fmt(qty[idx] * i.p)}</span>
                 </motion.div>
               ))
             )}
@@ -468,7 +591,85 @@ export default function QuoteBuilderDemo() {
             </div>
           </div>
         </div>
+        </>
+        )}
+          </div>
+        </div>
+      </div>
+
+      {/* Replay */}
+      <div className="mt-3 flex h-9 justify-center">
+        <AnimatePresence>
+          {done && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setRunId((n) => n + 1)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+            >
+              <RotateCcw className="h-3.5 w-3.5" /> Replay
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+/* The Invoice tab after the quote is accepted: deposit ready to send, balance locked. */
+function InvoiceView() {
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+      <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+        <p className="font-bold">Invoice</p>
+        <span className="text-[11px] text-slate-500">#INV-058</span>
+      </div>
+      <div className="min-h-[430px] space-y-3 p-4">
+        <div className="rounded-md border border-slate-200 px-3 py-2.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-slate-600">
+              <span className="font-bold tabular-nums text-slate-900">{fmt(0)}</span> of {fmt(TOTAL)} collected
+            </p>
+            <span className="font-semibold text-slate-700">0%</span>
+          </div>
+          <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100" />
+        </div>
+
+        <motion.div
+          initial={{ scale: 0.98 }}
+          animate={{ scale: 1 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+          className="rounded-md border border-slate-900 px-3 py-3 ring-1 ring-slate-900"
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-900">1. Deposit (40%)</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Ready to send</span>
+          </div>
+          <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-900">{fmt(DEPOSIT)}</p>
+          <p className="text-slate-500">Quote accepted, so the deposit is next.</p>
+          <div className="mt-2.5 flex items-center gap-2 border-t border-slate-100 pt-2.5">
+            <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white">
+              <Send className="h-3 w-3" /> Send Deposit Invoice
+            </span>
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700">
+              <Download className="h-3 w-3" /> PDF
+            </span>
+          </div>
+        </motion.div>
+
+        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50/70 px-3 py-3 opacity-70">
+          <div className="flex items-center justify-between">
+            <span className="font-bold text-slate-500">2. Remaining balance</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+              <Lock className="h-2.5 w-2.5" /> Locked
+            </span>
+          </div>
+          <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-400">{fmt(TOTAL - DEPOSIT)}</p>
+          <p className="text-slate-500">Send the final invoice when the job is done.</p>
+        </div>
+      </div>
+    </motion.div>
   );
 }

@@ -21,6 +21,76 @@ export const BLOG_CATEGORIES = [
 
 export const blogPosts: BlogPost[] = [
   {
+    slug: 'why-lead2project-is-different',
+    title: 'Why Lead2Project Is Different: One Card for Every Job',
+    description: 'Most contractor software splits a job across customers, quotes, jobs, invoices and payments. Lead2Project keeps the whole job, deposit included, on one card.',
+    excerpt: 'Most apps spread one job across six screens. Here\'s why we put the whole job on one card, and what that means for getting paid.',
+    category: 'guides',
+    publishedAt: '2026-10-07',
+    readTime: 5,
+    keywords: ['contractor CRM', 'contractor software', 'job management app for contractors', 'deposit invoices for contractors', 'contractor quote and invoice app', 'Jobber alternative'],
+    content: `
+<p>A roof repair starts as a phone call or a text. Then it turns into a customer record, a quote, a job, a calendar entry, an invoice and a payment. In most contractor software, <strong>each of those lives on its own screen.</strong></p>
+
+<p>So when a customer calls and asks where things stand, you click through four places to find out. Did the deposit come in? Was the final invoice sent? Is the job on the calendar? The answers exist. They're just scattered.</p>
+
+<p>We built Lead2Project around one idea: <strong>one job, one card, everything in it.</strong></p>
+
+<h2>1. The Whole Job Lives on One Card</h2>
+
+<p>Every request becomes a card on your job board, and the whole job lives on that card. Open it and you see where the job stands, then do the next step from the same place.</p>
+
+<p>Each card holds:</p>
+
+<ul>
+  <li><strong>Overview:</strong> the customer's request, their answers to your questions and their photos</li>
+  <li><strong>Quote:</strong> line items from your saved templates, with tax and the deposit already on it</li>
+  <li><strong>Schedule:</strong> the date, time and crew</li>
+  <li><strong>Invoice:</strong> the deposit and the final balance, and what's been paid</li>
+  <li><strong>Expenses:</strong> materials and labor, so you see what you actually made on that job</li>
+</ul>
+
+<p>There's no separate customer screen to set up first, and no copying a quote into an invoice. The card moves across your board as the job moves: new, quoted, scheduled, completed.</p>
+
+<h2>2. Deposits Are Built Into Every Quote</h2>
+
+<p>Getting paid up front is the difference between buying materials with your money or your customer's. In Lead2Project, the deposit isn't an afterthought.</p>
+
+<p>Set a deposit once per service, as a percent or a flat amount. When you load that service's template, the deposit is already on the quote. Your customer accepts online, you send the deposit invoice from the same card, and they pay by card through Stripe.</p>
+
+<p>When the job is done, the final invoice collects the balance. Cash and checks count too: record them and the balance updates. Every payment gets a receipt automatically.</p>
+
+<h2>3. Your Booking Form Asks Your Questions</h2>
+
+<p>Every account gets its own booking link and QR code, even on the free plan. Put them on your truck, yard signs, invoices and Google Business Profile, and requests land on your board.</p>
+
+<p>On Pro, the form becomes yours: your logo and colors, your services, and <strong>your own questions for each service.</strong> A roofer might ask what the problem is, the roof type, its age and how many stories. Customers can attach photos and pick a preferred date.</p>
+
+<p>The point is simple: you can often price a job before you drive out to see it.</p>
+
+<h2>4. Priced for Small Crews</h2>
+
+<p>A lot of contractor software charges per user and saves job costing for its higher plans. We think a small crew shouldn't pay more just because the office manager needs a login.</p>
+
+<p><strong>Pro is $49.99 a month with unlimited users.</strong> Quotes, deposits, card payments, scheduling, reminder emails, Google review requests and expenses and profit per job are all included. There's no setup fee and no contract.</p>
+
+<p>And if you only need a booking link and a job board, the free plan stays free.</p>
+
+<h2>5. Your Money and Your Data Stay Yours</h2>
+
+<p>Card payments go through <strong>your own Stripe account</strong>, and payouts go straight to your bank. We never hold your money, and card details are handled by Stripe, never stored by us.</p>
+
+<p>Your job data is yours too. Export it to CSV anytime, including a QuickBooks-ready format, and cancel whenever you want.</p>
+
+<h2>Try It on Your Next Job</h2>
+
+<p>The best way to see the difference is to run one real job through it: send the quote, collect the deposit and watch the card fill in.</p>
+
+<p><a href="/signup">Start free</a>, or <a href="/signup?plan=basic">try Pro free for 14 days</a>.</p>
+`,
+  },
+
+  {
     slug: 'how-to-get-more-leads-home-service-business',
     title: 'How to Get More Leads for Your Home Service Business in 2026',
     description: 'Proven strategies for contractors, landscapers, and home service pros to generate more leads and grow their business without expensive marketing agencies.',

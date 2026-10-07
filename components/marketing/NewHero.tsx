@@ -74,11 +74,12 @@ export default function Hero() {
         backgroundSize: '32px 32px',
       }}
     >
-      <section className="relative overflow-hidden pt-24 sm:pt-28 lg:pt-32 pb-14 sm:pb-20 lg:pb-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-            {/* ── Copy ── */}
-            <div className="lg:col-span-6 flex flex-col space-y-6 sm:space-y-7 text-center sm:text-left">
+      <section className="relative overflow-hidden pt-28 sm:pt-32 lg:pt-36 pb-14 sm:pb-20 lg:pb-24 px-5 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto">
+          {/* Phones: headline → demo → buttons. Desktop: text on the left (headline above buttons), demo on the right. */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-8 sm:gap-y-10 lg:gap-y-7">
+            {/* ── Headline + subhead ── */}
+            <div className="lg:col-span-5 lg:row-start-1 lg:self-end flex flex-col space-y-5 sm:space-y-6 text-center sm:text-left">
               <h1 className="font-[family-name:var(--font-display)] text-[52px] sm:text-7xl lg:text-[80px] xl:text-[88px] font-extrabold uppercase leading-[0.88] tracking-tight text-[#1C1F23]">
                 <span className="block">Quote it.</span>
                 <span className="block">Win it.</span>
@@ -88,17 +89,30 @@ export default function Hero() {
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{ duration: 0.6, delay: 0.25, ease: EASE }}
-                    className="absolute -left-[0.06em] -right-[0.1em] bottom-[0.06em] h-[0.38em] origin-left -rotate-1 rounded-[0.08em] bg-[#5EC4C9]/70"
+                    className="absolute -left-[0.04em] -right-[0.04em] bottom-[0.02em] h-[0.3em] origin-left -rotate-[0.6deg] rounded-[0.06em] bg-[#5EC4C9]"
                   />
-                  <span className="relative text-[#00828A]">Get paid.</span>
+                  <span className="relative">Get paid.</span>
                 </span>
               </h1>
 
-              <p className="text-[17px] sm:text-lg lg:text-xl text-[#3a3f45] leading-relaxed max-w-[36ch] mx-auto sm:mx-0 sm:max-w-xl">
+              <p className="text-[17px] sm:text-lg lg:text-xl text-[#3a3f45] leading-relaxed max-w-[36ch] mx-auto sm:mx-0 sm:max-w-[44ch]">
                 Every request becomes one card. Quote it, collect the deposit up front, schedule it, and send the
                 final invoice, all without leaving the job.
               </p>
+            </div>
 
+            {/* ── Auto-play demo ── */}
+            <motion.div
+              className="lg:col-span-7 lg:col-start-6 lg:row-start-1 lg:row-span-2 lg:self-center w-full overflow-hidden"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.15 }}
+            >
+              <QuoteBuilderDemo />
+            </motion.div>
+
+            {/* ── Buttons + checks ── */}
+            <div className="lg:col-span-5 lg:row-start-2 lg:self-start flex flex-col space-y-5 sm:space-y-6">
               <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -138,16 +152,6 @@ export default function Hero() {
                 </li>
               </motion.ul>
             </div>
-
-            {/* ── Auto-play demo ── */}
-            <motion.div
-              className="lg:col-span-6 w-full overflow-hidden"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.15 }}
-            >
-              <QuoteBuilderDemo />
-            </motion.div>
           </div>
         </div>
       </section>
