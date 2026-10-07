@@ -104,7 +104,7 @@ export default function DashboardLeadsSection({
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            className="mb-8 max-w-md mx-auto relative group cursor-pointer"
+            className="fixed inset-x-0 top-20 z-[70] mx-auto w-[calc(100%-2rem)] max-w-md group cursor-pointer"
             onClick={onDismissNewLeads}
           >
             <div

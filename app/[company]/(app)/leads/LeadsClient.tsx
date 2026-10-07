@@ -274,29 +274,47 @@ export default function LeadsClient({
   }, [allLeads]);
 
   const lastPollCount = useRef<number | null>(null);
-
   useEffect(() => {
     if (isInitialLoad) return;
-    const interval = setInterval(async () => {
-      if (document.hidden) return;
+    let stopped = false;
+    const baseTitle = document.title.replace(/^\(\d+\) /, '');
+
+    const check = async () => {
       try {
         const res = await fetch(`/api/company/${company.slug}/leads/count`, { cache: 'no-store' });
-        if (!res.ok) return;
+        if (!res.ok || stopped) return;
         const data = await res.json();
-        if (!data.success) return;
+        if (!data.success || stopped) return;
 
+        // First answer = the starting point, taken right away (not 30s later).
         if (lastPollCount.current === null) {
           lastPollCount.current = data.count;
           return;
         }
-
-        if (data.count > lastPollCount.current) {
-          setNewLeadCount(data.count - lastPollCount.current);
+        const diff = data.count - lastPollCount.current;
+        if (diff > 0) {
+          setNewLeadCount(diff);
+          document.title = `(${diff}) ${baseTitle}`; // shows in the browser tab
         }
       } catch {}
-    }, 30000);
+    };
 
-    return () => clearInterval(interval);
+    check();
+    const interval = setInterval(() => {
+      if (!document.hidden) check();
+    }, 30000);
+    // Check as soon as you come back to the tab instead of waiting up to 30s.
+    const onVisible = () => {
+      if (!document.hidden) check();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      stopped = true;
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', onVisible);
+      document.title = baseTitle;
+    };
   }, [isInitialLoad, company.slug]);
 
   // -------------------------------------------------------------------------
@@ -466,12 +484,14 @@ export default function LeadsClient({
   }, [sortKey]);
 
   // Stable event handlers
+  // Stable event handlers
   const handleDismissNewLeads = useCallback(() => {
     setNewLeadCount(0);
     lastPollCount.current = null;
+    document.title = document.title.replace(/^\(\d+\) /, '');
     fetchLeads(1);
   }, [fetchLeads]);
-
+  
   const handleToastSelectLead = useCallback((leadId: number) => {
     const lead = allLeads.find((l) => l.id === leadId);
     if (lead) openLead(lead);

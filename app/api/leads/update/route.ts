@@ -1180,8 +1180,29 @@ else if (action === 'update_lead_step2') {
     file_urls,
   } = body;
 
-  // Merge new file_urls with any existing ones
-  const existingLead = await sql`SELECT file_urls FROM leads WHERE id = ${id}`;
+  // This action is public (the booking form calls it right after step 1, before
+  // any login exists), so lock it down: only a lead created in the last 2 hours,
+  // and only files stored in our own Vercel Blob storage.
+  const existingLead = await sql`
+    SELECT file_urls FROM leads
+    WHERE id = ${id}
+      AND created_at > NOW() - INTERVAL '2 hours'
+    LIMIT 1
+  `;
+  if (existingLead.length === 0) {
+    return NextResponse.json({ success: false, error: 'This request can no longer be updated.' }, { status: 403 });
+  }
+  // The booking form sends { url, name, type, size }; accept a plain URL string too.
+  const isOurBlobFile = (f: any) => {
+    const raw = typeof f === 'string' ? f : f?.url;
+    try {
+      const url = new URL(String(raw));
+      return url.protocol === 'https:' && url.hostname.endsWith('.blob.vercel-storage.com');
+    } catch {
+      return false;
+    }
+  };
+  const safeNewFiles = Array.isArray(file_urls) ? file_urls.filter(isOurBlobFile) : [];
   let existingFiles = [];
   try {
     const raw = existingLead[0]?.file_urls;
@@ -1189,7 +1210,7 @@ else if (action === 'update_lead_step2') {
   } catch {
     existingFiles = [];
   }
-  const mergedFiles = [...existingFiles, ...(file_urls || [])];
+  const mergedFiles = [...existingFiles, ...safeNewFiles];
 
   await sql`
     UPDATE leads
