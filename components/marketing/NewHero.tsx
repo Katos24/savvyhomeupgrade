@@ -67,34 +67,34 @@ const CAPTIONS: Record<Phase, string> = {
 export default function Hero() {
   return (
     <div
-      className="bg-[#F4EFE6] text-[#1C1F23] antialiased selection:bg-[#00828A]/20 min-h-screen overflow-x-hidden"
+      className="bg-[#F4EFE6] text-[#1C1F23] antialiased selection:bg-[#00828A]/20 overflow-x-hidden"
       style={{
         backgroundImage:
           'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
         backgroundSize: '32px 32px',
       }}
     >
-      <section className="relative overflow-hidden pt-20 sm:pt-28 lg:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden pt-24 sm:pt-28 lg:pt-32 pb-14 sm:pb-20 lg:pb-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-10 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
             {/* ── Copy ── */}
-            <div className="lg:col-span-6 flex flex-col justify-center space-y-6 sm:space-y-8 text-left py-2">
-              <h1 className="font-[family-name:var(--font-display)] text-[40px] xs:text-[48px] sm:text-7xl lg:text-[88px] xl:text-[94px] font-extrabold uppercase leading-[0.9] sm:leading-[0.85] tracking-tight text-[#1C1F23]">
+            <div className="lg:col-span-6 flex flex-col space-y-6 sm:space-y-7 text-center sm:text-left">
+              <h1 className="font-[family-name:var(--font-display)] text-[52px] sm:text-7xl lg:text-[80px] xl:text-[88px] font-extrabold uppercase leading-[0.88] tracking-tight text-[#1C1F23]">
                 <span className="block">Quote it.</span>
-                <span className="block text-[#00828A] pl-3 sm:pl-6 lg:pl-8">Win it.</span>
-                <span className="relative inline-block whitespace-nowrap mt-0.5 sm:mt-1 pl-6 sm:pl-12 lg:pl-16">
+                <span className="block">Win it.</span>
+                <span className="relative inline-block whitespace-nowrap">
                   <motion.span
                     aria-hidden
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}
                     transition={{ duration: 0.6, delay: 0.25, ease: EASE }}
-                    className="absolute left-6 sm:left-12 lg:left-16 right-0 bottom-[0.06em] h-[0.38em] origin-left -rotate-1 rounded-[0.08em] bg-[#5EC4C9]/70"
+                    className="absolute -left-[0.06em] -right-[0.1em] bottom-[0.06em] h-[0.38em] origin-left -rotate-1 rounded-[0.08em] bg-[#5EC4C9]/70"
                   />
-                  <span className="relative">Get paid.</span>
+                  <span className="relative text-[#00828A]">Get paid.</span>
                 </span>
               </h1>
 
-              <p className="text-base sm:text-lg lg:text-[21px] text-[#3a3f45] leading-[1.6] max-w-xl">
+              <p className="text-[17px] sm:text-lg lg:text-xl text-[#3a3f45] leading-relaxed max-w-[36ch] mx-auto sm:mx-0 sm:max-w-xl">
                 Every request becomes one card. Quote it, collect the deposit up front, schedule it, and send the
                 final invoice, all without leaving the job.
               </p>
@@ -103,7 +103,7 @@ export default function Hero() {
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.24 }}
-                className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3.5 sm:gap-4 pt-1"
+                className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 sm:gap-4"
               >
                 <Link
                   href="/signup"
@@ -125,7 +125,7 @@ export default function Hero() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.32 }}
-                className="flex flex-col sm:flex-row sm:flex-wrap items-start sm:items-center justify-start gap-2.5 sm:gap-x-6 sm:gap-y-3 text-sm sm:text-base font-semibold text-[#3a3f45] pt-1"
+                className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 sm:gap-x-6 text-sm sm:text-base font-semibold text-[#3a3f45]"
               >
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#00828A] shrink-0" /> Free plan
