@@ -1,5 +1,5 @@
 import { MetadataRoute } from 'next';
-import { INDEXED_CITIES, SERVICES } from '@/lib/cities';
+import { INDEXED_CITIES, INDEXED_SERVICES } from '@/lib/cities';
 import { industryList } from '@/lib/industry-content';
 import { getAllPosts } from '@/lib/blog-posts';
 
@@ -45,7 +45,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Only the indexed cities. Noindexed pages don't belong in the sitemap.
   const cityPages: MetadataRoute.Sitemap = Array.from(INDEXED_CITIES).flatMap((city) =>
-    SERVICES.map((service) => ({
+    Array.from(INDEXED_SERVICES).map((service) => ({
       url: `${BASE}/contractor-software/${city}/${service}`,
       lastModified: now,
       changeFrequency: 'monthly' as const,

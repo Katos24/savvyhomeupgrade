@@ -79,3 +79,6 @@ export const SERVICES = [
   'chimney', 'waterproofing', 'foundation-repair', 'junk-removal',
   'carpet-cleaning', 'auto-detailing', 'towing',
 ];
+export const INDEXED_SERVICES = new Set<string>([
+  'roofing', 'hvac', 'plumbing', 'electrical', 'painting', 'landscaping', 'handyman', 'fencing',
+]);

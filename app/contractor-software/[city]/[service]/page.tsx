@@ -7,7 +7,7 @@ import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
 import { fontVars } from '@/components/marketing/marketingTheme';
 import { Eyebrow, TapeDivider } from '@/components/marketing/marketingUI';
-import { cities, INDEXED_CITIES, SERVICES } from '@/lib/cities';
+import { cities, INDEXED_CITIES, INDEXED_SERVICES, SERVICES } from '@/lib/cities';
 import { serviceDetails } from '@/lib/serviceDetails';
 
 /* ─────────────────────────────────────────────────────────
@@ -80,8 +80,11 @@ export async function generateMetadata({
     title: `${service} Software for ${city} Contractors | Lead2Project`,
     description: `${city} ${service.toLowerCase()} contractors: a booking link and QR code for job requests, one board for every lead, plus quotes, deposits and card payments. Free plan available.`,
     alternates: { canonical: url },
-    robots: INDEXED_CITIES.has(citySlug) ? undefined : { index: false, follow: true },
-    openGraph: {
+    robots:
+      INDEXED_CITIES.has(citySlug) && INDEXED_SERVICES.has(serviceSlug)
+        ? undefined
+        : { index: false, follow: true },
+            openGraph: {
       title: `${service} Job Management in ${city} | Lead2Project`,
       description: `Stop losing ${service.toLowerCase()} leads in ${city}. One booking link, one board, and deposits collected before you start.`,
       url,

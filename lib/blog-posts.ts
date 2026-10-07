@@ -108,7 +108,7 @@ export const blogPosts: BlogPost[] = [
 
 <p>Here's a controversial take: <strong>most contractors don't need a website.</strong> They need a booking page.</p>
 
-<p>A website costs $2,000–$10,000 to build, takes weeks, and sits there looking pretty while doing nothing. A booking page does one thing: turns visitors into leads. Customers fill out what they need, upload photos of the job, and you get an instant notification.</p>
+<p>A website can cost thousands of dollars, take weeks to build, and then sit there looking pretty while doing nothing. A booking page does one thing: turns visitors into leads. Customers fill out what they need, upload photos of the job, and you get an instant notification.</p>
 
 <p>The difference? A website is a brochure. A booking page is a lead machine. You can share it on your truck, your yard signs, your business cards, and your social media. One link, and customers can reach you 24/7 — even when you're on a job site.</p>
 
@@ -124,19 +124,19 @@ export const blogPosts: BlogPost[] = [
 
 <p>When someone Googles "landscaper near me" or "pressure washing [your city]," you want to show up. Here's how, without spending a dime on ads:</p>
 
-<p><strong>Google Business Profile:</strong> This is non-negotiable. Claim it, fill out every field, add photos of your work weekly, and ask every happy customer to leave a review. Businesses with 20+ reviews and recent photos consistently outrank those without.</p>
+<p><strong>Google Business Profile:</strong> This is non-negotiable. Claim it, fill out every field, add photos of your work weekly, and ask every happy customer to leave a review. Profiles with plenty of reviews and recent photos tend to stand out in local results.</p>
 
 <p><strong>Post on social media with location tags:</strong> Every time you finish a job, post a before-and-after photo on Instagram and Facebook. Tag the city. Use hashtags like #[YourCity]Landscaping. Google indexes social media posts, and this builds your local presence over time.</p>
 
 <h2>4. Ask for Reviews Like Your Business Depends on It</h2>
 
-<p>Because it does. 87% of consumers read online reviews for local businesses. A contractor with 50 five-star reviews will beat a contractor with zero reviews every single time, regardless of who does better work.</p>
+<p>Because it does. Most people check reviews before they hire a local business. A contractor with 50 five-star reviews will usually beat one with zero reviews, regardless of who does better work.</p>
 
 <p>The best time to ask for a review is <strong>right after you finish the job</strong>, while the customer is standing in their freshly transformed yard looking happy. Send them a direct link to your Google review page via text. Don't wait — the longer you wait, the less likely they are to do it.</p>
 
 <h2>5. Follow Up on Every Single Lead</h2>
 
-<p>Here's the stat that should scare you: <strong>78% of customers go with the first contractor who responds.</strong> Not the cheapest. Not the best. The first one who picks up the phone or sends a quote.</p>
+<p>Here's what should scare you: <strong>a lot of customers go with the first contractor who responds.</strong> Not always the cheapest. Not always the best. Often just the first one who picks up the phone or sends a quote.</p>
 
 <p>If a lead comes in and you don't respond for two days, they've already hired someone else. You need a system that captures leads, notifies you instantly, and lets you send a quote in minutes — not days.</p>
 
@@ -182,9 +182,9 @@ export const blogPosts: BlogPost[] = [
 
 <p><strong>Line items, not lump sums.</strong> Instead of "$2,400 for landscaping," break it down: sod removal ($400), grading ($300), new sod installation ($1,200), cleanup ($200), materials ($300). Customers want to see where their money goes. It builds trust and makes the price feel justified.</p>
 
-<p><strong>Your company branding.</strong> Your name, logo, phone number, and a professional layout. It takes 30 seconds of the customer's attention to form an impression. Make it count.</p>
+<p><strong>Your company branding.</strong> Your name, logo, phone number, and a professional layout. Customers form an impression fast. Make it count.</p>
 
-<p><strong>Speed.</strong> The contractor who sends a quote within 2 hours of the site visit wins the job. Not tomorrow. Not next week. Today. Speed signals that you're organized and reliable.</p>
+<p><strong>Speed.</strong> The contractor who sends a quote the same day often wins the job. Not tomorrow. Not next week. Today. Speed signals that you're organized and reliable.</p>
 
 <p><strong>One-click acceptance.</strong> Don't make them call you back to say yes. Include a way for them to accept the quote instantly — a button, a link, a reply. Remove every obstacle between "I like this" and "You're hired."</p>
 
@@ -192,13 +192,13 @@ export const blogPosts: BlogPost[] = [
 
 <p>The fastest approach is a quote builder that lets you add line items, calculates the total, and emails it to the customer with your branding — all from your phone while you're still on the job site.</p>
 
-<p>You finish the walkthrough, build the quote in 5 minutes, hit send, and the customer gets a professional email before you've even driven away. That's how you win jobs.</p>
+<p>You finish the walkthrough, build the quote in a few minutes, hit send, and the customer gets a professional email before you've even driven away. That's how you win jobs.</p>
 
 <h2>Following Up on Quotes</h2>
 
 <p>Sent a quote and haven't heard back? Don't just wait. Follow up after 48 hours with a short, friendly message. Something like: "Hey [name], just checking in on that quote I sent over. Happy to answer any questions."</p>
 
-<p>Most contractors never follow up. The ones who do close 40% more jobs. It's not pushy — it's professional.</p>
+<p>Most contractors never follow up. The ones who do win jobs they would have lost. It's not pushy — it's professional.</p>
 
 <h2>Track Everything</h2>
 
@@ -209,14 +209,14 @@ export const blogPosts: BlogPost[] = [
   {
     slug: 'why-contractors-need-booking-page-not-website',
     title: 'Why Every Contractor Needs a Booking Page (Not a Website)',
-    description: 'A traditional website costs thousands and generates zero leads. Here\'s why a booking page is the smarter move for contractors.',
-    excerpt: 'Your $5,000 website looks great. But is it actually getting you customers?',
+    description: 'A traditional website can cost thousands and still bring in few leads. Here\'s why a booking page is the smarter move for contractors.',
+    excerpt: 'Your expensive website looks great. But is it actually getting you customers?',
     category: 'growth',
     publishedAt: '2026-04-23',
     readTime: 5,
     keywords: ['contractor booking page', 'contractor website', 'online booking for contractors', 'lead capture page', 'contractor landing page'],
     content: `
-<p>Every contractor has been told the same thing: "You need a website." So they pay a web designer $3,000–$10,000, wait 6 weeks, and end up with a beautiful site that gets 12 visitors a month. Sound familiar?</p>
+<p>Every contractor has been told the same thing: "You need a website." So they pay a web designer thousands of dollars, wait weeks, and end up with a beautiful site that barely gets visitors. Sound familiar?</p>
 
 <h2>The Problem With Contractor Websites</h2>
 
@@ -224,13 +224,13 @@ export const blogPosts: BlogPost[] = [
 
 <p>Here's what happens: a potential customer lands on your site, scrolls around, thinks "nice work," and then… leaves. They didn't fill out the contact form. They didn't call. They just left. And you'll never know they were there.</p>
 
-<p>The conversion rate on a typical contractor website is <strong>under 2%</strong>. That means for every 100 visitors, 98 leave without contacting you.</p>
+<p>Most visitors to a typical contractor website <strong>leave without ever contacting you</strong>.</p>
 
 <h2>What a Booking Page Does Differently</h2>
 
 <p>A booking page has one job: <strong>turn a visitor into a lead.</strong> No distractions, no navigation maze, no "about our history since 1987." Just a clean form that asks what they need, lets them upload photos, and captures their contact info.</p>
 
-<p>The conversion rate on a focused booking page? <strong>15–30%.</strong> That's 10x better than a traditional website.</p>
+<p>A focused booking page does better because it asks for one thing: the request.</p>
 
 <p>Why? Because it removes friction. The customer doesn't have to hunt for a phone number, wonder if you're available, or compose an email. They fill out one form and they're done. You get notified instantly.</p>
 
@@ -250,13 +250,13 @@ export const blogPosts: BlogPost[] = [
 
 <p>"Won't people think I'm not legit without a real website?" No. People care about three things: your reviews, your photos, and how easy it is to contact you. A booking page with your branding, your work photos, and a simple form checks all three boxes.</p>
 
-<p>In fact, a booking page that works perfectly on mobile (where 70%+ of your traffic comes from) builds more credibility than a clunky desktop website that looks terrible on a phone.</p>
+<p>In fact, a booking page that works perfectly on mobile (where most of your visitors are) builds more credibility than a clunky desktop website that looks terrible on a phone.</p>
 
 <h2>The Cost Difference</h2>
 
-<p>A professional website: $3,000–$10,000 upfront + $50–$200/month hosting and maintenance.</p>
+<p>A professional website: often thousands of dollars upfront, plus monthly hosting and maintenance.</p>
 
-<p>A booking page with lead management: Under $80/month, ready in minutes, works on every device, and actually generates leads.</p>
+<p>A booking page with lead management: free to start with Lead2Project ($49.99/month for Pro), ready in minutes, works on every device, and built to bring in requests.</p>
 
 <p>One costs more than a week's revenue. The other pays for itself with a single job.</p>
 `,
@@ -280,7 +280,7 @@ export const blogPosts: BlogPost[] = [
 
 <p>Most small contractors run their business out of their head, their text messages, and maybe a crumpled notepad in the truck. It works when you're doing 3 jobs a week. It falls apart at 10.</p>
 
-<p>Here's what happens: you finish a job, move on to the next one, forget to send the invoice, remember a week later, send a text saying "hey, can you Venmo me?", and then chase them for another two weeks. Meanwhile, you've done $15,000 in work this month and only collected $8,000.</p>
+<p>Here's what happens: you finish a job, move on to the next one, forget to send the invoice, remember a week later, send a text saying "hey, can you Venmo me?", and then chase them for another two weeks. Say you've done $15,000 in work this month and only collected $8,000.</p>
 
 <p>That's not a revenue problem. It's an <strong>organization problem.</strong></p>
 
@@ -316,7 +316,7 @@ export const blogPosts: BlogPost[] = [
 
 <h2>The Payoff</h2>
 
-<p>Contractors who track every job and follow the three rules above typically collect payment <strong>2–3 weeks faster</strong> and reduce unpaid invoices by over 60%. That's not a small improvement — that's the difference between cash flow stress and financial confidence.</p>
+<p>Contractors who track every job and follow the three rules above <strong>get paid sooner and chase far fewer unpaid invoices</strong>. That's the difference between cash flow stress and financial confidence.</p>
 `,
   },
 
@@ -324,7 +324,7 @@ export const blogPosts: BlogPost[] = [
     slug: 'ways-contractors-lose-money-without-crm',
     title: '5 Ways Contractors Lose Money Without a CRM',
     description: 'Most contractors don\'t realize how much money they\'re losing to missed leads, slow quotes, and forgotten follow-ups. Here are the 5 biggest leaks.',
-    excerpt: 'You\'re probably losing $5,000+ per month and don\'t even know it. Here\'s where the money goes.',
+    excerpt: 'You\'re probably losing more money than you think. Here\'s where it goes.',
     category: 'tips',
     publishedAt: '2026-04-23',
     readTime: 6,
@@ -336,47 +336,47 @@ export const blogPosts: BlogPost[] = [
 
 <p>Let's do the math on what "fine" is actually costing you.</p>
 
-<h2>1. Missed Leads: $2,000–$5,000/month</h2>
+<h2>1. Missed Leads</h2>
 
 <p>A customer calls while you're on a roof. You miss the call. You forget to call back. They call someone else.</p>
 
-<p>This happens more than you think. Studies show that <strong>62% of calls to small businesses go unanswered</strong>. If your average job is worth $1,500 and you miss just 2–3 leads per month, that's $3,000–$4,500 walking out the door.</p>
+<p>This happens more than you think, especially when you're on a job and can't pick up. If your average job is worth $1,500 and you miss just 2–3 leads per month, that's $3,000–$4,500 walking out the door.</p>
 
 <p>A booking page catches these leads even when you can't answer the phone. The customer submits their request, you get notified, and you follow up when you're free. No missed calls. No lost leads.</p>
 
-<h2>2. Slow Quotes: $1,500–$3,000/month</h2>
+<h2>2. Slow Quotes</h2>
 
 <p>You visit the job site on Monday. You send the quote on Thursday. The customer hired someone else on Tuesday.</p>
 
-<p><strong>78% of customers hire the first contractor who sends a quote.</strong> Not the cheapest — the fastest. Every day you wait to send a quote, your close rate drops by roughly 10%.</p>
+<p><strong>Plenty of customers hire the first contractor who sends a quote.</strong> Not the cheapest — the fastest. Every day you wait, the job gets colder.</p>
 
 <p>If you're losing 1–2 jobs per month because someone else quoted faster, that's $1,500–$3,000 gone.</p>
 
-<h2>3. No Follow-Up: $1,000–$2,000/month</h2>
+<h2>3. No Follow-Up</h2>
 
 <p>You sent a quote last week. Haven't heard back. So you assume they're not interested and move on.</p>
 
-<p>Wrong. Most customers who don't respond to a quote are still deciding. They're busy. They forgot. They're comparing. A simple follow-up message 48 hours later — "Hey, just checking in on that estimate" — closes <strong>35–40% of otherwise-lost deals</strong>.</p>
+<p>Wrong. Most customers who don't respond to a quote are still deciding. They're busy. They forgot. They're comparing. A simple follow-up message 48 hours later — "Hey, just checking in on that estimate" — <strong>wins back jobs you'd otherwise lose</strong>.</p>
 
 <p>If you're not following up systematically, you're leaving at least 1 job per month on the table.</p>
 
-<h2>4. Unpaid Invoices: $2,000–$4,000/month (Cash Flow)</h2>
+<h2>4. Unpaid Invoices (Cash Flow)</h2>
 
 <p>The job's done. The customer is happy. But you didn't send an invoice right away, and now it's been three weeks. The customer has moved on mentally, and getting them to pay feels awkward.</p>
 
 <p>This isn't lost revenue — it's <strong>delayed revenue that damages your cash flow</strong>. When you have $8,000 in outstanding payments and $5,000 in expenses due this week, you're borrowing from your own future. Late payments create a cascade of stress that affects every part of your business.</p>
 
-<h2>5. No Repeat Business System: $3,000–$5,000/month</h2>
+<h2>5. No Repeat Business System</h2>
 
 <p>Your best customers — the ones who already trust you — are your most valuable asset. But if you don't have a record of past jobs and no system to follow up, you're starting from zero every season.</p>
 
-<p>A landscaping customer worth $2,000/year becomes worth $10,000 over five years — but only if you stay in touch. A simple system that tracks past customers and reminds you to follow up seasonally can add $3,000–$5,000/month in repeat business.</p>
+<p>A landscaping customer worth $2,000/year becomes worth $10,000 over five years — but only if you stay in touch. A simple system that tracks past customers and reminds you to follow up seasonally keeps that repeat work coming back.</p>
 
 <h2>Add It Up</h2>
 
-<p>Missed leads: $3,000. Slow quotes: $2,000. No follow-up: $1,500. Late payments: $3,000 in delayed cash flow. No repeat system: $4,000.</p>
+<p>Take a crew with a $1,500 average job. Two missed calls, one slow quote and one quote nobody followed up on is four jobs, or <strong>$6,000 in a single month</strong>, before counting late payments or lost repeat work.</p>
 
-<p>That's <strong>$13,500/month</strong> — conservatively. And the solution? A simple system that costs less than one job per month.</p>
+<p>Your numbers will be different, but the leaks are the same. And the solution? A simple system that costs less than one job per month.</p>
 
 <p>The question isn't whether you can afford a CRM. It's whether you can afford not to have one.</p>
 `,
