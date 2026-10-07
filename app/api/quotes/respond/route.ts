@@ -2,6 +2,8 @@ import { adminDb as sql } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { sendQuoteAcceptedNotification } from '@/lib/email';
 import { autoAdvanceStatus, logAutoMove } from '@/lib/statusAutomation';
+import { sendCollectionInvoice } from '@/lib/sendCollectionInvoice';
+import { getDepositAmount } from '@/lib/billing';
 
 // Accept / Decline links in the quote email only SHOW the quote (GET).
 // The answer is recorded when the customer taps a button on that page (POST).
@@ -23,6 +25,8 @@ async function loadProject(token: string) {
       p.quote_data,
       p.quote_accepted_at,
       p.quote_declined_at,
+      p.deposit_type,
+      p.deposit_value,
       p.customer_name,
       p.customer_email,
       l.id as lead_id,
@@ -34,7 +38,8 @@ async function loadProject(token: string) {
       c.logo_url as company_logo,
       c.website as company_website,
       c.email_brand_color_1 as brand_color_1,
-      c.email_brand_color_2 as brand_color_2
+      c.email_brand_color_2 as brand_color_2,
+      c.on_accept_collect
     FROM projects p
     JOIN leads l ON p.lead_id = l.id
     JOIN companies c ON l.company_id = c.id
@@ -42,6 +47,15 @@ async function loadProject(token: string) {
     LIMIT 1
   `;
   return projects[0] ?? null;
+}
+
+// What the customer owes to get started, from the same billing math as everywhere else.
+function depositFor(project: any): { amount: number; label?: string } | undefined {
+  const total = parseFloat(project.quote_total || '0');
+  const amount = getDepositAmount({ total, depositType: project.deposit_type, depositValue: project.deposit_value });
+  if (!amount || amount <= 0 || amount >= total) return undefined;
+  const pct = parseFloat(project.deposit_value || '0');
+  return { amount, label: project.deposit_type === 'percent' && pct > 0 ? `${pct}%` : undefined };
 }
 
 function invalidLinkPage() {
@@ -118,6 +132,7 @@ export async function GET(request: NextRequest) {
       taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
       quoteItems: project.quote_data || [],
       customerName: project.customer_name,
+      deposit: depositFor(project),
       confirm: { token, primary: wantsDecline ? 'decline' : 'accept' },
     }));
   } catch (error) {
@@ -191,9 +206,31 @@ export async function POST(request: NextRequest) {
         console.error('Failed to send acceptance notification:', err);
       }
 
+      // Company setting: ask for the deposit (or full payment) right away.
+      // Emails the invoice like the Send button does, and shows a Pay button here.
+      let payment: { url?: string; amount: number; kind: 'deposit' | 'balance' | 'full' } | undefined;
+      const mode = project.on_accept_collect || 'none';
+      if (mode === 'deposit' || mode === 'full') {
+        try {
+          const sent = await sendCollectionInvoice({
+            leadId: project.lead_id,
+            collect: mode === 'full' ? 'full' : undefined,
+            onlyIfKind: mode === 'deposit' ? 'deposit' : undefined,
+            skipIfAlreadySent: true,
+            sentBy: { name: 'Automatic (quote accepted)', email: '' },
+          });
+          if (sent.ok) payment = { url: sent.paymentLinkUrl, amount: sent.amount, kind: sent.kind };
+          else if (!sent.skipped) console.error('Auto invoice on accept failed:', sent.error);
+        } catch (autoErr) {
+          console.error('Auto invoice on accept failed (non-blocking):', autoErr);
+        }
+      }
+
       return html(renderPage({
         title: 'Quote Accepted',
-        message: `Thanks ${project.customer_name}! ${project.company_name} will be reaching out shortly to schedule your appointment.`,
+        message: payment
+          ? `Thanks ${project.customer_name}! We've also emailed you the invoice.`
+          : `Thanks ${project.customer_name}! ${project.company_name} will be reaching out shortly to schedule your appointment.`,
         state: 'success',
         companyName: project.company_name,
         companyPhone: project.company_phone,
@@ -204,6 +241,7 @@ export async function POST(request: NextRequest) {
         taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
         quoteItems: project.quote_data || [],
         customerName: project.customer_name,
+        payment,
       }));
     }
 
@@ -274,6 +312,8 @@ function renderPage({
   quoteItems = [],
   customerName,
   confirm,
+  payment,
+  deposit,
 }: {
   title: string;
   message: string;
@@ -289,6 +329,10 @@ function renderPage({
   customerName?: string;
   /** Show Accept / Decline buttons that POST back here. */
   confirm?: { token: string; primary: Action };
+  /** After accepting: the deposit / full payment just invoiced, with its pay link. */
+  payment?: { url?: string; amount: number; kind: 'deposit' | 'balance' | 'full' };
+  /** Deposit due on accepting, shown under the total on the review page. */
+  deposit?: { amount: number; label?: string };
 }) {
   const isSuccess = state === 'success';
   // Brand color goes into inline styles; only allow a plain hex color.
@@ -320,6 +364,17 @@ function renderPage({
           </tr>
   ` : '';
 
+  const depositRowsHtml = deposit && quoteTotal ? `
+          <tr style="background:#fff;border-top:1px solid #e2e8f0;">
+            <td colspan="2" style="padding:10px 14px;text-align:right;color:#0f172a;font-weight:700;font-size:13px;">Deposit due to get started${deposit.label ? ` (${esc(deposit.label)})` : ''}</td>
+            <td style="padding:10px 14px;text-align:right;color:#0f172a;font-weight:800;font-size:15px;">${fmt(deposit.amount)}</td>
+          </tr>
+          <tr style="background:#fff;">
+            <td colspan="2" style="padding:0 14px 10px;text-align:right;color:#64748b;font-size:12px;">Balance on completion</td>
+            <td style="padding:0 14px 10px;text-align:right;color:#64748b;font-size:12px;">${fmt(quoteTotal - deposit.amount)}</td>
+          </tr>
+  ` : '';
+
   const lineItemsHtml = quoteItems.length > 0 ? `
     <div style="margin-top:28px;">
       <p style="margin:0 0 10px 0;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#94a3b8;">Quote Summary</p>
@@ -346,6 +401,7 @@ function renderPage({
             <td colspan="2" style="padding:14px;text-align:right;color:#475569;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Total</td>
             <td style="padding:14px;text-align:right;color:${brandColor};font-weight:800;font-size:20px;">${quoteTotal ? fmt(quoteTotal) : ''}</td>
           </tr>
+          ${depositRowsHtml}
         </tfoot>
       </table>
     </div>
@@ -373,7 +429,17 @@ function renderPage({
     </div>
   ` : '';
 
-  const nextStepsHtml = isSuccess ? `
+  const payLabel = payment?.kind === 'deposit' ? 'Pay your deposit' : 'Pay your invoice';
+  const paymentHtml = payment ? `
+    <div style="margin-top:24px;padding:18px 20px;border:2px solid ${brandColor};border-radius:14px;text-align:center;">
+      <p style="margin:0 0 4px 0;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:${brandColor};">${payment.kind === 'deposit' ? 'Deposit due to get started' : 'Amount due'}</p>
+      <p style="margin:0 0 14px 0;font-size:26px;font-weight:800;color:#0f172a;">${fmt(payment.amount)}</p>
+      ${payment.url ? `<a href="${safeUrl(payment.url)}" style="display:block;padding:14px 16px;border-radius:12px;background:${brandColor};color:#fff;font-size:16px;font-weight:700;text-decoration:none;">${payLabel} now</a>
+      <p style="margin:10px 0 0 0;font-size:13px;color:#64748b;">Or pay later from the invoice we emailed you.</p>` : `<p style="margin:0;font-size:13px;color:#64748b;">We've emailed you the invoice with payment details.</p>`}
+    </div>
+  ` : '';
+
+  const nextStepsHtml = isSuccess && !payment ? `
     <div style="margin-top:24px;padding:16px 20px;background:${brandColor}08;border:1px solid ${brandColor}20;border-radius:10px;">
       <p style="margin:0 0 4px 0;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:${brandColor};">What happens next?</p>
       <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">${esc(companyName || 'The team')} will contact you shortly to confirm your appointment and go over any final details.</p>
@@ -460,6 +526,7 @@ function renderPage({
       <h1>${esc(title)}</h1>
       <p class="message">${esc(message)}</p>
     </div>
+    ${paymentHtml}
     ${lineItemsHtml}
     ${confirmHtml}
     ${nextStepsHtml}

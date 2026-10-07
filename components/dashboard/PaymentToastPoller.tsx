@@ -20,8 +20,37 @@ const POLL_INTERVAL_MS = 30_000;
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
 
+// Short rising "cha-ching" (C6 → E6 → G6). Different from the two-note
+// new-lead chime so the contractor can tell them apart without looking.
+// Browsers block sound until the user has clicked something on the page;
+// in that case this fails silently and the toast still shows.
+function playPaymentChime() {
+  try {
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const notes = [1046.5, 1318.5, 1568];
+    notes.forEach((freq, i) => {
+      const start = ctx.currentTime + i * 0.09;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(0.18, start + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + (i === notes.length - 1 ? 0.45 : 0.16));
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(start);
+      osc.stop(start + 0.5);
+    });
+    setTimeout(() => ctx.close().catch(() => {}), 1000);
+  } catch {
+    // no sound available; the toast still shows
+  }
+}
+
 const KIND_LABEL: Record<string, string> = {
-  deposit: 'Deposit paid',
+    deposit: 'Deposit paid',
   balance: 'Balance paid',
   payment: 'Payment received',
 };
@@ -59,7 +88,8 @@ export default function PaymentToastPoller({
       const data = await res.json();
       if (data.success && Array.isArray(data.payments) && data.payments.length > 0) {
         const payments: RecentPayment[] = data.payments;
-        const newOnes = payments.filter((p) => !seenIdsRef.current.has(p.id));
+               const newOnes = payments.filter((p) => !seenIdsRef.current.has(p.id));
+        let toasted = 0;
 
         for (const p of newOnes) {
           // Mark every new payment as seen regardless of method, so a
@@ -81,10 +111,14 @@ export default function PaymentToastPoller({
             duration: 6000,
             action:
               onSelectLead && p.lead_id
-                ? { label: 'View', onClick: () => onSelectLead(p.lead_id as number) }
+                          ? { label: 'View', onClick: () => onSelectLead(p.lead_id as number) }
                 : undefined,
           });
+          toasted++;
         }
+
+        // One chime per check, even if several payments arrived together.
+        if (toasted > 0) playPaymentChime();
 
         // Advance the cursor to the server's own latest timestamp — still
         // useful to keep the query fast/scoped, even though it's no

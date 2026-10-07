@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { Send, X, Clock, Mail, Eye, CheckCircle2, Loader2, Calendar } from 'lucide-react';
+import { Send, X, Clock, Mail, Eye, Loader2, Calendar, FileText, Receipt, Bell, AlertTriangle } from 'lucide-react';
 
 export type EmailType = 'quote' | 'schedule' | 'payment_reminder';
 
@@ -25,29 +25,44 @@ type SendEmailModalProps = {
   lastHtmlBody?: string | null;
 };
 
-const CONFIG: Record<EmailType, { title: string; subtitle: string; action: string; color: string; bg: string }> = {
+// Same shape as app/api/leads/[id]/send-preview/route.ts
+type QuotePreview = {
+  total: number;
+  itemCount: number;
+  deposit: { amount: number; label?: string } | null;
+  autoDeposit: boolean;
+  payLink: boolean;
+  acceptedAt: string | null;
+  declinedAt: string | null;
+  depositPaid: boolean;
+};
+
+const CONFIG: Record<EmailType, { title: string; subtitle: string; action: string; success: string; Icon: typeof Send }> = {
   quote: {
-    title: 'Send Quote?',
-    subtitle: 'Official Quote Email',
+    title: 'Send quote',
+    subtitle: 'Quote email with Accept and Decline buttons',
     action: 'send_quote_to_customer',
-    color: '#16a34a', // Emerald 600
-    bg: '#dcfce7',
+    success: 'Quote sent',
+    Icon: FileText,
   },
   schedule: {
-    title: 'Send Schedule?',
-    subtitle: 'Schedule Confirmation',
+    title: 'Send schedule',
+    subtitle: 'Appointment confirmation email',
     action: 'send_schedule_to_customer',
-    color: '#0284c7', // Sky 600
-    bg: '#e0f2fe',
+    success: 'Schedule confirmation sent',
+    Icon: Calendar,
   },
   payment_reminder: {
-    title: 'Send Payment Reminder?',
-    subtitle: 'Invoice & Payment Notice',
+    title: 'Send payment reminder',
+    subtitle: 'Payment reminder email',
     action: 'send_payment_reminder',
-    color: '#d97706', // Amber 600
-    bg: '#fef3c7',
+    success: 'Payment reminder sent',
+    Icon: Bell,
   },
 };
+
+const fmt = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n || 0);
 
 const fmtDate = (d: string) => {
   try {
@@ -56,6 +71,14 @@ const fmtDate = (d: string) => {
       day: 'numeric',
       year: 'numeric',
     });
+  } catch {
+    return d;
+  }
+};
+
+const fmtDay = (d: string) => {
+  try {
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   } catch {
     return d;
   }
@@ -79,7 +102,28 @@ export default function SendEmailModal({
   const [sending, setSending] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Quote only: what the customer gets and what happens when they answer.
+  const [quote, setQuote] = useState<QuotePreview | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || type !== 'quote' || !leadId) return;
+    let alive = true;
+    setQuoteLoading(true);
+    fetch(`/api/leads/${leadId}/send-preview`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (alive && d?.success) setQuote(d.preview);
+      })
+      .catch(() => {})
+      .finally(() => alive && setQuoteLoading(false));
+    return () => {
+      alive = false;
+    };
+  }, [open, type, leadId]);
+
   const cfg = CONFIG[type];
+  const firstName = customerName?.split(' ')[0] || 'the customer';
   const daysSince = lastSentAt
     ? Math.floor((Date.now() - new Date(lastSentAt).getTime()) / 86_400_000)
     : null;
@@ -99,13 +143,7 @@ export default function SendEmailModal({
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        toast.success(
-          type === 'quote'
-            ? 'Quote sent successfully!'
-            : type === 'schedule'
-            ? 'Schedule confirmation sent!'
-            : 'Payment reminder sent!'
-        );
+        toast.success(cfg.success);
         onClose();
         await onSuccess?.();
       } else {
@@ -120,6 +158,23 @@ export default function SendEmailModal({
 
   if (!open) return null;
 
+  const Icon = cfg.Icon;
+  const isResend = !!lastSentAt;
+
+  // What happens when the customer taps Accept.
+  const acceptLine = (() => {
+    if (!quote) return null;
+    if (quote.deposit && !quote.depositPaid) {
+      if (quote.autoDeposit) {
+        return quote.payLink
+          ? `${firstName} gets the ${fmt(quote.deposit.amount)} deposit request right away and can pay by card on the spot.`
+          : `${firstName} gets the ${fmt(quote.deposit.amount)} deposit request by email right away. No card payment button — Stripe isn't connected yet.`;
+      }
+      return `You send the ${fmt(quote.deposit.amount)} deposit request yourself from the Invoice tab. To send it automatically, turn on Auto invoices in Settings.`;
+    }
+    return 'You get an email letting you know.';
+  })();
+
   return (
     <>
       {/* CONFIRM MODAL */}
@@ -128,137 +183,177 @@ export default function SendEmailModal({
           className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
           onClick={() => !sending && onClose()}
         />
-        
-        <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200 overflow-hidden">
-          
-          {/* Top color accent bar */}
-          <div className="h-1.5 w-full" style={{ background: cfg.color }} />
 
-          <div className="p-6 sm:p-7">
-            {/* Close Button */}
+        <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-200 overflow-hidden max-h-[92vh] flex flex-col">
+          <div className="flex justify-center pt-3 sm:hidden">
+            <div className="w-9 h-1 rounded-full bg-slate-200" />
+          </div>
+
+          <div className="p-5 sm:p-6 overflow-y-auto">
+            {/* Close */}
             <button
               onClick={onClose}
               disabled={sending}
-              className="absolute top-5 right-5 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition disabled:opacity-40"
+              className="absolute top-4 right-4 p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition disabled:opacity-40"
+              aria-label="Close"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {/* Header / Icon */}
-            <div className="flex items-center gap-4 mb-5">
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-2xs"
-                style={{ background: cfg.bg }}
-              >
-                <Send className="w-5 h-5" style={{ color: cfg.color }} />
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5 pr-8">
+              <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0">
+                <Icon className="w-5 h-5 text-slate-700" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 leading-tight">{cfg.title}</h3>
-                <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
-                  {cfg.subtitle}
-                </p>
+              <div className="min-w-0">
+                <h3 className="text-lg font-bold text-slate-900 leading-tight">
+                  {isResend ? cfg.title.replace('Send', 'Resend') : cfg.title}
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">{cfg.subtitle}</p>
               </div>
             </div>
 
-            {/* Recipient Details & Scheduled Time Card */}
-            <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-4 space-y-3">
-              <div>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Recipient Details</p>
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0 shadow-2xs"
-                    style={{ background: cfg.color }}
-                  >
-                    {customerName ? customerName.charAt(0).toUpperCase() : '?'}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-slate-900 truncate">{customerName}</p>
-                    {customerEmail ? (
-                      <p className="text-xs text-slate-500 font-medium truncate">{customerEmail}</p>
-                    ) : (
-                      <p className="text-xs text-rose-500 font-medium italic">No email address on file</p>
-                    )}
-                  </div>
+            {/* Recipient */}
+            <div className="rounded-xl border border-slate-200 p-3.5 mb-3">
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">To</p>
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-xs font-bold text-white shrink-0">
+                  {customerName ? customerName.charAt(0).toUpperCase() : '?'}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-slate-900 truncate">{customerName}</p>
+                  {customerEmail ? (
+                    <p className="text-xs text-slate-500 truncate">{customerEmail}</p>
+                  ) : (
+                    <p className="text-xs text-red-600">No email on file — add one on the job first</p>
+                  )}
                 </div>
               </div>
 
-              {/* SCHEDULE TIME / DATE DISPLAY */}
+              {/* Schedule date / time */}
               {type === 'schedule' && (scheduledDateDisplay || scheduledTimeDisplay) && (
-                <div className="pt-3 border-t border-slate-200/60 flex items-center gap-2.5 bg-blue-50/50 -mx-4 -mb-4 p-3.5 rounded-b-2xl border-b border-blue-100/60">
-                  <div className="w-8 h-8 rounded-lg bg-blue-100/80 flex items-center justify-center shrink-0 text-blue-600">
-                    <Calendar size={15} />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[10px] font-bold text-blue-900/60 uppercase tracking-wider">Scheduled Event</p>
-                    <p className="text-xs font-bold text-blue-950 truncate">
-                      {scheduledDateDisplay || 'Date unset'}
-                      {scheduledTimeDisplay ? ` at ${scheduledTimeDisplay}` : ''}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {contextLine && type !== 'schedule' && (
-                <div className="pt-3 border-t border-slate-200/60 flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: cfg.color }} />
-                  <p className="text-xs font-semibold" style={{ color: cfg.color }}>{contextLine}</p>
-                </div>
-              )}
-            </div>
-
-            {/* QUOTE ACTION NOTE */}
-            {type === 'quote' && (
-              <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/70 p-3.5 mb-4 flex items-start gap-3">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <div className="space-y-0.5">
-                  <p className="text-xs font-bold text-emerald-950">Interactive Quote Actions</p>
-                  <p className="text-[11px] text-emerald-800 font-medium leading-relaxed">
-                    When sent, the customer can direct accept or decline straight from their email. You’ll be notified instantly, and your dashboard status will auto-update.
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2.5">
+                  <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
+                  <p className="text-sm font-semibold text-slate-900 truncate">
+                    {scheduledDateDisplay || 'Date not set'}
+                    {scheduledTimeDisplay ? ` at ${scheduledTimeDisplay}` : ''}
                   </p>
                 </div>
+              )}
+
+              {/* Other context (e.g. reminder amount) */}
+              {contextLine && type === 'payment_reminder' && (
+                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center gap-2.5">
+                  <Receipt className="w-4 h-4 text-slate-400 shrink-0" />
+                  <p className="text-sm font-semibold text-slate-900">{contextLine}</p>
+                </div>
+              )}
+            </div>
+
+            {/* QUOTE: what they get + what happens when they answer */}
+            {type === 'quote' && (
+              <div className="rounded-xl border border-slate-200 mb-3 overflow-hidden">
+                {quoteLoading && !quote ? (
+                  <div className="flex items-center gap-2 px-3.5 py-3 text-xs text-slate-400">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    Checking the saved quote…
+                  </div>
+                ) : quote ? (
+                  <>
+                    {/* Amounts */}
+                    <div className="px-3.5 py-3">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <p className="text-xs text-slate-500">
+                          Quote total{quote.itemCount > 0 ? ` · ${quote.itemCount} item${quote.itemCount === 1 ? '' : 's'}` : ''}
+                        </p>
+                        <p className="text-base font-bold text-slate-900 tabular-nums">{fmt(quote.total)}</p>
+                      </div>
+                      {quote.deposit && (
+                        <>
+                          <div className="mt-1.5 flex items-baseline justify-between gap-3">
+                            <p className="text-xs text-slate-500">
+                              Deposit to get started{quote.deposit.label ? ` (${quote.deposit.label})` : ''}
+                            </p>
+                            <p className="text-sm font-semibold text-slate-900 tabular-nums">{fmt(quote.deposit.amount)}</p>
+                          </div>
+                          <div className="mt-0.5 flex items-baseline justify-between gap-3">
+                            <p className="text-xs text-slate-400">Balance on completion</p>
+                            <p className="text-xs text-slate-400 tabular-nums">{fmt(quote.total - quote.deposit.amount)}</p>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* When they accept */}
+                    <div className="border-t border-slate-100 bg-slate-50 px-3.5 py-3">
+                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-1">When they accept</p>
+                      <p className="text-xs text-slate-700 leading-relaxed">{acceptLine}</p>
+                    </div>
+                  </>
+                ) : (
+                  // Preview failed: fall back to what the caller passed in.
+                  <div className="px-3.5 py-3 text-xs text-slate-600">
+                    {contextLine ? `Quote total ${contextLine}. ` : ''}
+                    {firstName} can accept or decline straight from the email.
+                  </div>
+                )}
               </div>
             )}
 
-            {/* HISTORY STATUS: Only displayed if an email was sent previously */}
+            {/* QUOTE: already answered — resending resets it */}
+            {type === 'quote' && quote?.acceptedAt && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 mb-3 flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-px" />
+                <p className="text-xs text-amber-900 leading-relaxed">
+                  <span className="font-semibold">{firstName} already accepted this quote on {fmtDay(quote.acceptedAt)}.</span>{' '}
+                  Sending it again clears that, and they&rsquo;ll need to accept again.
+                </p>
+              </div>
+            )}
+            {type === 'quote' && !quote?.acceptedAt && quote?.declinedAt && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 mb-3 flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-slate-400 shrink-0 mt-px" />
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  {firstName} declined this quote on {fmtDay(quote.declinedAt)}. Sending it again lets them accept or decline again.
+                </p>
+              </div>
+            )}
+
+            {/* Last sent */}
             {lastSentAt && (
-              <div className={`rounded-2xl p-3.5 mb-4 flex items-start gap-3 border ${
-                daysSince === 0
-                  ? 'bg-amber-50/50 border-amber-100 text-amber-900'
-                  : 'bg-slate-50 border-slate-100 text-slate-700'
-              }`}>
-                <Clock className={`w-4 h-4 shrink-0 mt-0.5 ${
-                  daysSince === 0 ? 'text-amber-600' : 'text-slate-400'
-                }`} />
+              <div
+                className={`rounded-xl p-3.5 mb-3 flex items-start gap-2.5 border ${
+                  daysSince === 0 ? 'bg-amber-50 border-amber-100 text-amber-900' : 'bg-white border-slate-200 text-slate-700'
+                }`}
+              >
+                <Clock className={`w-4 h-4 shrink-0 mt-px ${daysSince === 0 ? 'text-amber-600' : 'text-slate-400'}`} />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold">Last sent {fmtDate(lastSentAt)}</p>
-                  <p className="text-[11px] opacity-80 font-medium mt-0.5">
+                  <p className="text-xs font-semibold">Last sent {fmtDate(lastSentAt)}</p>
+                  <p className="text-[11px] opacity-80 mt-0.5">
                     {daysSince === 0
-                      ? 'Already sent today — click below to resend.'
+                      ? 'Already sent today. Sending again emails it a second time.'
                       : `Sent ${daysSince} day${daysSince !== 1 ? 's' : ''} ago.`}
                   </p>
                 </div>
+                {lastHtmlBody && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPreview(true)}
+                    className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                  >
+                    <Eye className="w-3 h-3" /> View
+                  </button>
+                )}
               </div>
             )}
 
-            {/* Preview Button */}
-            {lastHtmlBody && (
-              <button
-                type="button"
-                onClick={() => setShowPreview(true)}
-                className="w-full flex items-center justify-center gap-2 py-2.5 mb-4 rounded-xl border border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800 text-xs font-bold transition"
-              >
-                <Eye className="w-3.5 h-3.5 text-slate-400" />
-                Preview Last Rendered Email
-              </button>
-            )}
-
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 pt-1">
+            {/* Actions */}
+            <div className="grid grid-cols-2 gap-2.5 pt-1" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
               <button
                 type="button"
                 onClick={onClose}
                 disabled={sending}
-                className="py-3 bg-slate-100 hover:bg-slate-200/80 text-slate-700 font-bold rounded-2xl text-xs transition disabled:opacity-40"
+                className="py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition disabled:opacity-40"
               >
                 Cancel
               </button>
@@ -266,49 +361,51 @@ export default function SendEmailModal({
                 type="button"
                 onClick={handleSend}
                 disabled={sending || !customerEmail}
-                className="py-3 text-white font-bold rounded-2xl text-xs transition flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:pointer-events-none shadow-xs"
-                style={{
-                  background: cfg.color,
-                }}
+                className="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {sending ? (
-                  <><Loader2 className="w-4 h-4 animate-spin" /> Sending...</>
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Sending…
+                  </>
                 ) : (
-                  <><Send className="w-3.5 h-3.5" /> Send Now</>
+                  <>
+                    <Send className="w-3.5 h-3.5" /> {isResend ? 'Send again' : 'Send now'}
+                  </>
                 )}
               </button>
             </div>
-
           </div>
         </div>
       </div>
 
-      {/* EMAIL PREVIEW MODAL */}
+      {/* LAST SENT EMAIL PREVIEW */}
       {showPreview && lastHtmlBody && (
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs"
           onClick={() => setShowPreview(false)}
         >
           <div
-            className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col shadow-2xl border border-slate-200"
+            className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col shadow-2xl border border-slate-200"
             style={{ height: '85vh' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-1.5 w-full shrink-0" style={{ background: cfg.color }} />
             <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: cfg.bg }}>
-                  <Mail className="w-3.5 h-3.5" style={{ color: cfg.color }} />
+                <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center">
+                  <Mail className="w-3.5 h-3.5 text-slate-600" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900">Email Template Preview</p>
-                  <p className="text-[10px] text-slate-400 font-medium">Read-only render of actual email body</p>
+                  <p className="text-xs font-bold text-slate-900">Last sent email</p>
+                  <p className="text-[10px] text-slate-400">
+                    Exactly what {firstName} received{lastSentAt ? ` on ${fmtDate(lastSentAt)}` : ''}
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowPreview(false)}
-                className="p-1.5 hover:bg-slate-100 rounded-full transition text-slate-400 hover:text-slate-600"
+                className="p-1.5 hover:bg-slate-100 rounded-lg transition text-slate-400 hover:text-slate-600"
+                aria-label="Close preview"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -317,9 +414,9 @@ export default function SendEmailModal({
               <iframe
                 title="Email Preview"
                 srcDoc={`${lastHtmlBody}<style>a,button{pointer-events:none!important;cursor:default!important;}*{user-select:none!important;}</style>`}
-                className="w-full border-0 rounded-xl bg-white shadow-2xs"
+                className="w-full border-0 rounded-xl bg-white"
                 style={{ height: '100%', width: '100%', display: 'block' }}
-                sandbox="allow-same-origin"
+                sandbox=""
               />
             </div>
           </div>

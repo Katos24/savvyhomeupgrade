@@ -251,6 +251,25 @@ case 'update-deposit-default': {
   return NextResponse.json({ success: true, company: result[0] });
 }
 
+// ── Auto invoices (Settings → Money → Auto invoices) ──
+case 'update-invoice-automation': {
+  const onAccept = data?.on_accept_collect;
+  if (!['none', 'deposit', 'full'].includes(onAccept)) {
+    return NextResponse.json({ success: false, error: 'Pick what happens when a customer accepts.' }, { status: 400 });
+  }
+  if (typeof data?.auto_send_balance_on_complete !== 'boolean') {
+    return NextResponse.json({ success: false, error: 'Invalid value for the completed-job setting.' }, { status: 400 });
+  }
+  const result = await sql`
+    UPDATE companies
+    SET on_accept_collect = ${onAccept},
+        auto_send_balance_on_complete = ${data.auto_send_balance_on_complete}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
 // ── Default balance due-date window ──
 // No equivalent setting for deposits — those are conventionally due
 // immediately, not on a countdown, so that default is hardcoded on the

@@ -480,8 +480,9 @@ export async function sendQuoteToCustomer({
   quoteToken,
   contractorEmail,
   taxRate,
-  depositAmount,
+   depositAmount,
   depositLabel,
+  depositPayOnAccept,
 }: {
   customerEmail: string;
   customerName: string;
@@ -497,8 +498,10 @@ export async function sendQuoteToCustomer({
   /** Shown on the quote so a customer knows what's due on signing before
    *  they accept. Display only — accepting doesn't collect anything; the
    *  contractor sends the deposit request separately. */
-  depositAmount?: number;
+    depositAmount?: number;
   depositLabel?: string;
+  /** True when the company auto-sends the deposit request on accept. */
+  depositPayOnAccept?: boolean;
 }) {
   try {
     const company = await getCompanyDetails(companyId);
@@ -510,6 +513,34 @@ export async function sendQuoteToCustomer({
 
     const accentColor = company.email_brand_color_1 || '#667eea';
     const accentColor2 = company.email_brand_color_2 || accentColor;
+
+    // Deposit summary shown above the breakdown, so the customer sees what's due to start
+    const dep = depositAmount ?? 0;
+    const hasDeposit = dep > 0 && dep < quoteTotal;
+    const depositSummaryHtml = hasDeposit ? `
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+        style="margin: 0 0 28px 0; border-collapse: separate; background-color: #fffbeb; border: 1px solid #fde68a; border-radius: 12px;">
+        <tr>
+          <td style="padding: 18px 20px; vertical-align: top; width: 50%;">
+            <p style="margin: 0 0 4px 0; color: #92400e; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">
+              Deposit to get started${depositLabel ? ` (${depositLabel})` : ''}
+            </p>
+            <p style="margin: 0; color: #78350f; font-size: 24px; font-weight: 800;">${fmt(dep)}</p>
+          </td>
+          <td style="padding: 18px 20px; vertical-align: top; width: 50%; border-left: 1px solid #fde68a;">
+            <p style="margin: 0 0 4px 0; color: #92400e; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">
+              Balance on completion
+            </p>
+            <p style="margin: 0; color: #78350f; font-size: 24px; font-weight: 800;">${fmt(quoteTotal - dep)}</p>
+          </td>
+        </tr>
+        <tr>
+          <td colspan="2" style="padding: 0 20px 16px 20px; color: #b45309; font-size: 12px;">
+            Job total ${fmt(quoteTotal)}. You only pay the deposit to get on the schedule.
+          </td>
+        </tr>
+      </table>
+    ` : '';
 
     // Line items table
     const lineItemsHtml = quoteItems.length > 0 ? `
@@ -603,8 +634,9 @@ export async function sendQuoteToCustomer({
         <p style="margin: 0 0 24px 0; color: #64748b; font-size: 13px; line-height: 1.6;">
           Review the quote above and let us know your decision.${
             depositAmount && depositAmount > 0 && depositAmount < quoteTotal
-              ? ` A ${fmt(depositAmount)} deposit is due before work begins — we\u2019ll send that separately once you accept.`
-              : ''
+              ? depositPayOnAccept
+                ? ` A ${fmt(depositAmount)} deposit is due before work begins — you can pay it right after you accept.`
+                : ` A ${fmt(depositAmount)} deposit is due before work begins — we\u2019ll send that separately once you accept.`              : ''
           }
         </p>
         <table cellpadding="0" cellspacing="0" role="presentation" style="margin: 0 auto;">
@@ -644,13 +676,16 @@ export async function sendQuoteToCustomer({
       brandColor2: company.email_brand_color_2,
       bodyHtml: `
         <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7;">${rendered.body.replace(/\n/g, '<br>')}</p>
+               ${depositSummaryHtml}
         ${lineItemsHtml}
         ${acceptDeclineHtml}
       `,
       phone: company.phone || companyPhone,
       website: company.website,
-      preheader: `Your quote from ${company.name || companyName} — ${fmt(quoteTotal)}`,
-    });
+      preheader: hasDeposit
+        ? `Your quote from ${company.name || companyName} — ${fmt(quoteTotal)}, ${fmt(dep)} deposit to start`
+        : `Your quote from ${company.name || companyName} — ${fmt(quoteTotal)}`,
+          });
 
    const emailResult = await resend.emails.send({
   from: `${company.name || companyName} <hello@lead2project.com>`,

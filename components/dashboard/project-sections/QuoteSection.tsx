@@ -272,8 +272,16 @@ export default function QuoteSection({
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        toast.success('Quote marked as accepted');
+            if (data.success) {
+        toast.success(
+          data.deposit_request_sent
+            ? `Quote accepted. Deposit request sent${
+                data.deposit_amount != null
+                  ? ` (${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(data.deposit_amount)})`
+                  : ''
+              }`
+            : 'Quote marked as accepted'
+        );
         setShowAcceptConfirm(false);
         await onRefresh();
       } else {

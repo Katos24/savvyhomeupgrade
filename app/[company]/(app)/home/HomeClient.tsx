@@ -16,7 +16,8 @@ import {
   Users,
   HelpCircle,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  Zap,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
@@ -30,6 +31,7 @@ const PipelineTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/Pi
 const EmailTemplatesTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/EmailTemplatesTab'));
 const TeamTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/TeamTab'));
 const BillingTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/BillingTab'));
+const AutomationTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/AutomationTab'));
 
 // Lazy load Modals
 const FaqModal = dynamic(() => import('@/components/FaqModal'));
@@ -56,7 +58,7 @@ type Company = {
 };
 
 type SectionKey =
-  | 'setup' | 'overview' | 'categories' | 'payments'
+  | 'setup' | 'overview' | 'categories' | 'payments' | 'automation'
   | 'reviews' | 'pipeline' | 'email-templates' | 'team' | 'billing';
 
 type ChecklistStep =
@@ -328,6 +330,8 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
   const paymentsLocked = !can(planTier, 'stripe_connect');
   const reviewsLocked = !can(planTier, 'google_reviews');
   const categoriesLocked = !can(planTier, 'categories');
+  // Auto invoices send invoice emails, which are Pro.
+  const automationLocked = !can(planTier, 'send_invoice_email');
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(publicLink);
@@ -412,6 +416,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         label: 'Money',
         items: [
           { key: 'payments', label: 'Payments', icon: CreditCard, locked: paymentsLocked, visible: true },
+          { key: 'automation', label: 'Auto invoices', icon: Zap, locked: automationLocked, visible: isAdminForSections },
           { key: 'billing', label: 'Billing', icon: CreditCard, visible: isOwner },
         ],
       },
@@ -434,7 +439,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
     return raw
       .map((g) => ({ ...g, items: g.items.filter((s) => s.visible) }))
       .filter((g) => g.items.length > 0);
-  }, [categoriesLocked, paymentsLocked, isOwner, planTier, isAdminForSections, reviewsLocked]);
+  }, [categoriesLocked, paymentsLocked, automationLocked, isOwner, planTier, isAdminForSections, reviewsLocked]);
 
   const visibleSections = useMemo(() => sectionGroups.flatMap((g) => g.items), [sectionGroups]);
 
@@ -576,6 +581,14 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
                 <LockedSection label="Payments" companySlug={company.slug} />
               ) : (
                 <PaymentsTab company={company} currentUser={currentUser} />
+              )
+            )}
+
+            {isAdminForSections && activeSection === 'automation' && (
+              automationLocked ? (
+                <LockedSection label="Auto invoices" companySlug={company.slug} />
+              ) : (
+                <AutomationTab company={company} />
               )
             )}
 

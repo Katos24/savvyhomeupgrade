@@ -11,6 +11,7 @@ import { autoAdvanceStatus } from '@/lib/statusAutomation';
 import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSession';
 import { getSchedulingConfig } from '@/lib/schedulingConfig';
 import { getDepositAmount, isDepositSatisfied, getAmountDueNow, getBillingState } from '@/lib/billing';
+import { sendCollectionInvoice } from '@/lib/sendCollectionInvoice';
 
 
 
@@ -189,6 +190,31 @@ if (action === 'update_status') {
       } catch (reviewErr) {
         console.error('Review email failed (non-blocking):', reviewErr);
       }
+    }
+  }
+
+  // Send the final invoice automatically when the job is marked completed,
+  // if the company turned that on. Bills whatever is left; skips when nothing
+  // is due or a final invoice was already sent. Never blocks the status change.
+  if (status === 'completed' && old_status !== 'completed') {
+    try {
+      const setting = await sql`
+        SELECT c.auto_send_balance_on_complete
+        FROM leads l JOIN companies c ON c.id = l.company_id
+        WHERE l.id = ${id}
+        LIMIT 1
+      `;
+      if (setting[0]?.auto_send_balance_on_complete) {
+        const r = await sendCollectionInvoice({
+          leadId: id,
+          collect: 'full',
+          skipIfAlreadySent: true,
+          sentBy: { name: 'Automatic (job completed)', email: '' },
+        });
+        if (!r.ok && !r.skipped) console.error('Auto final invoice failed:', r.error);
+      }
+    } catch (autoErr) {
+      console.error('Auto final invoice failed (non-blocking):', autoErr);
     }
   }
 
@@ -763,7 +789,37 @@ else if (action === 'mark_quote_accepted') {
     });
   }
 
-  return NextResponse.json({ success: true });
+  // Same rule as when the customer accepts from the email: if the company
+  // turned on "send the deposit request when a quote is accepted", email the
+  // deposit invoice now. Only for quotes with a deposit; never sends twice;
+  // never blocks marking the quote accepted.
+  let depositRequest: { amount: number } | null = null;
+  try {
+    const setting = await sql`
+      SELECT c.on_accept_collect
+      FROM leads l JOIN companies c ON c.id = l.company_id
+      WHERE l.id = ${id}
+      LIMIT 1
+    `;
+    if (setting[0]?.on_accept_collect === 'deposit') {
+      const sent = await sendCollectionInvoice({
+        leadId: id,
+        onlyIfKind: 'deposit',
+        skipIfAlreadySent: true,
+        sentBy: { name: user_name || 'Automatic (quote accepted)', email: user_email || '' },
+      });
+      if (sent.ok) depositRequest = { amount: sent.amount };
+      else if (!sent.skipped) console.error('Auto deposit request failed:', sent.error);
+    }
+  } catch (autoErr) {
+    console.error('Auto deposit request failed (non-blocking):', autoErr);
+  }
+
+  return NextResponse.json({
+    success: true,
+    deposit_request_sent: !!depositRequest,
+    deposit_amount: depositRequest?.amount ?? null,
+  });
 }
 
     // ==================== SEND QUOTE ====================
@@ -807,7 +863,7 @@ else if (action === 'mark_quote_accepted') {
          p.deposit_type, p.deposit_value,
          c.name as company_name, c.phone as company_phone,
          c.email as company_email,
-         c.id as company_id, c.plan_tier
+              c.id as company_id, c.plan_tier, c.on_accept_collect
   FROM leads l
   LEFT JOIN projects p ON l.project_id = p.id
   LEFT JOIN companies c ON l.company_id = c.id
@@ -873,9 +929,10 @@ await sql`UPDATE projects
     depositType: lead.deposit_type,
     depositValue: lead.deposit_value,
   }) || undefined,
-  depositLabel: lead.deposit_type === 'percent' && parseFloat(lead.deposit_value || '0') > 0
+   depositLabel: lead.deposit_type === 'percent' && parseFloat(lead.deposit_value || '0') > 0
     ? `${parseFloat(lead.deposit_value)}%`
     : undefined,
+  depositPayOnAccept: lead.on_accept_collect === 'deposit',
 });
         // Log to outbox
         try {
@@ -1306,235 +1363,28 @@ else if (action === 'save_invoice') {
 
   return NextResponse.json({ success: true });
 }
-
-
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
 // ==================== SEND INVOICE TO CUSTOMER 📧 ====================
 else if (action === 'send_invoice_to_customer') {
-const leadCheck = await sql`
-   SELECT l.*, p.invoice_data, p.invoice_number, p.quote_data, p.quote_total, p.quote_tax_rate,
-         p.payment_amount, p.payment_status, p.stripe_checkout_session_id,
-         p.deposit_type, p.deposit_value, p.deposit_paid_at,
-         c.name as company_name, c.phone as company_phone,
-         c.email as company_email,
-         c.id as company_id, c.slug as company_slug, c.plan_tier,
-         c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status,
-         c.invoice_terms
-  FROM leads l
-    LEFT JOIN projects p ON l.project_id = p.id
-    LEFT JOIN companies c ON l.company_id = c.id
-    WHERE l.id = ${id}
-  `;
-
-  if (!leadCheck[0]) {
-    return NextResponse.json({ success: false, error: 'Lead not found' }, { status: 404 });
-  }
-
-  const lead = leadCheck[0];
-
-  if (!can((lead.plan_tier ?? 'free') as PlanTier, 'send_invoice_email')) {
-    return NextResponse.json({
-      success: false,
-      error: 'Sending invoices is available on the Pro plan',
-      upgrade_required: true,
-    }, { status: 403 });
-  }
-
-  if (!lead.project_id) {
-    return NextResponse.json({ success: false, error: 'No project exists.' }, { status: 400 });
-  }
-
-  const invoiceItems = (() => {
-    try {
-      const raw = body.invoice_data || lead.invoice_data || lead.quote_data;
-      if (!raw) return [];
-      return typeof raw === 'string' ? JSON.parse(raw) : raw;
-    } catch { return []; }
-  })();
-
-  if (invoiceItems.length === 0) {
-    return NextResponse.json({ success: false, error: 'No line items found.' }, { status: 400 });
-  }
-
-  const invoiceTaxRate = lead.quote_tax_rate ? parseFloat(lead.quote_tax_rate) : 0;
-  // quote_total is stored tax-inclusive and is what the PDF and the customer's
-  // payment link both use. Recomputing from items drifted when the stored tax
-  // rate had been rounded — the emailed total and the charged total differed.
-  const invoiceTotal = parseFloat(lead.quote_total || '0');
-  const invoiceNumber = body.invoice_number || lead.invoice_number || 'INV-001';
-
-  // ── Generate or reuse a Stripe Connect payment link ──
-  // ── Generate or reuse a Stripe Connect payment link ──
-  let paymentLinkUrl: string | undefined;
-  let paymentLinkType: string | undefined;
-
-  // Deposit vs. balance, computed from the lead's own saved terms and what's
-  // already been collected — not from Stripe. Previously this only got set
-  // inside the Stripe branch below, so a company without Stripe active (or a
-  // failed checkout call) sent an email with no record of whether a deposit
-  // or the balance actually went out.
-  // Was an inline reimplementation of the full deposit/collection logic —
-  // its own copy of the exact formula and satisfaction check lib/billing.ts
-  // already centralizes. Flagged as the highest-stakes instance of this
-  // duplication found anywhere in the app, since it's what actually goes
-  // out to a real customer, not just an internal display. getBillingState()
-  // computes everything below in one call, guaranteed internally
-  // consistent — no way for depositAmount, collectionKind, and chargeAmount
-  // to drift relative to each other within this request.
-  const paidSoFar = parseFloat(lead.payment_amount || '0');
-  const billing = getBillingState({
-    total: invoiceTotal,
-    paidAmount: paidSoFar,
-    depositType: lead.deposit_type,
-    depositValue: lead.deposit_value,
-    depositPaidAt: lead.deposit_paid_at,
+  // All of the sending now lives in lib/sendCollectionInvoice.ts, shared with the
+  // automatic sends (quote accepted, job completed).
+  const result = await sendCollectionInvoice({
+    leadId: id,
+    collect: body.collect === 'full' ? 'full' : undefined,
+    invoiceData: body.invoice_data,
+    invoiceNumber: body.invoice_number,
+    dueDate: body.due_date,
+    notes: body.notes,
+    sentBy: { name: user_name, email: user_email },
   });
-  const collectionKind = billing.collectionKind;
-  const chargeAmount = billing.amountDueNow;
-  // sendInvoiceToCustomer's collectionKind param predates the 'full' case —
-  // it only distinguishes deposit vs. balance, treating "unset" as full amount.
-  const emailCollectionKind = collectionKind === 'full' ? undefined : collectionKind;
-  if (lead.stripe_payment_status === 'active' && invoiceTotal > 0) {
-    try {
-      const checkout = await getOrCreateCheckoutSession({
-        projectId: lead.project_id,
-        connectedAccountId: lead.stripe_connect_account_id,
-        customerName: lead.name,
-        customerEmail: lead.email,
-        companySlug: lead.company_slug,
-        contractTotal: invoiceTotal,
-        collect: body.collect === 'full' ? 'full' : undefined,
-      });
-     if (checkout.url) {
-        paymentLinkUrl = checkout.url;
-        paymentLinkType = 'stripe';
-      }
-    } catch (stripeErr: any) {
-      console.error('Failed to create Stripe Checkout session:', stripeErr.message);
-      if (stripeErr.code === 'account_invalid' || stripeErr.message?.includes('not enabled')) {
-        return NextResponse.json({
-          success: false,
-          error: 'Your Stripe account needs attention before you can send payment links. Check your Stripe dashboard or reconnect in Settings.',
-        }, { status: 400 });
-      }
-      // other errors: fall through — email sends without a pay-now button
-    }
+
+  if (!result.ok) {
+    return NextResponse.json(
+      { success: false, error: result.error, ...(result.upgradeRequired ? { upgrade_required: true } : {}) },
+      { status: result.status }
+    );
   }
-
-  try {
-       const emailResult = await sendInvoiceToCustomer({
-      projectId: lead.project_id,
-      customerEmail: lead.email,
-      customerName: lead.name,
-      companyName: lead.company_name || '',
-      companyPhone: lead.company_phone || undefined,
-      companyId: lead.company_id,
-      invoiceNumber,
-      invoiceTotal,
-      amountPaid: lead.payment_amount ? parseFloat(lead.payment_amount) : undefined,
-      invoiceItems,
-        terms: lead.invoice_terms || undefined,
-      dueDate: body.due_date || undefined,
-      notes: body.notes || undefined,
-      contractorEmail: lead.company_email,
- paymentLinkUrl,
-  paymentLinkType,
-  taxRate: invoiceTaxRate > 0 ? invoiceTaxRate : undefined,
-  depositAmount: chargeAmount,
-  collectionKind: emailCollectionKind,
-    });
-
-    // Log to outbox
-    try {
-            await sql`
-        INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, subject, html_body, status, sent_by_email, sent_by_name, metadata)
-        VALUES (
-          ${lead.company_id}, ${lead.project_id}, ${id}, 'invoice',
-          ${lead.email}, ${lead.name},
-          ${emailResult?.subject || 'Invoice'}, ${emailResult?.html || ''},
-          'sent', ${user_email}, ${user_name},
-          ${JSON.stringify({
-            invoice_number: invoiceNumber,
-            invoice_total: invoiceTotal,
-            resend_id: emailResult?.resendId,
-            kind: collectionKind,
-            amount: chargeAmount,
-          })}::jsonb
-        )
-      `;
-    } catch (outboxErr) {
-      console.error('⚠️ Failed to log to outbox:', outboxErr);
-    }
-
-
-    // Mirrors this send onto the invoices table — additive, non-blocking.
-    // The email has already sent successfully by this point; a failure
-    // here shouldn't make a successful send look like an error to the
-    // contractor. Writes deposit_sent_at or sent_at (balance) based on
-    // collectionKind, already computed above by getBillingState(). Always
-    // overwrites unconditionally on every send — same semantics as the
-    // legacy invoice_sent_at = NOW() right above, just split by phase
-    // instead of one shared field.
-       try {
-      if (collectionKind === 'deposit') {
-        await sql`
-          UPDATE projects
-          SET invoice_status = 'sent',
-              invoice_sent_at = NOW(),
-              invoice_pdf_url = ${emailResult?.pdfUrl || null},
-              deposit_due_date = ${body.due_date || null},
-              updated_at = NOW()
-          WHERE id = ${lead.project_id}
-        `;
-        await sql`
-          UPDATE invoices
-          SET deposit_sent_at = NOW(), updated_at = NOW()
-          WHERE project_id = ${lead.project_id}
-        `;
-      } else {
-        await sql`
-          UPDATE projects
-          SET invoice_status = 'sent',
-              invoice_sent_at = NOW(),
-              invoice_pdf_url = ${emailResult?.pdfUrl || null},
-              payment_due_date = ${body.due_date || null},
-              updated_at = NOW()
-          WHERE id = ${lead.project_id}
-        `;
-        await sql`
-          UPDATE invoices
-          SET sent_at = NOW(), updated_at = NOW()
-          WHERE project_id = ${lead.project_id}
-        `;
-      }
-    } catch (mirrorErr) {
-      console.error('⚠️ Failed to update project/invoice after send:', mirrorErr);
-    }
-    
-    await addActivityToProject(id, {
-      type: 'invoice_sent',
-      text: `Invoice ${invoiceNumber} emailed to customer`,
-      user_name,
-      user_email,
-      timestamp: new Date().toISOString(),
-    });
-
-    return NextResponse.json({ success: true, message: 'Invoice sent!' });
-  } catch (emailError: any) {
-    try {
-      await sql`
-        INSERT INTO email_outbox (company_id, project_id, lead_id, type, to_email, to_name, status, error_message, sent_by_email, sent_by_name, metadata)
-        VALUES (
-          ${lead.company_id}, ${lead.project_id}, ${id}, 'invoice',
-          ${lead.email}, ${lead.name},
-          'failed', ${emailError.message || 'Unknown error'},
-          ${user_email}, ${user_name},
-          ${JSON.stringify({ invoice_number: invoiceNumber })}::jsonb
-        )
-      `;
-    } catch {}
-    return NextResponse.json({ success: false, error: 'Failed to send email.' }, { status: 500 });
-  }
+  return NextResponse.json({ success: true, message: 'Invoice sent!' });
 }
 
 

@@ -162,7 +162,7 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
       // redirect landed. Passing the exact session ID lets the success
       // page look up the exact transaction instead of guessing.
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/success?project_id=${projectId}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${companySlug}/dashboard?payment=cancelled`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/cancelled`,
       // kind is advisory only — the webhook re-derives it from the ledger so a
       // replayed or tampered session can't mislabel a row.
       metadata: {
