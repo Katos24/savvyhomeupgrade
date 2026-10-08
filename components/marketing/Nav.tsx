@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect, useRef } from 'react';
 import {
-  Menu, X, ArrowRight, ChevronRight, ChevronDown,
+  Menu, X, ArrowRight, ChevronRight, ChevronDown, Calculator,
   Thermometer, Droplets, Zap, Home, Sparkles, BookOpen,
   QrCode, LayoutDashboard, FileText, Mail, CalendarDays, CreditCard,
 } from 'lucide-react';
@@ -28,6 +28,10 @@ const INDUSTRY_LINKS: NavItem[] = [
   { label: 'Electrical', desc: 'Wiring, panels & installations', href: '/solutions/electrical', icon: <Zap size={16} /> },
   { label: 'Cleaning', desc: 'Residential & commercial cleaning', href: '/solutions/cleaning', icon: <Sparkles size={16} /> },
 ];
+
+// Free tool — its own top-level nav item (and in the site footer).
+// When there are more tools, turn this into a "Free Tools" dropdown.
+const TOOL_LINK = { label: 'Deposit Calculator', href: '/tools/deposit-calculator' };
 
 // Not a trade — shown as a footer row under Industries instead of an item in the list.
 const PARTNER_LINK = { label: 'Bookkeeper? Join the free partner program', href: '/partners' };
@@ -270,6 +274,10 @@ export default function Nav() {
             <Link href="/pricing" className={navLinkClass(isActive('/pricing'))}>
               Pricing
             </Link>
+            <Link href={TOOL_LINK.href} className={`inline-flex items-center gap-1.5 ${navLinkClass(isActive(TOOL_LINK.href))}`}>
+              <Calculator size={15} />
+              {TOOL_LINK.label}
+            </Link>
           </div>
 
           {/* Desktop actions */}
@@ -338,6 +346,13 @@ export default function Nav() {
           {renderMobileAccordion('industries', 'Industries', INDUSTRY_LINKS)}
           <Link href="/pricing" onClick={() => setMobileOpen(false)} className={mobileLinkClass(isActive('/pricing'))}>
             Pricing
+            <ChevronRight size={18} className="text-white/40" />
+          </Link>
+          <Link href={TOOL_LINK.href} onClick={() => setMobileOpen(false)} className={mobileLinkClass(isActive(TOOL_LINK.href))}>
+            <span className="inline-flex items-center gap-2">
+              <Calculator size={17} className="text-white/60" />
+              {TOOL_LINK.label}
+            </span>
             <ChevronRight size={18} className="text-white/40" />
           </Link>
         </div>

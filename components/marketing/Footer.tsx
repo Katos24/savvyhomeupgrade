@@ -11,6 +11,8 @@ const columns: { heading: string; links: [string, string][] }[] = [
       ['How it works', '/#how-it-works'],
       ['Blog', '/blog'],
       ['Book a demo', '/book-demo'],
+           ['Deposit calculator', '/tools/deposit-calculator'],
+      ['Blog', '/blog'],
       ['Sign up', '/signup'],
       ['Log in', '/login'],
     ],
