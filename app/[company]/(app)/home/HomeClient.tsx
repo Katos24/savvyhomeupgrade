@@ -18,6 +18,7 @@ import {
   ChevronRight,
   ChevronDown,
   Zap,
+  Upload,
 } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 
@@ -32,6 +33,7 @@ const EmailTemplatesTab = dynamic(() => import('@/app/[company]/admin/settings/t
 const TeamTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/TeamTab'));
 const BillingTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/BillingTab'));
 const AutomationTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/AutomationTab'));
+const ImportTab = dynamic(() => import('@/app/[company]/admin/settings/tabs/ImportTab'));
 
 // Lazy load Modals
 const FaqModal = dynamic(() => import('@/components/FaqModal'));
@@ -58,8 +60,8 @@ type Company = {
 };
 
 type SectionKey =
-  | 'setup' | 'overview' | 'categories' | 'payments' | 'automation'
-  | 'reviews' | 'pipeline' | 'email-templates' | 'team' | 'billing';
+  | 'setup' | 'overview' | 'categories' | 'payments' | 'automation' | 'import'
+    | 'reviews' | 'pipeline' | 'email-templates' | 'team' | 'billing';
 
 type ChecklistStep =
   | { label: string; description: string; done: boolean; kind: 'section'; section: SectionKey }
@@ -410,7 +412,7 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
         label: 'Your business',
         items: [
           { key: 'overview', label: 'Overview', icon: LayoutGrid, visible: true },
-        ],
+          { key: 'import', label: 'Import', icon: Upload, visible: isAdminForSections },        ],
       },
       {
         label: 'Money',
@@ -592,8 +594,10 @@ export default function HomeClient({ company: initialCompany, currentUser }: { c
               )
             )}
 
-            {activeSection === 'reviews' && <GoogleReviewsTab company={company} locked={reviewsLocked} />}
+            {isAdminForSections && activeSection === 'import' && <ImportTab company={company} />}
 
+            {activeSection === 'reviews' && <GoogleReviewsTab company={company} locked={reviewsLocked} />}
+            
                         {isAdminForSections && activeSection === 'pipeline' && (
               !can(planTier, 'settings_pipeline') ? (
                 <LockedSection label="Pipeline" companySlug={company.slug} />
