@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { resolveFieldConfig } from '@/lib/formFields';
+import { TIMELINE_OPTIONS, BEST_TIME_OPTIONS, bestTimesArray, toggleBestTime } from '@/lib/timing';
 
 
 // ---------------------------------------------------------------------------
@@ -615,40 +616,65 @@ export default function CreateLeadModal({
                         </>
                       )}
 
-                      {/* Date & Time */}
-                      {(showDate || showTime) && (
-                        <div className="grid grid-cols-2 gap-3">
-                          {showDate && (
-                            <div className="space-y-1.5 min-w-0 overflow-hidden">
-                              <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preferred Date</label>
-                              <div className="relative">
-                                <Calendar className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                                <input
-                                  type="date"
-                                  value={formData.preferred_date}
-                                  onChange={(e) => setFormData({ ...formData, preferred_date: e.target.value })}
-                                  style={{ colorScheme: isDark ? 'dark' : 'light', '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
-                                  className={`${inputClass} pl-9 text-sm w-full focus:ring-2 focus:ring-offset-0 focus:border-transparent [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full`}
-                                />
-                              </div>
-                            </div>
-                          )}
-                          {showTime && (
-                            <div className="space-y-1.5">
-                              <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preferred Time</label>
-                              <div className="relative">
-                                <Clock className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                                <input 
-                                  type="text" 
-                                  placeholder="Morning" 
-                                  value={formData.preferred_time}
-                                  onChange={(e) => setFormData({ ...formData, preferred_time: e.target.value })}
-                                  className={`${inputClass} pl-9 text-sm focus:ring-2 focus:ring-offset-0 focus:border-transparent`} 
-                                  style={{ '--tw-ring-color': `${accentColor}80` } as React.CSSProperties}
-                                />
-                              </div>
-                            </div>
-                          )}
+                                           {/* Timing (lib/timing.ts) — what the customer wants, not a booking */}
+                      {showDate && (
+                        <div className="space-y-1.5">
+                          <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            How soon?
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {TIMELINE_OPTIONS.map((opt) => {
+                              const selected = formData.preferred_date === opt.value;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  aria-pressed={selected}
+                                  onClick={() => setFormData({ ...formData, preferred_date: selected ? '' : opt.value })}
+                                  className={`px-3 py-1.5 rounded-xl border text-sm font-semibold transition-all duration-200 ${
+                                    selected
+                                      ? 'border-transparent shadow-sm'
+                                      : isDark
+                                      ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                  }`}
+                                  style={selected ? { backgroundColor: accentColor, color: accentTextColor } : undefined}
+                                >
+                                  {opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {showTime && (
+                        <div className="space-y-1.5">
+                          <label className={`text-[11px] font-bold uppercase tracking-wider ml-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                            Best times
+                          </label>
+                          <div className="flex flex-wrap gap-2">
+                            {BEST_TIME_OPTIONS.map((opt) => {
+                              const selected = bestTimesArray(formData.preferred_time).includes(opt.value);
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  aria-pressed={selected}
+                                  onClick={() => setFormData({ ...formData, preferred_time: toggleBestTime(formData.preferred_time, opt.value) })}
+                                  className={`px-3 py-1.5 rounded-xl border text-sm font-semibold transition-all duration-200 ${
+                                    selected
+                                      ? 'border-transparent shadow-sm'
+                                      : isDark
+                                      ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10'
+                                      : 'border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                                  }`}
+                                  style={selected ? { backgroundColor: accentColor, color: accentTextColor } : undefined}
+                                >
+                                  {opt.label}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
 

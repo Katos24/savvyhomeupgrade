@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  X, ChevronLeft, User, Mail, Phone, MapPin, Calendar, Clock,
+  X, ChevronLeft, User, Mail, Phone, MapPin,
   ImageIcon, Megaphone, Sparkles, Send, Loader2, Check, AlertCircle,
 } from 'lucide-react';
 import type { Category } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
-import { getSchedulingConfig } from '@/lib/schedulingConfig';
+import { TIMELINE_OPTIONS, BEST_TIME_OPTIONS, bestTimesArray, toggleBestTime } from '@/lib/timing';
 
 type Theme = ReturnType<typeof themeTokens>;
 
@@ -19,12 +19,6 @@ function formatPhone(value: string) {
   if (d.length <= 3) return d;
   if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
-}
-
-// Same label format as the real form (UploadFormStepTwo): "9:30 AM"
-function formatSlotLabel(t: string) {
-  const [h, m] = t.split(':').map(Number);
-  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
 }
 
 type TestModeStep1 = {
@@ -75,55 +69,12 @@ export default function TestModeModal({
   const [unit, setUnit] = useState('');
   const [city, setCity] = useState('');
   const [zip, setZip] = useState('');
+  // Timing (lib/timing.ts), same as the real form: "how soon" + best times.
   const [preferredDate, setPreferredDate] = useState('');
   const [preferredTime, setPreferredTime] = useState('');
   const [leadSource, setLeadSource] = useState('');
-
-  // Real availability, from the same endpoint the public form uses, so the
-  // test shows exactly the time buttons a customer would see (booked slots
-  // struck through). Read-only: nothing is booked or saved.
-  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-  const showTime = !!fieldConfig.preferred_time?.enabled;
-
-  // End time only for trades that use it — same rule as the real form.
-  const showEndTime = showTime && getSchedulingConfig(company?.business_type || 'general').showEndTime;
-  const [preferredEndTime, setPreferredEndTime] = useState('');
-  const [endSlots, setEndSlots] = useState<{ time: string; available: boolean }[]>([]);
-  const [endSlotsLoading, setEndSlotsLoading] = useState(false);
-
-  // Refetch end options whenever the start changes; clear a now-stale pick.
-  useEffect(() => {
-    setPreferredEndTime('');
-    if (!showEndTime || !preferredDate || !preferredTime || !company?.slug) {
-      setEndSlots([]);
-      return;
-    }
-    let cancelled = false;
-    setEndSlotsLoading(true);
-    fetch(`/api/company/${company.slug}/availability?date=${preferredDate}&start=${preferredTime}`)
-      .then((r) => r.json())
-      .then((data) => { if (!cancelled) setEndSlots(data.success ? data.slots : []); })
-      .catch(() => { if (!cancelled) setEndSlots([]); })
-      .finally(() => { if (!cancelled) setEndSlotsLoading(false); });
-    return () => { cancelled = true; };
-  }, [preferredTime, preferredDate, showEndTime, company?.slug]);
-
-  useEffect(() => {
-    setPreferredTime('');
-    if (!showTime || !preferredDate || !company?.slug) {
-      setSlots([]);
-      return;
-    }
-    let cancelled = false;
-    setSlotsLoading(true);
-    fetch(`/api/company/${company.slug}/availability?date=${preferredDate}`)
-      .then((r) => r.json())
-      .then((data) => { if (!cancelled) setSlots(data.success ? data.slots : []); })
-      .catch(() => { if (!cancelled) setSlots([]); })
-      .finally(() => { if (!cancelled) setSlotsLoading(false); });
-    return () => { cancelled = true; };
-  }, [preferredDate, showTime, company?.slug]);
+  const showTimeline = !!fieldConfig.preferred_date?.enabled;
+  const showBestTimes = !!fieldConfig.preferred_time?.enabled;
 
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -178,7 +129,6 @@ export default function TestModeModal({
           address: addressLine,
           preferredDate,
           preferredTime,
-          preferredEndTime,
           leadSource,
         }),
       });
@@ -396,92 +346,56 @@ export default function TestModeModal({
                 </div>
               )}
 
-              {fieldConfig.preferred_date.enabled && (
+              {showTimeline && (
                 <div>
-                  <label className={labelCls}>Preferred Date &amp; Time</label>
-                  <div className="space-y-2">
-                    <div className={inputWrap}>
-                      <Calendar className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
-                      <input
-                        type="date"
-                        value={preferredDate}
-                        onChange={(e) => setPreferredDate(e.target.value)}
-                        className={inputField}
-                        style={{ colorScheme: isDark ? 'dark' : 'light' }}
-                      />
-                    </div>
-                    {showTime && (
-                      <div>
-                        <p className={`mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold ${t.subText}`}>
-                          <Clock className="h-3.5 w-3.5" /> Select a time
-                        </p>
-                        {!preferredDate ? (
-                          <p className={`text-[11px] font-medium ${t.subText}`}>Pick a date to see available times.</p>
-                        ) : slotsLoading ? (
-                          <p className={`text-[11px] font-medium ${t.subText}`}>Checking availability...</p>
-                        ) : slots.length === 0 ? (
-                          <p className={`text-[11px] font-medium ${t.subText}`}>No times available that day.</p>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {slots.map((slot) => {
-                              const selected = preferredTime === slot.time;
-                              return (
-                                <button
-                                  key={slot.time}
-                                  type="button"
-                                  disabled={!slot.available}
-                                  onClick={() => setPreferredTime(slot.time)}
-                                  className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
-                                    !slot.available
-                                      ? `cursor-not-allowed line-through ${t.border} ${t.subText} opacity-50`
-                                      : selected
-                                      ? 'border-transparent bg-blue-600 text-white shadow-sm'
-                                      : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
-                                  }`}
-                                >
-                                  {formatSlotLabel(slot.time)}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {showEndTime && preferredTime && (
-                      <div>
-                        <p className={`mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold ${t.subText}`}>
-                          <Clock className="h-3.5 w-3.5" /> Preferred end time
-                        </p>
-                        {endSlotsLoading ? (
-                          <p className={`text-[11px] font-medium ${t.subText}`}>Checking availability...</p>
-                        ) : endSlots.length === 0 ? (
-                          <p className={`text-[11px] font-medium ${t.subText}`}>No end times available.</p>
-                        ) : (
-                          <div className="flex flex-wrap gap-1.5">
-                            {endSlots.map((slot) => {
-                              const selected = preferredEndTime === slot.time;
-                              return (
-                                <button
-                                  key={slot.time}
-                                  type="button"
-                                  disabled={!slot.available}
-                                  onClick={() => setPreferredEndTime(slot.time)}
-                                  className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
-                                    !slot.available
-                                      ? `cursor-not-allowed line-through ${t.border} ${t.subText} opacity-50`
-                                      : selected
-                                      ? 'border-transparent bg-blue-600 text-white shadow-sm'
-                                      : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
-                                  }`}
-                                >
-                                  {formatSlotLabel(slot.time)}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                  <label className={labelCls}>How soon do you need this?</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {TIMELINE_OPTIONS.map((opt) => {
+                      const selected = preferredDate === opt.value;
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => setPreferredDate(selected ? '' : opt.value)}
+                          className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                          selected
+                            ? 'border-transparent text-white shadow-sm'
+                            : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
+                        }`}
+                          style={selected ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {showBestTimes && (
+                <div>
+                  <label className={labelCls}>Best time to reach you or come by</label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {BEST_TIME_OPTIONS.map((opt) => {
+                      const selected = bestTimesArray(preferredTime).includes(opt.value);
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => setPreferredTime(toggleBestTime(preferredTime, opt.value))}
+                          className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
+                          selected
+                            ? 'border-transparent text-white shadow-sm'
+                            : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
+                        }`}
+                          style={selected ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
+                        >
+                          {opt.label}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}

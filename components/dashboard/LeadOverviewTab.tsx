@@ -14,6 +14,7 @@ import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButto
 import LeadLightbox from '@/components/dashboard/LeadLightbox';
 import JobProgress from '@/components/dashboard/JobProgress';
 import { can, type PlanTier } from '@/lib/permissions';
+import { timelineLabel, bestTimesLabel } from '@/lib/timing';
 
 type LeadOverviewTabProps = {
   lead: any;
@@ -654,13 +655,27 @@ export default function LeadOverviewTab({
             </h3>
           </div>
 
-          {(lead.preferred_date || lead.preferred_time) && (
-            <div className="flex items-center gap-2 text-xs text-blue-700 font-semibold bg-blue-50 px-3 py-1 rounded-lg border border-blue-100 shadow-2xs">
-              <Calendar className="w-3.5 h-3.5 text-blue-500" />
-              <span>
-                {lead.preferred_date && (() => { const d = new Date(lead.preferred_date); return isNaN(d.getTime()) ? lead.preferred_date : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); })()}
-                {lead.preferred_time && ` @ ${lead.preferred_time}`}
-              </span>
+                   {/* What the customer asked for (lib/timing.ts) — not a booking */}
+          {(timelineLabel(lead.preferred_date) || bestTimesLabel(lead.preferred_time)) && (
+            <div className="flex flex-wrap items-center justify-end gap-1.5">
+              {timelineLabel(lead.preferred_date) && (
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${
+                    lead.preferred_date === 'asap'
+                      ? 'border-amber-200 bg-amber-50 text-amber-800'
+                      : 'border-slate-200 bg-white text-slate-700'
+                  }`}
+                >
+                  <Calendar className="w-3.5 h-3.5 opacity-70" />
+                  {timelineLabel(lead.preferred_date)}
+                </span>
+              )}
+              {bestTimesLabel(lead.preferred_time) && (
+                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
+                  <Clock className="w-3.5 h-3.5 opacity-70" />
+                  {bestTimesLabel(lead.preferred_time)}
+                </span>
+              )}
             </div>
           )}
         </div>

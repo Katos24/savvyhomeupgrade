@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '@/lib/auth';
 import { getCompanyEmailTemplates, renderEmailTemplate } from '@/lib/emailTemplates';
 import { buildEmail, buildEmailRow, buildEmailTable, buildEmailSection, buildCustomAnswers } from '@/lib/emailBase';
+import { timingSummary } from '@/lib/timing';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const sql = neon(process.env.DATABASE_URL!);
@@ -89,8 +90,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     const summaryTable = buildEmailTable([
       buildEmailRow('Service', displayCategory),
       buildEmailRow('Address', address || ''),
-      preferredDate || preferredTime
-        ? buildEmailRow('Preferred', [preferredDate, preferredTime].filter(Boolean).join(' at '))
+           timingSummary(preferredDate, preferredTime)
+        ? buildEmailRow('Timing', timingSummary(preferredDate, preferredTime)!)
         : '',
       buildEmailRow('Details', description || ''),
     ]);

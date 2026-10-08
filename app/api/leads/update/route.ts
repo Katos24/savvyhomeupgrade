@@ -12,7 +12,7 @@ import { getOrCreateCheckoutSession } from '@/lib/stripe/getOrCreateCheckoutSess
 import { getSchedulingConfig } from '@/lib/schedulingConfig';
 import { getDepositAmount, isDepositSatisfied, getAmountDueNow, getBillingState } from '@/lib/billing';
 import { sendCollectionInvoice } from '@/lib/sendCollectionInvoice';
-
+import { cleanTimeline, cleanBestTimes } from '@/lib/timing';
 
 
 export async function POST(request: Request) {
@@ -333,9 +333,9 @@ ${'INV-' + String(nextProjectNumber).padStart(3, '0')},
           ${JSON.stringify(leadNotes)},
           '[]'::jsonb,
           '[]'::jsonb,
-          ${leadData.preferred_date || null},
-          ${leadData.preferred_time || null},
-          ${leadData.preferred_end_time || null},
+                   null, -- scheduled_date: set by the contractor, never from the customer's request
+          null, -- scheduled_time
+          null, -- scheduled_end_time
           NOW(),
           NOW()
         )
@@ -1309,9 +1309,8 @@ else if (action === 'update_lead_step2') {
       city           = COALESCE(${city || null}, city),
       zip_code       = COALESCE(${zip_code || null}, zip_code),
       lead_source    = COALESCE(${lead_source || null}, lead_source),
-      preferred_date = COALESCE(${preferred_date || null}, preferred_date),
-      preferred_time = COALESCE(${preferred_time || null}, preferred_time),
-      preferred_end_time = COALESCE(${preferred_end_time || null}, preferred_end_time),
+           preferred_date = COALESCE(${cleanTimeline(preferred_date)}, preferred_date),
+      preferred_time = COALESCE(${cleanBestTimes(preferred_time)}, preferred_time),
       custom_answers = COALESCE(${custom_answers ? JSON.stringify(custom_answers) : null}::jsonb, custom_answers),
       file_urls      = ${JSON.stringify(mergedFiles)},
       updated_at     = NOW()

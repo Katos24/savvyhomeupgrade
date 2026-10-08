@@ -5,6 +5,8 @@ import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getPaymentMethodLabel } from '@/lib/paymentStatus';
 import { periodStartsInZone } from '@/lib/timezone';
+import { timelineLabel, bestTimesLabel } from '@/lib/timing';
+
 
 
 
@@ -345,8 +347,8 @@ for (const lead of invoicedLeads) {
         'Refund Date',
         'Created Date',
         'Lead Source',
-        'Preferred Date',
-        'Preferred Time',
+               'How Soon',
+        'Best Times',
       ];
 
       const customHeaders = customQuestions.map((q: any) => q.label);
@@ -412,8 +414,8 @@ escape(lead.name || ''),
           escape(lead.refunded_at ? new Date(lead.refunded_at).toLocaleDateString() : ''),
           escape(new Date(lead.created_at).toLocaleDateString()),
           escape(lead.lead_source || ''),
-          escape(lead.preferred_date ? new Date(lead.preferred_date).toLocaleDateString() : ''),
-          escape(lead.preferred_time || ''),
+                    escape(timelineLabel(lead.preferred_date) || ''),
+          escape(bestTimesLabel(lead.preferred_time) || ''),
         ];
 
         const customValues = customQuestions.map((q: any) => {

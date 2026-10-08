@@ -1,12 +1,11 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
-import { getSchedulingConfig } from '@/lib/schedulingConfig';import {
+import { useRef } from 'react';
+import { TIMELINE_OPTIONS, BEST_TIME_OPTIONS, bestTimesArray, toggleBestTime } from '@/lib/timing';
+import {
   MapPin,
   Home,
   HelpCircle,
-  Calendar,
-  Clock,
   Image as ImageIcon,
   Video,
   Upload,
@@ -41,9 +40,10 @@ interface StepTwoProps {
     city: string;
     zip_code: string;
     lead_source: string;
+    /** How soon: 'asap' | 'week' | 'month' | 'flexible' (lib/timing.ts) */
     preferred_date: string;
+    /** Best times, comma list: 'weekday_mornings,evenings' (lib/timing.ts) */
     preferred_time: string;
-    preferred_end_time: string;
   };
   customAnswers: Record<string, any>;
   customQuestions: CustomQuestion[];
@@ -111,54 +111,11 @@ export default function UploadFormStepTwo({
 }: StepTwoProps) {
 const inputRef = useRef<HTMLInputElement | null>(null);
   const showAddress = fieldConfig.address.enabled;
-  const showDate = fieldConfig.preferred_date.enabled;
-  const showTime = fieldConfig.preferred_time.enabled;
-
- const showEndTime = showTime && getSchedulingConfig(businessType).showEndTime;
-
-  const [slots, setSlots] = useState<{ time: string; available: boolean }[]>([]);
-  const [slotsLoading, setSlotsLoading] = useState(false);
-
-  const [endSlots, setEndSlots] = useState<{ time: string; available: boolean }[]>([]);
-  const [endSlotsLoading, setEndSlotsLoading] = useState(false);
-
-  useEffect(() => {
-    if (!showTime || !formData.preferred_date || !companySlug) {
-      setSlots([]);
-      return;
-    }
-    setSlotsLoading(true);
-    fetch(`/api/company/${companySlug}/availability?date=${formData.preferred_date}`)
-      .then((r) => r.json())
-      .then((data) => setSlots(data.success ? data.slots : []))
-      .catch(() => setSlots([]))
-      .finally(() => setSlotsLoading(false));
-  }, [formData.preferred_date, companySlug, showTime]);
-
-  // Refetch end-time options whenever the chosen start changes. A previously
-  // picked end time can become invalid if the start changes — clearing it
-  // rather than leaving a stale, unvalidated value in the form.
-  useEffect(() => {
-    if (!showEndTime || !formData.preferred_date || !formData.preferred_time || !companySlug) {
-      setEndSlots([]);
-      return;
-    }
-    onChange('preferred_end_time', '');
-    setEndSlotsLoading(true);
-    fetch(`/api/company/${companySlug}/availability?date=${formData.preferred_date}&start=${formData.preferred_time}`)
-      .then((r) => r.json())
-      .then((data) => setEndSlots(data.success ? data.slots : []))
-      .catch(() => setEndSlots([]))
-      .finally(() => setEndSlotsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.preferred_time, formData.preferred_date, companySlug, showEndTime]);
-
-  const formatSlotLabel = (t: string) => {
-    const [h, m] = t.split(':').map(Number);
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    const hour = h % 12 || 12;
-    return `${hour}:${String(m).padStart(2, '0')} ${ampm}`;
-  };
+  // Same two config keys as before, new meaning (lib/timing.ts):
+  // preferred_date = "How soon?", preferred_time = "Best times".
+  const showTimeline = fieldConfig.preferred_date.enabled;
+  const showBestTimes = fieldConfig.preferred_time.enabled;
+  const selectedBestTimes = bestTimesArray(formData.preferred_time);
   const showLeadSource = fieldConfig.lead_source.enabled;
   const showFileUpload = fieldConfig.file_upload.enabled;
 
@@ -257,100 +214,69 @@ const inputRef = useRef<HTMLInputElement | null>(null);
   </>
 )}
 
-          {/* Date + Time */}
-
-
-          {/* Date + Time — stacked full-width, not a 2-col grid. Time
-              always forced itself to col-span-2 anyway (it needs room for
-              a row of slot buttons), which left Date alone in column 1
-              with an empty, wasted column 2 beside it — squeezing the
-              date input to half-width for no real reason on every screen
-              size, mobile included. */}
-          {(showDate || showTime) && (
-            <div className="space-y-4">
-              {showDate && (
-                <div className="min-w-0 overflow-hidden">
-                  <label className={labelClass}>Preferred Date</label>
-                  <input
-                    type="date"
-                    autoComplete="off"
-                    value={formData.preferred_date}
-                    onChange={e => onChange('preferred_date', e.target.value)}
-                    className={`${inputClass} mt-2`}
-                    style={{ colorScheme: 'light' }}
-                    disabled={disabled}
-                  />
-                </div>
-              )}
-              {showTime && (
-                <div>
-                  <label className={labelClass}>Preferred Time</label>
-                  {!formData.preferred_date ? (
-                    <p className="mt-2 text-sm font-medium text-gray-400">Pick a date first to see open times.</p>
-                  ) : slotsLoading ? (
-                    <p className="mt-2 text-sm font-medium text-gray-400">Checking availability...</p>
-                  ) : (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {slots.map((slot) => {
-                        const selected = formData.preferred_time === slot.time;
-                        return (
-                          <button
-                            key={slot.time}
-                            type="button"
-                            disabled={disabled || !slot.available}
-                            onClick={() => onChange('preferred_time', slot.time)}
-                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
-                              !slot.available
-                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed line-through'
-                                : selected
-                                ? 'text-white border-transparent shadow-sm bg-blue-600'
-                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                            }`}
-                          >
-                            {formatSlotLabel(slot.time)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {showEndTime && formData.preferred_time && (
-                <div>
-                  <label className={labelClass}>Preferred End Time</label>
-                  {endSlotsLoading ? (
-                    <p className="mt-2 text-sm font-medium text-gray-400">Checking availability...</p>
-                  ) : (
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      {endSlots.map((slot) => {
-                        const selected = formData.preferred_end_time === slot.time;
-                        return (
-                          <button
-                            key={slot.time}
-                            type="button"
-                            disabled={disabled || !slot.available}
-                            onClick={() => onChange('preferred_end_time', slot.time)}
-                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
-                              !slot.available
-                                ? 'bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed line-through'
-                                : selected
-                                ? 'text-white border-transparent shadow-sm bg-blue-600'
-                                : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                            }`}
-                          >
-                            {formatSlotLabel(slot.time)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              )}
+          {/* Timing — what the customer would like, not a booking.
+              The contractor sets the real visit in the Schedule tab. */}
+          {showTimeline && (
+            <div className="space-y-2">
+              <label className={labelClass}>How soon do you need this?</label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {TIMELINE_OPTIONS.map((opt) => {
+                  const selected = formData.preferred_date === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => onChange('preferred_date', selected ? '' : opt.value)}
+                      disabled={disabled}
+                      className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
+                            selected
+                              ? 'text-white border-transparent shadow-sm'
+                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                          }`}
+                      style={selected ? { background: `linear-gradient(135deg, ${color1}, ${color2})`, borderColor: 'transparent' } : {}}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           )}
 
- 
+          {showBestTimes && (
+            <div className="space-y-2">
+              <label className={labelClass}>
+                Best time to reach you or come by
+                <span className="ml-2 text-[10px] font-bold text-gray-400 normal-case tracking-normal">
+                  pick any
+                </span>
+              </label>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {BEST_TIME_OPTIONS.map((opt) => {
+                  const selected = selectedBestTimes.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => onChange('preferred_time', toggleBestTime(formData.preferred_time, opt.value))}
+                      disabled={disabled}
+                      className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
+                            selected
+                              ? 'text-white border-transparent shadow-sm'
+                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
+                          }`}
+                      style={selected ? { background: `linear-gradient(135deg, ${color1}, ${color2})`, borderColor: 'transparent' } : {}}
+                    >
+                      {opt.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Custom Questions */}
           {customQuestions.length > 0 && (
             <div className="border-t pt-4 space-y-5">

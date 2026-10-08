@@ -81,7 +81,7 @@ export default function UploadForm({
   });
  const [step2Data, setStep2Data] = useState({
     address_line_1: '', address_line_2: '', city: '', zip_code: '',
-    lead_source: '', preferred_date: '', preferred_time: '', preferred_end_time: '',
+    lead_source: '', preferred_date: '', preferred_time: '',
   });
   const [customAnswers, setCustomAnswers] = useState<Record<string, any>>({});
   const [files, setFiles] = useState<File[]>([]);
@@ -303,7 +303,7 @@ export default function UploadForm({
           lead_source: step2Data.lead_source || null,
          preferred_date: step2Data.preferred_date || null,
           preferred_time: step2Data.preferred_time || null,
-          preferred_end_time: step2Data.preferred_end_time || null,
+          preferred_end_time: null,
           custom_answers: customAnswers,
           file_urls: uploadedFiles,
         }),

@@ -199,13 +199,41 @@ export default function BookingFormConfig({
           </div>
         )}
         {fieldConfig.address.enabled && <PhoneField label="Address" isDark={isDark}><div className={fieldBox}><MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">123 Main St, New York 12345</span></div></PhoneField>}
-        {fieldConfig.preferred_date.enabled && (
-          <PhoneField label="Preferred Date & Time" isDark={isDark}>
-            <div className="space-y-2">
-              <div className={fieldBox}><Calendar className="h-3.5 w-3.5 shrink-0 text-slate-400" />MM / DD / YYYY</div>
-              <div className={fieldBox}><Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" />Morning</div>
-            </div>
-          </PhoneField>
+                {fieldConfig.preferred_date.enabled && (
+          <>
+            <PhoneField label="How soon do you need this?" isDark={isDark}>
+              <div className="flex flex-wrap gap-1.5">
+                {['ASAP', 'Within a week', 'Within a month', 'Just getting prices'].map((l, i) => (
+                  <span
+                    key={l}
+                    className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${
+                      i === 0
+                        ? 'border-transparent bg-slate-900 text-white'
+                        : isDark
+                        ? 'border-slate-700 bg-slate-800 text-slate-300'
+                        : 'border-slate-200 bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    {l}
+                  </span>
+                ))}
+              </div>
+            </PhoneField>
+            <PhoneField label="Best time to reach you" isDark={isDark}>
+              <div className="flex flex-wrap gap-1.5">
+                {['Weekday mornings', 'Weekday afternoons', 'Evenings', 'Weekends'].map((l) => (
+                  <span
+                    key={l}
+                    className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${
+                      isDark ? 'border-slate-700 bg-slate-800 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'
+                    }`}
+                  >
+                    {l}
+                  </span>
+                ))}
+              </div>
+            </PhoneField>
+          </>
         )}
         {fieldConfig.lead_source.enabled && <PhoneField label="How did you hear about us?" isDark={isDark}><div className={fieldBox}><Megaphone className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">Google, referral, saw your truck...</span></div></PhoneField>}
         {fieldConfig.file_upload.enabled && (
@@ -357,7 +385,7 @@ export default function BookingFormConfig({
               </div>
                             <div className="space-y-2">
                                <ControlRow icon={MapPin} label="Street Address" hint="Gather specific job site locations" enabled={fieldConfig.address.enabled} onToggle={() => toggleField('address')} planLocked={!canCustomizeForm} companySlug={company.slug} t={t} isDark={isDark} />
-                <ControlRow icon={Calendar} label="Preferred Date & Time" hint="Clients pick a target date and time" enabled={fieldConfig.preferred_date.enabled} onToggle={togglePreferredDateTime} planLocked={!canCustomizeForm} companySlug={company.slug} t={t} isDark={isDark} />
+                <ControlRow icon={Calendar} label="Timing" hint="How soon they need it and the best times to reach them" enabled={fieldConfig.preferred_date.enabled} onToggle={togglePreferredDateTime} planLocked={!canCustomizeForm} companySlug={company.slug} t={t} isDark={isDark} />
                 <ControlRow icon={Megaphone} label="Lead Referral Source" hint="Ask 'How did you hear about us?'" enabled={fieldConfig.lead_source.enabled} onToggle={() => toggleField('lead_source')} planLocked={!canCustomizeForm} companySlug={company.slug} t={t} isDark={isDark} />
                 <ControlRow
                   icon={ImageIcon}

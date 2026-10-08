@@ -10,6 +10,7 @@ import {
   buildAttachmentSummary,
 } from '@/lib/emailBase';
 import { describeRequirementReason } from '@/lib/stripe/requirementCopy';
+import { timingSummary } from '@/lib/timing';
 
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -84,8 +85,8 @@ export async function sendNewLeadAlertEmail({
       buildEmailRow('Phone', `<a href="tel:${customerPhone}" style="color: #3b82f6; text-decoration: none;">${customerPhone}</a>`),
       buildEmailRow('Email', `<a href="mailto:${customerEmail}" style="color: #3b82f6; text-decoration: none;">${customerEmail}</a>`),
       buildEmailRow('Address', fullAddress),
-      preferredDate || preferredTime
-        ? buildEmailRow('Preferred', [preferredDate, preferredTime].filter(Boolean).join(' at '))
+            timingSummary(preferredDate, preferredTime)
+        ? buildEmailRow('Timing', timingSummary(preferredDate, preferredTime)!)
         : '',
       buildEmailRow('Found via', leadSource || ''),
     ]);
@@ -225,8 +226,8 @@ export async function sendLeadConfirmationEmail({
     const summaryTable = buildEmailTable([
       buildEmailRow('Service', displayCategory),
       buildEmailRow('Address', fullAddress),
-      preferredDate || preferredTime
-        ? buildEmailRow('Preferred', [preferredDate, preferredTime].filter(Boolean).join(' at '))
+           timingSummary(preferredDate, preferredTime)
+        ? buildEmailRow('Timing', timingSummary(preferredDate, preferredTime)!)
         : '',
       buildEmailRow('Details', description || ''),
       buildEmailRow('Attached', attachmentText),

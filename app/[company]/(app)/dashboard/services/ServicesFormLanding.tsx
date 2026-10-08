@@ -76,8 +76,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
     { label: 'Service', on: true },
     { label: 'Description', on: true },
     { label: 'Address', on: !!fc.address?.enabled },
-    { label: 'Preferred date', on: !!fc.preferred_date?.enabled },
-    { label: 'Preferred time', on: !!fc.preferred_time?.enabled },
+      { label: 'Timing', on: !!fc.preferred_date?.enabled },
     { label: 'How they found you', on: !!fc.lead_source?.enabled },
     { label: 'Photos', on: !!fc.file_upload?.enabled },
   ];
