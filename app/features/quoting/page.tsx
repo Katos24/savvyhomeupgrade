@@ -14,9 +14,9 @@ import QuoteBuilderDemo from '@/components/marketing/QuoteBuilderDemo';
    ───────────────────────────────────────────────────────── */
 
 export const metadata = {
-  title: 'Quotes & Estimate Templates for Contractors | Lead2Project',
+  title: 'Contractor Estimate & Quote Software | Lead2Project',
   description:
-    'Build quotes from your price templates in a minute, with the deposit already on them. Customers accept online.',
+    'Build estimates from your own templates, email them in seconds, and let customers accept online with no account. The deposit to get started is shown right on the quote.',
 };
 
 const D = 'font-[family-name:var(--font-display)]';
@@ -200,7 +200,7 @@ function SavedItemsMock() {
 const STEPS = [
   { icon: Layers, title: 'Load your template', desc: 'Pick the service and your saved line items and deposit load in one tap. Adjust quantities for this job.' },
   { icon: Send, title: 'Send it', desc: 'Your customer gets a clean email with every line item, the total and the deposit to start.' },
-  { icon: ThumbsUp, title: 'They accept', desc: 'One click from their email, no account needed. The job moves forward on your board right away.' },
+  { icon: ThumbsUp, title: 'They accept', desc: 'Right from their email, no account needed. The job moves forward on your board right away.' },
 ];
 
 export default function QuotingPage() {

@@ -15,9 +15,9 @@ import { Eyebrow, Stamp, TapeDivider, TradesStrip } from '@/components/marketing
    ───────────────────────────────────────────────────────── */
 
 export const metadata = {
-  title: 'Deposits, Invoices & Card Payments for Contractors | Lead2Project',
+  title: 'Collect Contractor Deposits & Get Paid Online | Lead2Project',
   description:
-    'Collect the deposit before you buy materials and the balance when the job is done. Card payments through Stripe, cash and check tracked too.',
+    'Send deposit requests and final invoices your customers can pay by card. Turn on auto invoices and the deposit request goes out the moment a quote is accepted.',
 };
 
 const D = 'font-[family-name:var(--font-display)]';

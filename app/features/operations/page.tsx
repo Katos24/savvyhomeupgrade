@@ -28,9 +28,9 @@ import { Eyebrow, TapeDivider, TradesStrip } from '@/components/marketing/market
    ───────────────────────────────────────────────────────── */
 
 export const metadata = {
-  title: 'Job Management for Contractors | Lead2Project',
+  title: 'Simple CRM & Job Management for Contractors | Lead2Project',
   description:
-    'Every job on one board. Quotes from templates, scheduling, deposits and payments in one place for contractors.',
+    'One card per job from request to paid: quote, deposit, schedule, invoice and notes in one place. Board and table views, unlimited users.',
 };
 
 const D = 'font-[family-name:var(--font-display)]';

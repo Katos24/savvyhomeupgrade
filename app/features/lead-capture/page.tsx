@@ -31,9 +31,9 @@ import LeadFormDemo from '@/components/marketing/LeadFormDemo';
    ───────────────────────────────────────────────────────── */
 
 export const metadata = {
-  title: 'Booking Form & QR Code for Contractors | Lead2Project',
+  title: 'Quote Request Form & QR Code for Contractors | Lead2Project',
   description:
-    'Your own booking link and QR code. Customers request a quote from your truck, yard sign or Google profile, and it lands in your dashboard.',
+    'Your own online quote request form and QR code for your truck, yard signs and Google profile. Requests land on your board with photos, answers and how soon they need it.',
 };
 
 const D = 'font-[family-name:var(--font-display)]';
