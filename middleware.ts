@@ -44,7 +44,10 @@ pathname.startsWith('/api/upload/') ||
     pathname.startsWith('/onboarding') ||
     pathname.startsWith('/bookkeeper/login') ||
     pathname.startsWith('/bookkeeper/signup') ||
-    pathname.startsWith('/partners');
+    pathname.startsWith('/partners') ||
+pathname.startsWith('/features') ||
+pathname.startsWith('/tools') ||
+pathname.startsWith('/blog');
 
  // Allow bookkeeper routes with bookkeeper token
   const bookkeeperToken = request.cookies.get('bookkeeper-auth-token');
@@ -72,8 +75,10 @@ pathname.startsWith('/api/upload/') ||
     return NextResponse.next();
   }
 
-  if (isProtectedRoute && !token) {
-    return NextResponse.redirect(new URL('/login', request.url));
+// Marketing pages are always public, even if their address happens to
+// contain a protected word (e.g. /features/outbox).
+if (isProtectedRoute && !isPublicPage && !token) {
+      return NextResponse.redirect(new URL('/login', request.url));
   }
 
   return NextResponse.next();
