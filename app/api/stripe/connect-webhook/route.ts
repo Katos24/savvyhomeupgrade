@@ -416,9 +416,23 @@ RETURNING id
     // status on a connected account (e.g. charges_enabled flips, or Stripe
     // disables an account for compliance reasons). Currently just logs —
     // hook point for a future "your Stripe account needs attention" email.
-   case 'account.updated': {
-      const account = event.data.object as any;
-      const connectedAccountId = account.id;
+     case 'account.updated': {
+      // The event carries a v1 Account, but parseAccountStatus reads the v2
+      // shape (configuration.merchant.capabilities). Parsing the v1 object
+      // always came out 'pending' and overwrote good statuses. Use the event
+      // only for the id, then load the account the same way connect-return does.
+      const connectedAccountId = (event.data.object as any).id;
+
+      let account: any;
+      try {
+        account = await (stripe as any).v2.core.accounts.retrieve(connectedAccountId, {
+          include: ['configuration.merchant'],
+        });
+      } catch (err: any) {
+        console.error(`account.updated: could not load v2 account ${connectedAccountId}:`, err?.message);
+        // 500 so Stripe retries later instead of us saving a wrong status.
+        return NextResponse.json({ error: 'Could not load account' }, { status: 500 });
+      }
 
       const { paymentStatus, blockingReasons } = parseAccountStatus(account);
 
