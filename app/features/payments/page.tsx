@@ -6,6 +6,7 @@ import { InvoiceMock } from '@/components/marketing/InvoiceShowcaseSection';
 import { JobDemo } from '@/components/marketing/NewHero';
 import { fontVars } from '@/components/marketing/marketingTheme';
 import { Eyebrow, Stamp, TapeDivider, TradesStrip } from '@/components/marketing/marketingUI';
+import FeatureFAQ, { type FAQItem } from '@/components/marketing/FeatureFAQ';
 
 /* ─────────────────────────────────────────────────────────
    /features/payments
@@ -51,6 +52,44 @@ function Bullets({ items }: { items: { text: string; pro?: boolean }[] }) {
     </ul>
   );
 }
+
+// Written the way contractors search. Keep every answer true to the app.
+const PAYMENTS_FAQ: FAQItem[] = [
+  {
+    q: 'How do I ask a customer for a deposit?',
+    a: 'Set a deposit on each service, as a percent or a flat amount. It shows on every quote for that service, so the customer sees the deposit and the balance before they accept. Then send the deposit request from the job with one click, or let it go out automatically when they accept.',
+    link: { label: 'Work out a deposit with the free calculator', href: '/tools/deposit-calculator' },
+  },
+  {
+    q: 'How much deposit should I ask for?',
+    a: 'It depends on what you have to spend before the job starts, mostly materials and special orders, and on the rules where you work. Some states limit deposits on home improvement jobs or control where the money has to be held, so check yours.',
+    link: { label: 'Deposit calculator and state rules', href: '/tools/deposit-calculator' },
+  },
+  {
+    q: 'Can the deposit request go out automatically when a customer accepts the quote?',
+    a: 'Yes. Turn on Auto invoices in Settings and the deposit request is emailed the moment the customer accepts, whether they accept from the quote email or you mark it accepted. It only sends when the quote has a deposit, and never twice.',
+  },
+  {
+    q: 'Can customers pay the deposit by card?',
+    a: 'Yes, once you connect your own Stripe account. Every deposit and invoice email gets a pay button, the job updates when the payment lands, and the money goes to your bank. Stripe charges its standard processing fee; Lead2Project does not take a cut.',
+  },
+  {
+    q: 'How do I keep track of who still owes me money?',
+    a: 'Every job shows what has been collected and what is left, with the deposit and the balance as separate steps. Overdue jobs are flagged, and you can send a payment reminder with the balance and pay link in one click.',
+  },
+  {
+    q: 'Can I send the final invoice automatically when the job is done?',
+    a: 'Yes. With Auto invoices on, marking a job completed emails the final invoice for whatever is still owed. Nothing is sent if the job is already paid in full or a final invoice already went out.',
+  },
+  {
+    q: 'What if the customer pays cash, check, Venmo or Zelle?',
+    a: 'Record the payment on the job with the amount, method and date, and the balance updates right away. You can also add your own Venmo, Zelle, Cash App or PayPal link so it shows on the invoice.',
+  },
+  {
+    q: 'Do I need a Stripe account?',
+    a: 'Only to take card payments. Without Stripe you can still send deposit requests and invoices, and record cash, check and payment-link payments yourself.',
+  },
+];
 
 const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
@@ -159,6 +198,7 @@ export default function PaymentsPage() {
             <Bullets
               items={[
                 { text: 'Set the deposit once per service, or one default for every job' },
+                { text: 'Deposit request sent automatically when a quote is accepted (optional)', pro: true },
                 { text: 'Deposit and balance tracked as two clear steps' },
                 { text: 'Progress bar shows how much is collected' },
                 { text: 'Partial payments handled' },
@@ -299,6 +339,9 @@ export default function PaymentsPage() {
           </div>
         </div>
       </section>
+
+      {/* ── FAQ ── */}
+      <FeatureFAQ heading="Deposits & getting paid: questions" items={PAYMENTS_FAQ} className="bg-[#F4EFE6]" />
 
       {/* ── Final CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
