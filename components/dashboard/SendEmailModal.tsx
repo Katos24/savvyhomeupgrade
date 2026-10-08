@@ -449,7 +449,7 @@ export default function SendEmailModal({
             <div className="flex-1 overflow-hidden p-2 bg-slate-50" style={{ minHeight: 0 }}>
               <iframe
                 title="Email Preview"
-                srcDoc={`${lastHtmlBody}<style>a,button{pointer-events:none!important;cursor:default!important;}*{user-select:none!important;}</style>`}
+                srcDoc={`${lastHtmlBody}<style>a,button,input,select,textarea,label,form,area,summary,[role="button"],[onclick]{pointer-events:none!important;cursor:default!important}</style>`}
                 className="w-full border-0 rounded-xl bg-white"
                 style={{ height: '100%', width: '100%', display: 'block' }}
                 sandbox=""

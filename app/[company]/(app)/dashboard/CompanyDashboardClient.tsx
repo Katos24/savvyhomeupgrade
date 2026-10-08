@@ -447,6 +447,16 @@ export default function CompanyDashboardClient({ company }: { company: Company }
     }
   }, []);
 
+  // Deep link: /{company}/dashboard?lead=123 opens that job (used by the Outbox "Open job" button).
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const leadParam = parseInt(params.get('lead') || '', 10);
+    if (Number.isFinite(leadParam) && leadParam > 0) {
+      openLead(leadParam);
+      window.history.replaceState({}, '', `/${company.slug}/dashboard`);
+    }
+  }, [company.slug, openLead]);
+
   const refreshModalLead = useCallback(async () => {
     if (!selectedLead) return;
     await openLead(selectedLead.id, selectedLeadTab);

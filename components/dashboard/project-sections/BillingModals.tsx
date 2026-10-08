@@ -1383,7 +1383,8 @@ export default function BillingModals({
                 <iframe
                   title="Preview"
                   srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;}*{user-select:none!important;}</style>`}
-                  className="w-full h-full border-0 rounded-lg bg-white"
+                  sandbox=""
+                                    className="w-full h-full border-0 rounded-lg bg-white"
                 />
               </div>
             </motion.div>
