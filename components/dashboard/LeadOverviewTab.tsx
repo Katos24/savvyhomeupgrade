@@ -4,10 +4,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import {
   Mail, Phone, MessageSquare, Navigation, Edit2,
-  Calendar, Clock, Image as ImageIcon, Lock, History, UserCircle,
-  MessageCircle, NotebookPen, ChevronDown, ChevronUp,
-  Sparkles, MapPin, Tag, Check, X, FileText, AlertCircle,
-  Layers, HelpCircle, Star, CreditCard, PartyPopper
+  Image as ImageIcon, Lock, History, NotebookPen,
+  Layers, Star, CreditCard, Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButton';
@@ -30,21 +28,32 @@ type LeadOverviewTabProps = {
   quoteTemplates: any[];
 };
 
+// Same values as the booking form's "How did you hear about us?" pills.
+const LEAD_SOURCE_LABELS: Record<string, string> = {
+  website: 'Google Search',
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  google_ads: 'Google Ads',
+  referral: 'Referral',
+  yard_sign: 'Yard sign',
+  truck: 'Saw your truck',
+  other: 'Other',
+  dashboard_manual: 'Added by your team',
+};
+
+type DetailRow = { key: string; label: string; value: React.ReactNode; long?: boolean };
+
 export default function LeadOverviewTab({
   lead,
   company,
   currentUser,
   categories,
-  companySlug,
   onRefresh,
-  onAddNote,
   relatedLeads,
   onShowHistory,
   quoteTemplates,
 }: LeadOverviewTabProps) {
   const [saving, setSaving] = useState(false);
-  const [showClientDetails, setShowClientDetails] = useState(false);
-  const [showCustomQuestions, setShowCustomQuestions] = useState(true);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
   const [internalNotesText, setInternalNotesText] = useState(lead.project_internal_notes || '');
   const [isEditingDetails, setIsEditingDetails] = useState(false);
@@ -62,7 +71,7 @@ export default function LeadOverviewTab({
 
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const isProject = !!lead.project_id;
-   const [sendingReview, setSendingReview] = useState(false);
+  const [sendingReview, setSendingReview] = useState(false);
   const [reviewSentAt, setReviewSentAt] = useState<string | null>(lead.review_request_sent_at ?? null);
   useEffect(() => {
     if (lead.review_request_sent_at) setReviewSentAt(lead.review_request_sent_at);
@@ -70,7 +79,7 @@ export default function LeadOverviewTab({
 
   const isCompletedJob = isProject && lead.status === 'completed';
   const canReview = can(planTier, 'google_reviews');
-    // Same math as BillingSection so the two never disagree
+  // Same math as BillingSection so the two never disagree
   const completedAt = (lead as { job_completed_at?: string | null }).job_completed_at ?? null;
   const jobTotal = parseFloat(String((lead as { quote_total?: number | string | null }).quote_total ?? '0')) || 0;
   const amountPaid = parseFloat(String((lead as { payment_amount?: number | string | null }).payment_amount ?? '0')) || 0;
@@ -95,7 +104,7 @@ export default function LeadOverviewTab({
         }),
       });
       const data = await res.json();
-           if (res.ok && data.success) {
+      if (res.ok && data.success) {
         setReviewSentAt(data.review_request_sent_at || new Date().toISOString());
         toast.success('Review request sent');
         await onRefresh();
@@ -109,22 +118,26 @@ export default function LeadOverviewTab({
     }
   };
 
-  const customerPhotos = useMemo(() =>
-    Array.isArray(lead.file_urls)
-      ? lead.file_urls.map((f: any) => typeof f === 'string' ? f : f?.url || f?.path || '').filter(Boolean)
-      : [],
-    [lead.file_urls]);
+  const customerPhotos = useMemo(
+    () =>
+      Array.isArray(lead.file_urls)
+        ? lead.file_urls.map((f: any) => (typeof f === 'string' ? f : f?.url || f?.path || '')).filter(Boolean)
+        : [],
+    [lead.file_urls]
+  );
 
   // Safely parse custom answers whether stringified or raw object
   const customAnswersObj = useMemo(() => {
     if (!lead.custom_answers) return {};
     if (typeof lead.custom_answers === 'string') {
-      try { return JSON.parse(lead.custom_answers); } catch { return {}; }
+      try {
+        return JSON.parse(lead.custom_answers);
+      } catch {
+        return {};
+      }
     }
     return lead.custom_answers;
   }, [lead.custom_answers]);
-
-  const customAnswerEntries = useMemo(() => Object.entries(customAnswersObj), [customAnswersObj]);
 
   const formatPhoneNumber = (value: string): string => {
     const phoneNumber = (value ?? '').replace(/\D/g, '').slice(0, 10);
@@ -144,27 +157,42 @@ export default function LeadOverviewTab({
   const fullAddress = (() => {
     const addr = lead.address_line_1;
     if (!addr) return null;
-    return `${addr}${lead.address_line_2 ? ', ' + lead.address_line_2 : ''}${lead.city ? ', ' + lead.city : ''}`;
+    const cityZip = [lead.city, lead.zip_code].filter(Boolean).join(' ');
+    return `${addr}${lead.address_line_2 ? ', ' + lead.address_line_2 : ''}${cityZip ? ', ' + cityZip : ''}`;
   })();
 
+  const receivedAt = lead.created_at
+    ? new Date(lead.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+    : null;
+
   const handleSaveInternalNotes = async () => {
-    if (!lead.project_id) { toast.error('Project not found'); return; }
+    if (!lead.project_id) {
+      toast.error('Project not found');
+      return;
+    }
     setSaving(true);
     try {
       const res = await fetch('/api/leads/update', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id, action: 'update_internal_notes',
+          id: lead.id,
+          action: 'update_internal_notes',
           internal_notes: internalNotesText,
           user_name: currentUser?.name || currentUser?.email,
           user_email: currentUser?.email,
         }),
       });
-      if (res.ok) { toast.success('Notes saved!'); setIsEditingNotes(false); await onRefresh(); }
-      else toast.error('Failed to save notes');
-    } catch { toast.error('Failed to save notes'); }
-    finally { setSaving(false); }
+      if (res.ok) {
+        toast.success('Notes saved!');
+        setIsEditingNotes(false);
+        await onRefresh();
+      } else toast.error('Failed to save notes');
+    } catch {
+      toast.error('Failed to save notes');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const executeSaveDetails = async (overrideQuote?: any[] | null, overrideTaxRate?: number) => {
@@ -174,14 +202,19 @@ export default function LeadOverviewTab({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          id: lead.id, action: 'update_details',
-          ...editedDetails, category: selectedCategory,
+          id: lead.id,
+          action: 'update_details',
+          ...editedDetails,
+          category: selectedCategory,
           description: lead.description,
           user_name: currentUser?.name || currentUser?.email,
           user_email: currentUser?.email,
         }),
       });
-      if (!res.ok) { toast.error('Failed to update details'); return; }
+      if (!res.ok) {
+        toast.error('Failed to update details');
+        return;
+      }
       if (overrideQuote) {
         const rate = overrideTaxRate ?? 0;
         const subtotal = overrideQuote.reduce((s: number, i: any) => s + i.amount, 0);
@@ -190,8 +223,11 @@ export default function LeadOverviewTab({
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: lead.id, action: 'save_quote',
-            quote_data: overrideQuote, quote_tax_rate: rate, quote_total: total,
+            id: lead.id,
+            action: 'save_quote',
+            quote_data: overrideQuote,
+            quote_tax_rate: rate,
+            quote_total: total,
             user_name: currentUser?.name || currentUser?.email,
             user_email: currentUser?.email,
           }),
@@ -200,8 +236,11 @@ export default function LeadOverviewTab({
       toast.success('Details updated!');
       setIsEditingDetails(false);
       await onRefresh();
-    } catch { toast.error('Failed to update details'); }
-    finally { setSaving(false); }
+    } catch {
+      toast.error('Failed to update details');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSaveDetails = async () => {
@@ -223,71 +262,81 @@ export default function LeadOverviewTab({
     await executeSaveDetails(null);
   };
 
+  // One-tap contact actions — always visible, phone included.
   const actionButtons = [
-    { icon: <Mail className="w-3.5 h-3.5" />, label: 'Email', action: () => window.location.href = `mailto:${lead.email}`, color: 'text-blue-600 bg-blue-50 hover:bg-blue-100 border-blue-200' },
-    { icon: <Phone className="w-3.5 h-3.5" />, label: 'Call', action: () => window.location.href = `tel:${lead.phone}`, color: 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border-emerald-200' },
-    { icon: <MessageSquare className="w-3.5 h-3.5" />, label: 'Text', action: () => window.location.href = `sms:${lead.phone}`, color: 'text-purple-600 bg-purple-50 hover:bg-purple-100 border-purple-200' },
-    ...(fullAddress ? [{ icon: <Navigation className="w-3.5 h-3.5" />, label: 'Directions', action: () => window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`, '_blank'), color: 'text-rose-600 bg-rose-50 hover:bg-rose-100 border-rose-200' }] : []),
-  ];
+    ...(lead.phone ? [{ icon: <Phone className="w-4 h-4" />, label: 'Call', href: `tel:${lead.phone}` }] : []),
+    ...(lead.phone ? [{ icon: <MessageSquare className="w-4 h-4" />, label: 'Text', href: `sms:${lead.phone}` }] : []),
+    ...(lead.email ? [{ icon: <Mail className="w-4 h-4" />, label: 'Email', href: `mailto:${lead.email}` }] : []),
+    ...(fullAddress
+      ? [{
+          icon: <Navigation className="w-4 h-4" />,
+          label: 'Directions',
+          href: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`,
+          external: true,
+        }]
+      : []),
+  ] as { icon: React.ReactNode; label: string; href: string; external?: boolean }[];
 
-  // Helper function to dynamically format custom question responses nicely
-  const renderAnswerValue = (answer: any) => {
-    if (answer === null || answer === undefined || answer === '') {
-      return <span className="text-gray-400 italic text-xs">Not specified</span>;
-    }
-
-    if (typeof answer === 'boolean') {
-      return answer ? (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-          <Check className="w-3 h-3 text-emerald-600" /> Yes
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200">
-          <X className="w-3 h-3 text-gray-400" /> No
-        </span>
-      );
-    }
-
+  // ── Request details: one list, only what the customer actually answered ──
+  const formatAnswer = (answer: any): { text: string; long: boolean } | null => {
+    if (answer === null || answer === undefined || answer === '') return null;
+    if (typeof answer === 'boolean') return { text: answer ? 'Yes' : 'No', long: false };
     if (Array.isArray(answer)) {
-      if (answer.length === 0) return <span className="text-gray-400 italic text-xs">None selected</span>;
-      return (
-        <div className="flex flex-wrap gap-1.5 mt-1">
-          {answer.map((item, idx) => (
-            <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-blue-50/80 text-blue-700 border border-blue-100 shadow-2xs">
-              <Tag className="w-2.5 h-2.5 text-blue-500" /> {String(item)}
-            </span>
-          ))}
-        </div>
-      );
+      const parts = answer.map((a) => String(a)).filter(Boolean);
+      return parts.length ? { text: parts.join(', '), long: false } : null;
     }
-
-    const strAnswer = String(answer);
-
-    if (strAnswer.length > 50) {
-      return (
-        <p className="text-xs text-gray-800 bg-white/80 p-2.5 rounded-lg border border-gray-200/80 leading-relaxed mt-1 font-normal shadow-2xs">
-          {strAnswer}
-        </p>
-      );
-    }
-
-    return (
-      <span className="text-xs font-semibold text-gray-900 bg-white px-2.5 py-1 rounded-lg border border-gray-200 shadow-2xs inline-block">
-        {strAnswer}
-      </span>
-    );
+    const s = String(answer).trim();
+    if (!s) return null;
+    return { text: s, long: s.length > 50 };
   };
+
+  const timeline = timelineLabel(lead.preferred_date);
+  const bestTimes = bestTimesLabel(lead.preferred_time);
+
+  const detailRows: DetailRow[] = [];
+  if (lead.category) detailRows.push({ key: 'service', label: 'Service', value: formatCategory(lead.category) });
+  if (timeline)
+    detailRows.push({
+      key: 'timeline',
+      label: 'How soon',
+      value:
+        lead.preferred_date === 'asap' ? (
+          <span className="inline-flex rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+            {timeline}
+          </span>
+        ) : (
+          timeline
+        ),
+    });
+  if (bestTimes) detailRows.push({ key: 'best_times', label: 'Best times', value: bestTimes });
+  if (fullAddress) detailRows.push({ key: 'address', label: 'Address', value: fullAddress });
+  if (lead.lead_source)
+    detailRows.push({
+      key: 'source',
+      label: 'Heard about you',
+      value: LEAD_SOURCE_LABELS[lead.lead_source] || String(lead.lead_source).replace(/_/g, ' '),
+    });
+  for (const [qId, answer] of Object.entries(customAnswersObj)) {
+    const formatted = formatAnswer(answer);
+    if (!formatted) continue;
+    const qDef = (company?.custom_questions || []).find((q: any) => q.id === qId);
+    detailRows.push({
+      key: `q_${qId}`,
+      label: qDef?.label || qId.replace(/_/g, ' '),
+      value: formatted.text,
+      long: formatted.long,
+    });
+  }
+
+  const inputCls =
+    'w-full px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-slate-400 bg-white';
+  const labelCls = 'text-xs font-medium text-slate-500 mb-1 block';
 
   return (
     <div className="max-w-4xl mx-auto space-y-4">
-      {lightbox && (
-        <LeadLightbox
-          photos={lightbox.photos}
-          startIndex={lightbox.index}
-          onClose={() => setLightbox(null)}
-        />
-      )}
-      {/* Job progress (jobs only) — tap for full summary */}
+      {lightbox && <LeadLightbox photos={lightbox.photos} startIndex={lightbox.index} onClose={() => setLightbox(null)} />}
+
+      {/* ── 1. Where the job stands ── */}
       {isProject && (
         <JobProgress
           lead={lead}
@@ -298,567 +347,410 @@ export default function LeadOverviewTab({
         />
       )}
 
-            {/* Job wrap-up (completed jobs) */}
+      {/* Job wrap-up (completed jobs) */}
       {isCompletedJob && (
-        <div className="relative overflow-hidden rounded-2xl border border-gray-200/80 bg-white shadow-xs">
-          <div className="absolute inset-y-0 left-0 w-1 bg-[#00828A]" />
-          <div className="p-4 pl-5">
-                      {/* Header */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00828A]/10">
-                  <PartyPopper className="h-4 w-4 text-[#00828A]" />
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-xs">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">Job complete</p>
+              <p className="text-xs text-slate-500">
+                {completedAt
+                  ? `Finished ${new Date(completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · `
+                  : ''}
+                {paymentStatus === 'paid' && (reviewSentAt || !canReview) ? 'All wrapped up.' : 'A couple of things to close out.'}
+              </p>
+            </div>
+            {jobTotal > 0 && (
+              <div className="text-right">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Job total</p>
+                <p className="text-base font-bold tabular-nums text-slate-900">{money(jobTotal)}</p>
+              </div>
+            )}
+          </div>
+
+          <div className={`mt-4 grid gap-3 ${paymentStatus && canReview ? 'sm:grid-cols-2' : ''}`}>
+            {paymentStatus && (
+              <div className="rounded-xl border border-slate-200 p-3.5">
+                <div className="flex items-center gap-2">
+                  <CreditCard className={`h-4 w-4 ${paymentStatus === 'paid' ? 'text-emerald-600' : 'text-slate-400'}`} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Payment</span>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">Job complete</p>
-                  <p className="text-xs text-gray-500">
-                    {completedAt
-                      ? `Finished ${new Date(completedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} · `
-                      : ''}
-                    {paymentStatus === 'paid' && (reviewSentAt || !canReview)
-                      ? 'All wrapped up.'
-                      : 'A couple of things to close out.'}
-                  </p>
+                <p
+                  className={`mt-2 text-sm font-semibold ${
+                    paymentStatus === 'paid' ? 'text-emerald-700' : paymentStatus === 'partial' ? 'text-amber-700' : 'text-slate-700'
+                  }`}
+                >
+                  {paymentStatus === 'paid' ? 'Paid in full' : paymentStatus === 'partial' ? 'Balance due' : 'Not paid yet'}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {paymentStatus === 'paid'
+                    ? `${money(amountPaid)} collected`
+                    : paymentStatus === 'partial'
+                    ? `${money(amountPaid)} of ${money(jobTotal)} · ${money(amountLeft)} left`
+                    : `${money(jobTotal)} to collect`}
+                </p>
+                <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div
+                    className={`h-full rounded-full transition-all ${paymentStatus === 'paid' ? 'bg-emerald-500' : 'bg-slate-400'}`}
+                    style={{ width: `${paidPct}%` }}
+                  />
                 </div>
               </div>
-              {jobTotal > 0 && (
-                <div className="text-right">
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">Job total</p>
-                  <p className="text-base font-bold tabular-nums text-gray-900">
-                    {money(jobTotal)}
-                  </p>
-                </div>
-              )}
-            </div>
+            )}
 
-            {/* Tiles */}
-            <div className={`mt-4 grid gap-3 ${paymentStatus && canReview ? 'sm:grid-cols-2' : ''}`}>
-              {/* Payment */}
-              {paymentStatus && (
-                <div
-                  className={`rounded-xl border p-3.5 ${
-                    paymentStatus === 'paid'
-                      ? 'border-emerald-200 bg-emerald-50/50'
-                      : paymentStatus === 'partial'
-                      ? 'border-amber-200 bg-amber-50/50'
-                      : 'border-gray-200 bg-gray-50/60'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <CreditCard
-                      className={`h-4 w-4 ${
-                        paymentStatus === 'paid'
-                          ? 'text-emerald-600'
-                          : paymentStatus === 'partial'
-                          ? 'text-amber-600'
-                          : 'text-gray-400'
-                      }`}
-                    />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Payment</span>
-                  </div>
-                  <p
-                    className={`mt-2 text-sm font-semibold ${
-                      paymentStatus === 'paid'
-                        ? 'text-emerald-700'
-                        : paymentStatus === 'partial'
-                        ? 'text-amber-700'
-                        : 'text-gray-700'
-                    }`}
-                  >
-                    {paymentStatus === 'paid' ? 'Paid in full' : paymentStatus === 'partial' ? 'Balance due' : 'Not paid yet'}
-                  </p>
-                                   <p className="mt-0.5 text-xs text-gray-500">
-                    {paymentStatus === 'paid'
-                      ? `${money(amountPaid)} collected`
-                      : paymentStatus === 'partial'
-                      ? `${money(amountPaid)} of ${money(jobTotal)} · ${money(amountLeft)} left`
-                      : `${money(jobTotal)} to collect`}
-                  </p>
-                  <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-white">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        paymentStatus === 'paid' ? 'bg-emerald-500' : paymentStatus === 'partial' ? 'bg-amber-400' : 'bg-gray-300'
-                      }`}
-                      style={{ width: `${paidPct}%` }}
-                    />
-                  </div>
+            {canReview && (
+              <div className="rounded-xl border border-slate-200 p-3.5">
+                <div className="flex items-center gap-2">
+                  <Star className={`h-4 w-4 ${reviewSentAt ? 'text-amber-400' : 'text-slate-400'}`} fill={reviewSentAt ? 'currentColor' : 'none'} />
+                  <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Google review</span>
                 </div>
-              )}
-
-              {/* Google review */}
-              {canReview && (
-                <div
-                  className={`rounded-xl border p-3.5 ${
-                    reviewSentAt ? 'border-emerald-200 bg-emerald-50/50' : 'border-amber-200 bg-amber-50/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <Star
-                      className={`h-4 w-4 ${reviewSentAt ? 'text-emerald-600' : 'text-amber-500'}`}
-                      fill={reviewSentAt ? 'currentColor' : 'none'}
-                    />
-                    <span className="text-[11px] font-semibold uppercase tracking-wider text-gray-500">Google review</span>
-                  </div>
-
-                  {reviewSentAt ? (
-                    <>
-                      <p className="mt-2 text-sm font-semibold text-emerald-700">Request sent</p>
-                      <p className="mt-0.5 text-xs text-gray-500">
-                        Sent{' '}
-                        {new Date(reviewSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        {lead.email ? ` to ${lead.email}` : ''}
-                      </p>
-                    </>
-                  ) : lead.email ? (
-                    <>
-                      <p className="mt-2 text-sm font-semibold text-amber-700">Not asked yet</p>
-                      <button
-                        onClick={handleSendReview}
-                        disabled={sendingReview}
-                        className="mt-2.5 w-full rounded-lg bg-amber-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50"
-                      >
-                        {sendingReview ? 'Sending…' : 'Send review request'}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <p className="mt-2 text-sm font-semibold text-amber-700">Not asked yet</p>
-                      <p className="mt-0.5 text-xs text-gray-500">Add their email in Client Info to send one.</p>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
+                {reviewSentAt ? (
+                  <>
+                    <p className="mt-2 text-sm font-semibold text-slate-900">Request sent</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      Sent {new Date(reviewSentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      {lead.email ? ` to ${lead.email}` : ''}
+                    </p>
+                  </>
+                ) : lead.email ? (
+                  <>
+                    <p className="mt-2 text-sm font-semibold text-slate-700">Not asked yet</p>
+                    <button
+                      onClick={handleSendReview}
+                      disabled={sendingReview}
+                      className="mt-2.5 w-full rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                    >
+                      {sendingReview ? 'Sending…' : 'Send review request'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-2 text-sm font-semibold text-slate-700">Not asked yet</p>
+                    <p className="mt-0.5 text-xs text-slate-500">Add their email to send one.</p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
 
-      {/* Convert to Project banner */}
-      {!isProject && can(planTier, 'convert_to_project') && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 border border-slate-800 shadow-md"
-          style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)' }}
-        >
-          <div>
-            <p className="text-sm font-semibold text-white flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              Ready to start this job?
-            </p>
-            <p className="text-xs mt-0.5 text-slate-300">Convert to a project to unlock scheduling, quotes, and tasks.</p>
+      {/* Lead (not converted yet): same status-bar look as JobProgress,
+          so the card reads the same before and after converting. */}
+      {!isProject && (
+        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xs">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-slate-900">
+                New request
+                {receivedAt && <span className="ml-1.5 font-normal text-slate-500">· {receivedAt}</span>}
+              </p>
+              <p className="mt-0.5 text-xs text-slate-500">
+                {can(planTier, 'convert_to_project')
+                  ? 'Next: convert it to a project to quote, schedule and invoice.'
+                  : 'Quoting, scheduling and invoicing are on the Pro plan.'}
+              </p>
+            </div>
+            <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
           </div>
-          <ConvertToProjectButton lead={lead} currentUser={currentUser} onRefresh={onRefresh} planTier={company?.plan_tier} />
-        </motion.div>
+          <div className="mt-3 flex items-center gap-1.5 text-[11px] font-semibold">
+            {['Request', 'Quote', 'Deposit', 'Scheduled', 'Paid'].map((label, i) => (
+              <div key={label} className="flex min-w-0 flex-1 flex-col gap-1">
+                <div className={`h-1.5 rounded-full ${i === 0 ? 'bg-[#00828A]' : 'bg-slate-100'}`} />
+                <span className={`truncate ${i === 0 ? 'text-slate-700' : 'text-slate-400'}`}>{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
-      {/* SLIM COLLAPSIBLE CLIENT BAR */}
-      <div className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden transition-all">
-        <div className="p-3.5 sm:p-4 flex items-center justify-between gap-3 bg-white">
-          
-          {/* Left: Quick Client Summary */}
+      {/* ── 2. Contact — always open, one-tap actions ── */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="flex items-start justify-between gap-3 p-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-blue-50/80 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 font-bold text-sm shadow-2xs">
-              {lead.name ? lead.name.charAt(0).toUpperCase() : <UserCircle className="w-5 h-5" />}
+            <div className="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center shrink-0 font-bold text-sm">
+              {lead.name ? lead.name.charAt(0).toUpperCase() : '?'}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-bold text-gray-900 truncate">{lead.name || 'Unnamed Client'}</span>
-                {lead.category && (
-                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-100/80 rounded-md text-[11px] font-semibold shrink-0">
-                    {formatCategory(lead.category)}
-                  </span>
-                )}
+                <span className="text-base font-bold text-slate-900 truncate">{lead.name || 'Unnamed client'}</span>
                 {relatedLeads.length > 0 && (
                   <button
                     onClick={onShowHistory}
-                    className="flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md hover:bg-amber-100/80 transition"
+                    className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-0.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
                   >
-                    <History className="w-3 h-3 text-amber-500" />
+                    <History className="w-3 h-3" />
                     {relatedLeads.length} past job{relatedLeads.length > 1 ? 's' : ''}
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-500 truncate mt-0.5">
-                {formatPhoneNumber(lead.phone)} {lead.phone && lead.email && '•'} {lead.email}
-              </p>
+              {isProject && receivedAt && <p className="text-xs text-slate-500 mt-0.5">Request received {receivedAt}</p>}
             </div>
           </div>
-
-          {/* Right: Quick Actions & Toggle Expand */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="hidden sm:flex items-center gap-1.5">
-              {actionButtons.map(btn => (
-                <button
-                  key={btn.label}
-                  onClick={btn.action}
-                  className={`p-2 rounded-xl border transition-all ${btn.color}`}
-                  title={btn.label}
-                >
-                  {btn.icon}
-                </button>
-              ))}
-            </div>
-
+          {!isEditingDetails && (
             <button
-              onClick={() => setShowClientDetails(!showClientDetails)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gray-100 hover:bg-gray-200/80 text-xs font-semibold text-gray-700 transition"
+              onClick={() => setIsEditingDetails(true)}
+              className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
-              <span>{showClientDetails ? 'Hide Info' : 'Client Info'}</span>
-              {showClientDetails ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              <Edit2 className="w-3 h-3" /> Edit
             </button>
-          </div>
+          )}
         </div>
 
-        {/* Collapsible Extended Client Details / Edit Form */}
-        <AnimatePresence>
-          {showClientDetails && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              className="border-t border-gray-100 bg-gray-50/50 p-4 sm:p-5"
-            >
-              {isEditingDetails ? (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">Name</label>
-                      <input type="text" value={editedDetails.name}
-                        onChange={e => setEditedDetails({ ...editedDetails, name: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 bg-white" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">Phone</label>
-                      <input type="tel" value={editedDetails.phone}
-                        onChange={e => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 bg-white" maxLength={14} />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">Email</label>
-                      <input type="email" value={editedDetails.email}
-                        onChange={e => setEditedDetails({ ...editedDetails, email: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 bg-white" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">Category</label>
-                      <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 bg-white">
-                        {categories.map((cat: any) => (
-                          <option key={cat.value} value={cat.value}>{cat.label}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-gray-500 mb-1 block">Address</label>
-                    <input type="text" value={editedDetails.address_line_1}
-                      onChange={e => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 bg-white" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">Apt/Suite</label>
-                      <input type="text" value={editedDetails.address_line_2}
-                        onChange={e => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 bg-white" />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-gray-500 mb-1 block">City</label>
-                      <input type="text" value={editedDetails.city}
-                        onChange={e => setEditedDetails({ ...editedDetails, city: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs focus:outline-none focus:border-blue-500 bg-white" />
-                    </div>
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={handleSaveDetails} disabled={saving}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-xl text-xs transition">
-                      {saving ? 'Saving...' : 'Save changes'}
-                    </button>
-                    <button onClick={() => setIsEditingDetails(false)}
-                      className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl text-xs transition">
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div className="space-y-2">
-                      <div className="flex justify-between border-b border-gray-200/60 pb-1.5">
-                        <span className="text-gray-500 font-medium">Full Name</span>
-                        <span className="text-gray-900 font-semibold">{lead.name || '—'}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-gray-200/60 pb-1.5">
-                        <span className="text-gray-500 font-medium">Email</span>
-                        <span className="text-blue-600 font-medium break-all">{lead.email || '—'}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-gray-200/60 pb-1.5">
-                        <span className="text-gray-500 font-medium">Phone</span>
-                        <span className="text-gray-900 font-semibold">{formatPhoneNumber(lead.phone) || '—'}</span>
-                      </div>
-                    </div>
+        {isEditingDetails ? (
+          <div className="border-t border-slate-100 p-4 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Name</label>
+                <input type="text" value={editedDetails.name} onChange={(e) => setEditedDetails({ ...editedDetails, name: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Phone</label>
+                <input
+                  type="tel"
+                  value={formatPhoneNumber(editedDetails.phone)}
+                  onChange={(e) => setEditedDetails({ ...editedDetails, phone: formatPhoneNumber(e.target.value) })}
+                  className={inputCls}
+                  maxLength={14}
+                />
+              </div>
+              <div>
+                <label className={labelCls}>Email</label>
+                <input type="email" value={editedDetails.email} onChange={(e) => setEditedDetails({ ...editedDetails, email: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>Service</label>
+                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className={inputCls}>
+                  {categories.map((cat: any) => (
+                    <option key={cat.value} value={cat.value}>
+                      {cat.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Address</label>
+              <input type="text" value={editedDetails.address_line_1} onChange={(e) => setEditedDetails({ ...editedDetails, address_line_1: e.target.value })} className={inputCls} />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Apt / Suite</label>
+                <input type="text" value={editedDetails.address_line_2} onChange={(e) => setEditedDetails({ ...editedDetails, address_line_2: e.target.value })} className={inputCls} />
+              </div>
+              <div>
+                <label className={labelCls}>City</label>
+                <input type="text" value={editedDetails.city} onChange={(e) => setEditedDetails({ ...editedDetails, city: e.target.value })} className={inputCls} />
+              </div>
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleSaveDetails}
+                disabled={saving}
+                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-semibold rounded-lg text-sm transition"
+              >
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+              <button
+                onClick={() => setIsEditingDetails(false)}
+                className="px-4 py-2 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg text-sm transition"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <dl className="border-t border-slate-100 divide-y divide-slate-100 text-sm">
+              <div className="flex items-center justify-between gap-4 px-4 py-2.5">
+                <dt className="text-slate-500">Phone</dt>
+                <dd className="font-medium text-slate-900 text-right">{formatPhoneNumber(lead.phone) || '—'}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4 px-4 py-2.5">
+                <dt className="text-slate-500">Email</dt>
+                <dd className="font-medium text-slate-900 text-right break-all">{lead.email || '—'}</dd>
+              </div>
+              <div className="flex items-start justify-between gap-4 px-4 py-2.5">
+                <dt className="text-slate-500 shrink-0">Address</dt>
+                <dd className="font-medium text-slate-900 text-right">{fullAddress || '—'}</dd>
+              </div>
+            </dl>
 
-                    <div className="space-y-2">
-                      <div className="flex justify-between border-b border-gray-200/60 pb-1.5">
-                        <span className="text-gray-500 font-medium">Category</span>
-                        <span className="text-gray-900 font-semibold">{formatCategory(lead.category)}</span>
-                      </div>
-                      <div className="flex justify-between border-b border-gray-200/60 pb-1.5">
-                        <span className="text-gray-500 font-medium">Address</span>
-                        <span className="text-gray-800 font-medium text-right">{fullAddress || '—'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Actions for Mobile */}
-                  <div className="pt-2 flex items-center justify-between gap-2">
-                    <div className="flex sm:hidden gap-1.5 w-full">
-                      {actionButtons.map(btn => (
-                        <button
-                          key={btn.label}
-                          onClick={btn.action}
-                          className="flex-1 py-1.5 rounded-lg border border-gray-200 bg-white text-xs font-semibold text-gray-700 flex items-center justify-center gap-1"
-                        >
-                          {btn.icon}
-                          {btn.label}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => setIsEditingDetails(true)}
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition shrink-0 ml-auto"
-                    >
-                      <Edit2 className="w-3 h-3" /> Edit Info
-                    </button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {actionButtons.length > 0 && (
+              <div className={`grid gap-2 border-t border-slate-100 p-3 ${actionButtons.length === 4 ? 'grid-cols-4' : actionButtons.length === 3 ? 'grid-cols-3' : 'grid-cols-2'}`}>
+                {actionButtons.map((btn) => (
+                  <a
+                    key={btn.label}
+                    href={btn.href}
+                    target={btn.external ? '_blank' : undefined}
+                    rel={btn.external ? 'noopener noreferrer' : undefined}
+                    className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-1.5 rounded-xl border border-slate-200 bg-white py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-[0.98] transition"
+                  >
+                    {btn.icon}
+                    {btn.label}
+                  </a>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
-      {/* HERO SECTION: CUSTOMER REQUEST */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-        className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden"
-      >
-        <div className="px-5 py-3.5 border-b border-gray-100 bg-emerald-50/30 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-lg bg-emerald-100 flex items-center justify-center shadow-2xs">
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
-            </span>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-950">
-              Customer Request
-            </h3>
-          </div>
-
-                   {/* What the customer asked for (lib/timing.ts) — not a booking */}
-          {(timelineLabel(lead.preferred_date) || bestTimesLabel(lead.preferred_time)) && (
-            <div className="flex flex-wrap items-center justify-end gap-1.5">
-              {timelineLabel(lead.preferred_date) && (
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold ${
-                    lead.preferred_date === 'asap'
-                      ? 'border-amber-200 bg-amber-50 text-amber-800'
-                      : 'border-slate-200 bg-white text-slate-700'
-                  }`}
-                >
-                  <Calendar className="w-3.5 h-3.5 opacity-70" />
-                  {timelineLabel(lead.preferred_date)}
-                </span>
-              )}
-              {bestTimesLabel(lead.preferred_time) && (
-                <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
-                  <Clock className="w-3.5 h-3.5 opacity-70" />
-                  {bestTimesLabel(lead.preferred_time)}
-                </span>
-              )}
-            </div>
-          )}
+      {/* ── 3. What they want ── */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100">
+          <h3 className="text-sm font-semibold text-slate-900">Customer request</h3>
         </div>
 
-        <div className="p-5 space-y-6">
-          {/* Main Message Box */}
-          <div>
-            <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block mb-2">Message</span>
-            <div className="p-4 bg-gray-50/80 rounded-xl border-l-4 border-l-emerald-500 border border-gray-200/60 text-sm text-gray-800 leading-relaxed font-normal whitespace-pre-line shadow-2xs">
-              {lead.description || <span className="text-gray-400 italic">No description provided by customer.</span>}
-            </div>
+        <div className="p-4 space-y-4">
+          {/* Their message */}
+          <div className="rounded-xl bg-slate-50 border border-slate-200 p-3.5 text-sm text-slate-800 leading-relaxed whitespace-pre-line">
+            {lead.description || <span className="text-slate-400 italic">No message from the customer.</span>}
           </div>
 
-          {/* Attached Photos */}
+          {/* Photos */}
           {customerPhotos.length > 0 && (
             <div>
-              <div className="flex items-center gap-1.5 mb-2.5">
-                <ImageIcon className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                  Submitted Photos ({customerPhotos.length})
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                <ImageIcon className="w-3.5 h-3.5" />
+                Photos ({customerPhotos.length})
+              </p>
+              <div className="flex flex-wrap gap-2">
                 {customerPhotos.map((url: string, i: number) => (
-                  <motion.button key={i} whileTap={{ scale: 0.95 }}
+                  <button
+                    key={i}
                     onClick={() => setLightbox({ photos: customerPhotos, index: i })}
-                    className="w-16 h-16 sm:w-20 sm:h-20 overflow-hidden border border-gray-200 hover:border-blue-500 transition rounded-xl shadow-2xs group relative">
-                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover group-hover:scale-105 transition duration-200" />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
-                      <ImageIcon className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-md" />
-                    </div>
-                  </motion.button>
+                    className="w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-xl border border-slate-200 hover:border-slate-400 transition"
+                  >
+                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                  </button>
                 ))}
               </div>
             </div>
           )}
-
-          {/* ENHANCED ADDITIONAL DETAILS (CUSTOM ANSWERS) */}
-          {customAnswerEntries.length > 0 && (
-            <div className="pt-4 border-t border-gray-100">
-              <button 
-                onClick={() => setShowCustomQuestions(!showCustomQuestions)}
-                className="w-full flex items-center justify-between p-2.5 rounded-xl bg-slate-50 hover:bg-slate-100/80 transition border border-slate-200/60 group"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-md bg-blue-100 text-blue-600 flex items-center justify-center text-xs font-bold">
-                    <Sparkles className="w-3 h-3 text-blue-600" />
-                  </span>
-                  <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-                    Additional Details ({customAnswerEntries.length})
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 text-xs font-semibold text-slate-500 group-hover:text-slate-800 transition">
-                  <span>{showCustomQuestions ? 'Collapse' : 'Expand'}</span>
-                  {showCustomQuestions ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
-              </button>
-              
-              <AnimatePresence>
-                {showCustomQuestions && (
-                  <motion.div 
-                    initial={{ height: 0, opacity: 0 }} 
-                    animate={{ height: 'auto', opacity: 1 }} 
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3">
-                      {customAnswerEntries.map(([qId, answer]: [string, any]) => {
-                        const qDef = (company?.custom_questions || []).find((q: any) => q.id === qId);
-                        const label = qDef?.label || qId.replace(/_/g, ' ');
-                        const isLongText = typeof answer === 'string' && answer.length > 50;
-
-                        return (
-                          <div 
-                            key={qId} 
-                            className={`p-3.5 rounded-xl border border-gray-200/80 bg-gradient-to-b from-white to-gray-50/50 shadow-2xs flex flex-col justify-between gap-1.5 transition hover:border-gray-300 ${
-                              isLongText ? 'sm:col-span-2' : ''
-                            }`}
-                          >
-                            <div className="flex items-start justify-between gap-2">
-                              <span className="text-xs font-semibold text-gray-600 capitalize leading-snug">
-                                {label}
-                              </span>
-                            </div>
-                            
-                            <div className="mt-0.5">
-                              {renderAnswerValue(answer)}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
         </div>
-      </motion.div>
 
-      {/* INTERNAL TEAM NOTES */}
+        {/* Details: one list — timing, address, source and custom questions */}
+        {detailRows.length > 0 && (
+          <dl className="border-t border-slate-100 divide-y divide-slate-100 text-sm">
+            {detailRows.map((row) =>
+              row.long ? (
+                <div key={row.key} className="px-4 py-2.5">
+                  <dt className="text-slate-500 mb-1">{row.label}</dt>
+                  <dd className="text-slate-900 leading-relaxed whitespace-pre-line">{row.value}</dd>
+                </div>
+              ) : (
+                <div key={row.key} className="flex items-start justify-between gap-4 px-4 py-2.5">
+                  <dt className="text-slate-500 min-w-0">{row.label}</dt>
+                  <dd className="font-medium text-slate-900 text-right shrink-0 max-w-[60%]">{row.value}</dd>
+                </div>
+              )
+            )}
+          </dl>
+        )}
+      </div>
+
+      {/* ── 4. Internal notes (team only) ── */}
       {isProject && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl border border-gray-200/80 shadow-xs overflow-hidden"
-        >
-          <div className="px-5 py-3 border-b border-gray-100 bg-amber-50/30 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-6 h-6 rounded-lg bg-amber-100 flex items-center justify-center shadow-2xs">
-                <Lock className="w-3.5 h-3.5 text-amber-600" />
-              </span>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-amber-950">
-                Internal Notes (Team Only)
-              </h3>
-            </div>
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-xs overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
+            <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-900">
+              <Lock className="w-3.5 h-3.5 text-slate-400" />
+              Internal notes
+              <span className="text-xs font-normal text-slate-400">· team only</span>
+            </h3>
             {lead.project_internal_notes && !isEditingNotes && (
-              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-semibold text-blue-600 hover:text-blue-700 transition">
-                Edit Notes
+              <button onClick={() => setIsEditingNotes(true)} className="text-xs font-semibold text-slate-600 hover:text-slate-900">
+                Edit
               </button>
             )}
           </div>
 
           <div className="p-4">
-            <AnimatePresence mode="wait">
-              {isEditingNotes ? (
-                <div className="space-y-2">
-                  <textarea value={internalNotesText} onChange={e => setInternalNotesText(e.target.value)}
-                    rows={4} placeholder="Add private notes for your team..."
-                    className="w-full px-3 py-2 border border-gray-200 rounded-xl text-xs resize-none focus:outline-none focus:border-blue-400 bg-white shadow-2xs" />
-                  <div className="flex gap-2">
-                    <button onClick={handleSaveInternalNotes} disabled={saving}
-                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition shadow-2xs">
-                      {saving ? 'Saving...' : 'Save Notes'}
-                    </button>
-                    <button onClick={() => { setIsEditingNotes(false); setInternalNotesText(lead.project_internal_notes || ''); }}
-                      className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-lg text-xs transition">
-                      Cancel
-                    </button>
-                  </div>
+            {isEditingNotes ? (
+              <div className="space-y-2">
+                <textarea
+                  value={internalNotesText}
+                  onChange={(e) => setInternalNotesText(e.target.value)}
+                  rows={4}
+                  placeholder="Add private notes for your team…"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm resize-none focus:outline-none focus:border-slate-400 bg-white"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveInternalNotes}
+                    disabled={saving}
+                    className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-semibold rounded-lg text-xs transition"
+                  >
+                    {saving ? 'Saving…' : 'Save notes'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsEditingNotes(false);
+                      setInternalNotesText(lead.project_internal_notes || '');
+                    }}
+                    className="px-4 py-1.5 border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-lg text-xs transition"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              ) : lead.project_internal_notes ? (
-                <div className="p-3.5 bg-amber-50/40 rounded-xl border border-amber-200/60 text-xs text-gray-800 leading-relaxed font-normal whitespace-pre-line shadow-2xs">
-                  {lead.project_internal_notes}
-                </div>
-              ) : (
-                <button onClick={() => setIsEditingNotes(true)}
-                  className="w-full py-3 border border-dashed border-gray-300 rounded-xl hover:border-blue-400 hover:bg-blue-50/30 transition flex items-center justify-center gap-2 text-xs font-semibold text-gray-400 hover:text-blue-600">
-                  <NotebookPen className="w-3.5 h-3.5" />
-                  Add internal note
-                </button>
-              )}
-            </AnimatePresence>
+              </div>
+            ) : lead.project_internal_notes ? (
+              <p className="text-sm text-slate-800 leading-relaxed whitespace-pre-line">{lead.project_internal_notes}</p>
+            ) : (
+              <button
+                onClick={() => setIsEditingNotes(true)}
+                className="w-full py-3 border border-dashed border-slate-300 rounded-xl hover:border-slate-400 hover:bg-slate-50 transition flex items-center justify-center gap-2 text-xs font-semibold text-slate-500"
+              >
+                <NotebookPen className="w-3.5 h-3.5" />
+                Add internal note
+              </button>
+            )}
           </div>
-        </motion.div>
+        </div>
       )}
 
-      {/* Category Change Confirmation Modal */}
+      {/* Category change confirmation */}
       <AnimatePresence>
         {pendingCategoryChange && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-[200] flex items-center justify-center p-4">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-2xl w-full max-w-sm p-6 shadow-2xl text-center"
+            >
+              <div className="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center mx-auto mb-3">
                 <Layers className="w-6 h-6" />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Update quote template?</h3>
-              <p className="text-xs text-gray-500 leading-relaxed mb-5">
-                <span className="font-semibold text-gray-800">{pendingCategoryChange?.newLabel}</span> has a preset pricing template. Replace current quote items with this template?
+              <h3 className="text-lg font-bold text-slate-900 mb-2">Update quote template?</h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-5">
+                <span className="font-semibold text-slate-800">{pendingCategoryChange?.newLabel}</span> has a preset pricing
+                template. Replace the current quote items with it?
               </p>
               <div className="grid grid-cols-2 gap-2.5">
-                <button onClick={async () => { setPendingCategoryChange(null); await executeSaveDetails(null); }}
-                  className="py-2.5 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition text-xs">
+                <button
+                  onClick={async () => {
+                    setPendingCategoryChange(null);
+                    await executeSaveDetails(null);
+                  }}
+                  className="py-2.5 border border-slate-200 bg-white text-slate-700 font-semibold rounded-lg hover:bg-slate-50 transition text-xs"
+                >
                   Keep current
                 </button>
-                <button onClick={async () => {
-                    const items = pendingCategoryChange?.template.items.map((item: any, i: number) => ({ ...item, id: `item_${Date.now()}_${i}` }));
-                                       const rate = pendingCategoryChange?.template.tax_rate ?? 0;
+                <button
+                  onClick={async () => {
+                    const items = pendingCategoryChange?.template.items.map((item: any, i: number) => ({
+                      ...item,
+                      id: `item_${Date.now()}_${i}`,
+                    }));
+                    const rate = pendingCategoryChange?.template.tax_rate ?? 0;
                     setPendingCategoryChange(null);
                     await executeSaveDetails(items, rate);
                   }}
-                  className="py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition text-xs shadow-2xs">
-                  Use template
+                  className="py-2.5 bg-slate-900 text-white font-semibold rounded-lg hover:bg-slate-800 transition text-xs inline-flex items-center justify-center gap-1.5"
+                >
+                  <Check className="w-3.5 h-3.5" /> Use template
                 </button>
               </div>
             </motion.div>
