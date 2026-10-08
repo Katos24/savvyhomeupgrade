@@ -25,6 +25,8 @@ export type QuoteSendPreview = {
   acceptedAt: string | null;
   declinedAt: string | null;
   depositPaid: boolean;
+  /** Net amount collected so far (payments minus refunds). */
+  paidAmount: number;
 };
 
 export async function GET(_request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -51,7 +53,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
 
     const rows = await sql`
       SELECT l.company_id,
-             p.quote_total, p.quote_data, p.deposit_type, p.deposit_value, p.deposit_paid_at,
+             p.quote_total, p.quote_data, p.deposit_type, p.deposit_value, p.deposit_paid_at, p.payment_amount,
              p.quote_accepted_at, p.quote_declined_at,
              c.on_accept_collect, c.stripe_payment_status
       FROM leads l
@@ -92,6 +94,7 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
       acceptedAt: r.quote_accepted_at ? new Date(r.quote_accepted_at).toISOString() : null,
       declinedAt: r.quote_declined_at ? new Date(r.quote_declined_at).toISOString() : null,
       depositPaid: !!r.deposit_paid_at,
+      paidAmount: parseFloat(r.payment_amount || '0') || 0,
     };
 
     return NextResponse.json({ success: true, preview });

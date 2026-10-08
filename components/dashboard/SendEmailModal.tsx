@@ -35,6 +35,7 @@ type QuotePreview = {
   acceptedAt: string | null;
   declinedAt: string | null;
   depositPaid: boolean;
+  paidAmount: number;
 };
 
 const CONFIG: Record<EmailType, { title: string; subtitle: string; action: string; success: string; Icon: typeof Send }> = {
@@ -105,10 +106,13 @@ export default function SendEmailModal({
   // Quote only: what the customer gets and what happens when they answer.
   const [quote, setQuote] = useState<QuotePreview | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
+  // Second tap for resending a quote the customer already accepted.
+  const [confirmReset, setConfirmReset] = useState(false);
 
   useEffect(() => {
     if (!open || type !== 'quote' || !leadId) return;
     let alive = true;
+    setConfirmReset(false);
     setQuoteLoading(true);
     fetch(`/api/leads/${leadId}/send-preview`, { cache: 'no-store' })
       .then((r) => r.json())
@@ -139,6 +143,7 @@ export default function SendEmailModal({
           action: cfg.action,
           user_name: currentUser?.name || 'Unknown',
           user_email: currentUser?.email || '',
+          ...(type === 'quote' && confirmReset ? { confirm_resend_accepted: true } : {}),
         }),
       });
       const data = await res.json();
@@ -160,6 +165,13 @@ export default function SendEmailModal({
 
   const Icon = cfg.Icon;
   const isResend = !!lastSentAt;
+
+  // Quote resend rules (the server enforces the same ones):
+  // - money already collected → can't resend (the quote is locked, like tax/deposit)
+  // - accepted, nothing paid → allowed only after ticking the confirm box
+  const quotePaidLocked = type === 'quote' && !!quote && (quote.paidAmount > 0 || quote.depositPaid);
+  const needsResetConfirm = type === 'quote' && !!quote?.acceptedAt && !quotePaidLocked;
+  const sendBlocked = quotePaidLocked || (needsResetConfirm && !confirmReset);
 
   // What happens when the customer taps Accept.
   const acceptLine = (() => {
@@ -300,14 +312,38 @@ export default function SendEmailModal({
               </div>
             )}
 
-            {/* QUOTE: already answered — resending resets it */}
-            {type === 'quote' && quote?.acceptedAt && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 mb-3 flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-px" />
-                <p className="text-xs text-amber-900 leading-relaxed">
-                  <span className="font-semibold">{firstName} already accepted this quote on {fmtDay(quote.acceptedAt)}.</span>{' '}
-                  Sending it again clears that, and they&rsquo;ll need to accept again.
+            {/* QUOTE: already paid — locked */}
+            {quotePaidLocked && quote && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3.5 mb-3 flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-slate-500 shrink-0 mt-px" />
+                <p className="text-xs text-slate-700 leading-relaxed">
+                  <span className="font-semibold">
+                    {firstName} has already paid {fmt(quote.paidAmount)} on this quote, so it can&rsquo;t be sent again.
+                  </span>{' '}
+                  For extra work or changes, update the invoice instead.
                 </p>
+              </div>
+            )}
+
+            {/* QUOTE: accepted, nothing paid — resending resets it, needs a confirm tap */}
+            {needsResetConfirm && quote?.acceptedAt && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 mb-3">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-px" />
+                  <p className="text-xs text-amber-900 leading-relaxed">
+                    <span className="font-semibold">{firstName} already accepted this quote on {fmtDay(quote.acceptedAt)}.</span>{' '}
+                    Sending it again clears that, and they&rsquo;ll need to accept again.
+                  </p>
+                </div>
+                <label className="mt-3 flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={confirmReset}
+                    onChange={(e) => setConfirmReset(e.target.checked)}
+                    className="h-4 w-4 rounded border-amber-300 text-slate-900 focus:ring-slate-400"
+                  />
+                  <span className="text-xs font-semibold text-amber-900">Yes, send it again and reset the acceptance</span>
+                </label>
               </div>
             )}
             {type === 'quote' && !quote?.acceptedAt && quote?.declinedAt && (
@@ -360,7 +396,7 @@ export default function SendEmailModal({
               <button
                 type="button"
                 onClick={handleSend}
-                disabled={sending || !customerEmail}
+                disabled={sending || !customerEmail || sendBlocked}
                 className="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold transition flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
               >
                 {sending ? (

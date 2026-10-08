@@ -156,15 +156,25 @@ if (action === 'update_status') {
  // Opt-out rather than opt-in: anything else calling this route without the
   // flag keeps the old automatic behaviour.
   if (status === 'completed' && old_status !== 'completed' && body.send_review_request !== false) {
-    const projectData = await sql`
-      SELECT p.id, p.review_request_sent_at, l.email as customer_email, l.name as customer_name, l.category, p.company_id
+      const projectData = await sql`
+      SELECT p.id, p.review_request_sent_at, l.email as customer_email, l.name as customer_name, l.category, p.company_id,
+             c.plan_tier, c.google_review_url
       FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
+      LEFT JOIN companies c ON c.id = l.company_id
       WHERE l.id = ${id}
       LIMIT 1
     `;
     const proj = projectData[0];
-    if (proj?.company_id && proj?.customer_email && !proj?.review_request_sent_at) {
+    // Same rules as the completion popup: Pro plan, a saved Google review
+    // link, a customer email, and never twice.
+    if (
+      proj?.company_id &&
+      proj?.customer_email &&
+      !proj?.review_request_sent_at &&
+      proj?.google_review_url &&
+      can((proj.plan_tier ?? 'free') as PlanTier, 'google_reviews')
+    ) {
       try {
         const { sendGoogleReviewRequestEmail } = await import('@/lib/email');
         await sendGoogleReviewRequestEmail({
@@ -859,8 +869,11 @@ else if (action === 'mark_quote_accepted') {
    else if (action === 'send_quote_to_customer') {
   
  const leadCheck = await sql`
-  SELECT l.*, p.quote_data, p.quote_total, p.quote_tax_rate,
+   SELECT l.*, p.quote_data, p.quote_total, p.quote_tax_rate,
          p.deposit_type, p.deposit_value,
+         p.quote_accepted_at AS proj_quote_accepted_at,
+         p.payment_amount AS proj_payment_amount,
+         p.deposit_paid_at AS proj_deposit_paid_at,
          c.name as company_name, c.phone as company_phone,
          c.email as company_email,
               c.id as company_id, c.plan_tier, c.on_accept_collect
@@ -885,8 +898,27 @@ else if (action === 'mark_quote_accepted') {
     }, { status: 403 });
   }
 
-      if (!lead.project_id || !lead.quote_data || !lead.quote_total) {
+           if (!lead.project_id || !lead.quote_data || !lead.quote_total) {
         return NextResponse.json({ success: false, error: 'No quote exists. Please create a quote first.' }, { status: 400 });
+      }
+
+      // Resending clears quote_accepted_at. Once money has been collected the
+      // quote is locked (same as tax/deposit). Accepted but unpaid needs an
+      // explicit confirm from the Send Quote popup.
+      const paidOnQuote = parseFloat(lead.proj_payment_amount || '0') || 0;
+      if (paidOnQuote > 0 || lead.proj_deposit_paid_at) {
+        return NextResponse.json({
+          success: false,
+          error: 'This customer has already paid on this quote, so it can’t be sent again. Update the invoice for any changes.',
+          locked: true,
+        }, { status: 409 });
+      }
+      if (lead.proj_quote_accepted_at && body.confirm_resend_accepted !== true) {
+        return NextResponse.json({
+          success: false,
+          error: 'This quote was already accepted. Confirm in the Send Quote popup to send it again.',
+          needs_confirm: true,
+        }, { status: 409 });
       }
 
       let quoteItems = [];
@@ -1686,8 +1718,8 @@ else if (action === 'send_review_request') {
   // same "never send twice" rule as the automatic one in update_status.
   const rows = await sql`
     SELECT l.id, l.status, l.email AS customer_email, l.name AS customer_name, l.category,
-           p.id AS project_id, p.review_request_sent_at,
-           c.id AS company_id, c.plan_tier
+                p.id AS project_id, p.review_request_sent_at,
+           c.id AS company_id, c.plan_tier, c.google_review_url
     FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
@@ -1713,8 +1745,11 @@ else if (action === 'send_review_request') {
   if (!r.project_id) {
     return NextResponse.json({ success: false, error: 'Job not found.' }, { status: 400 });
   }
-  if (r.review_request_sent_at) {
+   if (r.review_request_sent_at) {
     return NextResponse.json({ success: false, error: 'A review request was already sent for this job.' }, { status: 409 });
+  }
+  if (!r.google_review_url) {
+    return NextResponse.json({ success: false, error: 'Add your Google review link in Settings first.' }, { status: 400 });
   }
 
   const { sendGoogleReviewRequestEmail } = await import('@/lib/email');
