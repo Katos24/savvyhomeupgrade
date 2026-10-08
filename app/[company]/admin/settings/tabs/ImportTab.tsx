@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Upload, FileText, Loader2, Check, AlertTriangle, Undo2, Download, Lock, X, HelpCircle, Table } from 'lucide-react';
 import { can, type PlanTier } from '@/lib/permissions';
 import { parseCSV, toCSV } from '@/lib/csv';
+import { CATEGORY_MAP } from '@/lib/formCategories';
 
 type FieldKey =
   | 'name' | 'first_name' | 'last_name' | 'email' | 'phone'
@@ -133,6 +134,31 @@ const fmtDay = (d: string) => new Date(d).toLocaleDateString('en-US', { month: '
 
 const TYPE_LABEL: Record<ImportType, string> = { leads: 'New leads', active: 'Active jobs', past: 'Past customers' };
 
+type Service = { value: string; label: string };
+
+// Same list the server matches against: the company's services, or the
+// defaults for its business type.
+function companyServices(company: any): Service[] {
+  const raw: any[] =
+    Array.isArray(company?.form_categories) && company.form_categories.length
+      ? company.form_categories
+      : (CATEGORY_MAP as any)[company?.business_type || 'general'] || (CATEGORY_MAP as any).general || [];
+  return raw
+    .map((c) => (typeof c === 'object' ? { value: String(c.value ?? ''), label: String(c.label ?? c.value ?? '') } : { value: String(c), label: String(c) }))
+    .filter((c) => c.value);
+}
+
+// Same rule as the server: match on the value, the value with spaces, or the label, ignoring case.
+function matchService(raw: string, services: Service[]): string | null {
+  const k = raw.trim().toLowerCase();
+  if (!k) return null;
+  for (const s of services) {
+    const v = s.value.toLowerCase();
+    if (k === v || k === v.replace(/_/g, ' ') || k === s.label.toLowerCase()) return s.value;
+  }
+  return null;
+}
+
 export default function ImportTab({ company }: { company: any }) {
   const planTier = (company?.plan_tier || 'free') as PlanTier;
   const canConvert = can(planTier, 'convert_to_project');
@@ -144,6 +170,23 @@ export default function ImportTab({ company }: { company: any }) {
   const [mapping, setMapping] = useState<Mapping | null>(null);
   const [type, setType] = useState<ImportType>('leads');
   const [activeStatus, setActiveStatus] = useState('active');
+  // Unmatched service name (lowercased) → one of the company's service values, or '' to leave blank.
+  const [serviceMap, setServiceMap] = useState<Record<string, string>>({});
+  // Load the saved services fresh (the page's company object may not carry them).
+  const [serviceSource, setServiceSource] = useState<any>(company);
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/company/${company.slug}/settings`, { cache: 'no-store' })
+      .then((r) => r.json())
+      .then((d) => {
+        if (alive && d?.success && d.company) setServiceSource(d.company);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [company.slug]);
+  const services = useMemo(() => companyServices(serviceSource), [serviceSource]);
   const [error, setError] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
@@ -166,6 +209,7 @@ export default function ImportTab({ company }: { company: any }) {
     setHeaders([]);
     setRows([]);
     setMapping(null);
+    setServiceMap({});
     setError(null);
     setResult(null);
     if (fileRef.current) fileRef.current.value = '';
@@ -198,6 +242,7 @@ export default function ImportTab({ company }: { company: any }) {
     setHeaders(head.map((h, i) => h.trim() || `Column ${i + 1}`));
     setRows(body);
     setMapping(autoMap(head));
+    setServiceMap({});
   };
 
   const mappedRows = useMemo(() => {
@@ -213,12 +258,33 @@ export default function ImportTab({ company }: { company: any }) {
       address_line_2: get(r, 'address_line_2'),
       city: get(r, 'city'),
       zip_code: get(r, 'zip_code'),
-      category: get(r, 'category'),
+      category: (() => {
+        const raw = get(r, 'category');
+        if (!raw || matchService(raw, services)) return raw;
+        return serviceMap[raw.toLowerCase()] || raw; // mapped value, or raw (kept in notes)
+      })(),
       notes: get(r, 'notes'),
       date: toISODate(get(r, 'date')),
       lead_source: get(r, 'lead_source'),
     }));
-  }, [rows, mapping]);
+  }, [rows, mapping, serviceMap, services]);
+
+  // Service names in the file that don't match one of the company's services.
+  const unmatchedServices = useMemo(() => {
+    if (!mapping || mapping.category < 0) return [] as { key: string; label: string; count: number }[];
+    const counts = new Map<string, { label: string; count: number }>();
+    for (const r of rows) {
+      const raw = (r[mapping.category] ?? '').trim();
+      if (!raw || matchService(raw, services)) continue;
+      const key = raw.toLowerCase();
+      const cur = counts.get(key);
+      if (cur) cur.count++;
+      else counts.set(key, { label: raw, count: 1 });
+    }
+    return [...counts.entries()]
+      .map(([key, v]) => ({ key, label: v.label, count: v.count }))
+      .sort((a, b) => b.count - a.count);
+  }, [rows, mapping, services]);
 
   const hasName = mapping && (mapping.name >= 0 || mapping.first_name >= 0 || mapping.last_name >= 0);
   const hasContact = mapping && (mapping.email >= 0 || mapping.phone >= 0);
@@ -436,6 +502,48 @@ export default function ImportTab({ company }: { company: any }) {
               </p>
             )}
           </section>
+
+          {unmatchedServices.length > 0 && (
+            <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+              <p className="text-sm font-semibold text-stone-900">
+                {unmatchedServices.length} service {unmatchedServices.length === 1 ? 'name doesn’t' : 'names don’t'} match
+                yours
+              </p>
+              <p className="mt-0.5 text-xs text-stone-500">
+                Pick which of your services each one is, so templates and deposits load later. Anything left blank keeps
+                the name in the card&rsquo;s notes.
+              </p>
+              <div className="mt-3 space-y-2">
+                {unmatchedServices.slice(0, 40).map((u) => (
+                  <label key={u.key} className="flex items-center justify-between gap-3 rounded-lg border border-stone-200 px-3 py-2">
+                    <span className="min-w-0 truncate text-sm text-stone-800">
+                      &ldquo;{u.label}&rdquo;
+                      <span className="ml-1.5 text-xs text-stone-400">
+                        {u.count} {u.count === 1 ? 'row' : 'rows'}
+                      </span>
+                    </span>
+                    <select
+                      value={serviceMap[u.key] ?? ''}
+                      onChange={(e) => setServiceMap({ ...serviceMap, [u.key]: e.target.value })}
+                      className="max-w-[55%] rounded-md border border-stone-200 bg-white px-2 py-1 text-xs text-stone-800"
+                    >
+                      <option value="">Leave blank</option>
+                      {services.map((s) => (
+                        <option key={s.value} value={s.value}>
+                          {s.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+              </div>
+              {unmatchedServices.length > 40 && (
+                <p className="mt-2 text-xs text-stone-500">
+                  Showing the 40 most common. The rest are left blank, with the name kept in the notes.
+                </p>
+              )}
+            </section>
+          )}
 
           <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold text-stone-500">What is this list?</p>
