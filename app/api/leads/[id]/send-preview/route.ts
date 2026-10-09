@@ -55,7 +55,8 @@ export async function GET(_request: NextRequest, context: { params: Promise<{ id
       SELECT l.company_id,
              p.quote_total, p.quote_data, p.deposit_type, p.deposit_value, p.deposit_paid_at, p.payment_amount,
              p.quote_accepted_at, p.quote_declined_at,
-             c.on_accept_collect, c.stripe_payment_status
+                         c.on_accept_collect,
+             CASE WHEN c.card_payments_enabled = false THEN 'off' ELSE c.stripe_payment_status END AS stripe_payment_status
       FROM leads l
       LEFT JOIN projects p ON l.project_id = p.id
       LEFT JOIN companies c ON l.company_id = c.id

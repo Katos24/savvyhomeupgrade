@@ -61,8 +61,8 @@ export async function GET(
       sql`
         SELECT id, name, phone, email, logo_url, payment_link_url, payment_link_type,
                email_brand_color_1, email_brand_color_2, plan_tier, referred_by_code,
-               stripe_connect_account_id, stripe_connect_onboarded, stripe_payment_status,
-               invoice_terms
+               stripe_connect_account_id, stripe_connect_onboarded,
+               CASE WHEN card_payments_enabled = false THEN 'off' ELSE stripe_payment_status END AS stripe_payment_status,               invoice_terms
         FROM companies WHERE slug = ${slug} LIMIT 1
       `,
       sql`

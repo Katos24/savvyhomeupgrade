@@ -1,8 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Layers, Trash2, CheckSquare, DollarSign, HandCoins, HelpCircle, ArrowRight } from 'lucide-react';
 import { useState, type ElementType } from 'react';
+import { Trash2, CheckSquare, DollarSign, HelpCircle, ChevronRight } from 'lucide-react';
 import type { Category, QuoteTemplate, CustomQuestion } from './CategoriesTaskEditorModal';
 import { fmt, depositLabel } from './CategoriesTaskEditorModal';
 
@@ -13,7 +12,7 @@ type Props = {
   questions: CustomQuestion[];
   expanded: boolean;
   isDark: boolean;
-  accentColor: string;
+  accentColor: string; // kept for compatibility; the app UI stays neutral
   onToggleExpand: () => void;
   onDelete: () => void;
   onOpenTasks: () => void;
@@ -23,55 +22,90 @@ type Props = {
   taxRate: number;
 };
 
-type StatRowProps = {
-  icon: ElementType;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-  accentColor: string;
-  isDark: boolean;
-};
+function cardTokens(isDark: boolean) {
+  return isDark
+    ? {
+        card: 'border-white/10 bg-[#0f1420]',
+        tile: 'border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.05]',
+        tileEmpty: 'border-dashed border-white/15 hover:border-white/30 hover:bg-white/[0.03]',
+        text: 'text-white',
+        sub: 'text-slate-300',
+        faint: 'text-slate-400',
+        icon: 'bg-white/[0.06] text-slate-300',
+        iconEmpty: 'bg-white/[0.03] text-slate-500',
+        btn: 'border-white/10 text-slate-300 hover:bg-white/10',
+        input: 'border-white/15 bg-white/5 text-white focus:border-white/40',
+        primary: 'bg-white text-slate-900 hover:bg-slate-100',
+        divider: 'border-white/10',
+      }
+    : {
+        card: 'border-slate-200 bg-white',
+        tile: 'border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50',
+        tileEmpty: 'border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-50',
+        text: 'text-slate-900',
+        sub: 'text-slate-600',
+        faint: 'text-slate-500',
+        icon: 'bg-slate-100 text-slate-700',
+        iconEmpty: 'bg-slate-50 text-slate-400',
+        btn: 'border-slate-200 text-slate-600 hover:bg-slate-50',
+        input: 'border-slate-300 bg-white text-slate-900 focus:border-slate-500',
+        primary: 'bg-slate-900 text-white hover:bg-slate-800',
+        divider: 'border-slate-100',
+      };
+}
 
-const StatRow = ({ icon: Icon, label, active, onClick, accentColor, isDark }: StatRowProps) => (
-  <button
-    type="button"
-    onClick={(e) => {
-      e.stopPropagation();
-      onClick();
-    }}
-    className={`group/stat flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all cursor-pointer ${
-      isDark ? 'hover:bg-slate-800/60' : 'hover:bg-slate-200/60'
-    }`}
-  >
-    <div
-      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
-        !active ? (isDark ? 'bg-slate-800/80 text-slate-400' : 'bg-slate-200/80 text-slate-600') : ''
-      }`}
-      style={active ? { backgroundColor: `${accentColor}20`, color: accentColor } : {}}
+function Tile({
+  icon: Icon,
+  title,
+  value,
+  detail,
+  isSet,
+  emptyText,
+  onClick,
+  c,
+}: {
+  icon: ElementType;
+  title: string;
+  value: string;
+  detail: string;
+  isSet: boolean;
+  emptyText: string;
+  onClick: () => void;
+  c: ReturnType<typeof cardTokens>;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition ${isSet ? c.tile : c.tileEmpty}`}
     >
-      <Icon className="h-4 w-4" />
-    </div>
-    <span
-      className={`min-w-0 flex-1 truncate text-xs font-semibold ${
-        isDark ? 'text-slate-200' : 'text-slate-800'
-      }`}
-    >
-      {label}
-    </span>
-    <ArrowRight
-      className={`h-3.5 w-3.5 shrink-0 opacity-0 transition-all group-hover/stat:opacity-100 group-hover/stat:translate-x-0.5 ${
-        isDark ? 'text-slate-400' : 'text-slate-500'
-      }`}
-    />
-  </button>
-);
+      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${isSet ? c.icon : c.iconEmpty}`}>
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={`block text-xs font-medium ${c.sub}`}>{title}</span>
+        {isSet ? (
+          <>
+            <span className={`mt-0.5 block truncate text-base font-semibold ${c.text}`}>{value}</span>
+            <span className={`block truncate text-[13px] ${c.faint}`}>{detail}</span>
+          </>
+        ) : (
+          <>
+            <span className={`mt-0.5 block text-sm font-semibold ${c.sub}`}>Set up</span>
+            <span className={`block text-[13px] leading-snug ${c.faint}`}>{emptyText}</span>
+          </>
+        )}
+      </span>
+      <ChevronRight className={`mt-1 h-4 w-4 shrink-0 transition group-hover:translate-x-0.5 ${c.faint}`} />
+    </button>
+  );
+}
 
 export default function CategoriesServiceCard({
   category,
   quoteTemplate,
   questions,
   isDark,
-  accentColor,
   onDelete,
   onOpenTasks,
   onOpenPricing,
@@ -79,142 +113,120 @@ export default function CategoriesServiceCard({
   onSetTaxOverride,
   taxRate,
 }: Props) {
+  const c = cardTokens(isDark);
   const [editingRate, setEditingRate] = useState(false);
   const [rateDraft, setRateDraft] = useState(
     category.tax_rate_override != null ? String(category.tax_rate_override) : ''
   );
+  const [rateError, setRateError] = useState('');
 
   const hasOverride = category.tax_rate_override != null;
   const taskCount = category.task_templates?.length || 0;
-  const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate.deposit_value ?? 0) > 0;
   const questionCount = questions.length;
+  const itemCount = quoteTemplate?.items?.length || 0;
+  const hasDeposit = !!quoteTemplate?.deposit_type && (quoteTemplate?.deposit_value ?? 0) > 0;
+
+  const setUpCount = [!!quoteTemplate, questionCount > 0, taskCount > 0].filter(Boolean).length;
+
+  const saveRate = () => {
+    const parsed = parseFloat(rateDraft);
+    if (isNaN(parsed) || parsed < 0 || parsed > 100) {
+      setRateError('Enter 0 to 100');
+      return;
+    }
+    onSetTaxOverride(parsed);
+    setRateError('');
+    setEditingRate(false);
+  };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={`flex h-full flex-col rounded-2xl border p-4 sm:p-5 shadow-xs transition-all ${
-        isDark
-          ? 'border-slate-800 bg-slate-900 text-slate-100'
-          : 'border-slate-200 bg-white text-slate-900'
-      }`}
-    >
-      {/* ── Header Area ── */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
-          <div
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
-            style={{ backgroundColor: `${accentColor}20` }}
-          >
-            <Layers className="h-5 w-5" style={{ color: accentColor }} />
-          </div>
-
-          <h3
-            className={`min-w-0 truncate text-base font-bold tracking-tight ${
-              isDark ? 'text-white' : 'text-slate-900'
-            }`}
-            title={category.label}
-          >
+    <div className={`rounded-2xl border ${c.card}`}>
+      {/* Header: the service */}
+      <div className="flex items-start justify-between gap-3 px-4 pb-3 pt-4 sm:px-5">
+        <div className="min-w-0">
+          <h3 className={`truncate text-lg font-semibold ${c.text}`} title={category.label}>
             {category.label}
           </h3>
+          <p className={`text-[13px] ${c.faint}`}>
+            {setUpCount === 3 ? 'Fully set up' : `${setUpCount} of 3 set up`}
+          </p>
         </div>
-
         <button
           type="button"
           onClick={onDelete}
-          className={`rounded-xl p-2 shrink-0 transition-colors hover:bg-rose-500/10 hover:text-rose-500 cursor-pointer ${
-            isDark ? 'text-slate-400' : 'text-slate-500'
-          }`}
-          aria-label={`Delete ${category.label}`}
+          className={`shrink-0 rounded-lg p-2 transition hover:bg-rose-500/10 hover:text-rose-500 ${c.faint}`}
+          aria-label={`Remove ${category.label}`}
+          title="Remove service"
         >
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
 
-      {/* ── Action Rows ── */}
-      <div
-        className={`mt-4 space-y-1 rounded-2xl p-1 transition-colors ${
-          isDark ? 'bg-slate-950/50' : 'bg-slate-100/70'
-        }`}
-      >
-        <StatRow
+      {/* What you can do with it */}
+      <div className="grid grid-cols-1 gap-2 px-4 sm:grid-cols-3 sm:px-5">
+        <Tile
           icon={DollarSign}
-          label={quoteTemplate ? `${quoteTemplate.items.length} line items` : 'No pricing'}
-          active={!!quoteTemplate}
+          title="Estimate template"
+          isSet={!!quoteTemplate}
+          value={quoteTemplate ? fmt(quoteTemplate.total) : ''}
+          detail={
+            quoteTemplate
+              ? `${itemCount} item${itemCount === 1 ? '' : 's'}${
+                  hasDeposit ? ` · ${depositLabel(quoteTemplate.deposit_type, quoteTemplate.deposit_value).toLowerCase()}` : ''
+                }`
+              : ''
+          }
+          emptyText="Starting price you load into quotes"
           onClick={onOpenPricing}
-          accentColor={accentColor}
-          isDark={isDark}
+          c={c}
         />
-        <StatRow
+        <Tile
           icon={HelpCircle}
-          label={questionCount > 0 ? `${questionCount} questions` : 'No questions'}
-          active={questionCount > 0}
+          title="Booking questions"
+          isSet={questionCount > 0}
+          value={`${questionCount} question${questionCount === 1 ? '' : 's'}`}
+          detail="Asked when customers pick this"
+          emptyText="Extra questions on your booking form"
           onClick={onOpenQuestions}
-          accentColor={accentColor}
-          isDark={isDark}
+          c={c}
         />
-        <StatRow
+        <Tile
           icon={CheckSquare}
-          label={taskCount > 0 ? `${taskCount} tasks` : 'No tasks'}
-          active={taskCount > 0}
+          title="Job checklist"
+          isSet={taskCount > 0}
+          value={`${taskCount} task${taskCount === 1 ? '' : 's'}`}
+          detail="Added to every job"
+          emptyText="Steps added to each job automatically"
           onClick={onOpenTasks}
-          accentColor={accentColor}
-          isDark={isDark}
+          c={c}
         />
       </div>
 
-      {/* ── Footer ── */}
-      <div className="mt-auto pt-4 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex flex-wrap items-center gap-2.5">
-          {quoteTemplate && (
-            <span className={`font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-              Total:{' '}
-              <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {fmt(quoteTemplate.total)}
-              </span>
-            </span>
-          )}
-          {hasDeposit && (
-            <span
-              className={`inline-flex items-center gap-1 font-semibold ${
-                isDark ? 'text-slate-400' : 'text-slate-600'
-              }`}
-            >
-              <HandCoins className="h-3.5 w-3.5 text-amber-500" />
-              {depositLabel(quoteTemplate!.deposit_type, quoteTemplate!.deposit_value)}
-            </span>
-          )}
-        </div>
-
+      {/* Tax */}
+      <div className={`mt-3 border-t px-4 py-2.5 sm:px-5 ${c.divider}`}>
         {editingRate ? (
-          <div className="flex w-full items-center gap-1.5 pt-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-[13px] ${c.sub}`}>Tax for this service</span>
             <input
               type="number"
               step="0.001"
               min="0"
               max="100"
               value={rateDraft}
-              onChange={(e) => setRateDraft(e.target.value)}
+              onChange={(e) => {
+                setRateDraft(e.target.value);
+                setRateError('');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveRate();
+                if (e.key === 'Escape') setEditingRate(false);
+              }}
               autoFocus
               placeholder={String(taxRate)}
-              className={`w-16 rounded-xl border px-2.5 py-1 text-xs font-bold outline-none transition ${
-                isDark
-                  ? 'border-slate-700 bg-slate-800 text-white focus:border-blue-500'
-                  : 'border-slate-300 bg-white text-slate-900 focus:border-blue-500'
-              }`}
+              className={`w-20 rounded-lg border px-2.5 py-1 text-base sm:text-xs font-semibold outline-none ${c.input}`}
             />
-            <span className={`text-xs font-bold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>%</span>
-            <button
-              type="button"
-              onClick={() => {
-                const parsed = parseFloat(rateDraft);
-                if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
-                  onSetTaxOverride(parsed);
-                  setEditingRate(false);
-                }
-              }}
-              className="rounded-xl bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-blue-700 cursor-pointer transition shadow-xs"
-            >
+            <span className={`text-[13px] ${c.sub}`}>%</span>
+            <button type="button" onClick={saveRate} className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${c.primary}`}>
               Save
             </button>
             {hasOverride && (
@@ -225,48 +237,40 @@ export default function CategoriesServiceCard({
                   setRateDraft('');
                   setEditingRate(false);
                 }}
-                className="text-[11px] font-bold text-rose-500 hover:text-rose-600 cursor-pointer"
+                className={`text-xs font-semibold hover:underline ${c.sub}`}
               >
-                Reset
+                Use default ({taxRate}%)
               </button>
             )}
             <button
               type="button"
               onClick={() => {
                 setEditingRate(false);
+                setRateError('');
                 setRateDraft(category.tax_rate_override != null ? String(category.tax_rate_override) : '');
               }}
-              className={`text-[11px] font-bold hover:underline cursor-pointer ${
-                isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`text-xs font-semibold hover:underline ${c.faint}`}
             >
               Cancel
             </button>
+            {rateError && <span className="text-xs font-medium text-rose-500">{rateError}</span>}
           </div>
         ) : (
           <button
             type="button"
             onClick={() => setEditingRate(true)}
-            className={`inline-flex items-center gap-1.5 rounded-xl px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
-              hasOverride
-                ? isDark
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  : 'bg-amber-100 text-amber-900 border border-amber-200'
-                : isDark
-                ? 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
-                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-            title="Click to set a custom tax rate for this service"
+            className={`text-xs transition hover:underline ${c.sub}`}
+            title="Set a different tax rate for this service"
           >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                hasOverride ? (isDark ? 'bg-amber-400' : 'bg-amber-600') : 'bg-slate-400'
-              }`}
-            />
-            {hasOverride ? `${category.tax_rate_override}% tax` : `${taxRate}% tax`}
+            Tax:{' '}
+            <span className={`font-semibold ${c.text}`}>
+              {hasOverride ? category.tax_rate_override : taxRate}%
+            </span>{' '}
+            {hasOverride ? '· custom for this service' : '· your default'}
+            <span className={`ml-1.5 ${c.faint}`}>Change</span>
           </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 }

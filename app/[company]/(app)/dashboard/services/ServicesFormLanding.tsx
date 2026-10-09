@@ -1,15 +1,13 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, Tag, FileText, ArrowRight, Sun, Moon, Check, X } from 'lucide-react';
+import { ChevronLeft, Tag, FileText, ChevronRight, Sun, Moon, Check } from 'lucide-react';
 import CategoriesTab from './CategoriesTab';
 import BookingFormConfig from './BookingFormConfig';
 import { useFormTabLogic } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
 import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
 import { can, type PlanTier } from '@/lib/permissions';
-
 
 type View = 'landing' | 'services' | 'form';
 
@@ -28,30 +26,68 @@ const parseArray = (raw: any): any[] => {
   return [];
 };
 
+function landingTokens(isDark: boolean) {
+  return isDark
+    ? {
+        text: 'text-white',
+        sub: 'text-slate-300',
+        faint: 'text-slate-400',
+        card: 'border-white/10 bg-[#0f1420] hover:border-white/25',
+        icon: 'bg-white/[0.06] text-slate-200',
+        pillOn: 'border-white/15 bg-white/[0.08] text-white',
+        pillOff: 'border-dashed border-white/20 text-slate-400',
+        btn: 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10',
+        divider: 'border-white/10',
+        link: 'text-white',
+      }
+    : {
+        text: 'text-slate-900',
+        sub: 'text-slate-600',
+        faint: 'text-slate-500',
+        card: 'border-slate-200 bg-white hover:border-slate-400',
+        icon: 'bg-slate-100 text-slate-700',
+        pillOn: 'border-slate-200 bg-slate-50 text-slate-900',
+        pillOff: 'border-dashed border-slate-300 text-slate-500',
+        btn: 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+        divider: 'border-slate-200',
+        link: 'text-slate-900',
+      };
+}
+
 export default function ServicesFormLanding({ company, currentUser }: { company: any; currentUser: any }) {
   const [view, setView] = useState<View>('landing');
 
+  // Theme: same key + event as the rest of the app.
   const [isDark, setIsDark] = useState<boolean>(true);
   const skipFirstThemeWrite = useRef(true);
-
   useEffect(() => {
-    setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+    try {
+      setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
+    } catch {}
   }, []);
-
   useEffect(() => {
     if (skipFirstThemeWrite.current) {
       skipFirstThemeWrite.current = false;
       return;
     }
-    localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+    try {
+      localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
+    } catch {}
     window.dispatchEvent(new Event('theme-changed'));
   }, [isDark]);
 
-  const t = themeTokens(isDark);
-  const formLogic = useFormTabLogic(company);
-  const { data: templates = [], isLoading: templatesLoading } = useQuoteTemplates(company?.slug, { enabled: can((company?.plan_tier || 'free') as PlanTier, 'quote_templates') });
+  // Scroll to top when switching views (matters most on phones).
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [view]);
 
-  // ── Services summary: every service + whether it has a pricing template ──
+  const t = themeTokens(isDark);
+  const l = landingTokens(isDark);
+  const formLogic = useFormTabLogic(company);
+  const { data: templates = [], isLoading: templatesLoading } = useQuoteTemplates(company?.slug, {
+    enabled: can((company?.plan_tier || 'free') as PlanTier, 'quote_templates'),
+  });
+
   const services = useMemo(() => {
     return parseArray(formLogic.categories)
       .filter((c: any) => c && (c.value || c.label))
@@ -65,8 +101,8 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
       });
   }, [formLogic.categories, templates]);
   const servicesWithTemplate = services.filter((s) => s.hasTemplate).length;
+  const missingTemplates = services.length - servicesWithTemplate;
 
-  // ── Booking form summary: which fields customers actually see ──
   const fc: any = (formLogic as any).fieldConfig || {};
   const customQuestions = parseArray((formLogic as any).customQuestions ?? company?.custom_questions);
   const formFields = [
@@ -76,26 +112,23 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
     { label: 'Service', on: true },
     { label: 'Description', on: true },
     { label: 'Address', on: !!fc.address?.enabled },
-      { label: 'Timing', on: !!fc.preferred_date?.enabled },
+    { label: 'Timing', on: !!fc.preferred_date?.enabled },
     { label: 'How they found you', on: !!fc.lead_source?.enabled },
     { label: 'Photos', on: !!fc.file_upload?.enabled },
   ];
+  const fieldsOn = formFields.filter((f) => f.on);
+  const fieldsOff = formFields.filter((f) => !f.on);
 
-  const pillOn = isDark
-    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
-    : 'border-emerald-200 bg-emerald-50 text-emerald-700';
-  const pillOff = isDark
-    ? 'border-white/10 bg-white/5 text-slate-400'
-    : 'border-slate-200 bg-slate-50 text-slate-500';
-  const pillBase = 'inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[11px] font-semibold';
+  const pill = 'inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[13px] font-medium';
 
   const backBar = (max: string) => (
-    <div className={`mx-auto ${max} px-4 pt-5 sm:px-6`}>
+    <div className={`mx-auto ${max} px-4 pt-4 sm:px-6`}>
       <button
+        type="button"
         onClick={() => setView('landing')}
-        className={`inline-flex items-center gap-1.5 text-xs font-bold ${t.subText} hover:opacity-80 transition`}
+        className={`-ml-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-sm font-medium transition hover:opacity-80 ${l.sub}`}
       >
-        <ChevronLeft className="h-4 w-4" /> Back
+        <ChevronLeft className="h-4 w-4" /> Services &amp; booking form
       </button>
     </div>
   );
@@ -103,13 +136,8 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
   if (view === 'services') {
     return (
       <div className={`min-h-screen ${t.bg} transition-colors`}>
-        {backBar('max-w-5xl')}
-        <CategoriesTab
-          company={company}
-          currentUser={currentUser}
-          isDark={isDark}
-          onToggleTheme={() => setIsDark((v) => !v)}
-        />
+        {backBar('max-w-4xl')}
+        <CategoriesTab company={company} currentUser={currentUser} isDark={isDark} onToggleTheme={() => setIsDark((v) => !v)} />
       </div>
     );
   }
@@ -117,132 +145,133 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
   if (view === 'form') {
     return (
       <div className={`min-h-screen ${t.bg} transition-colors`}>
-        {backBar('max-w-5xl')}
+        {backBar('max-w-4xl')}
         <BookingFormConfig company={company} formLogic={formLogic} isDark={isDark} t={t} />
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${t.bg} transition-colors font-sans`}>
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 space-y-8 pb-20">
-        <div
-          className="flex items-center justify-between gap-4 pb-6 border-b"
-          style={{ borderColor: isDark ? 'rgba(255,255,255,0.08)' : '#e2e8f0' }}
-        >
-          <div>
-            <h1 className={`text-2xl sm:text-3xl font-extrabold tracking-tight ${t.heading}`}>
-              Services &amp; Booking Form
-            </h1>
-            <p className={`mt-1 text-xs sm:text-sm ${t.subText}`}>
-              What customers can request, and how they ask for it.
-            </p>
+    <div className={`min-h-screen ${t.bg} transition-colors`}>
+      <div className="mx-auto max-w-4xl space-y-6 px-4 pb-20 pt-6 sm:px-6 sm:pt-8">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className={`text-xl font-semibold tracking-tight sm:text-2xl ${l.text}`}>Services &amp; booking form</h1>
+            <p className={`mt-0.5 text-sm ${l.sub}`}>What customers can book, and the form they use to book it.</p>
           </div>
           <button
+            type="button"
             onClick={() => setIsDark((v) => !v)}
-            className={`shrink-0 rounded-xl border p-2.5 transition-colors ${
-              isDark ? 'border-white/10 bg-white/5 text-slate-300 hover:bg-white/10' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-            }`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition ${l.btn}`}
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 items-stretch">
-          {/* SERVICES CARD */}
-          <motion.button
-            whileHover={{ y: -2 }}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Services */}
+          <button
+            type="button"
             onClick={() => setView('services')}
-            className={`flex flex-col rounded-2xl border ${t.border} ${t.cardBg} p-6 text-left transition hover:border-blue-400`}
+            className={`group flex flex-col rounded-2xl border p-5 text-left transition sm:p-6 ${l.card}`}
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white mb-4">
-              <Tag className="h-5 w-5" />
+            <div className="flex items-center gap-3">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${l.icon}`}>
+                <Tag className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={`text-lg font-semibold ${l.text}`}>Services</p>
+                <p className={`text-[13px] ${l.sub}`}>
+                  {services.length} service{services.length === 1 ? '' : 's'}
+                  {!templatesLoading && services.length > 0 && ` · ${servicesWithTemplate} priced`}
+                </p>
+              </div>
+              <ChevronRight className={`h-5 w-5 shrink-0 transition group-hover:translate-x-0.5 ${l.faint}`} />
             </div>
-            <p className={`text-lg font-bold ${t.cardText}`}>Services & Templates</p>
-            <p className={`mt-1.5 text-xs sm:text-sm leading-relaxed ${t.subText}`}>
-              Add the services you offer. Create reusable templates for estimates/quotes so you can price jobs instantly in 1-click.
+
+            <p className={`mt-3 text-sm leading-relaxed ${l.sub}`}>
+              Your deposit, the services you offer, and a starting price, questions and checklist for each.
             </p>
 
-            <div className="mt-5 flex-1">
-              <p className={`mb-2 text-[11px] font-bold uppercase tracking-wider ${t.subText}`}>
-                {templatesLoading
-                  ? `${services.length} services`
-                  : `${services.length} services · ${servicesWithTemplate} with estimate templates`}
-              </p>
+            <div className="mt-4 flex-1">
               {services.length === 0 ? (
-                <p className={`text-xs ${t.subText}`}>No services yet — add your first one.</p>
+                <p className={`text-sm ${l.sub}`}>No services yet. Add your first one.</p>
               ) : (
                 <div className="flex flex-wrap gap-1.5">
-                  {services.slice(0, MAX_PILLS).map((s) => (
-                    <span
-                      key={s.value}
-                      className={`${pillBase} ${!templatesLoading && s.hasTemplate ? pillOn : pillOff}`}
-                      title={s.hasTemplate ? 'Estimate template set up' : 'No estimate template yet'}
-                    >
-                      {!templatesLoading &&
-                        (s.hasTemplate ? (
-                          <Check className="h-3 w-3" />
-                        ) : (
-                          <X className="h-3 w-3 text-rose-400" />
-                        ))}
-                      {s.label}
-                    </span>
-                  ))}
+                  {services.slice(0, MAX_PILLS).map((s) => {
+                    const priced = !templatesLoading && s.hasTemplate;
+                    return (
+                      <span
+                        key={s.value}
+                        className={`${pill} ${priced || templatesLoading ? l.pillOn : l.pillOff}`}
+                        title={s.hasTemplate ? 'Has an estimate template' : 'No estimate template yet'}
+                      >
+                        {priced && <Check className="h-3 w-3" />}
+                        {s.label}
+                      </span>
+                    );
+                  })}
                   {services.length > MAX_PILLS && (
-                    <span className={`${pillBase} ${pillOff}`}>+{services.length - MAX_PILLS} more</span>
+                    <span className={`${pill} ${l.pillOn}`}>+{services.length - MAX_PILLS} more</span>
                   )}
                 </div>
               )}
-              {!templatesLoading && services.length > 0 && servicesWithTemplate < services.length && (
-                <p className={`mt-2 text-[11px] ${t.subText}`}>
-                  <X className="mr-0.5 inline h-3 w-3 text-rose-400" /> = no estimate template yet. Add one so quotes load in one click.
+              {!templatesLoading && missingTemplates > 0 && (
+                <p className={`mt-2.5 text-[13px] ${l.faint}`}>
+                  {missingTemplates} without a starting price yet (dashed). Add one so quotes load in one click.
                 </p>
               )}
             </div>
 
-            <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-blue-500">
-              Add services & templates <ArrowRight className="h-4 w-4" />
-            </span>
-          </motion.button>
+            <span className={`mt-5 border-t pt-3 text-sm font-semibold ${l.divider} ${l.link}`}>Manage services</span>
+          </button>
 
-          {/* BOOKING FORM CARD */}
-          <motion.button
-            whileHover={{ y: -2 }}
+          {/* Booking form */}
+          <button
+            type="button"
             onClick={() => setView('form')}
-            className={`flex flex-col rounded-2xl border ${t.border} ${t.cardBg} p-6 text-left transition hover:border-emerald-400`}
+            className={`group flex flex-col rounded-2xl border p-5 text-left transition sm:p-6 ${l.card}`}
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-white mb-4">
-              <FileText className="h-5 w-5" />
+            <div className="flex items-center gap-3">
+              <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${l.icon}`}>
+                <FileText className="h-5 w-5" />
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={`text-lg font-semibold ${l.text}`}>Booking form</p>
+                <p className={`text-[13px] ${l.sub}`}>
+                  {fieldsOn.length} fields on
+                  {customQuestions.length > 0 &&
+                    ` · ${customQuestions.length} service question${customQuestions.length === 1 ? '' : 's'}`}
+                </p>
+              </div>
+              <ChevronRight className={`h-5 w-5 shrink-0 transition group-hover:translate-x-0.5 ${l.faint}`} />
             </div>
-            <p className={`text-lg font-bold ${t.cardText}`}>Booking Form</p>
-            <p className={`mt-1.5 text-xs sm:text-sm leading-relaxed ${t.subText}`}>
-              Update and test your live booking form. Toggle fields on or off, grab your booking link, and see exactly what customers see.
+
+            <p className={`mt-3 text-sm leading-relaxed ${l.sub}`}>
+              Choose which fields customers fill in, get your booking link, and test it as a customer.
             </p>
 
-            <div className="mt-5 flex-1">
-              <p className={`mb-2 text-[11px] font-bold uppercase tracking-wider ${t.subText}`}>
-                Active customer fields
-              </p>
+            <div className="mt-4 flex-1">
               <div className="flex flex-wrap gap-1.5">
-                {formFields.map((f) => (
-                  <span key={f.label} className={`${pillBase} ${f.on ? pillOn : pillOff}`}>
-                    {f.on ? <Check className="h-3 w-3" /> : <X className="h-3 w-3 text-rose-400" />}
+                {fieldsOn.map((f) => (
+                  <span key={f.label} className={`${pill} ${l.pillOn}`}>
+                    <Check className="h-3 w-3" />
+                    {f.label}
+                  </span>
+                ))}
+                {fieldsOff.map((f) => (
+                  <span key={f.label} className={`${pill} ${l.pillOff}`} title="Turned off">
                     {f.label}
                   </span>
                 ))}
               </div>
-              <p className={`mt-2 text-[11px] ${t.subText}`}>
-                {customQuestions.length > 0
-                  ? `+ ${customQuestions.length} custom question${customQuestions.length === 1 ? '' : 's'} (shown based on the service selected)`
-                  : 'No custom questions yet — add them per service in the Services tab.'}
-              </p>
+              {fieldsOff.length > 0 && <p className={`mt-2.5 text-[13px] ${l.faint}`}>Dashed fields are turned off.</p>}
             </div>
 
-            <span className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-emerald-500">
-              Update & test form <ArrowRight className="h-4 w-4" />
-            </span>
-          </motion.button>
+            <span className={`mt-5 border-t pt-3 text-sm font-semibold ${l.divider} ${l.link}`}>Edit and test form</span>
+          </button>
         </div>
       </div>
     </div>

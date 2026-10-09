@@ -164,8 +164,8 @@ export async function POST(req: Request, { params }: Props) {
         c.plan_tier,
         c.slug as company_slug,
         c.stripe_connect_account_id,
-        c.stripe_payment_status,
-        c.payment_link_url,
+        CASE WHEN c.card_payments_enabled = false THEN 'off' ELSE c.stripe_payment_status END AS stripe_payment_status,
+                c.payment_link_url,
         c.payment_link_type
       FROM projects p
       JOIN leads l ON p.lead_id = l.id

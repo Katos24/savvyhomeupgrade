@@ -1,50 +1,78 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Plus,
   X,
   Trash2,
-  Edit2,
+  Pencil,
   AlertCircle,
-  HelpCircle,
   ArrowLeft,
   Type,
-  ListFilter,
+  List,
   ToggleRight,
   Check,
-  MessageSquarePlus,
+  ChevronUp,
+  ChevronDown,
+  Loader2,
 } from 'lucide-react';
 import type { Category, CustomQuestion } from './CategoriesTaskEditorModal';
 
 type QuestionType = 'text' | 'select' | 'checkbox';
 
-const QUESTION_TYPES: {
-  val: QuestionType;
-  label: string;
-  description: string;
-  icon: typeof Type;
-}[] = [
-  {
-    val: 'text',
-    label: 'Text Field',
-    description: 'Freeform input box for short or long responses',
-    icon: Type,
-  },
-  {
-    val: 'select',
-    label: 'Dropdown List',
-    description: 'Select a single option from a custom list',
-    icon: ListFilter,
-  },
-  {
-    val: 'checkbox',
-    label: 'Yes / No',
-    description: 'Simple Yes / No or True / False confirmation',
-    icon: ToggleRight,
-  },
+const QUESTION_TYPES: { val: QuestionType; label: string; description: string; icon: typeof Type }[] = [
+  { val: 'text', label: 'Written answer', description: 'They type a reply', icon: Type },
+  { val: 'select', label: 'Pick from a list', description: 'They choose one option', icon: List },
+  { val: 'checkbox', label: 'Yes / No', description: 'A simple yes or no', icon: ToggleRight },
 ];
+
+const typeSummary = (q: CustomQuestion) =>
+  q.type === 'select'
+    ? `Pick from a list · ${q.options?.length || 0} option${(q.options?.length || 0) === 1 ? '' : 's'}`
+    : q.type === 'checkbox'
+    ? 'Yes / No'
+    : 'Written answer';
+
+function tokens(isDark: boolean) {
+  return isDark
+    ? {
+        panel: 'border-white/10 bg-[#0f1420] text-slate-100',
+        bar: 'border-white/10',
+        text: 'text-white',
+        sub: 'text-slate-400',
+        faint: 'text-slate-500',
+        row: 'border-white/10 bg-white/[0.02]',
+        iconBtn: 'text-slate-400 hover:bg-white/10 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent',
+        btn: 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10',
+        primary: 'bg-white text-slate-900 hover:bg-slate-100',
+        input: 'border-white/15 bg-white/5 text-white placeholder:text-slate-500 focus:border-white/40',
+        choice: 'border-white/10 hover:border-white/25',
+        choiceOn: 'border-white bg-white/[0.06] ring-1 ring-white',
+        chip: 'border-white/15 bg-white/5 text-slate-200',
+        empty: 'border-white/15',
+        preview: 'border-white/10 bg-black/20',
+        previewField: 'border-white/15 bg-white/5 text-slate-400',
+      }
+    : {
+        panel: 'border-slate-200 bg-white text-slate-900',
+        bar: 'border-slate-100',
+        text: 'text-slate-900',
+        sub: 'text-slate-500',
+        faint: 'text-slate-400',
+        row: 'border-slate-200 bg-white',
+        iconBtn: 'text-slate-500 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent',
+        btn: 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+        primary: 'bg-slate-900 text-white hover:bg-slate-800',
+        input: 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-slate-500',
+        choice: 'border-slate-200 hover:border-slate-400',
+        choiceOn: 'border-slate-900 bg-slate-50 ring-1 ring-slate-900',
+        chip: 'border-slate-200 bg-slate-50 text-slate-800',
+        empty: 'border-slate-300',
+        preview: 'border-slate-200 bg-slate-50',
+        previewField: 'border-slate-300 bg-white text-slate-400',
+      };
+}
 
 type Props = {
   companySlug: string;
@@ -63,79 +91,110 @@ export default function CategoriesQuestionsModal({
   onClose,
   onSaved,
 }: Props) {
+  const c = tokens(isDark);
   const [questions, setQuestions] = useState<CustomQuestion[]>(allQuestions);
+  const [dirty, setDirty] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
-  // View State: 'list' | 'editor'
   const [viewMode, setViewMode] = useState<'list' | 'editor'>('list');
 
-  // Form State
+  // Editor state
   const [editingQId, setEditingQId] = useState<string | null>(null);
-  const [newQLabel, setNewQLabel] = useState('');
-  const [newQType, setNewQType] = useState<QuestionType>('text');
-  const [newQOptions, setNewQOptions] = useState<string[]>([]);
-  const [newQOptionDraft, setNewQOptionDraft] = useState('');
-  const [questionLabelError, setQuestionLabelError] = useState('');
+  const [label, setLabel] = useState('');
+  const [type, setType] = useState<QuestionType>('text');
+  const [options, setOptions] = useState<string[]>([]);
+  const [optionDraft, setOptionDraft] = useState('');
+  const [labelError, setLabelError] = useState('');
+  const [optionsError, setOptionsError] = useState('');
 
-  // API State
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
 
-  const questionsForThisService = questions.filter((q) => q.category === category.value);
+  const mine = useMemo(() => questions.filter((q) => q.category === category.value), [questions, category.value]);
 
-  const resetForm = () => {
-    setNewQLabel('');
-    setNewQType('text');
-    setNewQOptions([]);
-    setNewQOptionDraft('');
+  const resetEditor = () => {
     setEditingQId(null);
-    setQuestionLabelError('');
+    setLabel('');
+    setType('text');
+    setOptions([]);
+    setOptionDraft('');
+    setLabelError('');
+    setOptionsError('');
   };
 
-  const handleOpenAddForm = () => {
-    resetForm();
+  const openNew = () => {
+    resetEditor();
     setViewMode('editor');
   };
 
-  const handleStartEdit = (q: CustomQuestion) => {
+  const openEdit = (q: CustomQuestion) => {
     setEditingQId(q.id);
-    setNewQLabel(q.label);
-    setNewQType(q.type);
-    setNewQOptions(q.options || []);
-    setNewQOptionDraft('');
-    setQuestionLabelError('');
+    setLabel(q.label);
+    setType(q.type as QuestionType);
+    setOptions(q.options || []);
+    setOptionDraft('');
+    setLabelError('');
+    setOptionsError('');
     setViewMode('editor');
   };
 
-  const handleAddOption = () => {
-    const trimmed = newQOptionDraft.trim();
-    if (trimmed && !newQOptions.includes(trimmed)) {
-      setNewQOptions((prev) => [...prev, trimmed]);
-      setNewQOptionDraft('');
+  const backToList = () => {
+    resetEditor();
+    setViewMode('list');
+  };
+
+  const requestClose = () => {
+    if (saving) return;
+    if (dirty) setConfirmDiscard(true);
+    else onClose();
+  };
+
+  // Esc: editor → list, list → close (asks first if there are unsaved changes).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (confirmDiscard) setConfirmDiscard(false);
+      else if (viewMode === 'editor') backToList();
+      else requestClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, dirty, saving, confirmDiscard]);
+
+  const addOption = () => {
+    const v = optionDraft.trim();
+    if (!v) return;
+    if (options.some((o) => o.toLowerCase() === v.toLowerCase())) {
+      setOptionsError('That option is already in the list.');
+      return;
     }
+    setOptions((prev) => [...prev, v]);
+    setOptionDraft('');
+    setOptionsError('');
   };
 
-  const handleRemoveOption = (index: number) => {
-    setNewQOptions((prev) => prev.filter((_, idx) => idx !== index));
-  };
-
-  const handleConfirmQuestion = () => {
-    const trimmedLabel = newQLabel.trim();
-    if (!trimmedLabel) {
-      setQuestionLabelError('Question prompt cannot be empty.');
+  const confirmQuestion = () => {
+    const trimmed = label.trim();
+    if (!trimmed) {
+      setLabelError('Write the question first.');
+      return;
+    }
+    // Include anything still typed in the option box.
+    let finalOptions = options;
+    const pending = optionDraft.trim();
+    if (type === 'select' && pending && !options.some((o) => o.toLowerCase() === pending.toLowerCase())) {
+      finalOptions = [...options, pending];
+    }
+    if (type === 'select' && finalOptions.length < 2) {
+      setOptionsError('Add at least 2 options.');
       return;
     }
 
     if (editingQId) {
       setQuestions((prev) =>
         prev.map((q) =>
-          q.id === editingQId
-            ? {
-                ...q,
-                label: trimmedLabel,
-                type: newQType,
-                options: newQType === 'select' ? newQOptions : [],
-              }
-            : q
+          q.id === editingQId ? { ...q, label: trimmed, type, options: type === 'select' ? finalOptions : [] } : q
         )
       );
     } else {
@@ -143,21 +202,37 @@ export default function CategoriesQuestionsModal({
         ...prev,
         {
           id: `q_${Date.now()}`,
-          label: trimmedLabel,
-          type: newQType,
+          label: trimmed,
+          type,
           required: false,
-          options: newQType === 'select' ? newQOptions : [],
+          options: type === 'select' ? finalOptions : [],
           category: category.value,
         },
       ]);
     }
-
-    resetForm();
-    setViewMode('list');
+    setDirty(true);
+    backToList();
   };
 
-  const handleRemoveQuestion = (id: string) => {
+  const removeQuestion = (id: string) => {
     setQuestions((prev) => prev.filter((q) => q.id !== id));
+    setDirty(true);
+  };
+
+  // Move within this service's questions; other services' questions keep their spots.
+  const move = (id: string, dir: -1 | 1) => {
+    setQuestions((prev) => {
+      const idxs = prev.map((q, i) => (q.category === category.value ? i : -1)).filter((i) => i >= 0);
+      const pos = idxs.findIndex((i) => prev[i].id === id);
+      const swapPos = pos + dir;
+      if (pos < 0 || swapPos < 0 || swapPos >= idxs.length) return prev;
+      const next = [...prev];
+      const a = idxs[pos];
+      const b = idxs[swapPos];
+      [next[a], next[b]] = [next[b], next[a]];
+      return next;
+    });
+    setDirty(true);
   };
 
   const handleSave = async () => {
@@ -174,7 +249,7 @@ export default function CategoriesQuestionsModal({
         onSaved(questions);
         onClose();
       } else {
-        setSaveError(data.error || 'Failed to save questions.');
+        setSaveError(data.error || 'Could not save questions.');
       }
     } catch {
       setSaveError('Network error. Try again.');
@@ -183,292 +258,257 @@ export default function CategoriesQuestionsModal({
     }
   };
 
+  // Live preview of what the customer sees for the question being edited.
+  const Preview = () => (
+    <div className={`rounded-xl border p-3.5 ${c.preview}`}>
+      <p className={`mb-2 text-[11px] font-medium uppercase tracking-wide ${c.faint}`}>Customer sees</p>
+      <p className={`mb-2 text-sm font-medium ${c.text}`}>{label.trim() || 'Your question'}</p>
+      {type === 'text' && <div className={`h-9 rounded-lg border ${c.previewField}`} />}
+      {type === 'select' && options.length > 0 && (
+        <p className={`mb-1.5 truncate text-xs ${c.faint}`}>Options: {options.join(', ')}</p>
+      )}
+      {type === 'select' && (
+        <div className={`flex h-9 items-center justify-between rounded-lg border px-3 text-sm ${c.previewField}`}>
+          <span className="truncate">Select an option…</span>
+          <ChevronDown className="h-4 w-4 shrink-0" />
+        </div>
+      )}
+      {type === 'checkbox' && (
+        <div className="flex gap-4">
+          {['Yes', 'No'].map((v) => (
+            <span key={v} className={`flex items-center gap-1.5 text-sm ${c.sub}`}>
+              <span className={`h-3.5 w-3.5 rounded-full border ${c.previewField}`} />
+              {v}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-md"
-      onClick={onClose}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={requestClose}
     >
       <motion.div
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.96 }}
-        transition={{ duration: 0.2 }}
-        className={`flex max-h-[85vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border shadow-2xl transition-all ${
-          isDark
-            ? 'border-slate-800 bg-slate-900 text-slate-100'
-            : 'border-slate-200 bg-white text-slate-900'
-        }`}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Booking questions for ${category.label}`}
+        className={`flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border shadow-2xl sm:rounded-2xl ${c.panel}`}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ── Header ── */}
-        <div className={`flex items-center justify-between border-b px-6 py-4.5 ${
-          isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'
-        }`}>
-          <div className="flex items-center gap-3 min-w-0">
+        {/* Header */}
+        <div className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${c.bar}`}>
+          <div className="flex min-w-0 items-center gap-2.5">
             {viewMode === 'editor' && (
               <button
                 type="button"
-                onClick={() => setViewMode('list')}
-                className={`flex h-8 w-8 items-center justify-center rounded-xl border transition cursor-pointer ${
-                  isDark
-                    ? 'border-slate-800 bg-slate-800/50 text-slate-300 hover:text-white'
-                    : 'border-slate-200 bg-white text-slate-700 hover:text-slate-900'
-                }`}
-                aria-label="Back to questions list"
+                onClick={backToList}
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
+                aria-label="Back to questions"
               >
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
             <div className="min-w-0">
-              <h3 className={`text-base font-bold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {viewMode === 'editor'
-                  ? editingQId
-                    ? 'Edit Service Question'
-                    : 'Create Custom Question'
-                  : 'Service Questions'}
+              <h3 className={`truncate text-base font-semibold ${c.text}`}>
+                {viewMode === 'editor' ? (editingQId ? 'Edit question' : 'New question') : 'Booking questions'}
               </h3>
-              <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                {category.label}
-              </p>
+              <p className={`truncate text-xs ${c.sub}`}>{category.label}</p>
             </div>
           </div>
-
           <button
             type="button"
-            onClick={onClose}
-            aria-label="Close modal"
-            className={`flex h-8 w-8 items-center justify-center rounded-xl transition cursor-pointer ${
-              isDark ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-            }`}
+            onClick={requestClose}
+            aria-label="Close"
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
           >
-            <X className="h-4.5 w-4.5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* ── Body Content ── */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <AnimatePresence mode="wait">
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-5">
+          <AnimatePresence mode="wait" initial={false}>
             {viewMode === 'list' ? (
               <motion.div
-                key="list-view"
-                initial={{ opacity: 0, x: -12 }}
+                key="list"
+                initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -12 }}
-                transition={{ duration: 0.15 }}
-                className="space-y-5"
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.12 }}
+                className="space-y-4"
               >
-                {/* Banner */}
-                <div className={`flex items-start gap-3 rounded-2xl border p-4 text-xs font-semibold leading-relaxed ${
-                  isDark
-                    ? 'border-sky-500/30 bg-sky-500/10 text-sky-300'
-                    : 'border-sky-200 bg-sky-50 text-sky-800'
-                }`}>
-                  <HelpCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                  <span>
-                    Questions added here will be prompted on the booking form specifically when customers select{' '}
-                    <strong className={`font-bold ${isDark ? 'text-sky-200' : 'text-sky-950'}`}>{category.label}</strong>.
-                  </span>
-                </div>
+                <p className={`text-sm ${c.sub}`}>
+                  Customers who pick <span className={`font-semibold ${c.text}`}>{category.label}</span> on your booking
+                  form answer these, and you see the answers on the lead.
+                </p>
 
-                {/* Question List Header */}
-                <div className="flex items-center justify-between pt-1">
-                  <span className={`text-[11px] font-bold uppercase tracking-wider ${
-                    isDark ? 'text-slate-400' : 'text-slate-700'
-                  }`}>
-                    Active Questions ({questionsForThisService.length})
-                  </span>
-                  <button
-                    type="button"
-                    onClick={handleOpenAddForm}
-                    className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-blue-700 cursor-pointer"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    <span>New Question</span>
-                  </button>
-                </div>
-
-                {/* Questions List */}
-                <div className="space-y-2.5">
-                  {questionsForThisService.length === 0 ? (
-                    <div className={`flex flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center ${
-                      isDark ? 'border-slate-800 bg-slate-900/30' : 'border-slate-300 bg-slate-50'
-                    }`}>
-                      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500/10 text-blue-500">
-                        <MessageSquarePlus className="h-5 w-5" />
-                      </div>
-                      <p className={`text-xs font-bold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-                        No custom questions created
-                      </p>
-                      <p className={`mt-1 text-xs max-w-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                        Ask customers for measurements, preferences, or specific scope details.
-                      </p>
-                    </div>
-                  ) : (
-                    questionsForThisService.map((q) => (
-                      <div
-                        key={q.id}
-                        className={`group flex items-center justify-between gap-4 rounded-2xl border p-4 transition-all ${
-                          isDark
-                            ? 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
-                            : 'border-slate-200 bg-slate-50/80 hover:border-slate-300'
-                        }`}
-                      >
-                        <div className="min-w-0 flex-1">
-                          <p className={`truncate text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                            {q.label}
-                          </p>
-                          <div className="mt-1 flex items-center gap-2">
-                            <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-bold ${
-                              isDark ? 'bg-blue-500/20 text-blue-300' : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {q.type === 'text' && 'Text Input'}
-                              {q.type === 'checkbox' && 'Yes/No'}
-                              {q.type === 'select' && `Dropdown (${q.options?.length || 0} options)`}
-                            </span>
+                {mine.length === 0 ? (
+                  <div className={`rounded-xl border border-dashed px-4 py-8 text-center ${c.empty}`}>
+                    <p className={`text-sm font-medium ${c.text}`}>No questions yet</p>
+                    <p className={`mx-auto mt-1 max-w-xs text-xs ${c.sub}`}>
+                      Ask what you need to quote it, like size, age of the system, or how many rooms.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openNew}
+                      className={`mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold ${c.primary}`}
+                    >
+                      <Plus className="h-4 w-4" /> Add question
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <ol className="space-y-2">
+                      {mine.map((q, i) => (
+                        <li key={q.id} className={`flex items-center gap-2 rounded-xl border p-3 ${c.row}`}>
+                          <span className={`w-5 shrink-0 text-center text-xs font-semibold tabular-nums ${c.faint}`}>
+                            {i + 1}
+                          </span>
+                          <button type="button" onClick={() => openEdit(q)} className="min-w-0 flex-1 text-left">
+                            <p className={`truncate text-sm font-medium ${c.text}`}>{q.label}</p>
+                            <p className={`truncate text-xs ${c.faint}`}>
+                              {typeSummary(q)}
+                              {q.type === 'select' && q.options?.length ? `: ${q.options.join(', ')}` : ''}
+                            </p>
+                          </button>
+                          <div className="flex shrink-0 items-center">
+                            <button
+                              type="button"
+                              onClick={() => move(q.id, -1)}
+                              disabled={i === 0}
+                              className={`flex h-8 w-7 items-center justify-center rounded-lg ${c.iconBtn}`}
+                              aria-label="Move up"
+                            >
+                              <ChevronUp className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => move(q.id, 1)}
+                              disabled={i === mine.length - 1}
+                              className={`flex h-8 w-7 items-center justify-center rounded-lg ${c.iconBtn}`}
+                              aria-label="Move down"
+                            >
+                              <ChevronDown className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openEdit(q)}
+                              className={`hidden h-8 w-8 items-center justify-center rounded-lg sm:flex ${c.iconBtn}`}
+                              aria-label="Edit question"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeQuestion(q.id)}
+                              className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-500/10 hover:text-rose-500"
+                              aria-label="Delete question"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
                           </div>
-                        </div>
-
-                        <div className="flex items-center gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleStartEdit(q)}
-                            className={`flex h-8 w-8 items-center justify-center rounded-xl border transition cursor-pointer ${
-                              isDark
-                                ? 'border-slate-800 text-slate-300 hover:border-slate-700 hover:text-blue-400 hover:bg-slate-800'
-                                : 'border-slate-300 text-slate-700 hover:border-slate-400 hover:text-blue-600 hover:bg-white'
-                            }`}
-                            title="Edit question"
-                          >
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveQuestion(q.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-xl text-rose-500 hover:bg-rose-500/10 transition cursor-pointer"
-                            title="Delete question"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                        </li>
+                      ))}
+                    </ol>
+                    <button
+                      type="button"
+                      onClick={openNew}
+                      className={`inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-dashed py-2.5 text-sm font-medium transition ${c.empty} ${c.sub} hover:opacity-80`}
+                    >
+                      <Plus className="h-4 w-4" /> Add question
+                    </button>
+                  </>
+                )}
               </motion.div>
             ) : (
               <motion.div
-                key="editor-view"
-                initial={{ opacity: 0, x: 12 }}
+                key="editor"
+                initial={{ opacity: 0, x: 8 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 12 }}
-                transition={{ duration: 0.15 }}
-                className="space-y-6"
+                exit={{ opacity: 0, x: 8 }}
+                transition={{ duration: 0.12 }}
+                className="space-y-5"
               >
-                {/* Field 1: Question Title */}
-                <div className="space-y-2">
-                  <label className={`block text-xs font-bold uppercase tracking-wider ${
-                    isDark ? 'text-slate-400' : 'text-slate-700'
-                  }`}>
-                    Question Prompt
+                {/* Question */}
+                <div>
+                  <label htmlFor="q-label" className={`mb-1.5 block text-sm font-medium ${c.text}`}>
+                    Question
                   </label>
                   <input
+                    id="q-label"
                     type="text"
-                    value={newQLabel}
+                    value={label}
                     autoFocus
+                    maxLength={200}
                     onChange={(e) => {
-                      setNewQLabel(e.target.value);
-                      setQuestionLabelError('');
+                      setLabel(e.target.value);
+                      setLabelError('');
                     }}
-                    placeholder='e.g., "What is the square footage of the roof?"'
-                    className={`w-full rounded-xl border px-4 py-3 text-xs font-semibold outline-none transition ${
-                      questionLabelError
-                        ? 'border-rose-500 bg-rose-500/5'
-                        : isDark
-                        ? 'border-slate-800 bg-slate-950 text-white placeholder:text-slate-500 focus:border-blue-500'
-                        : 'border-slate-300 bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
-                    }`}
+                    onKeyDown={(e) => e.key === 'Enter' && type !== 'select' && confirmQuestion()}
+                    placeholder="e.g. About how many square feet is the roof?"
+                    className={`w-full rounded-xl border px-3.5 py-2.5 text-base sm:text-sm outline-none transition ${
+                      labelError ? 'border-rose-500' : ''
+                    } ${c.input}`}
                   />
-                  {questionLabelError && (
-                    <p className="flex items-center gap-1.5 text-[11px] font-bold text-rose-500">
-                      <AlertCircle className="h-3.5 w-3.5" /> {questionLabelError}
+                  {labelError && (
+                    <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-rose-500">
+                      <AlertCircle className="h-3.5 w-3.5" /> {labelError}
                     </p>
                   )}
                 </div>
 
-                {/* Field 2: Answer Format Cards */}
-                <div className="space-y-2">
-                  <label className={`block text-xs font-bold uppercase tracking-wider ${
-                    isDark ? 'text-slate-400' : 'text-slate-700'
-                  }`}>
-                    Response Format
-                  </label>
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
-                    {QUESTION_TYPES.map((typeObj) => {
-                      const Icon = typeObj.icon;
-                      const isSelected = newQType === typeObj.val;
+                {/* Answer type */}
+                <div>
+                  <p className={`mb-1.5 text-sm font-medium ${c.text}`}>How they answer</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {QUESTION_TYPES.map(({ val, label: tl, description, icon: Icon }) => {
+                      const on = type === val;
                       return (
                         <button
-                          key={typeObj.val}
+                          key={val}
                           type="button"
-                          onClick={() => setNewQType(typeObj.val)}
-                          className={`relative flex flex-col justify-between rounded-2xl border p-3.5 text-left transition-all cursor-pointer ${
-                            isSelected
-                              ? 'border-blue-500 bg-blue-500/10 ring-1 ring-blue-500'
-                              : isDark
-                              ? 'border-slate-800 bg-slate-950/40 hover:border-slate-700'
-                              : 'border-slate-200 bg-slate-50 hover:border-slate-300'
-                          }`}
+                          onClick={() => {
+                            setType(val);
+                            setOptionsError('');
+                          }}
+                          aria-pressed={on}
+                          className={`relative rounded-xl border p-3 text-left transition ${on ? c.choiceOn : c.choice}`}
                         >
-                          <div className="flex items-center justify-between">
-                            <div className={`flex h-7 w-7 items-center justify-center rounded-xl ${
-                              isSelected ? 'bg-blue-600 text-white' : isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-200 text-slate-700'
-                            }`}>
-                              <Icon className="h-3.5 w-3.5" />
-                            </div>
-                            {isSelected && <Check className="h-4 w-4 text-blue-500" />}
-                          </div>
-                          <div className="mt-3">
-                            <p className={`text-xs font-bold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-                              {typeObj.label}
-                            </p>
-                            <p className={`mt-0.5 text-[10px] font-medium leading-tight ${
-                              isDark ? 'text-slate-400' : 'text-slate-600'
-                            }`}>
-                              {typeObj.description}
-                            </p>
-                          </div>
+                          <span className="flex items-center justify-between">
+                            <Icon className={`h-4 w-4 ${on ? c.text : c.sub}`} />
+                            {on && <Check className={`h-3.5 w-3.5 ${c.text}`} />}
+                          </span>
+                          <span className={`mt-2 block text-xs font-semibold ${c.text}`}>{tl}</span>
+                          <span className={`mt-0.5 hidden text-[11px] leading-tight sm:block ${c.faint}`}>{description}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Field 3: Dropdown Option Pills */}
-                {newQType === 'select' && (
-                  <div className={`space-y-3 rounded-2xl border p-4 ${
-                    isDark ? 'border-slate-800 bg-slate-950/40' : 'border-slate-200 bg-slate-50'
-                  }`}>
-                    <label className={`block text-xs font-bold uppercase tracking-wider ${
-                      isDark ? 'text-slate-400' : 'text-slate-700'
-                    }`}>
-                      Dropdown Options
-                    </label>
-
-                    {/* Option Pills Box */}
-                    {newQOptions.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {newQOptions.map((opt, i) => (
+                {/* Options */}
+                {type === 'select' && (
+                  <div>
+                    <p className={`mb-1.5 text-sm font-medium ${c.text}`}>Options</p>
+                    {options.length > 0 && (
+                      <div className="mb-2 flex flex-wrap gap-1.5">
+                        {options.map((opt, i) => (
                           <span
-                            key={i}
-                            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold ${
-                              isDark ? 'border-slate-700 bg-slate-800 text-slate-200' : 'border-slate-300 bg-white text-slate-900'
-                            }`}
+                            key={`${opt}-${i}`}
+                            className={`inline-flex items-center gap-1 rounded-lg border py-1 pl-2.5 pr-1 text-sm ${c.chip}`}
                           >
-                            <span>{opt}</span>
+                            {opt}
                             <button
                               type="button"
-                              onClick={() => handleRemoveOption(i)}
-                              className="text-slate-400 hover:text-rose-500 transition cursor-pointer"
+                              onClick={() => setOptions((prev) => prev.filter((_, idx) => idx !== i))}
+                              className="rounded p-0.5 text-slate-400 transition hover:text-rose-500"
+                              aria-label={`Remove ${opt}`}
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
@@ -476,102 +516,115 @@ export default function CategoriesQuestionsModal({
                         ))}
                       </div>
                     )}
-
-                    {/* Add Input */}
                     <div className="flex gap-2">
                       <input
                         type="text"
-                        value={newQOptionDraft}
-                        onChange={(e) => setNewQOptionDraft(e.target.value)}
+                        value={optionDraft}
+                        maxLength={80}
+                        onChange={(e) => {
+                          setOptionDraft(e.target.value);
+                          setOptionsError('');
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            handleAddOption();
+                            addOption();
                           }
                         }}
-                        placeholder="Add option (e.g. 1-2 Stories)..."
-                        className={`flex-1 rounded-xl border px-3.5 py-2 text-xs font-semibold outline-none ${
-                          isDark
-                            ? 'border-slate-800 bg-slate-900 text-white placeholder:text-slate-500 focus:border-blue-500'
-                            : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-blue-500'
-                        }`}
+                        placeholder={options.length ? 'Add another option' : 'e.g. 1 story'}
+                        className={`min-w-0 flex-1 rounded-xl border px-3.5 py-2 text-base sm:text-sm outline-none ${c.input}`}
                       />
                       <button
                         type="button"
-                        onClick={handleAddOption}
-                        className={`rounded-xl px-4 py-2 text-xs font-bold transition cursor-pointer ${
-                          isDark
-                            ? 'bg-slate-800 text-slate-200 hover:bg-slate-700'
-                            : 'bg-slate-800 text-white hover:bg-slate-900'
-                        }`}
+                        onClick={addOption}
+                        className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${c.btn}`}
                       >
                         Add
                       </button>
                     </div>
+                    {optionsError ? (
+                      <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-rose-500">
+                        <AlertCircle className="h-3.5 w-3.5" /> {optionsError}
+                      </p>
+                    ) : (
+                      <p className={`mt-1.5 text-xs ${c.faint}`}>Press Enter to add each one.</p>
+                    )}
                   </div>
                 )}
 
-                {/* Controls */}
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      resetForm();
-                      setViewMode('list');
-                    }}
-                    className={`rounded-xl border px-4 py-2.5 text-xs font-bold transition cursor-pointer ${
-                      isDark
-                        ? 'border-slate-800 text-slate-300 hover:bg-slate-800'
-                        : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-                    }`}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleConfirmQuestion}
-                    className="rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-blue-700 transition cursor-pointer shadow-xs"
-                  >
-                    {editingQId ? 'Update Question' : 'Add Question'}
-                  </button>
-                </div>
+                <Preview />
               </motion.div>
             )}
           </AnimatePresence>
 
           {saveError && (
-            <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs font-semibold text-rose-500">
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm font-medium text-rose-500">
               <AlertCircle className="h-4 w-4 shrink-0" /> {saveError}
             </div>
           )}
         </div>
 
-        {/* ── Footer ── */}
-        {viewMode === 'list' && (
-          <div className={`grid grid-cols-2 gap-3 border-t p-4.5 ${
-            isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-100 bg-slate-50/50'
-          }`}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={`rounded-xl border py-2.5 text-xs font-bold transition cursor-pointer ${
-                isDark
-                  ? 'border-slate-800 text-slate-300 hover:bg-slate-800'
-                  : 'border-slate-300 text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={handleSave}
-              disabled={saving}
-              className="rounded-xl bg-blue-600 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer shadow-xs"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        )}
+        {/* Footer */}
+        <div className={`border-t px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] ${c.bar}`}>
+          {confirmDiscard ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className={`text-sm ${c.text}`}>Discard your changes?</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDiscard(false)}
+                  className={`rounded-xl border px-4 py-2 text-sm font-medium ${c.btn}`}
+                >
+                  Keep editing
+                </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white hover:bg-rose-700"
+                >
+                  Discard
+                </button>
+              </div>
+            </div>
+          ) : viewMode === 'editor' ? (
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={backToList} className={`rounded-xl border px-4 py-2.5 text-sm font-medium ${c.btn}`}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmQuestion}
+                className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${c.primary}`}
+              >
+                {editingQId ? 'Update question' : 'Add question'}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <p className={`text-xs ${c.faint}`}>{dirty ? 'Changes not saved yet' : `${mine.length} question${mine.length === 1 ? '' : 's'}`}</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={requestClose}
+                  className={`rounded-xl border px-4 py-2.5 text-sm font-medium ${c.btn}`}
+                >
+                  {dirty ? 'Cancel' : 'Close'}
+                </button>
+                {dirty && (
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${c.primary}`}
+                  >
+                    {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                    {saving ? 'Saving…' : 'Save'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </motion.div>
     </div>
   );

@@ -74,8 +74,10 @@ export async function sendCollectionInvoice(opts: SendCollectionOptions): Promis
            c.name as company_name, c.phone as company_phone,
            c.email as company_email,
            c.id as company_id, c.slug as company_slug, c.plan_tier,
-           c.stripe_connect_account_id, c.stripe_connect_onboarded, c.stripe_payment_status,
-           c.invoice_terms
+           c.stripe_connect_account_id, c.stripe_connect_onboarded,
+           CASE WHEN c.card_payments_enabled = false THEN 'off' ELSE c.stripe_payment_status END AS stripe_payment_status,
+           c.payment_link_url, c.payment_link_type,
+                                 c.invoice_terms
     FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
@@ -139,8 +141,9 @@ export async function sendCollectionInvoice(opts: SendCollectionOptions): Promis
   const emailCollectionKind = collectionKind === 'full' ? undefined : collectionKind;
 
   // ── Stripe Connect payment link ──
-  let paymentLinkUrl: string | undefined;
-  let paymentLinkType: string | undefined;
+   // Manual link (Venmo, Zelle…) by default; replaced by Stripe Checkout below when cards are on.
+  let paymentLinkUrl: string | undefined = lead.payment_link_url || undefined;
+  let paymentLinkType: string | undefined = lead.payment_link_url ? lead.payment_link_type || 'other' : undefined;
   if (lead.stripe_payment_status === 'active' && invoiceTotal > 0) {
     try {
       const checkout = await getOrCreateCheckoutSession({

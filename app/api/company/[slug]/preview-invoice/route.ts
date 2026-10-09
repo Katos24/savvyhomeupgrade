@@ -24,8 +24,8 @@ export async function GET(
          const companies = await sql`
       SELECT name, phone, email, logo_url,
              email_brand_color_1, email_brand_color_2,
-            stripe_connect_onboarded, stripe_payment_status, invoice_terms,
-            payment_link_url, payment_link_type
+            stripe_connect_onboarded, invoice_terms,
+            CASE WHEN card_payments_enabled = false THEN 'off' ELSE stripe_payment_status END AS stripe_payment_status,            payment_link_url, payment_link_type
       FROM companies WHERE slug = ${slug} LIMIT 1
     `;
     if (!companies.length) return NextResponse.json({ error: 'Company not found' }, { status: 404 });

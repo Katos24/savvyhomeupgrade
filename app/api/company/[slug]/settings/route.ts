@@ -176,6 +176,34 @@ case 'update-payment-link': {
   return NextResponse.json({ success: true, company: result[0] });
 }
 
+// ── Card payments on/off (Stripe stays connected either way) ──
+case 'update-payment-method': {
+  if (typeof data?.card_payments_enabled !== 'boolean') {
+    return NextResponse.json({ success: false, error: 'Invalid value.' }, { status: 400 });
+  }
+  const result = await sql`
+    UPDATE companies
+    SET card_payments_enabled = ${data.card_payments_enabled}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
+// ── Card payments on/off (Stripe stays connected either way) ──
+case 'update-payment-method': {
+  if (typeof data?.card_payments_enabled !== 'boolean') {
+    return NextResponse.json({ success: false, error: 'Invalid value.' }, { status: 400 });
+  }
+  const result = await sql`
+    UPDATE companies
+    SET card_payments_enabled = ${data.card_payments_enabled}
+    WHERE id = ${company.id}
+    RETURNING *
+  `;
+  return NextResponse.json({ success: true, company: result[0] });
+}
+
 // ── BCC preference ──
 case 'update-bcc': {
   const result = await sql`

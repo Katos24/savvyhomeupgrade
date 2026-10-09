@@ -1430,8 +1430,9 @@ else if (action === 'get_payment_link') {
     SELECT l.id, l.name, l.email, l.project_id,
            p.quote_total, p.payment_amount, p.deposit_type, p.deposit_value, p.deposit_paid_at,
            c.slug as company_slug, c.plan_tier,
-           c.stripe_connect_account_id, c.stripe_payment_status,
-           c.payment_link_url, c.payment_link_type
+           c.stripe_connect_account_id,
+           CASE WHEN c.card_payments_enabled = false THEN 'off' ELSE c.stripe_payment_status END AS stripe_payment_status,
+                      c.payment_link_url, c.payment_link_type
     FROM leads l
     LEFT JOIN projects p ON l.project_id = p.id
     LEFT JOIN companies c ON l.company_id = c.id
