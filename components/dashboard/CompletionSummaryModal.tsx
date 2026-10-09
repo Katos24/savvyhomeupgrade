@@ -149,7 +149,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
           title: `Final invoice for ${fmt(inv.amount)} will be emailed to ${firstName}`,
           sub: inv.payLink
             ? `Sent to ${inv.email} with a card payment button.`
-            : `Sent to ${inv.email}. No card payment button — Stripe isn't connected yet.`,
+            : `Sent to ${inv.email}. Card payments are off, so it uses your pay link if you have one.`,
           tone: 'send',
         };
       case 'paid':
@@ -230,7 +230,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 40, opacity: 0 }}
         transition={{ type: 'spring', damping: 32, stiffness: 340 }}
-        className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92vh] flex flex-col"
+        className="w-full sm:max-w-md bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[92dvh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-center pt-3 sm:hidden">
@@ -240,7 +240,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
         {/* Header */}
         <div className="flex items-start justify-between gap-3 px-5 pt-4 sm:pt-5">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Complete job</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Complete job</p>
             <h3 className="mt-0.5 text-lg font-bold text-slate-900 truncate">{lead?.name || 'This job'}</h3>
             {lead?.category && (
               <p className="text-xs text-slate-500 capitalize">{String(lead.category).replace(/_/g, ' ')}</p>
@@ -248,7 +248,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
           </div>
           <button
             onClick={onCancel}
-            className="p-1.5 -mr-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition"
+            className="p-2 -mr-2 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -260,15 +260,15 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
           {total > 0 && (
             <div className="grid grid-cols-3 rounded-xl border border-slate-200 divide-x divide-slate-200">
               <div className="px-3 py-2.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Total</p>
                 <p className="text-sm font-bold text-slate-900 tabular-nums">{fmt(total)}</p>
               </div>
               <div className="px-3 py-2.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Collected</p>
-                <p className="text-sm font-bold text-emerald-600 tabular-nums">{fmt(paid)}</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Collected</p>
+                <p className="text-sm font-bold text-emerald-700 tabular-nums">{fmt(paid)}</p>
               </div>
               <div className="px-3 py-2.5">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Balance</p>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Balance</p>
                 <p className={`text-sm font-bold tabular-nums ${balance > 0 ? 'text-amber-600' : 'text-slate-900'}`}>
                   {fmt(balance)}
                 </p>
@@ -295,10 +295,10 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
                     >
                       {c.done && <Check className="w-2.5 h-2.5" strokeWidth={3.5} />}
                     </span>
-                    <span className={`text-xs font-medium truncate ${c.done ? 'text-slate-700' : 'text-slate-400'}`}>
+                    <span className={`text-sm font-medium truncate ${c.done ? 'text-slate-800' : 'text-slate-500'}`}>
                       {c.label}
                     </span>
-                    {c.detail && <span className="ml-auto text-[11px] text-slate-400 shrink-0">{c.detail}</span>}
+                    {c.detail && <span className="ml-auto text-[13px] text-slate-600 shrink-0">{c.detail}</span>}
                   </div>
                 ))}
               </div>
@@ -310,7 +310,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
             <p className="mb-2 text-xs font-semibold text-slate-500">When you mark this complete</p>
 
             {loading ? (
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3.5 py-3 text-xs text-slate-400">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200 px-3.5 py-3 text-sm text-slate-600">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 Checking invoice and review settings…
               </div>
@@ -329,7 +329,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
                     <div className="min-w-0">
                       <p className="text-sm font-semibold leading-snug">{invoiceLine.title}</p>
                       {invoiceLine.sub && (
-                        <p className={`mt-0.5 text-[11px] leading-relaxed ${invoiceLine.tone === 'warn' ? 'text-amber-800' : 'text-slate-500'}`}>
+                        <p className={`mt-0.5 text-[13px] leading-relaxed ${invoiceLine.tone === 'warn' ? 'text-amber-800' : 'text-slate-600'}`}>
                           {invoiceLine.sub}
                         </p>
                       )}
@@ -353,7 +353,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
                       />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-900">Ask {firstName} for a Google review</p>
-                        <p className="text-[11px] text-slate-500 truncate">
+                        <p className="text-[13px] text-slate-600 truncate">
                           {sendReview
                             ? `Review email goes to ${reviewEmail || firstName}`
                             : 'No review email will be sent'}
@@ -361,7 +361,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
                       </div>
                       <span
                         className={`relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors ${
-                          sendReview ? 'bg-emerald-500' : 'bg-slate-200'
+                          sendReview ? 'bg-slate-900' : 'bg-slate-300'
                         }`}
                       >
                         <span
@@ -380,7 +380,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
                 </div>
 
                 {!invoiceWillSend && !reviewOn && (
-                  <p className="px-1 text-[11px] text-slate-400">Nothing will be emailed to {firstName}.</p>
+                  <p className="px-1 text-[13px] text-slate-600">Nothing will be emailed to {firstName}.</p>
                 )}
               </div>
             )}
@@ -401,7 +401,7 @@ export default function CompletionSummaryModal({ lead, onConfirm, onCancel }: Co
           <button
             onClick={() => onConfirm(reviewOn)}
             disabled={loading}
-            className="py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-wait text-sm font-semibold text-white transition active:scale-[0.98] inline-flex items-center justify-center gap-1.5"
+            className="py-3 rounded-xl bg-slate-900 hover:bg-slate-800 disabled:opacity-60 disabled:cursor-wait text-sm font-semibold text-white transition active:scale-[0.98] inline-flex items-center justify-center gap-1.5"
           >
             <Check className="w-4 h-4" strokeWidth={3} />
             {confirmLabel}

@@ -1181,9 +1181,26 @@ export default function BillingSection({
                           )}
                         </div>
                       </div>
-                      {/* Refund rows and fully-reversed payments can't be reversed again */}
+                                           {/* Refund rows and fully-reversed payments can't be reversed again.
+                          Card payments are refunded in Stripe; the webhook syncs the refund back here. */}
                       {isRefundRow ? null : fullyReversed ? (
-                        <span className="text-slate-400 font-medium shrink-0">Reversed</span>
+                        <span className="text-slate-400 font-medium shrink-0">
+                          {p.is_stripe ? 'Refunded' : 'Reversed'}
+                        </span>
+                      ) : p.is_stripe ? (
+                        <a
+                          href={
+                            p.stripe_payment_intent_id
+                              ? `https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`
+                              : 'https://dashboard.stripe.com/payments'
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Refunds are done in Stripe and sync back here automatically"
+                          className="text-slate-700 hover:underline font-medium shrink-0 py-1 whitespace-nowrap"
+                        >
+                          Refund in Stripe ↗
+                        </a>
                       ) : (
                         <button
                           onClick={() => setConfirmDeletePayment(p)}

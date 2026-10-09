@@ -481,8 +481,9 @@ className="p-3 sm:p-7 space-y-6"
                     onRefresh={onRefresh}
                     onAddNote={onAddNote}
                     relatedLeads={relatedLeads}
-                    onShowHistory={() => setShowHistoryDrawer(true)}
+                                      onShowHistory={() => setShowHistoryDrawer(true)}
                     quoteTemplates={quoteTemplates}
+                    onMarkComplete={() => handleSaveStatusWithCheck('completed')}
                   />
                 )}
 

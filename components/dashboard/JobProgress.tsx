@@ -12,6 +12,8 @@ type Props = {
   reviewSentAt: string | null;
   sendingReview: boolean;
   onSendReview: () => void;
+  /** Opens the same completion pop-up as setting the status to Completed. */
+  onMarkComplete?: () => void;
 };
 
 const fmtDate = (v?: string | null) =>
@@ -28,7 +30,7 @@ const money = (n: number) =>
 
 const num = (v: any) => parseFloat(String(v ?? '0')) || 0;
 
-export default function JobProgress({ lead, canReview, reviewSentAt, sendingReview, onSendReview }: Props) {
+export default function JobProgress({ lead, canReview, reviewSentAt, sendingReview, onSendReview, onMarkComplete }: Props) {
   const [open, setOpen] = useState(false);
 
   // Same payment math as BillingSection
@@ -104,7 +106,11 @@ export default function JobProgress({ lead, canReview, reviewSentAt, sendingRevi
     key: 'done',
     label: 'Job done',
     done: completed,
-    detail: completed ? (lead.job_completed_at ? `Finished ${fmtDate(lead.job_completed_at)}` : 'Finished') : 'Not yet',
+    detail: completed
+      ? lead.job_completed_at
+        ? `Finished ${fmtDate(lead.job_completed_at)}`
+        : 'Finished'
+      : 'Mark complete when the work is done',
   });
 
   // Skip the invoice step when it was paid in full without one (e.g. cash at the door)
@@ -144,14 +150,23 @@ export default function JobProgress({ lead, canReview, reviewSentAt, sendingRevi
   const current = steps.find((s) => !s.done) || null;
   const currentIndex = current ? steps.indexOf(current) : steps.length;
   const pct = Math.round((doneCount / steps.length) * 100);
+  const canMarkComplete = !!onMarkComplete && !completed;
+  // Show the quick button when the job is due: either it's the next step,
+  // or the scheduled day has arrived (even if the deposit was never logged).
+  const todayStr = (() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  })();
+  const doneIsCurrent = current?.key === 'done' || (!!scheduledDate && scheduledDate <= todayStr);
 
   return (
     <>
       {/* One-line status bar — tap for the full summary */}
+      <div className="flex w-full items-center gap-2 rounded-2xl border border-gray-200/80 bg-white pr-3 shadow-xs transition hover:border-[#00828A]/40">
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="w-full flex items-center gap-3 rounded-2xl border border-gray-200/80 bg-white px-4 py-3 text-left shadow-xs transition hover:border-[#00828A]/40"
+        className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left"
       >
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
@@ -171,6 +186,18 @@ export default function JobProgress({ lead, canReview, reviewSentAt, sendingRevi
         </div>
         <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
       </button>
+      {canMarkComplete && doneIsCurrent && (
+        <button
+          type="button"
+          onClick={onMarkComplete}
+          className="shrink-0 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white transition hover:bg-slate-800"
+        >
+          <Check className="h-4 w-4" strokeWidth={3} />
+          <span className="hidden sm:inline">Mark complete</span>
+          <span className="sm:hidden">Complete</span>
+        </button>
+      )}
+      </div>
 
       {/* Summary modal */}
       <AnimatePresence>
@@ -236,6 +263,19 @@ export default function JobProgress({ lead, canReview, reviewSentAt, sendingRevi
                           {s.label}
                         </p>
                         <p className={`text-xs ${s.done || isCurrent ? 'text-gray-500' : 'text-gray-400'}`}>{s.detail}</p>
+
+                        {s.key === 'done' && canMarkComplete && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setOpen(false);
+                              onMarkComplete?.();
+                            }}
+                            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                          >
+                            <Check className="h-3.5 w-3.5" strokeWidth={3} /> Mark complete
+                          </button>
+                        )}
 
                         {s.key === 'review' && !s.done && completed && lead.email && (
                           <button

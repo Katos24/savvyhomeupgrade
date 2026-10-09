@@ -646,14 +646,19 @@ export default function BillingSummaryPanel({
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        {p.is_stripe && p.kind !== 'refund' && p.stripe_payment_intent_id && (
+                                               {p.is_stripe && p.kind !== 'refund' && (
                           <a
-                            href={`https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`}
+                            href={
+                              p.stripe_payment_intent_id
+                                ? `https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id}`
+                                : 'https://dashboard.stripe.com/payments'
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
+                            title="Refunds are done in Stripe and sync back here automatically"
                             className="inline-flex items-center gap-0.5 px-2 py-1 rounded-lg text-[10px] font-semibold text-brand-700 hover:bg-brand-50 whitespace-nowrap transition-colors"
                           >
-                            Stripe <ExternalLink className="w-2.5 h-2.5" />
+                            Refund in Stripe <ExternalLink className="w-2.5 h-2.5" />
                           </a>
                         )}
                         {canReverse && (

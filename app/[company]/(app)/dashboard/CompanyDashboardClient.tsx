@@ -287,9 +287,17 @@ function Pipeline({
                 style={{ width: r.count ? `max(6px, ${(r.count / max) * 100}%)` : '0%' }}
               />
             </span>
-            <span className={`text-right text-sm font-semibold tabular-nums ${r.count ? t.text : t.faint}`}>{r.count}</span>
+                       <span className={`text-right text-sm font-semibold tabular-nums ${r.count ? t.text : t.faint}`}>{r.count}</span>
           </button>
         ))}
+        <button
+          type="button"
+          onClick={() => router.push(`/${companySlug}/leads`)}
+          className={`mt-1 flex w-full items-center justify-between rounded-lg border-t px-2.5 py-2.5 text-sm font-semibold transition ${t.border} ${t.text} ${t.hover}`}
+        >
+          View all leads
+          <ArrowRight className="h-4 w-4" />
+        </button>
       </div>
     </section>
   );

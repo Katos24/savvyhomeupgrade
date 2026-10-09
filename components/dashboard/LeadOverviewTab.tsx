@@ -25,7 +25,8 @@ type LeadOverviewTabProps = {
   onAddNote: (id: number, text: string) => Promise<boolean>;
   relatedLeads: any[];
   onShowHistory: () => void;
-  quoteTemplates: any[];
+   quoteTemplates: any[];
+  onMarkComplete?: () => void;
 };
 
 // Same values as the booking form's "How did you hear about us?" pills.
@@ -51,7 +52,8 @@ export default function LeadOverviewTab({
   onRefresh,
   relatedLeads,
   onShowHistory,
-  quoteTemplates,
+   quoteTemplates,
+  onMarkComplete,
 }: LeadOverviewTabProps) {
   const [saving, setSaving] = useState(false);
   const [isEditingNotes, setIsEditingNotes] = useState(false);
@@ -343,7 +345,8 @@ export default function LeadOverviewTab({
           canReview={canReview}
           reviewSentAt={reviewSentAt}
           sendingReview={sendingReview}
-          onSendReview={handleSendReview}
+                  onSendReview={handleSendReview}
+          onMarkComplete={onMarkComplete}
         />
       )}
 

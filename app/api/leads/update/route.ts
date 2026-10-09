@@ -1,5 +1,5 @@
 import { neon } from '@neondatabase/serverless';
-import { NextResponse } from 'next/server';
+import { NextResponse, after } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '@/lib/auth';
@@ -153,60 +153,58 @@ if (action === 'update_status') {
 
   await addActivityToProject(id, statusChangeEntry);
 
- // Opt-out rather than opt-in: anything else calling this route without the
-  // flag keeps the old automatic behaviour.
-  if (status === 'completed' && old_status !== 'completed' && body.send_review_request !== false) {
-      const projectData = await sql`
-      SELECT p.id, p.review_request_sent_at, l.email as customer_email, l.name as customer_name, l.category, p.company_id,
-             c.plan_tier, c.google_review_url
-      FROM leads l
-      LEFT JOIN projects p ON l.id = p.lead_id
-      LEFT JOIN companies c ON c.id = l.company_id
-      WHERE l.id = ${id}
-      LIMIT 1
-    `;
-    const proj = projectData[0];
-    // Same rules as the completion popup: Pro plan, a saved Google review
-    // link, a customer email, and never twice.
-    if (
-      proj?.company_id &&
-      proj?.customer_email &&
-      !proj?.review_request_sent_at &&
-      proj?.google_review_url &&
-      can((proj.plan_tier ?? 'free') as PlanTier, 'google_reviews')
-    ) {
+  if (status === 'completed' && old_status !== 'completed') {
+    // ── Review request: claim it now (so the screen shows "sent" and it can't be
+    // sent twice), send the email after the response. Undo the claim if it fails.
+    if (body.send_review_request !== false) {
       try {
-        const { sendGoogleReviewRequestEmail } = await import('@/lib/email');
-        await sendGoogleReviewRequestEmail({
-          customerEmail: proj.customer_email,
-          customerName: proj.customer_name,
-          companyId: proj.company_id,
-          jobCategory: proj.category,
-        });
-       if (proj.id) {
-  await sql`
-    UPDATE projects
-    SET review_request_sent_at = NOW()
-    WHERE id = ${proj.id}
-  `;
-  await addActivityToProject(id, {
-    type: 'review_request_sent',
-    text: `Google review request sent to ${proj.customer_email}`,
-    user_name: 'System',
-    user_email: '',
-    timestamp: new Date().toISOString(),
-  });
-}
+        const claimed = await sql`
+          UPDATE projects p
+          SET review_request_sent_at = NOW()
+          FROM leads l, companies c
+          WHERE p.lead_id = l.id
+            AND c.id = l.company_id
+            AND l.id = ${id}
+            AND p.review_request_sent_at IS NULL
+            AND COALESCE(l.email, '') <> ''
+            AND COALESCE(c.google_review_url, '') <> ''
+          RETURNING p.id AS project_id, l.email AS customer_email, l.name AS customer_name,
+                    l.category, c.id AS company_id, c.plan_tier
+        `;
+        const proj = claimed[0];
+        if (proj && !can((proj.plan_tier ?? 'free') as PlanTier, 'google_reviews')) {
+          // Not on a plan with reviews: release the claim, send nothing.
+          await sql`UPDATE projects SET review_request_sent_at = NULL WHERE id = ${proj.project_id}`;
+        } else if (proj) {
+          after(async () => {
+            try {
+              const { sendGoogleReviewRequestEmail } = await import('@/lib/email');
+              await sendGoogleReviewRequestEmail({
+                customerEmail: proj.customer_email,
+                customerName: proj.customer_name,
+                companyId: proj.company_id,
+                jobCategory: proj.category,
+              });
+              await addActivityToProject(id, {
+                type: 'review_request_sent',
+                text: `Google review request sent to ${proj.customer_email}`,
+                user_name: 'System',
+                user_email: '',
+                timestamp: new Date().toISOString(),
+              });
+            } catch (reviewErr) {
+              console.error('Review email failed, releasing claim:', reviewErr);
+              await sql`UPDATE projects SET review_request_sent_at = NULL WHERE id = ${proj.project_id}`;
+            }
+          });
+        }
       } catch (reviewErr) {
-        console.error('Review email failed (non-blocking):', reviewErr);
+        console.error('Review request failed (non-blocking):', reviewErr);
       }
     }
-  }
 
-  // Send the final invoice automatically when the job is marked completed,
-  // if the company turned that on. Bills whatever is left; skips when nothing
-  // is due or a final invoice was already sent. Never blocks the status change.
-  if (status === 'completed' && old_status !== 'completed') {
+    // ── Final invoice: sent before responding, so it's settled when the screen
+    // refreshes and can't be double-sent by a manual click.
     try {
       const setting = await sql`
         SELECT c.auto_send_balance_on_complete
@@ -230,6 +228,7 @@ if (action === 'update_status') {
 
   return NextResponse.json({ success: true });
 }
+
     // ==================== ADD NOTE ====================
     else if (action === 'add_note') {
       
