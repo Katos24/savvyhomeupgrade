@@ -2,6 +2,7 @@ import { MetadataRoute } from 'next';
 import { INDEXED_CITIES, INDEXED_SERVICES } from '@/lib/cities';
 import { industryList } from '@/lib/industry-content';
 import { getAllPosts } from '@/lib/blog-posts';
+import { STATE_LIST } from './tools/deposit-calculator/states';
 
 const BASE = 'https://lead2project.com';
 
@@ -14,11 +15,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: BASE, lastModified: now, changeFrequency: 'weekly', priority: 1 },
     { url: `${BASE}/pricing`, lastModified: now, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${BASE}/tools/deposit-calculator`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
-        { url: `${BASE}/signup`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE}/signup`, lastModified: now, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE}/book-demo`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${BASE}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
   ];
+
+  // One page per supported state on the deposit calculator.
+  const depositStates: MetadataRoute.Sitemap = STATE_LIST.map((s) => ({
+    url: `${BASE}/tools/deposit-calculator/${s.slug}`,
+    lastModified: now,
+    changeFrequency: 'monthly' as const,
+    priority: 0.7,
+  }));
 
   const features: MetadataRoute.Sitemap = FEATURES.map((f) => ({
     url: `${BASE}/features/${f}`,
@@ -54,5 +63,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })),
   );
 
-  return [...core, ...features, ...solutions, ...blog, ...cityPages];
+  return [...core, ...depositStates, ...features, ...solutions, ...blog, ...cityPages];
 }
