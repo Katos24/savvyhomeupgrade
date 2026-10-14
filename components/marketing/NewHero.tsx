@@ -135,7 +135,7 @@ export default function Hero() {
                 )}
               </motion.div>
 
-              <motion.ul
+                     <motion.ul
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.5, delay: 0.32 }}
@@ -150,7 +150,19 @@ export default function Hero() {
                 <li className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#00828A] shrink-0" /> Quotes customers accept online
                 </li>
+                <li className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#00828A] shrink-0" /> Import your old customers
+                </li>
               </motion.ul>
+
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="text-center sm:text-left text-sm text-[#3a3f45]"
+              >
+                Already have a customer list? Upload a spreadsheet and pick up right where you left off.
+                              </motion.p>
             </div>
           </div>
         </div>

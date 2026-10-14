@@ -6,6 +6,7 @@ import ProfitSection from '@/components/marketing/ProfitSection';
 import InvoiceShowcaseSection from '@/components/marketing/InvoiceShowcaseSection';
 import PaymentsReviewsSection from '@/components/marketing/PaymentsReviewsSection';
 import Pricing from '@/components/marketing/Pricing';
+import ImportSection from '@/components/marketing/ImportSection';
 import FAQSection from '@/components/marketing/FAQSection';
 import FinalCTA from '@/components/marketing/FinalCTA';
 import Footer from '@/components/marketing/Footer';
@@ -30,9 +31,10 @@ export default function NewHome() {
             <InvoiceShowcaseSection />
 
       <ProfitSection />
-      <WhatYouGetSection />
-      <TapeDivider />
-      <Pricing />
+     <WhatYouGetSection />
+<ImportSection />
+<TapeDivider />
+<Pricing />
       <FAQSection />
       <FinalCTA />
       <Footer />
