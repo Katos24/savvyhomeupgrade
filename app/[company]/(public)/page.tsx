@@ -29,27 +29,34 @@ type Company = {
 async function getCompany(slug: string): Promise<Company | null> {
   const sql = neon(process.env.DATABASE_URL!);
   const companies = await sql`
-    SELECT 
-      id, name, slug, email, phone, website, business_type, 
+    SELECT
+      id, name, slug, email, phone, website, business_type,
       logo_url, form_categories, address_enabled, address_required,
       cta_heading, cta_button_text, cta_success_message,
       custom_questions, email_brand_color_1, email_brand_color_2,
       form_field_config, plan_tier
-    FROM companies 
+    FROM companies
     WHERE slug = ${slug}
   `;
   return (companies[0] as Company) || null;
 }
 
-export default async function CompanyPage({ 
-  params 
-}: { 
-  params: Promise<{ company: string }> 
+export default async function CompanyPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ company: string }>;
+    searchParams: Promise<{ embed?: string; demo?: string }>;
 }) {
   const { company: companySlug } = await params;
-  const company = await getCompany(companySlug);
+  const { embed, demo } = await searchParams;
+    const company = await getCompany(companySlug);
 
   if (!company) notFound();
 
-  return <UploadForm company={company} showHeader={true} />;
+  // ?embed=1 → the form is shown inside another website (iframe):
+  // no page header, transparent background, success shown in place.
+  const embedded = embed === '1';
+
+  return <UploadForm company={company} showHeader={!embedded} embedded={embedded} demo={demo === '1'} />;
 }

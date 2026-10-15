@@ -151,8 +151,43 @@ function GoogleProfileMock() {
   );
 }
 
+/* ── Mock: the booking form sitting on a contractor's own website ── */
+function WebsiteMock() {
+  return (
+    <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg" aria-hidden>
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-100 px-3 py-2.5">
+        <span className="flex gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+          <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+          <span className="h-2.5 w-2.5 rounded-full bg-slate-300" />
+        </span>
+        <span className="ml-2 min-w-0 flex-1 truncate rounded-md bg-white px-3 py-1 text-xs text-slate-500">
+          yourcompany.com/request-a-quote
+        </span>
+      </div>
+      <div className="flex items-center justify-between bg-[#1f2a37] px-5 py-3 text-white">
+        <span className="text-sm font-extrabold">Your Company</span>
+        <span className="text-xs text-white/70">Services · Our work · Contact</span>
+      </div>
+      <div className="p-5 sm:p-6">
+        <p className="text-base font-bold">Request a quote</p>
+        <div className="mt-4 space-y-2.5 rounded-md border-2 border-dashed border-[#00828A]/50 p-4">
+          <div className="h-9 rounded-md border border-slate-200 bg-slate-50" />
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="h-9 rounded-md border border-slate-200 bg-slate-50" />
+            <div className="h-9 rounded-md border border-slate-200 bg-slate-50" />
+          </div>
+          <div className="h-20 rounded-md border border-slate-200 bg-slate-50" />
+          <div className="h-10 rounded-md bg-[#00828A]" />
+        </div>
+        <p className="mt-3 text-xs text-slate-500">Your Lead2Project form, right on your page.</p>
+      </div>
+    </div>
+  );
+}
+
 const STEPS = [
-  { icon: QrCode, title: 'Share your link', desc: 'You get your own booking link and QR code. Put them on your truck, yard signs, business cards and Google profile.' },
+    { icon: QrCode, title: 'Share your link', desc: 'You get your own booking link and QR code. Put them on your truck, yard signs, business cards and Google profile.' },
   { icon: Smartphone, title: 'Customer fills it out', desc: 'They scan or tap, and fill out your form: what they need, where, and when, with photos if you turn them on.' },
   { icon: LayoutDashboard, title: 'It lands on your board', desc: 'The request shows up in your dashboard with every detail, and you get an email alert. No retyping, no lost paper.' },
 ];
@@ -355,8 +390,38 @@ export default function LeadCapturePage() {
         </div>
       </section>
 
+      {/* ── Your website (embed) ── */}
+      <section className="bg-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
+          <div>
+            <Eyebrow>Your website</Eyebrow>
+            <h2 className={`mt-3 ${H2}`}>Put the form on your own site.</h2>
+            <p className={`mt-4 ${BODY}`}>
+              Already have a website? Paste two lines and your request form sits right on your page. Customers never
+              leave your site, and every request still lands on your board.
+            </p>
+            <Bullets
+              items={[
+                { text: 'Paste it into any page that allows custom HTML' },
+                { text: 'Resizes to fit, no scrolling inside a box' },
+                { text: 'Same form and questions as your booking link' },
+                { text: 'Requests land on your board like any other' },
+              ]}
+            />
+            <div className="mt-8">
+              <Link href="/features/lead-capture/embed" className={`w-full sm:w-auto ${BTN}`}>
+                See it on a demo site <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+          <div className="w-full max-w-md mx-auto lg:max-w-none">
+            <WebsiteMock />
+          </div>
+        </div>
+      </section>
+
       {/* ── What arrives ── */}
-      <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+            <section className="bg-[#1C1F23] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="max-w-2xl mx-auto text-center mb-10 sm:mb-12">
             <Eyebrow dark>Every request</Eyebrow>

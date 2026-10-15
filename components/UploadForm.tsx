@@ -62,6 +62,10 @@ interface UploadFormProps {
   showHeader?: boolean;
   headerTitle?: string;
   headerSubtitle?: string;
+   /** Shown inside another website (iframe, ?embed=1). */
+  embedded?: boolean;
+  /** Marketing demo (?demo=1): walks through the form but saves and sends nothing. */
+  demo?: boolean;
 }
 
 export default function UploadForm({
@@ -71,6 +75,8 @@ export default function UploadForm({
   showHeader = true,
   headerTitle = 'Submit Your Request',
   headerSubtitle = 'Fast, professional service tailored to your needs.',
+   embedded = false,
+  demo = false,
 }: UploadFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
@@ -79,7 +85,7 @@ export default function UploadForm({
   const [step1Data, setStep1Data] = useState({
     name: '', email: '', phone: '', category: '', description: '',
   });
- const [step2Data, setStep2Data] = useState({
+  const [step2Data, setStep2Data] = useState({
     address_line_1: '', address_line_2: '', city: '', zip_code: '',
     lead_source: '', preferred_date: '', preferred_time: '',
   });
@@ -97,7 +103,7 @@ export default function UploadForm({
   const [toasts, setToasts] = useState<ToastType[]>([]);
 
   const businessType = company?.business_type || 'general';
- const isFree = company?.plan_tier === 'free';
+  const isFree = company?.plan_tier === 'free';
   const categories: Category[] = company?.form_categories?.length
     ? company.form_categories
     : CATEGORY_MAP[businessType] || CATEGORY_MAP.general;
@@ -115,9 +121,6 @@ export default function UploadForm({
 
   // Same shared resolver Settings, Create Lead and signup use (lib/formFields.ts),
   // so what the contractor's toggles show is exactly what customers get.
-  // It fills in missing keys from the shared defaults and applies plan rules
-  // (free = basic form only; photos need Basic). This replaces a separate
-  // inline default here that disagreed with Settings.
   const fieldConfig: FieldConfig = resolveFieldConfig(company?.form_field_config, {
     planTier: company?.plan_tier,
     businessType,
@@ -146,6 +149,40 @@ export default function UploadForm({
     if (company?.cta_button_text) return company.cta_button_text;
     return 'Submit Details';
   };
+
+  // Scroll to the top of the form. Inside another site, ask that page to do it
+  // (scrolling the iframe itself does nothing useful).
+  const scrollToTop = () => {
+    if (embedded) {
+      try {
+        window.parent.postMessage({ type: 'l2p:scroll' }, '*');
+      } catch {}
+      return;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Embedded: tell the host page how tall the form is, so the iframe fits it
+  // exactly and there's no scrollbar inside a box. Only the height is sent.
+  useEffect(() => {
+    if (!embedded || typeof window === 'undefined' || window.parent === window) return;
+    const send = () => {
+      try {
+        // Measure the content, not the frame: documentElement.scrollHeight
+        // never drops below the iframe's own height, so the form couldn't shrink.
+        const h = Math.ceil(document.body.getBoundingClientRect().height);
+        window.parent.postMessage({ type: 'l2p:height', height: h }, '*');
+      } catch {}
+    };
+    send();
+    const ro = new ResizeObserver(send);
+    ro.observe(document.body);
+    window.addEventListener('load', send);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('load', send);
+    };
+  }, [embedded]);
 
   // File previews
   useEffect(() => {
@@ -203,10 +240,16 @@ export default function UploadForm({
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
   const removeFile = (i: number) => { setFiles(f => f.filter((_, idx) => idx !== i)); };
 
-  // Redirect to /success after any successful submission
+  // After a successful submission: the full success page normally; inside
+  // another site, a thank-you message in place (no navigating the iframe).
   const [showSuccess, setShowSuccess] = useState(false);
 
- const handleSuccess = () => {
+  const handleSuccess = () => {
+    if (embedded) {
+      setShowSuccess(true);
+      scrollToTop();
+      return;
+    }
     router.push(`/${finalCompanySlug}/success`);
   };
 
@@ -216,24 +259,32 @@ export default function UploadForm({
     const { name, email, phone, category, description } = step1Data;
     if (!name || !email || !phone || !category || !description) {
       setStep1Error('Please fill in all required fields.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
       return;
     }
     // Catches typos like "jane@gmail" — a bad email here means the
     // contractor can't reach the customer and the lead is effectively lost.
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setStep1Error('Please enter a valid email address.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
       return;
     }
     const rawPhone = phone.replace(/\D/g, '');
     if (rawPhone.length !== 10) {
       setStep1Error('Please enter a valid 10-digit phone number.');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
       return;
     }
     if (!finalCompanySlug || !finalCompanyId) {
       setStep1Error('Company information is missing. Please refresh and try again.');
+      return;
+    }
+
+      // Demo: no lead, no emails. Just move through the form.
+    if (demo) {
+      if (!hasStep2Content) { handleSuccess(); return; }
+      setStep(2);
+      scrollToTop();
       return;
     }
 
@@ -262,12 +313,12 @@ export default function UploadForm({
 
       setSavedLeadId(result.leadId);
       setStep(2);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to submit. Please try again.';
       setStep1Error(msg);
       showToast(msg, 'error');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollToTop();
     } finally {
       setSubmittingStep1(false);
     }
@@ -276,6 +327,8 @@ export default function UploadForm({
   // Step 2 submit
   const handleStep2Submit = async () => {
     setStep2Error('');
+    // Demo: skip file uploads and saving.
+    if (demo) { handleSuccess(); return; }
     setSubmittingStep2(true);
     try {
       const uploadedFiles: any[] = [];
@@ -301,7 +354,7 @@ export default function UploadForm({
           city: step2Data.city || null,
           zip_code: step2Data.zip_code || null,
           lead_source: step2Data.lead_source || null,
-         preferred_date: step2Data.preferred_date || null,
+          preferred_date: step2Data.preferred_date || null,
           preferred_time: step2Data.preferred_time || null,
           preferred_end_time: null,
           custom_answers: customAnswers,
@@ -326,40 +379,46 @@ export default function UploadForm({
 
   if (showSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#fafaf9] px-4">
+      <div className={`flex items-center justify-center px-4 ${embedded ? 'py-16' : 'min-h-screen bg-[#fafaf9]'}`}>
         <div className="text-center animate-in fade-in zoom-in-95 duration-300">
           <div className="w-16 h-16 rounded-full bg-emerald-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/30">
             <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" className="w-8 h-8">
               <path d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Request Received!</h1>
-          <p className="text-slate-500 text-sm">Check your inbox for a confirmation email.</p>
+                  <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            {demo ? 'That’s the whole form' : 'Request received!'}
+          </h1>
+          <p className="text-slate-600 text-sm">
+            {demo
+              ? 'This is a demo, so nothing was sent. On your site, this request would go straight to your board.'
+              : company?.cta_success_message || 'Thanks! Check your inbox for a confirmation email.'}
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className={embedded ? '' : 'min-h-screen bg-slate-50'}>
       {toasts.map(toast => (
-  <Toast 
-    key={toast.id} 
-    message={toast.message} 
-    type={toast.type} 
-    onClose={() => removeToast(toast.id)} 
-    darkText={true} // <--- ADD THIS LINE
-  />
-))}
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => removeToast(toast.id)}
+          darkText={true}
+        />
+      ))}
 
-       {showHeader && company && !isFree && (
+      {showHeader && !embedded && company && !isFree && (
         <>
           <FormHeader company={company} />
           {step === 1 && <FormHero company={company} ctaHeading={getCtaHeading()} />}
         </>
       )}
 
-     <main className="pb-16">
+      <main className={embedded ? 'pb-4' : 'pb-16'}>
         {step === 1 && (
           <UploadFormStepOne
             formData={step1Data}
@@ -382,7 +441,7 @@ export default function UploadForm({
         )}
       </main>
 
-     {step === 2 && (
+      {step === 2 && (
         <UploadFormStepTwo
           companySlug={finalCompanySlug}
           businessType={businessType}
