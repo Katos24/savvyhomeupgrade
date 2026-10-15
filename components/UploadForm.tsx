@@ -462,8 +462,9 @@ export default function UploadForm({
           companyWebsite={company?.website}
           companyName={company?.name}
           isDragging={isDragging}
+          demo={demo}
           onChange={(field, value) => setStep2Data(prev => ({ ...prev, [field]: value }))}
-          onCustomAnswerChange={(qId, val) => setCustomAnswers(prev => ({ ...prev, [qId]: val }))}
+                    onCustomAnswerChange={(qId, val) => setCustomAnswers(prev => ({ ...prev, [qId]: val }))}
           onFileChange={handleFileChange}
           onDrop={handleDrop}
           onDragEnter={handleDragEnter}

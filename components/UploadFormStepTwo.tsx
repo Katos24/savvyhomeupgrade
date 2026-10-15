@@ -1,19 +1,8 @@
 'use client';
 
-import { useRef } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { TIMELINE_OPTIONS, BEST_TIME_OPTIONS, bestTimesArray, toggleBestTime } from '@/lib/timing';
-import {
-  MapPin,
-  Home,
-  HelpCircle,
-  Image as ImageIcon,
-  Video,
-  Upload,
-  X,
-  Loader2,
-  ChevronRight,
-} from 'lucide-react';
-
+import { Image as ImageIcon, Video, Upload, X, Loader2 } from 'lucide-react';
 
 type CustomQuestion = {
   id: string;
@@ -61,6 +50,8 @@ interface StepTwoProps {
   companyWebsite?: string | null;
   companyName?: string;
   isDragging: boolean;
+  /** Marketing demo: nothing was saved, so don't say it was. */
+  demo?: boolean;
   onChange: (field: string, value: string) => void;
   onCustomAnswerChange: (questionId: string, value: any) => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -73,14 +64,60 @@ interface StepTwoProps {
   onSkip: () => void;
 }
 
-const labelClass = 'text-xs font-black text-black uppercase tracking-[0.12em] ml-1';
+const LEAD_SOURCES = [
+  { value: 'website', label: 'Google Search' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'google_ads', label: 'Google Ads' },
+  { value: 'referral', label: 'Referral' },
+  { value: 'yard_sign', label: 'Yard Sign' },
+  { value: 'truck', label: 'Saw Your Truck' },
+  { value: 'other', label: 'Other' },
+];
 
+// Readable labels: normal case, 14px, semibold.
+const labelClass = 'block text-sm font-semibold text-gray-900';
+const hintClass = 'ml-2 text-[13px] font-normal text-gray-500';
+
+// text-base keeps iOS from zooming in on focus. Focus ring uses the brand color.
 const inputClass =
-  'w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition disabled:opacity-50';
+  'mt-2 w-full px-4 py-3 text-base border border-gray-300 rounded-lg outline-none transition ' +
+  'focus:border-transparent focus:ring-2 focus:ring-[color:var(--brand)] disabled:opacity-50';
+
+/* One pill style for every choice on this step. Defined at module level so
+   buttons keep focus when the parent re-renders. */
+function Pill({
+  selected,
+  onClick,
+  disabled,
+  gradient,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  disabled: boolean;
+  gradient: string;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      disabled={disabled}
+      className={`px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all active:scale-95 disabled:opacity-50 ${
+        selected
+          ? 'text-white border-transparent shadow-sm'
+          : 'bg-white text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+      }`}
+      style={selected ? { background: gradient } : undefined}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function UploadFormStepTwo({
-  companySlug,
-  businessType,
   formData,
   customAnswers,
   customQuestions,
@@ -90,14 +127,11 @@ export default function UploadFormStepTwo({
   compressing,
   uploadProgress,
   error,
-  addressConfig,
   fieldConfig,
-  ctaButtonText,
   brandColor1,
   brandColor2,
-  companyWebsite,
-  companyName,
   isDragging,
+  demo = false,
   onChange,
   onCustomAnswerChange,
   onFileChange,
@@ -109,306 +143,245 @@ export default function UploadFormStepTwo({
   onSubmit,
   onSkip,
 }: StepTwoProps) {
-const inputRef = useRef<HTMLInputElement | null>(null);
-  const showAddress = fieldConfig.address.enabled;
   // Same two config keys as before, new meaning (lib/timing.ts):
   // preferred_date = "How soon?", preferred_time = "Best times".
+  const showAddress = fieldConfig.address.enabled;
   const showTimeline = fieldConfig.preferred_date.enabled;
   const showBestTimes = fieldConfig.preferred_time.enabled;
-  const selectedBestTimes = bestTimesArray(formData.preferred_time);
   const showLeadSource = fieldConfig.lead_source.enabled;
   const showFileUpload = fieldConfig.file_upload.enabled;
+  const selectedBestTimes = bestTimesArray(formData.preferred_time);
 
- 
+  // Did they add anything? If not, the button just finishes (no extra save).
+  const hasDetails =
+    files.length > 0 ||
+    Object.values(formData).some((v) => typeof v === 'string' && v.trim() !== '') ||
+    Object.values(customAnswers).some((v) => v !== undefined && v !== null && v !== '');
+
   const disabled = submitting || compressing;
   const color1 = brandColor1 || '#2563eb';
   const color2 = brandColor2 || '#3b82f6';
+  const gradient = `linear-gradient(135deg, ${color1}, ${color2})`;
+
+  // Shorthand so every pill gets the same disabled state and brand gradient.
+  const pill = (key: string | number, selected: boolean, onClick: () => void, children: ReactNode) => (
+    <Pill key={key} selected={selected} onClick={onClick} disabled={disabled} gradient={gradient}>
+      {children}
+    </Pill>
+  );
 
   return (
-<div className="w-full max-w-2xl mx-auto px-4 py-6" style={{ fontFamily: "'Nunito', sans-serif" }}>
+    <div
+      className="w-full max-w-2xl mx-auto px-4 py-6"
+      style={{ fontFamily: "'Nunito', sans-serif", ['--brand' as string]: color1 } as CSSProperties}
+    >
       <div className="w-full bg-white rounded-3xl border border-gray-200 shadow-md overflow-hidden">
-
         {/* Header */}
-        <div
-          className="rounded-t-2xl px-6 py-5 text-white"
-          style={{
-            background: `linear-gradient(to right, ${color1}, ${color2})`
-          }}
-        >
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-8 h-8 rounded-full bg-white/20 text-white text-sm font-bold flex items-center justify-center">
-              <span className="text-base leading-none">✓</span>
-            </div>
-            <ChevronRight className="w-4 h-4 opacity-60" />
-            <div className="w-8 h-8 rounded-full bg-white text-blue-600 text-sm font-bold flex items-center justify-center">2</div>
+        <div className="px-6 py-5 text-white" style={{ background: `linear-gradient(to right, ${color1}, ${color2})` }}>
+          <div className="flex items-center gap-2 text-sm font-semibold text-white/90">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-white/25">✓</span>
+            <span className="h-px w-6 bg-white/50" />
+            <span
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white font-bold"
+              style={{ color: color1 }}
+            >
+              2
+            </span>
+            <span className="ml-1">Step 2 of 2</span>
           </div>
-          <h2 className="text-xl font-bold mt-2">Your request is saved!</h2>
-          <p className="text-white/80 text-sm mt-1">
-            Add a few more details to help us give you a better quote — all optional.
-          </p>
+          <h2 className="text-xl sm:text-2xl font-bold mt-3">
+            {demo ? 'Add a few details' : 'Your request is saved!'}
+          </h2>
+          <p className="text-white/90 text-[15px] mt-1">
+            {demo
+              ? 'Everything here is optional. This is a demo, so nothing is sent.'
+              : 'Everything below is optional. Add what you can, or just tap Finish and we’ll be in touch.'}
+                        </p>
         </div>
 
-<form className="p-6 space-y-6" autoComplete="off" onSubmit={e => e.preventDefault()}>
-          {/* Error */}
+        <form className="p-6 space-y-7" autoComplete="off" onSubmit={(e) => e.preventDefault()}>
           {error && (
-            <div className="bg-red-50 border-2 border-red-200 text-red-700 p-4 rounded-xl text-sm">
-              <p className="font-semibold">Error</p>
-              <p className="mt-1">{error}</p>
+            <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-[15px] text-red-700">
+              {error}
             </div>
           )}
 
           {/* Address */}
-{showAddress && (
-  <>
-    <div>
-      <label className={labelClass}>Street Address</label>
-      <input
-        type="text"
-        autoComplete="street-address"
-        value={formData.address_line_1}
-        onChange={e => onChange('address_line_1', e.target.value)}
-        className={`${inputClass} mt-2`}
-        placeholder="123 Main St"
-        disabled={disabled}
-      />
-    </div>
-    <div className="grid grid-cols-2 gap-4">
-      <div>
-        <label className={labelClass}>City</label>
-        <input
-          type="text"
-          autoComplete="address-level2"
-          value={formData.city}
-          onChange={e => onChange('city', e.target.value)}
-          className={`${inputClass} mt-2`}
-          placeholder="New York"
-          disabled={disabled}
-        />
-      </div>
-      <div>
-        <label className={labelClass}>Zip Code</label>
-        <input
-          type="text"
-          autoComplete="postal-code"
-          value={formData.zip_code}
-          onChange={e => onChange('zip_code', e.target.value.replace(/\D/g, '').slice(0, 5))}
-          className={`${inputClass} mt-2`}
-          placeholder="12345"
-          maxLength={5}
-          disabled={disabled}
-        />
-      </div>
-    </div>
-    <div>
-      <label className={labelClass}>Unit / Apt</label>
-      <input
-        type="text"
-        autoComplete="address-line2"
-        value={formData.address_line_2}
-        onChange={e => onChange('address_line_2', e.target.value)}
-        className={`${inputClass} mt-2`}
-        placeholder="Apt 4B"
-        disabled={disabled}
-      />
-    </div>
-  </>
-)}
+          {showAddress && (
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="s2-address" className={labelClass}>Street address</label>
+                <input
+                  id="s2-address"
+                  type="text"
+                  autoComplete="street-address"
+                  value={formData.address_line_1}
+                  onChange={(e) => onChange('address_line_1', e.target.value)}
+                  className={inputClass}
+                  placeholder="123 Main St"
+                  disabled={disabled}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="s2-city" className={labelClass}>City</label>
+                  <input
+                    id="s2-city"
+                    type="text"
+                    autoComplete="address-level2"
+                    value={formData.city}
+                    onChange={(e) => onChange('city', e.target.value)}
+                    className={inputClass}
+                    placeholder="City"
+                    disabled={disabled}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="s2-zip" className={labelClass}>ZIP code</label>
+                  <input
+                    id="s2-zip"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    value={formData.zip_code}
+                    onChange={(e) => onChange('zip_code', e.target.value.replace(/\D/g, '').slice(0, 5))}
+                    className={inputClass}
+                    placeholder="12345"
+                    maxLength={5}
+                    disabled={disabled}
+                  />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="s2-unit" className={labelClass}>
+                  Unit / Apt <span className={hintClass}>if any</span>
+                </label>
+                <input
+                  id="s2-unit"
+                  type="text"
+                  autoComplete="address-line2"
+                  value={formData.address_line_2}
+                  onChange={(e) => onChange('address_line_2', e.target.value)}
+                  className={inputClass}
+                  placeholder="Apt 4B"
+                  disabled={disabled}
+                />
+              </div>
+            </div>
+          )}
 
-          {/* Timing — what the customer would like, not a booking.
+          {/* Timing: what the customer would like, not a booking.
               The contractor sets the real visit in the Schedule tab. */}
           {showTimeline && (
-            <div className="space-y-2">
-              <label className={labelClass}>How soon do you need this?</label>
-              <div className="flex flex-wrap gap-2 mt-2">
+            <div>
+              <p className={labelClass}>How soon do you need this?</p>
+              <div className="mt-2 flex flex-wrap gap-2">
                 {TIMELINE_OPTIONS.map((opt) => {
                   const selected = formData.preferred_date === opt.value;
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => onChange('preferred_date', selected ? '' : opt.value)}
-                      disabled={disabled}
-                      className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
-                            selected
-                              ? 'text-white border-transparent shadow-sm'
-                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                          }`}
-                      style={selected ? { background: `linear-gradient(135deg, ${color1}, ${color2})`, borderColor: 'transparent' } : {}}
-                    >
-                      {opt.label}
-                    </button>
-                  );
+                  return pill(opt.value, selected, () => onChange('preferred_date', selected ? '' : opt.value), opt.label);
                 })}
               </div>
             </div>
           )}
 
           {showBestTimes && (
-            <div className="space-y-2">
-              <label className={labelClass}>
-                Best time to reach you or come by
-                <span className="ml-2 text-[10px] font-bold text-gray-400 normal-case tracking-normal">
-                  pick any
-                </span>
-              </label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {BEST_TIME_OPTIONS.map((opt) => {
-                  const selected = selectedBestTimes.includes(opt.value);
-                  return (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      aria-pressed={selected}
-                      onClick={() => onChange('preferred_time', toggleBestTime(formData.preferred_time, opt.value))}
-                      disabled={disabled}
-                      className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
-                            selected
-                              ? 'text-white border-transparent shadow-sm'
-                              : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                          }`}
-                      style={selected ? { background: `linear-gradient(135deg, ${color1}, ${color2})`, borderColor: 'transparent' } : {}}
-                    >
-                      {opt.label}
-                    </button>
-                  );
-                })}
+            <div>
+              <p className={labelClass}>
+                Best time to reach you or come by <span className={hintClass}>pick any</span>
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {BEST_TIME_OPTIONS.map((opt) =>
+                  pill(
+                    opt.value,
+                    selectedBestTimes.includes(opt.value),
+                    () => onChange('preferred_time', toggleBestTime(formData.preferred_time, opt.value)),
+                    opt.label,
+                  ),
+                )}
               </div>
             </div>
           )}
 
-          {/* Custom Questions */}
+          {/* Custom questions (all optional on this step) */}
           {customQuestions.length > 0 && (
-            <div className="border-t pt-4 space-y-5">
-              <h3 className="text-base font-bold text-gray-900">A few quick questions</h3>
-              {customQuestions.map(q => (
+            <div className="space-y-6 border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-bold text-gray-900">A few quick questions</h3>
+              {customQuestions.map((q) => (
                 <div key={q.id}>
-                  <label className={labelClass}>
-                    {q.label}
-                    {q.required && <span className="text-red-400 ml-1">*</span>}
-                  </label>
-                  <div className="mt-2">
-                    {q.type === 'text' && (
-                      <input
-                        type="text"
-                        value={customAnswers[q.id] || ''}
-                        onChange={e => onCustomAnswerChange(q.id, e.target.value)}
-                        className={inputClass}
-                        placeholder="Your answer..."
-                        disabled={disabled}
-                      />
-                    )}
-                    {q.type === 'select' && (
-                      <div className="flex flex-wrap gap-2">
-                        {q.options?.map((opt, i) => {
-                          const selected = customAnswers[q.id] === opt;
-                          return (
-                            <button
-                              key={i}
-                              type="button"
-                              onClick={() => onCustomAnswerChange(q.id, opt)}
-                              disabled={disabled}
-                              className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
-                                selected
-                                  ? 'text-white border-transparent shadow-sm'
-                                  : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                              }`}
-                              style={selected ? { background: `linear-gradient(135deg, ${color1}, ${color2})`, borderColor: 'transparent' } : {}}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                    {q.type === 'checkbox' && (
-                      <div className="flex gap-3">
-                        {[true, false].map(val => (
-                          <label
-                            key={String(val)}
-                            className="flex-1 flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition"
-                          >
-                            <input
-                              type="radio"
-                              name={q.id}
-                              checked={customAnswers[q.id] === val}
-                              onChange={() => onCustomAnswerChange(q.id, val)}
-                              className="w-4 h-4 text-blue-600"
-                              disabled={disabled}
-                            />
-                            <span className="font-medium text-gray-700">{val ? 'Yes' : 'No'}</span>
-                          </label>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  {q.type === 'text' ? (
+                    <label htmlFor={`s2-q-${q.id}`} className={labelClass}>{q.label}</label>
+                  ) : (
+                    <p className={labelClass}>{q.label}</p>
+                  )}
+
+                  {q.type === 'text' && (
+                    <input
+                      id={`s2-q-${q.id}`}
+                      type="text"
+                      value={customAnswers[q.id] || ''}
+                      onChange={(e) => onCustomAnswerChange(q.id, e.target.value)}
+                      className={inputClass}
+                      placeholder="Your answer"
+                      disabled={disabled}
+                    />
+                  )}
+
+                  {q.type === 'select' && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {q.options?.map((opt, i) => {
+                        const selected = customAnswers[q.id] === opt;
+                        return pill(i, selected, () => onCustomAnswerChange(q.id, selected ? '' : opt), opt);
+                      })}
+                    </div>
+                  )}
+
+                  {q.type === 'checkbox' && (
+                    <div className="mt-2 flex gap-2">
+                      {[true, false].map((val) => {
+                        const selected = customAnswers[q.id] === val;
+                        return pill(String(val), selected, () => onCustomAnswerChange(q.id, selected ? undefined : val), <span className="px-3">{val ? 'Yes' : 'No'}</span>);
+                      })}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           )}
 
-          {/* Lead Source — pills */}
+          {/* Lead source */}
           {showLeadSource && (
-            <div className="space-y-2">
-              <label className={labelClass}>How Did You Hear About Us?</label>
-              <div className="flex flex-wrap gap-2 mt-2">
-                {[
-                  { value: 'website',    label: 'Google Search' },
-                  { value: 'facebook',   label: 'Facebook' },
-                  { value: 'instagram',  label: 'Instagram' },
-                  { value: 'google_ads', label: 'Google Ads' },
-                  { value: 'referral',   label: 'Referral' },
-                  { value: 'yard_sign',  label: 'Yard Sign' },
-                  { value: 'truck',      label: 'Saw Your Truck' },
-                  { value: 'other',      label: 'Other' },
-                ].map(source => {
+            <div>
+              <p className={labelClass}>How did you hear about us?</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {LEAD_SOURCES.map((source) => {
                   const selected = formData.lead_source === source.value;
-                  return (
-                    <button
-                      key={source.value}
-                      type="button"
-                      onClick={() => onChange('lead_source', source.value)}
-                      disabled={disabled}
-                      className={`px-3.5 py-2 rounded-xl text-sm font-bold border transition-all active:scale-95 ${
-                        selected
-                          ? 'text-white border-transparent shadow-sm'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-100'
-                      }`}
-                      style={selected ? { background: `linear-gradient(135deg, ${color1}, ${color2})`, borderColor: 'transparent' } : {}}
-                    >
-                      {source.label}
-                    </button>
-                  );
+                  return pill(source.value, selected, () => onChange('lead_source', selected ? '' : source.value), source.label);
                 })}
               </div>
             </div>
           )}
 
-          {/* File Upload */}
+          {/* File upload */}
           {showFileUpload && (
             <div>
-              <label className={labelClass}>
-            Photos, Short Videos, or Documents
-                <span className="ml-2 text-[10px] font-bold text-gray-400 normal-case tracking-normal">
-                  helps us quote faster
-                </span>
-              </label>
+              <p className={labelClass}>
+                Photos or videos <span className={hintClass}>helps with a faster quote</span>
+              </p>
               <div
                 onDragEnter={onDragEnter}
                 onDragOver={onDragOver}
                 onDragLeave={onDragLeave}
                 onDrop={onDrop}
-                className={`border-2 border-dashed rounded-xl p-6 text-center transition-all mt-2 ${
-                  isDragging
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-blue-400 bg-gray-50'
+                className={`mt-2 rounded-xl border-2 border-dashed p-6 text-center transition-all ${
+                  isDragging ? 'bg-gray-50' : 'border-gray-300 bg-gray-50 hover:border-gray-400'
                 }`}
+                style={isDragging ? { borderColor: color1 } : undefined}
               >
                 <input
                   type="file"
                   id="step2-file-upload"
                   multiple
-accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                  accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
                   onChange={onFileChange}
                   className="hidden"
                   disabled={disabled}
@@ -418,45 +391,57 @@ accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
                   className={`${disabled ? 'cursor-not-allowed' : 'cursor-pointer'} block`}
                 >
                   {compressing ? (
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin mx-auto mb-2" />
+                    <Loader2 className="mx-auto mb-2 h-10 w-10 animate-spin" style={{ color: color1 }} />
                   ) : (
-                    <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-2">
-                      <ImageIcon className="w-6 h-6 text-blue-600" />
-                    </div>
+                    <span
+                      className="mb-2 inline-flex h-12 w-12 items-center justify-center rounded-full text-white"
+                      style={{ background: gradient }}
+                    >
+                      <ImageIcon className="h-6 w-6" />
+                    </span>
                   )}
-                  <p className="font-semibold text-gray-700 text-sm">
-                    {compressing ? 'Processing...' : 'Click or drag files here'}
+                  <p className="text-[15px] font-semibold text-gray-800">
+                    {compressing ? (
+                      'Processing...'
+                    ) : (
+                      <>
+                        <span className="sm:hidden">Tap to add photos or videos</span>
+                        <span className="hidden sm:inline">Click or drag photos and videos here</span>
+                      </>
+                    )}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">Max 50MB per file</p>
+                  <p className="mt-1 text-[13px] text-gray-500">Documents work too · Max 50MB per file</p>
                 </label>
               </div>
 
               {files.length > 0 && (
                 <div className="mt-4 grid grid-cols-3 gap-3">
                   {files.map((file, i) => (
-                    <div key={i} className="relative rounded-lg overflow-hidden shadow group">
-                     {file.type.startsWith('image/') ? (
-  <img src={filePreviews[i]} alt={file.name} className="w-full h-28 object-cover" />
-) : file.type.startsWith('video/') ? (
-  <div className="w-full h-28 bg-purple-100 flex items-center justify-center">
-    <Video className="w-8 h-8 text-purple-500" />
-  </div>
-) : (
-  <div className="w-full h-28 bg-blue-50 flex flex-col items-center justify-center">
-    <Upload className="w-6 h-6 text-blue-500 mb-1" />
-    <p className="text-[10px] font-bold text-blue-500 uppercase">{file.name.split('.').pop()}</p>
-  </div>
-)}
+                    <div key={i} className="group relative overflow-hidden rounded-lg shadow">
+                      {file.type.startsWith('image/') ? (
+                        <img src={filePreviews[i]} alt={file.name} className="h-28 w-full object-cover" />
+                      ) : file.type.startsWith('video/') ? (
+                        <div className="flex h-28 w-full items-center justify-center bg-gray-100">
+                          <Video className="h-8 w-8 text-gray-500" />
+                        </div>
+                      ) : (
+                        <div className="flex h-28 w-full flex-col items-center justify-center bg-gray-100">
+                          <Upload className="mb-1 h-6 w-6 text-gray-500" />
+                          <p className="text-[11px] font-bold uppercase text-gray-600">{file.name.split('.').pop()}</p>
+                        </div>
+                      )}
+                      {/* Always visible on phones (no hover); hover-reveal on desktop. */}
                       <button
                         type="button"
                         onClick={() => onRemoveFile(i)}
                         disabled={disabled}
-                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition"
+                        aria-label={`Remove ${file.name}`}
+                        className="absolute right-1.5 top-1.5 rounded-full bg-black/70 p-1.5 text-white transition sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="h-3.5 w-3.5" />
                       </button>
                       <div className="absolute bottom-0 left-0 right-0 bg-black/50 px-2 py-1">
-                        <p className="text-white text-xs truncate">{file.name}</p>
+                        <p className="truncate text-xs text-white">{file.name}</p>
                       </div>
                     </div>
                   ))}
@@ -465,28 +450,28 @@ accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
             </div>
           )}
 
-        {/* Submit */}
-<div className="pt-2">
-  <button
-    type="button"
-    onClick={onSubmit}
-    disabled={disabled}
-    className="w-full inline-flex items-center justify-center gap-3 text-white py-4 px-6 rounded-xl font-bold text-lg transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:opacity-90"
-   style={{
-      background: `linear-gradient(to right, ${color1}, ${color2})`,
-    }}
-  >
+                   {/* One button: sends details if they added any, otherwise just finishes. */}
+          <div className="pt-2">
+            <button
+              type="button"
+              onClick={hasDetails ? onSubmit : onSkip}
+              disabled={disabled}
+              className="inline-flex w-full items-center justify-center gap-3 rounded-xl px-6 py-4 text-lg font-bold text-white shadow-lg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              style={{ background: `linear-gradient(to right, ${color1}, ${color2})` }}
+            >
               {submitting ? (
-                <><Loader2 className="w-5 h-5 animate-spin" />{uploadProgress || 'Saving...'}</>
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  {uploadProgress || 'Saving...'}
+                </>
+                         ) : hasDetails ? (
+                'Send details'
               ) : (
-                <><Upload className="w-5 h-5" />Submit Details</>
+                'Finish'
               )}
             </button>
-
-         
           </div>
-
-     </form>
+        </form>
       </div>
     </div>
   );

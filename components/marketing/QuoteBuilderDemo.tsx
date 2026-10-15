@@ -2,10 +2,33 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { Check, CheckCircle2, FileText, Plus, Send, User, Layers, CalendarDays, CreditCard, Receipt, ImageIcon, Lock, Download, RotateCcw } from 'lucide-react';
+import {
+  Check,
+  CheckCircle2,
+  FileText,
+  Plus,
+  Send,
+  User,
+  Layers,
+  CalendarDays,
+  CreditCard,
+  Receipt,
+  ImageIcon,
+  Lock,
+  Download,
+  RotateCcw,
+  Zap,
+} from 'lucide-react';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+
+// Business name shown on the customer's phone.
+const BIZ = 'Summit Roofing';
+
+// Caption for the auto deposit step. If auto-send is a setting contractors turn on
+// (not on by default), change this to: 'Turn on auto deposit and the request goes out on its own'.
+const AUTO_CAPTION = 'The deposit request goes out automatically';
 
 // The template loads with 22 squares (t); the demo bumps both to 25 (q) for this roof.
 // Final: 2,125 + 4,125 + 5,750 = 12,000 subtotal; 8.625% tax = 1,035; total 13,035; 40% deposit = 5,214.
@@ -24,7 +47,7 @@ const TEMPLATE_TOTAL = TEMPLATE_SUBTOTAL + Math.round(TEMPLATE_SUBTOTAL * TAX_RA
 const START_QTY = ITEMS.map((i) => i.t);
 const FINAL_QTY = ITEMS.map((i) => i.q);
 
-// Job card tabs, like the real app. The demo stays on Quote.
+// Job card tabs, like the real app.
 const TABS = [
   { label: 'Overview', icon: User },
   { label: 'Quote', icon: FileText },
@@ -42,16 +65,21 @@ const TEMPLATES = [
   { name: 'Siding Repair', items: 5, total: 6200 },
 ];
 
-// 0 empty · 1 template loaded · 2 sent, customer reading · 3 accepted · 4 on the Invoice tab
-type Phase = 0 | 1 | 2 | 3 | 4;
+// 0 empty · 1 template loaded · 2 sent, customer reading · 3 accepted
+// 4 deposit request sent automatically · 5 deposit paid, on the Invoice tab
+type Phase = 0 | 1 | 2 | 3 | 4 | 5;
 const CAPTIONS: Record<Phase, string> = {
   0: 'Pick one of your saved price templates',
   1: 'Line items, total and deposit, already on the quote',
   2: 'Your customer gets the estimate by email',
   3: 'Accepted! Your customer said yes',
-  4: 'Next: send the deposit invoice from the same card',
+  4: AUTO_CAPTION,
+  5: 'Deposit paid. The balance is ready when the job is done',
 };
 type Tab = 'Quote' | 'Invoice';
+
+// What the customer's phone is showing.
+type PhoneStage = 'quote' | 'accepted' | 'deposit' | 'paid';
 
 export default function QuoteBuilderDemo() {
   const reduceMotion = useReducedMotion();
@@ -63,7 +91,7 @@ export default function QuoteBuilderDemo() {
   const [picked, setPicked] = useState(false);
   const [phoneVisible, setPhoneVisible] = useState(false);
   const [phonePressing, setPhonePressing] = useState(false);
-  const [accepted, setAccepted] = useState(false);
+  const [phoneStage, setPhoneStage] = useState<PhoneStage>('quote');
   const [toast, setToast] = useState(false);
   const [qty, setQty] = useState<number[]>(START_QTY);
   const [editing, setEditing] = useState<number | null>(null); // which row's quantity is being changed
@@ -80,10 +108,10 @@ export default function QuoteBuilderDemo() {
 
   useEffect(() => {
     if (reduceMotion) {
-      setPhase(4);
+      setPhase(5);
       setShown(ITEMS.length);
       setQty(FINAL_QTY);
-      setAccepted(true);
+      setPhoneStage('paid');
       setTab('Invoice');
       return;
     }
@@ -113,7 +141,7 @@ export default function QuoteBuilderDemo() {
       setPickerOpen(false);
       setPicked(false);
       setPhoneVisible(false);
-      setAccepted(false);
+      setPhoneStage('quote');
       setToast(false);
       setQty(START_QTY);
       setEditing(null);
@@ -181,21 +209,30 @@ export default function QuoteBuilderDemo() {
       at(13700, () => setPhonePressing(true));
       at(13900, () => {
         setPhonePressing(false);
-        setAccepted(true);
-      });
-      at(15000, () => setPhoneVisible(false));
-      at(15300, () => {
+        setPhoneStage('accepted');
         setPhase(3);
         setToast(true);
       });
-      // Move to the Invoice tab: the deposit is ready to send
-      at(17300, () => {
+      // The deposit request arrives on its own: no click from the contractor
+      at(15400, () => {
         setToast(false);
-        setTab('Invoice');
+        setPhoneStage('deposit');
         setPhase(4);
       });
+      // Customer pays the deposit
+      at(17400, () => setPhonePressing(true));
+      at(17600, () => {
+        setPhonePressing(false);
+        setPhoneStage('paid');
+      });
+      // Phone slides away; the job card shows the deposit paid
+      at(18900, () => setPhoneVisible(false));
+      at(19200, () => {
+        setTab('Invoice');
+        setPhase(5);
+      });
       // Play once, then stop on this frame with a Replay button
-      at(18800, () => setDone(true));
+      at(20700, () => setDone(true));
     };
 
     run();
@@ -340,10 +377,10 @@ export default function QuoteBuilderDemo() {
                 <div className="rounded-[1.25rem] bg-white overflow-hidden text-[10px]">
                   <div className="h-1 bg-[#00828A]" />
                   <AnimatePresence mode="wait">
-                    {!accepted ? (
-                      <motion.div key="email" exit={{ opacity: 0 }} className="px-3 py-3 space-y-2">
+                    {phoneStage === 'quote' && (
+                      <motion.div key="estimate" exit={{ opacity: 0 }} className="px-3 py-3 space-y-2">
                         <div>
-                          <p className="text-slate-500">From Summit Roofing</p>
+                          <p className="text-slate-500">From {BIZ}</p>
                           <p className="font-bold text-slate-900">Your estimate for Roof Repair</p>
                         </div>
                         <div className="rounded-md border border-slate-200 divide-y divide-slate-100">
@@ -377,9 +414,57 @@ export default function QuoteBuilderDemo() {
                           <span className="rounded-md border border-slate-300 py-1.5 text-center font-semibold text-slate-600">Decline</span>
                         </div>
                       </motion.div>
-                    ) : (
+                    )}
+
+                    {phoneStage === 'accepted' && (
                       <motion.div
-                        key="ok"
+                        key="accepted"
+                        initial={{ opacity: 0, scale: 0.96 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="px-3 py-7 flex flex-col items-center text-center gap-1.5"
+                      >
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[#00828A] text-white">
+                          <Check className="h-5 w-5" strokeWidth={3} />
+                        </span>
+                        <p className="font-bold text-slate-900">Estimate accepted</p>
+                        <p className="text-slate-500">{BIZ} has been notified</p>
+                      </motion.div>
+                    )}
+
+                    {phoneStage === 'deposit' && (
+                      <motion.div
+                        key="deposit"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="px-3 py-3 space-y-2.5"
+                      >
+                        <div className="flex items-center justify-between text-slate-400">
+                          <span className="truncate">From {BIZ}</span>
+                          <span className="shrink-0">now</span>
+                        </div>
+                        <div>
+                          <p className="font-bold text-slate-900 leading-tight">Deposit to start your Roof Repair</p>
+                          <p className="text-slate-500">40% of {fmt(TOTAL)}</p>
+                        </div>
+                        <p className="text-base sm:text-lg font-extrabold tabular-nums text-slate-900">{fmt(DEPOSIT)}</p>
+                        <motion.span
+                          animate={{ scale: phonePressing ? 0.93 : 1 }}
+                          transition={{ duration: 0.12 }}
+                          className="block rounded-md bg-[#00828A] py-1.5 text-center font-bold text-white"
+                        >
+                          Pay {fmt(DEPOSIT)}
+                        </motion.span>
+                        <p className="flex items-center gap-1 border-t border-slate-100 pt-2 text-[9px] text-slate-400">
+                          <Lock className="h-2.5 w-2.5 shrink-0" /> Secure card payment via Stripe
+                        </p>
+                      </motion.div>
+                    )}
+
+                    {phoneStage === 'paid' && (
+                      <motion.div
+                        key="paid"
                         initial={{ opacity: 0, scale: 0.96 }}
                         animate={{ opacity: 1, scale: 1 }}
                         className="px-3 py-7 flex flex-col items-center text-center gap-1.5"
@@ -387,8 +472,8 @@ export default function QuoteBuilderDemo() {
                         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-white">
                           <Check className="h-5 w-5" strokeWidth={3} />
                         </span>
-                        <p className="font-bold text-slate-900">Estimate accepted</p>
-                        <p className="text-slate-500">Summit Roofing has been notified</p>
+                        <p className="font-bold text-slate-900">Deposit paid</p>
+                        <p className="tabular-nums text-slate-500">{fmt(DEPOSIT)}</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -398,19 +483,19 @@ export default function QuoteBuilderDemo() {
           </AnimatePresence>
         </div>
 
-        {/* Accepted note */}
+        {/* Accepted note on the contractor's side */}
         <AnimatePresence>
           {toast && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
-              className="absolute right-3 top-14 z-20 flex items-center gap-2 rounded-xl bg-[#1C1F23] px-3.5 py-2.5 text-white shadow-xl text-[11px]"
+              className="absolute left-3 sm:left-auto sm:right-3 top-14 z-20 flex items-center gap-2 rounded-xl bg-[#1C1F23] px-3.5 py-2.5 text-white shadow-xl text-[11px]"
             >
-              <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+              <CheckCircle2 className="h-4 w-4 text-[#5EC4C9]" />
               <div>
                 <p className="font-semibold">Estimate accepted</p>
-                <p className="text-[10px] text-slate-300">Roof Repair · {fmt(TOTAL)}</p>
+                <p className="text-[10px] text-slate-300">Deposit request sent automatically</p>
               </div>
             </motion.div>
           )}
@@ -463,136 +548,138 @@ export default function QuoteBuilderDemo() {
           </div>
 
           <div className="min-w-0 flex-1">
-        {tab === 'Invoice' ? (
-          <InvoiceView />
-        ) : (
-        <>
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <p className="font-bold">Quote</p>
-            {phase === 3 && (
-              <motion.span
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700"
-              >
-                <Check className="h-3 w-3" /> Accepted
-              </motion.span>
-            )}
-          </div>
-          <motion.span
-            ref={sendBtnRef}
-            animate={{ scale: pressing && phase === 1 && !adjusting ? 0.92 : 1, opacity: loaded ? 1 : 0.4 }}
-            transition={{ duration: 0.15 }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-[#00828A] px-2.5 py-1 text-xs font-bold text-white"
-          >
-            <Send className="h-3 w-3" /> {phase >= 2 ? 'Sent' : 'Send Estimate'}
-          </motion.span>
-        </div>
-
-        <div className="p-4 space-y-3">
-          {/* Line items */}
-          <div className="rounded-md border border-slate-200 min-h-[148px]">
-            <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-              <span>Description</span>
-              <span className="text-right">Price × Qty</span>
-              <span className="w-20 text-right">Amount</span>
-            </div>
-            {shown === 0 ? (
-              <p className="px-3 py-8 text-center text-slate-400">No line items yet</p>
+            {tab === 'Invoice' ? (
+              <InvoiceView />
             ) : (
-              ITEMS.slice(0, shown).map((i, idx) => (
-                <motion.div
-                  key={i.d}
-                  initial={{ opacity: 0, y: -6, backgroundColor: 'rgba(0,130,138,0.10)' }}
-                  animate={{ opacity: 1, y: 0, backgroundColor: 'rgba(0,130,138,0)' }}
-                  transition={{ duration: 0.5 }}
-                  className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-slate-100 px-3 py-2 last:border-b-0"
-                >
-                  <span className="truncate font-medium">{i.d}</span>
-                  <span className="flex items-center justify-end gap-1 text-slate-500 tabular-nums">
-                    {fmt(i.p)} ×
+              <>
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <p className="font-bold">Quote</p>
+                    {phase >= 3 && (
+                      <motion.span
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="inline-flex items-center gap-1 rounded-full border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-800"
+                      >
+                        <Check className="h-3 w-3" /> Accepted
+                      </motion.span>
+                    )}
+                  </div>
+                  <motion.span
+                    ref={sendBtnRef}
+                    animate={{ scale: pressing && phase === 1 && !adjusting ? 0.92 : 1, opacity: loaded ? 1 : 0.4 }}
+                    transition={{ duration: 0.15 }}
+                    className="inline-flex items-center gap-1.5 rounded-md bg-[#00828A] px-2.5 py-1 text-xs font-bold text-white"
+                  >
+                    <Send className="h-3 w-3" /> {phase >= 2 ? 'Sent' : 'Send Estimate'}
+                  </motion.span>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  {/* Line items */}
+                  <div className="rounded-md border border-slate-200 min-h-[148px]">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+                      <span>Description</span>
+                      <span className="text-right">Price × Qty</span>
+                      <span className="w-20 text-right">Amount</span>
+                    </div>
+                    {shown === 0 ? (
+                      <p className="px-3 py-8 text-center text-slate-400">No line items yet</p>
+                    ) : (
+                      ITEMS.slice(0, shown).map((i, idx) => (
+                        <motion.div
+                          key={i.d}
+                          initial={{ opacity: 0, y: -6, backgroundColor: 'rgba(0,130,138,0.10)' }}
+                          animate={{ opacity: 1, y: 0, backgroundColor: 'rgba(0,130,138,0)' }}
+                          transition={{ duration: 0.5 }}
+                          className="grid grid-cols-[1fr_auto_auto] gap-x-4 border-b border-slate-100 px-3 py-2 last:border-b-0"
+                        >
+                          <span className="truncate font-medium">{i.d}</span>
+                          <span className="flex items-center justify-end gap-1 text-slate-500 tabular-nums">
+                            {fmt(i.p)} ×
+                            <motion.span
+                              ref={(el) => {
+                                qtyRefs.current[idx] = el;
+                              }}
+                              key={qty[idx]}
+                              initial={{ scale: idx < 2 && qty[idx] !== i.t ? 1.25 : 1 }}
+                              animate={{ scale: 1 }}
+                              className={`inline-block min-w-[2.1em] rounded border px-1 text-center font-semibold transition-colors ${
+                                editing === idx
+                                  ? 'border-slate-900 bg-white text-slate-900 ring-2 ring-slate-900/15'
+                                  : 'border-slate-200 bg-white text-slate-700'
+                              }`}
+                            >
+                              {qty[idx]}
+                            </motion.span>
+                          </span>
+                          <span className="w-20 text-right font-semibold tabular-nums">{fmt(qty[idx] * i.p)}</span>
+                        </motion.div>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
                     <motion.span
-                      ref={(el) => {
-                        qtyRefs.current[idx] = el;
-                      }}
-                      key={qty[idx]}
-                      initial={{ scale: idx < 2 && qty[idx] !== i.t ? 1.25 : 1 }}
-                      animate={{ scale: 1 }}
-                      className={`inline-block min-w-[2.1em] rounded border px-1 text-center font-semibold transition-colors ${
-                        editing === idx ? 'border-slate-900 bg-white text-slate-900 ring-2 ring-slate-900/15' : 'border-slate-200 bg-white text-slate-700'
-                      }`}
+                      ref={addBtnRef}
+                      animate={{ scale: pressing && phase === 0 && !pickerOpen ? 0.92 : 1 }}
+                      transition={{ duration: 0.12 }}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700"
                     >
-                      {qty[idx]}
+                      <FileText className="h-3.5 w-3.5 text-[#00828A]" /> Add from Saved
                     </motion.span>
-                  </span>
-                  <span className="w-20 text-right font-semibold tabular-nums">{fmt(qty[idx] * i.p)}</span>
-                </motion.div>
-              ))
+                    <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-400">
+                      <Plus className="h-3.5 w-3.5" /> Line item
+                    </span>
+                  </div>
+
+                  {/* Totals */}
+                  <div className="rounded-md border border-slate-200 overflow-hidden">
+                    <div className="flex flex-wrap gap-2 border-b border-slate-100 px-3 py-2">
+                      <span
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                          loaded ? 'border border-slate-900 text-slate-900' : 'border border-dashed border-slate-300 text-slate-400'
+                        }`}
+                      >
+                        {loaded ? (
+                          `Tax ${TAX_RATE}%`
+                        ) : (
+                          <>
+                            <Plus className="h-3 w-3" /> Add tax
+                          </>
+                        )}
+                      </span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                          loaded ? 'border border-slate-900 text-slate-900' : 'border border-dashed border-slate-300 text-slate-400'
+                        }`}
+                      >
+                        {loaded ? 'Deposit 40%' : 'Deposit'}
+                      </span>
+                    </div>
+                    <div className="px-3">
+                      <div className="flex justify-between py-1.5 text-slate-600">
+                        <span>Subtotal</span>
+                        <span className="tabular-nums">{fmt(subtotal)}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-slate-100 py-1.5 text-slate-600">
+                        <span>{loaded ? `Tax (${TAX_RATE}%)` : 'Tax'}</span>
+                        <span className="tabular-nums">{loaded ? fmt(tax) : '—'}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-slate-200 py-2">
+                        <span className="font-semibold">Total</span>
+                        <span className="text-base font-bold tabular-nums">{fmt(total)}</span>
+                      </div>
+                    </div>
+                    <div className="flex justify-between bg-slate-50 px-3 py-2">
+                      <span className="font-semibold text-slate-900">Deposit due</span>
+                      <span className="font-bold tabular-nums">{fmt(loaded ? depositDue : 0)}</span>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-          </div>
-
-          <div className="flex gap-2">
-            <motion.span
-              ref={addBtnRef}
-              animate={{ scale: pressing && phase === 0 && !pickerOpen ? 0.92 : 1 }}
-              transition={{ duration: 0.12 }}
-              className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700"
-            >
-              <FileText className="h-3.5 w-3.5 text-[#00828A]" /> Add from Saved
-            </motion.span>
-            <span className="inline-flex items-center gap-1 rounded-md border border-dashed border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-400">
-              <Plus className="h-3.5 w-3.5" /> Line item
-            </span>
-          </div>
-
-          {/* Totals */}
-          <div className="rounded-md border border-slate-200 overflow-hidden">
-            <div className="flex flex-wrap gap-2 border-b border-slate-100 px-3 py-2">
-              <span
-                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                  loaded ? 'border border-slate-900 text-slate-900' : 'border border-dashed border-slate-300 text-slate-400'
-                }`}
-              >
-                {loaded ? (
-                  `Tax ${TAX_RATE}%`
-                ) : (
-                  <>
-                    <Plus className="h-3 w-3" /> Add tax
-                  </>
-                )}
-              </span>
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
-                  loaded ? 'border border-slate-900 text-slate-900' : 'border border-dashed border-slate-300 text-slate-400'
-                }`}
-              >
-                {loaded ? 'Deposit 40%' : 'Deposit'}
-              </span>
-            </div>
-            <div className="px-3">
-              <div className="flex justify-between py-1.5 text-slate-600">
-                <span>Subtotal</span>
-                <span className="tabular-nums">{fmt(subtotal)}</span>
-              </div>
-              <div className="flex justify-between border-t border-slate-100 py-1.5 text-slate-600">
-                <span>{loaded ? `Tax (${TAX_RATE}%)` : 'Tax'}</span>
-                <span className="tabular-nums">{loaded ? fmt(tax) : '—'}</span>
-              </div>
-              <div className="flex justify-between border-t border-slate-200 py-2">
-                <span className="font-semibold">Total</span>
-                <span className="text-base font-bold tabular-nums">{fmt(total)}</span>
-              </div>
-            </div>
-            <div className="flex justify-between bg-slate-50 px-3 py-2">
-              <span className="font-semibold text-slate-900">Deposit due</span>
-              <span className="font-bold tabular-nums">{fmt(loaded ? depositDue : 0)}</span>
-            </div>
-          </div>
-        </div>
-        </>
-        )}
           </div>
         </div>
       </div>
@@ -618,8 +705,9 @@ export default function QuoteBuilderDemo() {
   );
 }
 
-/* The Invoice tab after the quote is accepted: deposit ready to send, balance locked. */
+/* The Invoice tab at the end: deposit paid (green = money received), balance next. */
 function InvoiceView() {
+  const pct = Math.round((DEPOSIT / TOTAL) * 100);
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
       <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/60 px-4 py-3">
@@ -627,46 +715,56 @@ function InvoiceView() {
         <span className="text-[11px] text-slate-500">#INV-058</span>
       </div>
       <div className="min-h-[430px] space-y-3 p-4">
+        {/* Collected so far */}
         <div className="rounded-md border border-slate-200 px-3 py-2.5">
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-slate-600">
-              <span className="font-bold tabular-nums text-slate-900">{fmt(0)}</span> of {fmt(TOTAL)} collected
+              <span className="font-bold tabular-nums text-slate-900">{fmt(DEPOSIT)}</span> of {fmt(TOTAL)} collected
             </p>
-            <span className="font-semibold text-slate-700">0%</span>
+            <span className="font-semibold text-slate-700">{pct}%</span>
           </div>
-          <div className="mt-2 h-1.5 w-full rounded-full bg-slate-100" />
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+            <motion.div
+              className="h-full rounded-full bg-emerald-500"
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 0.9, delay: 0.2, ease: EASE }}
+            />
+          </div>
         </div>
 
+        {/* 1. Deposit: paid */}
         <motion.div
           initial={{ scale: 0.98 }}
           animate={{ scale: 1 }}
           transition={{ duration: 0.3, delay: 0.2 }}
-          className="rounded-md border border-slate-900 px-3 py-3 ring-1 ring-slate-900"
+          className="rounded-md border border-emerald-500 bg-emerald-50/40 px-3 py-3 ring-1 ring-emerald-500"
         >
           <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-900">1. Deposit (40%)</span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Ready to send</span>
+            <span className="font-bold text-emerald-800">1. Deposit (40%)</span>
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-800">Paid</span>
           </div>
-          <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-900">{fmt(DEPOSIT)}</p>
-          <p className="text-slate-500">Quote accepted, so the deposit is next.</p>
-          <div className="mt-2.5 flex items-center gap-2 border-t border-slate-100 pt-2.5">
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-white">
-              <Send className="h-3 w-3" /> Send Deposit Invoice
+          <p className="mt-1 text-lg font-extrabold tabular-nums text-emerald-800">{fmt(DEPOSIT)}</p>
+          <p className="flex items-center gap-1 text-slate-600">
+            <Zap className="h-3 w-3 shrink-0 text-[#00828A]" /> Sent automatically when the quote was accepted
+          </p>
+          <div className="mt-2.5 flex items-center gap-2 border-t border-emerald-100 pt-2.5">
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700">
+              <Check className="h-3.5 w-3.5" strokeWidth={3} /> Paid by card
             </span>
-            <span className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-700">
-              <Download className="h-3 w-3" /> PDF
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700">
+              <Download className="h-3 w-3" /> Receipt
             </span>
           </div>
         </motion.div>
 
-        <div className="rounded-md border border-dashed border-slate-300 bg-slate-50/70 px-3 py-3 opacity-70">
+        {/* 2. Balance: next */}
+        <div className="rounded-md border border-slate-300 bg-white px-3 py-3">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-slate-500">2. Remaining balance</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-              <Lock className="h-2.5 w-2.5" /> Locked
-            </span>
+            <span className="font-bold text-slate-900">2. Remaining balance</span>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">Next up</span>
           </div>
-          <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-400">{fmt(TOTAL - DEPOSIT)}</p>
+          <p className="mt-1 text-lg font-extrabold tabular-nums text-slate-900">{fmt(TOTAL - DEPOSIT)}</p>
           <p className="text-slate-500">Send the final invoice when the job is done.</p>
         </div>
       </div>

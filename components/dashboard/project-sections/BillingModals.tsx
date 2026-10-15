@@ -367,8 +367,8 @@ export default function BillingModals({
                 </div>
 
                 {/* Body */}
-                <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5">
-                  {/* Amount */}
+                <div className="min-w-0 flex-1 space-y-5 overflow-y-auto overflow-x-hidden px-5 py-5">
+                                    {/* Amount */}
                   <div className="rounded-xl border border-slate-200">
                     <div className="flex items-baseline justify-between gap-3 px-4 py-3.5">
                       <p className="text-sm font-medium text-slate-700">
@@ -387,8 +387,8 @@ export default function BillingModals({
                           <>
                             {depositCollected > 0 && (
                               <div className="flex justify-between">
-                                <dt className="text-slate-600">Already paid toward deposit</dt>
-                                <dd className="tabular-nums font-medium text-emerald-700">{fmt(depositCollected)}</dd>
+                                <dt className="min-w-0 pr-3 text-slate-600">Already paid toward deposit</dt>
+                                                                <dd className="tabular-nums font-medium text-emerald-700">{fmt(depositCollected)}</dd>
                               </div>
                             )}
                             <div className="flex justify-between">
@@ -416,7 +416,7 @@ export default function BillingModals({
                     <ul className="space-y-1.5 text-sm text-slate-700">
                       <li className="flex items-start gap-2">
                         <Send className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" />
-                        <span>
+                                               <span className="min-w-0 [overflow-wrap:anywhere]">
                           An email to <span className="font-medium text-slate-900">{lead?.email || 'no email on file'}</span> with the PDF invoice
                         </span>
                       </li>
@@ -492,8 +492,8 @@ export default function BillingModals({
                         setDueDate(e.target.value);
                         setShowNoDueDateWarning(false);
                       }}
-                      className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-base text-slate-900 outline-none focus:border-slate-900 sm:text-sm"
-                    />
+                      className="mt-2 block w-full min-w-0 max-w-full appearance-none rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-left text-base text-slate-900 outline-none focus:border-slate-900 sm:text-sm"
+                                          />
                     {!dueDate && (
                       <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-sm text-amber-900">
                         <p className="flex items-center gap-1.5">
@@ -596,7 +596,7 @@ export default function BillingModals({
           </motion.div>
         )}
       </AnimatePresence>
-      
+
       {/* CONFIRM DELETE PAYMENT */}
       <AnimatePresence>
         {confirmDeletePayment && (
