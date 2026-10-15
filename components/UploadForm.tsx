@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { upload } from '@vercel/blob/client';
 import { compressImages } from '@/lib/compressImage';
@@ -82,6 +82,9 @@ export default function UploadForm({
   const [step, setStep] = useState<1 | 2>(1);
   const [savedLeadId, setSavedLeadId] = useState<number | null>(null);
 
+  // Bot protection: a hidden field people never see, and when the form loaded.
+  const [trapValue, setTrapValue] = useState('');
+  const loadedAtRef = useRef(Date.now());
   const [step1Data, setStep1Data] = useState({
     name: '', email: '', phone: '', category: '', description: '',
   });
@@ -299,11 +302,13 @@ export default function UploadForm({
           company_slug: finalCompanySlug,
           company_id: finalCompanyId,
           lead_source: null,
-          custom_answers: {},
+                 custom_answers: {},
+          website_url: trapValue,
+          form_elapsed_ms: Date.now() - loadedAtRef.current,
         }),
       });
-      if (!res.ok) throw new Error(`Submission failed (${res.status}). Please try again.`);
-      const result = await res.json();
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(result.error || `Submission failed (${res.status}). Please try again.`);
       if (!result.success) throw new Error(result.error || 'Submission failed.');
 
       if (!hasStep2Content) {
@@ -418,7 +423,25 @@ export default function UploadForm({
         </>
       )}
 
-      <main className={embedded ? 'pb-4' : 'pb-16'}>
+          <main className={embedded ? 'pb-4' : 'pb-16'}>
+        {/* Bot trap: hidden from people and screen readers. Bots fill every field. */}
+        {step === 1 && (
+          <div
+            aria-hidden="true"
+            style={{ position: 'absolute', left: '-10000px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}
+          >
+            <label htmlFor="l2p-extra">Leave this empty</label>
+            <input
+              id="l2p-extra"
+              name="l2p_extra"
+              type="text"
+              tabIndex={-1}
+              autoComplete="off"
+              value={trapValue}
+              onChange={(e) => setTrapValue(e.target.value)}
+            />
+          </div>
+        )}
         {step === 1 && (
           <UploadFormStepOne
             formData={step1Data}

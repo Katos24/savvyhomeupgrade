@@ -78,17 +78,22 @@ export default function LeadModal({
   const [quoteTemplates, setQuoteTemplates] = useState<any[]>([]);
 
   const [quoteDirty, setQuoteDirty] = useState(false);
-  const [pendingTab, setPendingTab] = useState<TopTab | null>(null);
+  const [scheduleDirty, setScheduleDirty] = useState(false);
+    const [pendingTab, setPendingTab] = useState<TopTab | null>(null);
 
   // ── Closing: back gesture, swipe down (mobile), unsaved-quote guard ──
   const dragControls = useDragControls();
   const [swipeClosing, setSwipeClosing] = useState(false);
   const closedByHistoryRef = useRef(false);
 
-  // OK to close unless there's an unsaved quote the user wants to keep
+   // Unsaved changes on the tab you're looking at (Quote or Schedule)
+  const hasUnsaved = () =>
+    (activeTab === 'quote' && quoteDirty) || (activeTab === 'schedule' && scheduleDirty);
+
+  // OK to close unless there are unsaved changes the user wants to keep
   const okToClose = () =>
-    !(activeTab === 'quote' && quoteDirty) ||
-    window.confirm('You have unsaved quote changes. Discard them?');
+    !hasUnsaved() ||
+    window.confirm(`You have unsaved ${activeTab === 'schedule' ? 'schedule' : 'quote'} changes. Discard them?`);
 
   const okToCloseRef = useRef(okToClose);
   okToCloseRef.current = okToClose;
@@ -128,10 +133,12 @@ export default function LeadModal({
     const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
   const quoteSaveRef = useRef<(() => Promise<boolean>) | null>(null);
   const registerQuoteSave = (fn: (() => Promise<boolean>) | null) => { quoteSaveRef.current = fn; };
+  const scheduleSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const registerScheduleSave = (fn: (() => Promise<boolean>) | null) => { scheduleSaveRef.current = fn; };
 
     const requestTabChange = (tab: TopTab) => {
     if (tab === activeTab) return;
-    if (activeTab === 'quote' && quoteDirty) {
+      if (hasUnsaved()) {
       setPendingTab(tab);
       return;
     }
@@ -140,6 +147,7 @@ export default function LeadModal({
 
   const leaveQuote = (tab: TopTab) => {
     setQuoteDirty(false);
+    setScheduleDirty(false);
     setPendingTab(null);
     setActiveTab(tab);
   };
@@ -296,7 +304,9 @@ export default function LeadModal({
         activity={activity}
         onDirtyChange={setQuoteDirty}
         onRegisterSave={registerQuoteSave}
-      />
+        onScheduleDirtyChange={setScheduleDirty}
+        onRegisterScheduleSave={registerScheduleSave}
+              />
     );
   };
 
@@ -586,17 +596,22 @@ className="p-3 sm:p-7 space-y-6"
               className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-base font-bold text-slate-900 mb-1">Save your quote changes?</h3>
+                           <h3 className="text-base font-bold text-slate-900 mb-1">
+                {activeTab === 'schedule' ? 'Save your schedule changes?' : 'Save your quote changes?'}
+              </h3>
               <p className="text-xs text-slate-500 leading-relaxed mb-5">
-                You changed this quote but haven&rsquo;t saved it yet.
+                {activeTab === 'schedule'
+                  ? 'You changed the schedule but haven’t saved it yet.'
+                  : 'You changed this quote but haven’t saved it yet.'}
               </p>
               <div className="flex flex-col gap-2">
                 <button
                   disabled={savingBeforeLeave}
                   onClick={async () => {
                     setSavingBeforeLeave(true);
-                    const ok = (await quoteSaveRef.current?.()) ?? false;
-                    setSavingBeforeLeave(false);
+                    const saveFn = activeTab === 'schedule' ? scheduleSaveRef.current : quoteSaveRef.current;
+                    const ok = (await saveFn?.()) ?? false;
+                                        setSavingBeforeLeave(false);
                     if (ok) leaveQuote(pendingTab);
                     else setPendingTab(null);
                   }}

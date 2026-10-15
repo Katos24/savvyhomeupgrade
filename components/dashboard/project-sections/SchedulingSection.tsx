@@ -20,7 +20,11 @@ type SchedulingSectionProps = {
   onRefresh: () => Promise<void>;
   hasProject: boolean;
   companySlug: string;
-  teamMembers?: any[];
+    teamMembers?: any[];
+  /** Tells LeadModal there are unsaved schedule changes (for the leave prompt). */
+  onDirtyChange?: (dirty: boolean) => void;
+  /** Lets LeadModal's "Save" button in the leave prompt save this schedule. */
+  onRegisterSave?: (fn: (() => Promise<boolean>) | null) => void;
 };
 
 export default function SchedulingSection({ 
@@ -30,7 +34,9 @@ export default function SchedulingSection({
   onRefresh, 
   hasProject, 
   companySlug, 
-  teamMembers = [] 
+  teamMembers = [],
+  onDirtyChange,
+  onRegisterSave,
 }: SchedulingSectionProps) {
   const [saving, setSaving] = useState(false);
 
@@ -59,6 +65,9 @@ export default function SchedulingSection({
   const [eventLocation, setEventLocation] = useState('');
 
   const [initialState, setInitialState] = useState<any>({});
+
+  // Set true by handleSave on success, so the leave prompt knows whether to switch tabs.
+  const lastSaveOkRef = useRef(false);
 
   // Background check, independent of whichever picker (if any) is
   // currently open — this closes the actual gap: if People gets picked
@@ -237,8 +246,9 @@ export default function SchedulingSection({
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.success) {
+        lastSaveOkRef.current = true;
         toast.success('Schedule updated');
-        await onRefresh();
+                await onRefresh();
       } else {
         toast.error(data.error || 'Failed to save');
       }
@@ -248,6 +258,36 @@ export default function SchedulingSection({
       setSaving(false); 
     }
   };
+
+  // ── Unsaved-changes guard (same as the Quote tab) ──
+  // Report dirty state up to LeadModal; clear it when this tab unmounts.
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
+
+  // Let LeadModal's "Save" button save the schedule and tell it if it worked.
+  const handleSaveRef = useRef(handleSave);
+  handleSaveRef.current = handleSave;
+  useEffect(() => {
+    onRegisterSave?.(async () => {
+      lastSaveOkRef.current = false;
+      await handleSaveRef.current();
+      return lastSaveOkRef.current;
+    });
+    return () => onRegisterSave?.(null);
+  }, [onRegisterSave]);
+
+  // Browser refresh / closing the tab with unsaved changes.
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
 
   return (
     <div className="w-full space-y-4">
@@ -343,9 +383,7 @@ export default function SchedulingSection({
             bar below. This header now just shows status + Send Schedule. */}
         <div className="px-4 sm:px-5 py-3.5 border-b border-slate-200 bg-slate-50 rounded-t-2xl flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Schedule Overview
-            </h3>
+                        <h3 className="text-sm font-bold text-slate-900">Schedule</h3>
             {isDirty ? (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/80 rounded-md text-[10px] font-semibold">
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />

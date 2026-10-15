@@ -13,7 +13,9 @@ type ProjectSectionProps = {
     lead: any;
   onDirtyChange?: (dirty: boolean) => void;
   onRegisterSave?: (fn: (() => Promise<boolean>) | null) => void;
-  currentUser: any;
+  onScheduleDirtyChange?: (dirty: boolean) => void;
+  onRegisterScheduleSave?: (fn: (() => Promise<boolean>) | null) => void;
+    currentUser: any;
   onRefresh: () => Promise<void>;
   statusOptions: any[];
   onUpdateStatus: (id: number, status: string, oldStatus: string) => Promise<boolean>;
@@ -30,7 +32,9 @@ export default function ProjectSection({
   lead,
   onDirtyChange,
   onRegisterSave,
-  company,
+  onScheduleDirtyChange,
+  onRegisterScheduleSave,
+    company,
   currentUser,
   onRefresh,
   statusOptions,
@@ -209,8 +213,10 @@ export default function ProjectSection({
           )}
 
           {planningTab === 'schedule' && (
-            <SchedulingSection
-              lead={lead}
+<SchedulingSection
+              onDirtyChange={onScheduleDirtyChange}
+              onRegisterSave={onRegisterScheduleSave}
+                            lead={lead}
               company={company}
               currentUser={currentUser}
               onRefresh={onRefresh}

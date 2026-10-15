@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { getJwtSecret } from '@/lib/auth';
 import { sendNewLeadAlertEmail, sendLeadConfirmationEmail } from '@/lib/email';
 import { cleanTimeline, cleanBestTimes } from '@/lib/timing';
+import { createHash } from 'crypto';
 
 export const maxDuration = 60;
 export const runtime = 'nodejs';
@@ -142,6 +143,51 @@ export async function POST(request: Request) {
     const userCompanyId = await loggedInCompanyId();
     const isMember = userCompanyId != null && userCompanyId === company.id;
 
+    // ── Bot protection (public booking form only) ──
+    if (!isMember) {
+      // 1. Rate limit: 5 per hour per device (IP) per company, 20 per hour across all companies.
+      //    The IP is hashed, never stored as-is. If this check itself breaks
+      //    (e.g. table missing), log it and let the lead through.
+      try {
+        const ip =
+          (request.headers.get('x-forwarded-for') || '').split(',')[0].trim() ||
+          request.headers.get('x-real-ip') ||
+          'unknown';
+        const ipHash = createHash('sha256').update(`${ip}|${getJwtSecret()}`).digest('hex');
+
+        const [counts] = await sql`
+          SELECT
+            COUNT(*) FILTER (WHERE company_id = ${company.id})::int AS for_company,
+            COUNT(*)::int AS overall
+          FROM form_submissions
+          WHERE ip_hash = ${ipHash} AND created_at > now() - interval '1 hour'
+        `;
+        if ((counts?.for_company ?? 0) >= 5 || (counts?.overall ?? 0) >= 20) {
+          return NextResponse.json(
+            { success: false, error: 'Too many requests from this device. Please try again in about an hour.' },
+            { status: 429 },
+          );
+        }
+        await sql`INSERT INTO form_submissions (ip_hash, company_id) VALUES (${ipHash}, ${company.id})`;
+
+        // Keep the table small: now and then, delete rows older than a day.
+        if (Math.random() < 0.02) {
+          await sql`DELETE FROM form_submissions WHERE created_at < now() - interval '1 day'`;
+        }
+      } catch (err) {
+        console.error('Rate limit check failed, allowing submission:', err);
+      }
+
+      // 2. Hidden trap field and 3. submitted too fast:
+      //    pretend it worked, but save nothing and send no emails.
+      const trap = str(body.website_url, 200);
+      const elapsedMs = Number(body.form_elapsed_ms);
+      const tooFast = Number.isFinite(elapsedMs) && elapsedMs >= 0 && elapsedMs < 3000;
+      if (trap || tooFast) {
+        return NextResponse.json({ success: true, message: 'Lead submitted successfully!', leadId: null, filesUploaded: 0 });
+      }
+    }
+    
     // The public form must give a way to reach the customer and a service.
     // A contractor adding a walk-in by hand is trusted to leave them blank.
     if (!isMember) {
