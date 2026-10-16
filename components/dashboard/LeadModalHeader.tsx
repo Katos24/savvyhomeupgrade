@@ -147,8 +147,16 @@ export default function LeadModalHeader({
 
   return (
     <div className="flex-shrink-0 relative" style={{ background: '#0f172a' }}>
-<div className={`px-5 pt-4 ${showSnapshotOnMobile ? 'pb-0' : 'pb-4 sm:pb-0'}`}>
-  
+<div
+  className={`px-5 pt-4 ${
+    isProject && snapshot.length > 0
+      ? showSnapshotOnMobile
+        ? 'pb-0'
+        : 'pb-4 sm:pb-0'
+      : 'pb-2' // no stats row (new lead): give the subtitle room to breathe
+  }`}
+>
+    
         {/* ── TOP ROW — name, status, actions. Category and date moved into
               this row on desktop so they don't cost a line of their own. ── */}
        <div className="flex items-center gap-3 mb-2">

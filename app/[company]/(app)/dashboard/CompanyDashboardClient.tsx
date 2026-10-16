@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useTransition, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, X, CalendarDays, CreditCard } from 'lucide-react';
+import { Loader2, Plus, ArrowRight, Sun, Moon, Menu, Mail, X, CalendarDays, CreditCard, LayoutList } from 'lucide-react';
 import { Toaster } from 'sonner';
 import { can, type PlanTier } from '@/lib/permissions';
 import { getPaymentStatusDisplay } from '@/lib/paymentStatus';
@@ -556,7 +556,15 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5">
+                    <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => router.push(`/${company.slug}/leads`)}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${t.iconBtn}`}
+            >
+              <LayoutList className="h-4 w-4" />
+              Leads
+            </button>
             <button
               type="button"
               onClick={handleOpenCreateModal}
@@ -617,7 +625,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
               <div className="min-w-0 space-y-6">
                 <section>
                   <SectionHeader
-                    title="Today"
+                    title="Scheduled Today"
                     action={
                       <LinkButton onClick={() => router.push(`/${company.slug}/dashboard/calendar`)} t={t}>
                         Calendar
