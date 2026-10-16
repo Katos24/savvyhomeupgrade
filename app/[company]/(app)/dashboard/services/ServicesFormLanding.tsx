@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ChevronLeft, Tag, FileText, ChevronRight, Sun, Moon, Check } from 'lucide-react';
 import CategoriesTab from './CategoriesTab';
 import BookingFormConfig from './BookingFormConfig';
@@ -56,6 +56,28 @@ function landingTokens(isDark: boolean) {
 
 export default function ServicesFormLanding({ company, currentUser }: { company: any; currentUser: any }) {
   const [view, setView] = useState<View>('landing');
+
+  // Unsaved-changes guard for the Services view (same prompt as the lead modal).
+  const [servicesDirty, setServicesDirty] = useState(false);
+  const [pendingView, setPendingView] = useState<View | null>(null);
+  const [savingBeforeLeave, setSavingBeforeLeave] = useState(false);
+  const servicesSaveRef = useRef<(() => Promise<boolean>) | null>(null);
+  const registerServicesSave = useCallback((fn: (() => Promise<boolean>) | null) => {
+    servicesSaveRef.current = fn;
+  }, []);
+
+  const requestView = (next: View) => {
+    if (view === 'services' && servicesDirty && next !== 'services') {
+      setPendingView(next);
+      return;
+    }
+    setView(next);
+  };
+  const leaveTo = (next: View) => {
+    setServicesDirty(false);
+    setPendingView(null);
+    setView(next);
+  };
 
   // Theme: same key + event as the rest of the app.
   const [isDark, setIsDark] = useState<boolean>(true);
@@ -125,8 +147,8 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
     <div className={`mx-auto ${max} px-4 pt-4 sm:px-6`}>
       <button
         type="button"
-        onClick={() => setView('landing')}
-        className={`-ml-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-sm font-medium transition hover:opacity-80 ${l.sub}`}
+        onClick={() => requestView('landing')}
+                className={`-ml-2 inline-flex min-h-[40px] items-center gap-1 rounded-lg px-2 text-sm font-medium transition hover:opacity-80 ${l.sub}`}
       >
         <ChevronLeft className="h-4 w-4" /> Services &amp; booking form
       </button>
@@ -136,8 +158,69 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
   if (view === 'services') {
     return (
       <div className={`min-h-screen ${t.bg} transition-colors`}>
-        {backBar('max-w-4xl')}
-        <CategoriesTab company={company} currentUser={currentUser} isDark={isDark} onToggleTheme={() => setIsDark((v) => !v)} />
+                {backBar('max-w-5xl')}
+        <CategoriesTab
+          company={company}
+          currentUser={currentUser}
+          isDark={isDark}
+          onToggleTheme={() => setIsDark((v) => !v)}
+          onDirtyChange={setServicesDirty}
+          onRegisterSave={registerServicesSave}
+        />
+
+        {/* Leave prompt: Save / Discard / Keep editing */}
+        {pendingView && (
+          <div
+            className="fixed inset-0 z-[700] flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center"
+            onClick={() => !savingBeforeLeave && setPendingView(null)}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={`w-full max-w-sm rounded-2xl border p-6 shadow-2xl ${
+                isDark ? 'border-white/10 bg-[#0f1420]' : 'border-slate-200 bg-white'
+              }`}
+            >
+              <h3 className={`text-base font-semibold ${l.text}`}>Save your service changes?</h3>
+              <p className={`mb-5 mt-1 text-sm ${l.sub}`}>You changed your services but haven&rsquo;t saved them yet.</p>
+              <div className="flex flex-col gap-2">
+                <button
+                  type="button"
+                  disabled={savingBeforeLeave}
+                  onClick={async () => {
+                    setSavingBeforeLeave(true);
+                    const ok = (await servicesSaveRef.current?.()) ?? false;
+                    setSavingBeforeLeave(false);
+                    if (ok) leaveTo(pendingView);
+                    else setPendingView(null);
+                  }}
+                  className={`w-full rounded-xl py-3 text-sm font-semibold disabled:opacity-50 ${
+                    isDark ? 'bg-white text-slate-900' : 'bg-slate-900 text-white'
+                  }`}
+                >
+                  {savingBeforeLeave ? 'Saving…' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  disabled={savingBeforeLeave}
+                  onClick={() => leaveTo(pendingView)}
+                  className={`w-full rounded-xl border py-3 text-sm font-semibold text-rose-600 disabled:opacity-50 ${
+                    isDark ? 'border-white/10 bg-transparent' : 'border-slate-200 bg-white'
+                  }`}
+                >
+                  Discard changes
+                </button>
+                <button
+                  type="button"
+                  disabled={savingBeforeLeave}
+                  onClick={() => setPendingView(null)}
+                  className={`w-full py-2 text-sm font-semibold ${l.faint}`}
+                >
+                  Keep editing
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

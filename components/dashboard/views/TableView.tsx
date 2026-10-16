@@ -1,10 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { safeJSONParse } from '@/lib/utils';
-import { Edit2, X, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
+import { Edit2, X, Trash2, ChevronDown, ChevronRight, ArrowUp, ArrowDown } from 'lucide-react';
 import { toast } from 'sonner';
-import { getTheme } from '@/lib/theme';
 
 interface CustomQuestion {
   id: string;
@@ -24,29 +22,22 @@ interface TableViewProps {
   categories?: any[];
   customQuestions?: CustomQuestion[];
   isDark?: boolean;
-  // Sort now happens server-side — leads arrives pre-sorted for whatever
-  // page is currently loaded. Previously this component held its own
-  // sortConfig and sorted the `leads` prop locally, which only ever
-  // sorted the 20 (or however many) rows already fetched — correct
-  // relative to each other, but not relative to the leads that hadn't
-  // been loaded yet. "Sorted by Quote descending" now means the highest
-  // quotes across the whole company, not just within whatever page
-  // happened to be in memory.
+  // Sorting happens on the server: `leads` arrives already sorted across the
+  // whole company, not just the page in memory.
   sortKey: string | null;
   sortDir: 'asc' | 'desc';
   onSortChange: (key: string) => void;
 }
- 
 
-type SortConfig = { key: string; direction: 'asc' | 'desc' } | null;
+/* ───────────────────────── helpers ───────────────────────── */
 
-const formatCategory = (cat: string) => {
-  if (!cat) return '';
-  return cat.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-};
+const formatCategory = (cat: string) =>
+  !cat ? '' : cat.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 
 const formatCurrency = (amount: number) =>
-  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(
+    amount || 0
+  );
 
 const formatPhone = (phone: string) => {
   const cleaned = ('' + phone).replace(/\D/g, '');
@@ -54,45 +45,115 @@ const formatPhone = (phone: string) => {
   return match ? `(${match[1]}) ${match[2]}-${match[3]}` : phone;
 };
 
+const formatShortDate = (d: string) => {
+  const [y, m, day] = d.split('T')[0].split('-').map(Number);
+  if (!y || !m || !day) return '';
+  return new Date(y, m - 1, day).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+};
+
+// Status dot colors (the company picks these per stage).
 const STATUS_COLORS: Record<string, string> = {
   blue: '#3b82f6', yellow: '#eab308', purple: '#a855f7', orange: '#f97316',
   green: '#22c55e', red: '#ef4444', gray: '#6b7280', indigo: '#6366f1', pink: '#ec4899',
 };
+const getHex = (color: string) => STATUS_COLORS[color] || '#3b82f6';
 
-// Darker, text-safe variants for badge labels — STATUS_COLORS above is
-// tuned for a small dot accent, not for text that needs real contrast on
-// a light tint background. Matches the reference: bright dot, darker
-// muted label text, not the same hex for both.
-const STATUS_TEXT_COLORS: Record<string, string> = {
-  blue: '#1d4ed8', yellow: '#a16207', purple: '#7e22ce', orange: '#c2410c',
-  green: '#15803d', red: '#b91c1c', gray: '#374151', indigo: '#4338ca', pink: '#be185d',
-};
+/* Money state. Green only for money received; amber for partly paid;
+   neutral when nothing is paid yet (not overdue, just not paid). */
+type Money = { label: string; tone: 'paid' | 'partial' | 'none'; amount: string; note: string | null };
+function getMoney(lead: any): Money | null {
+  const quote = parseFloat(lead.quote_total || 0) || 0;
+  const paid = parseFloat(lead.payment_amount || 0) || 0;
+  if (!quote && !paid) return null;
+  if (lead.payment_status === 'paid' || (quote > 0 && paid >= quote)) {
+    return { label: 'Paid', tone: 'paid', amount: formatCurrency(paid || quote), note: null };
+  }
+  if (paid > 0 && quote > paid) {
+    return { label: 'Partly paid', tone: 'partial', amount: formatCurrency(quote), note: `${formatCurrency(quote - paid)} left` };
+  }
+  return { label: 'Not paid', tone: 'none', amount: formatCurrency(quote), note: null };
+}
+
+/* One set of tokens per theme (same palette as the dashboard). */
+function tokens(isDark: boolean) {
+  return isDark
+    ? {
+        card: 'bg-[#0f1420] border border-white/10',
+        head: 'bg-white/[0.03]',
+        headText: 'text-slate-400 hover:text-white',
+        text: 'text-white',
+        sub: 'text-slate-300',
+        faint: 'text-slate-500',
+        divide: 'divide-white/10',
+        border: 'border-white/10',
+        rowHover: 'hover:bg-white/[0.04]',
+        rowSelected: 'bg-white/[0.07]',
+        chip: 'bg-white/[0.06] text-slate-200',
+        pill: 'bg-white/[0.06] text-slate-100 border border-white/10',
+        menu: 'bg-[#141a27] border border-white/10',
+        menuHead: 'bg-white/[0.03] text-slate-400',
+        menuItem: 'text-slate-100 hover:bg-white/[0.06]',
+        primaryBtn: 'bg-white text-slate-900 hover:bg-slate-100',
+        secondaryBtn: 'border border-white/15 bg-transparent text-slate-200 hover:bg-white/[0.06]',
+        paid: 'bg-emerald-500/15 text-emerald-300',
+        partial: 'bg-amber-500/15 text-amber-300',
+        none: 'bg-white/[0.06] text-slate-300',
+        paidAmount: 'text-emerald-400',
+        checkbox: 'accent-white',
+      }
+    : {
+        card: 'bg-white border border-slate-200 shadow-sm',
+        head: 'bg-slate-50',
+        headText: 'text-slate-500 hover:text-slate-900',
+        text: 'text-slate-900',
+        sub: 'text-slate-600',
+        faint: 'text-slate-400',
+        divide: 'divide-slate-200',
+        border: 'border-slate-200',
+        rowHover: 'hover:bg-slate-50',
+        rowSelected: 'bg-slate-100',
+        chip: 'bg-slate-100 text-slate-700',
+        pill: 'bg-white text-slate-800 border border-slate-200',
+        menu: 'bg-white border border-slate-200',
+        menuHead: 'bg-slate-50 text-slate-500',
+        menuItem: 'text-slate-800 hover:bg-slate-50',
+        primaryBtn: 'bg-slate-900 text-white hover:bg-slate-800',
+        secondaryBtn: 'border border-slate-300 bg-white text-slate-800 hover:bg-slate-50',
+        paid: 'bg-emerald-50 text-emerald-700',
+        partial: 'bg-amber-50 text-amber-800',
+        none: 'bg-slate-100 text-slate-700',
+        paidAmount: 'text-emerald-600',
+        checkbox: 'accent-slate-900',
+      };
+}
+
+/* ───────────────────────── component ───────────────────────── */
 
 export default function TableView({
-  leads, onSelectLead, statusOptions,
-  onBulkUpdate, onBulkDelete,
-  teamMembers = [], categories = [],
+  leads,
+  onSelectLead,
+  statusOptions,
+  onBulkUpdate,
+  onBulkDelete,
+  teamMembers = [],
+  categories = [],
   isDark = true,
-  sortKey, sortDir, onSortChange,
+  sortKey,
+  sortDir,
+  onSortChange,
 }: TableViewProps) {
-  // Dark mode keeps every color routed through the app's existing shared
-  // theme tokens, untouched. Light mode is a new, separately hardcoded
-  // Terrascape-inspired look — kept apart deliberately rather than
-  // guessing at what belongs in the shared token file for a design this
-  // different from the rest of the app's current light theme.
-  const t = getTheme(isDark);
+  const t = tokens(isDark);
 
-   const [editMode, setEditMode] = useState(false);
+  const [editMode, setEditMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
-  // Which row's status popover is currently open — null means none.
-  // Reuses onBulkUpdate with a single-item array rather than adding a
-  // new prop, since a one-lead status change is just the bulk-update
-  // path with one id in it.
+  // Inline status change: one lead goes through the bulk-update path with one id.
   const [statusPickerFor, setStatusPickerFor] = useState<number | null>(null);
   const [updatingStatusFor, setUpdatingStatusFor] = useState<number | null>(null);
+
+  const getStatusConfig = (val: string) => statusOptions.find((s: any) => s.value === val) || statusOptions[0] || { label: val, color: 'gray' };
 
   const handleInlineStatusChange = async (leadId: number, status: string) => {
     if (!onBulkUpdate) return;
@@ -108,37 +169,12 @@ export default function TableView({
     }
   };
 
-    const getStatusConfig = (val: string) => statusOptions.find((s: any) => s.value === val) || statusOptions[0];
-  const getHex = (color: string) => STATUS_COLORS[color] || '#3b82f6';
-  const getTextHex = (color: string) => STATUS_TEXT_COLORS[color] || '#374151';
-
-  // Same colored-pill language as the Status column above — reusing an
-  // existing visual pattern instead of inventing a new one for this
-  // column. Three real, distinct states instead of one flat number:
-  // unpaid still owes the full quote, partial owes what's left after a
-  // deposit or partial payment, paid needs no further action.
-  const getPaymentDisplay = (lead: any) => {
-    const quoteTotal = parseFloat(lead.quote_total || 0);
-    const paidAmount = parseFloat(lead.payment_amount || 0);
-    if (!quoteTotal && !paidAmount) return null;
-
-    if (lead.payment_status === 'paid' || (quoteTotal > 0 && paidAmount >= quoteTotal)) {
-      return { label: 'Paid', hex: '#22c55e', textHex: '#15803d', primary: formatCurrency(paidAmount || quoteTotal), secondary: null };
-    }
-    if (paidAmount > 0 && quoteTotal > paidAmount) {
-      return { label: 'Partial', hex: '#f97316', textHex: '#c2410c', primary: formatCurrency(paidAmount), secondary: `${formatCurrency(quoteTotal - paidAmount)} left` };
-    }
-    if (quoteTotal > 0) {
-      return { label: 'Unpaid', hex: '#ef4444', textHex: '#b91c1c', primary: formatCurrency(quoteTotal), secondary: 'due' };
-    }
-    return null;
+  const toggleEditMode = () => {
+    setEditMode((e) => !e);
+    setSelectedIds(new Set());
+    setShowActionsMenu(false);
   };
-
-   const handleSort = (key: string) => onSortChange(key);
-
-
-  const toggleEditMode = () => { setEditMode(e => !e); setSelectedIds(new Set()); setShowActionsMenu(false); };
-  const toggleSelectAll = () => setSelectedIds(selectedIds.size === leads.length ? new Set() : new Set(leads.map(l => l.id)));
+  const toggleSelectAll = () => setSelectedIds(selectedIds.size === leads.length ? new Set() : new Set(leads.map((l) => l.id)));
   const toggleSelect = (id: number) => {
     const s = new Set(selectedIds);
     s.has(id) ? s.delete(id) : s.add(id);
@@ -147,392 +183,227 @@ export default function TableView({
 
   const bulkAction = async (fn: () => Promise<void>, successMsg: string) => {
     setBulkActionLoading(true);
-    try { await fn(); toast.success(successMsg); setSelectedIds(new Set()); setShowActionsMenu(false); }
-    catch { toast.error('Action failed'); }
-    finally { setBulkActionLoading(false); }
+    try {
+      await fn();
+      toast.success(successMsg);
+      setSelectedIds(new Set());
+      setShowActionsMenu(false);
+    } catch {
+      toast.error('Action failed');
+    } finally {
+      setBulkActionLoading(false);
+    }
   };
-
   const handleBulkStatusChange = (status: string) =>
     bulkAction(() => onBulkUpdate!(Array.from(selectedIds), { status }), `Updated ${selectedIds.size} lead(s)`);
   const handleBulkAssign = (name: string) =>
     bulkAction(() => onBulkUpdate!(Array.from(selectedIds), { assigned_to: name }), `Assigned ${selectedIds.size} lead(s)`);
   const handleBulkCategoryChange = (cat: string) =>
-    bulkAction(() => onBulkUpdate!(Array.from(selectedIds), { category: cat }), `Category updated`);
+    bulkAction(() => onBulkUpdate!(Array.from(selectedIds), { category: cat }), 'Service updated');
   const handleBulkDelete = async () => {
     setBulkActionLoading(true);
     try {
       await onBulkDelete!(Array.from(selectedIds));
       toast.success(`Deleted ${selectedIds.size} lead(s)`);
-      setSelectedIds(new Set()); setShowDeleteConfirm(false); setShowActionsMenu(false); setEditMode(false);
-    } catch { toast.error('Delete failed'); }
-    finally { setBulkActionLoading(false); }
+      setSelectedIds(new Set());
+      setShowDeleteConfirm(false);
+      setShowActionsMenu(false);
+      setEditMode(false);
+    } catch {
+      toast.error('Delete failed');
+    } finally {
+      setBulkActionLoading(false);
+    }
   };
 
- const sortedLeads = leads;
+  /* ── small pieces ── */
 
-  const SortIcon = ({ k }: { k: string }) =>
-    sortKey !== k
-      ? null
-      : sortDir === 'asc'
-        ? <span className="ml-1">&#8593;</span>
-        : <span className="ml-1">&#8595;</span>;
+  const SortHeader = ({ label, k, className = '' }: { label: string; k?: string; className?: string }) => (
+    <th
+      onClick={k ? () => onSortChange(k) : undefined}
+      className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wide select-none ${t.headText} ${k ? 'cursor-pointer' : ''} ${className}`}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {k && sortKey === k && (sortDir === 'asc' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />)}
+      </span>
+    </th>
+  );
 
-  // ── LIGHT MODE — Terrascape-inspired: warm paper background, thin
-  // hairline borders, monospace-flavored uppercase labels, pill badges,
-  // no shadow/blur doing the work of "looking premium." ──
-  if (!isDark) {
-         const headerCell = 'px-4 py-3 lg:py-4 text-left text-[11px] font-mono font-medium text-[#57534e] hover:text-[#1c1917] uppercase tracking-wider select-none transition-colors';
-    // Thicker on desktop only (lg:) — mobile keeps its original tighter
-    // padding, since screen space is already scarce there.
-    const cell = 'px-4 py-3.5 lg:py-5';
+  const StatusPill = ({ lead }: { lead: any }) => {
+    const cfg = getStatusConfig(lead.status || statusOptions[0]?.value);
+    const open = statusPickerFor === lead.id;
     return (
-      <div className="bg-white">
-        {/* Toolbar */}
-        <div className="px-4 py-3 border-b border-[#e7e2d8] flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            {editMode ? (
-              <>
-                <label className="flex items-center gap-2 text-[#292524] cursor-pointer text-sm font-medium">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.size === leads.length && leads.length > 0}
-                    onChange={toggleSelectAll}
-                    className="w-4 h-4 rounded text-[#1c1917] focus:ring-[#1c1917]"
-                  />
-                  {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
-                </label>
-                {selectedIds.size > 0 && (
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowActionsMenu(!showActionsMenu)}
-                      disabled={bulkActionLoading}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1c1917] hover:bg-[#292524] disabled:opacity-50 text-white text-xs font-semibold transition-colors"
-                    >
-                      {bulkActionLoading ? 'Working...' : 'Actions'}
-                      <ChevronDown className="w-3.5 h-3.5" />
-                    </button>
-                    {showActionsMenu && (
-                      <>
-                        <div className="fixed inset-0 z-10" onClick={() => setShowActionsMenu(false)} />
-                        <div className="absolute left-0 top-full mt-2 w-56 bg-white border border-[#e7e2d8] rounded-xl shadow-lg z-20 overflow-hidden">
-                          <div className="px-3 py-2 text-[10px] font-mono font-semibold text-[#a8a29e] uppercase tracking-wider bg-[#faf9f5]">Status</div>
-                          <div className="max-h-40 overflow-y-auto">
-                            {statusOptions.map((s) => (
-                              <button key={s.value} onClick={() => handleBulkStatusChange(s.value)}
-                                className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
-                                {s.label}
-                              </button>
-                            ))}
-                          </div>
-                          {teamMembers.length > 0 && (
-                            <>
-                              <div className="border-t border-[#e7e2d8]" />
-                              <div className="px-3 py-2 text-[10px] font-mono font-semibold text-[#a8a29e] uppercase tracking-wider bg-[#faf9f5]">Assign</div>
-                              <div className="max-h-40 overflow-y-auto">
-                                {teamMembers.map((m) => (
-                                  <button key={m.id} onClick={() => handleBulkAssign(m.name)}
-                                    className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors">
-                                    {m.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                          {categories.length > 0 && (
-                            <>
-                              <div className="border-t border-[#e7e2d8]" />
-                              <div className="px-3 py-2 text-[10px] font-mono font-semibold text-[#a8a29e] uppercase tracking-wider bg-[#faf9f5]">Category</div>
-                              <div className="max-h-40 overflow-y-auto">
-                                {categories.map((c: any) => (
-                                  <button key={c.value} onClick={() => handleBulkCategoryChange(c.value)}
-                                    className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors">
-                                    {c.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          )}
-                          <div className="border-t border-[#e7e2d8]" />
-                          <button
-                            onClick={() => { setShowActionsMenu(false); setShowDeleteConfirm(true); }}
-                            className="w-full text-left px-3 py-2.5 text-sm text-rose-600 hover:bg-rose-50 transition-colors flex items-center gap-2 font-medium"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedIds.size})
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </>
-            ) : (
-              <span className="text-[#78716c] text-sm">{leads.length} lead{leads.length !== 1 ? 's' : ''}</span>
-            )}
-          </div>
-          <button
-            onClick={toggleEditMode}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-              editMode
-                ? 'bg-[#f5f1e8] hover:bg-[#e7e2d8] text-[#292524] border border-[#e7e2d8]'
-                : 'bg-[#1c1917] hover:bg-[#292524] text-white'
-            }`}
-          >
-            {editMode ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><Edit2 className="w-3.5 h-3.5" /> Edit</>}
-          </button>
-        </div>
-
-        {/* Delete confirm */}
-        {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white border border-[#e7e2d8] rounded-2xl max-w-sm w-full shadow-xl p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center shrink-0">
-                  <Trash2 className="w-5 h-5 text-rose-600" />
-                </div>
-                <div>
-                  <h3 className="text-[#1c1917] font-semibold">Delete {selectedIds.size} lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
-                  <p className="text-[#78716c] text-sm">This can't be undone.</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowDeleteConfirm(false)} disabled={bulkActionLoading}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-[#f5f1e8] hover:bg-[#e7e2d8] text-[#292524] font-medium text-sm transition-colors">
-                  Cancel
+      <div className="relative inline-block">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!editMode) setStatusPickerFor(open ? null : lead.id);
+          }}
+          disabled={updatingStatusFor === lead.id || !onBulkUpdate}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition hover:opacity-80 disabled:opacity-60 ${t.pill}`}
+        >
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: getHex(cfg.color) }} />
+          {updatingStatusFor === lead.id ? 'Updating…' : cfg.label}
+          {onBulkUpdate && <ChevronDown className="h-3 w-3 opacity-60" />}
+        </button>
+        {open && (
+          <>
+            <div
+              className="fixed inset-0 z-20"
+              onClick={(e) => {
+                e.stopPropagation();
+                setStatusPickerFor(null);
+              }}
+            />
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={`absolute left-0 top-full z-30 mt-1 max-h-56 w-48 overflow-y-auto rounded-xl shadow-lg ${t.menu}`}
+            >
+              {statusOptions.map((s: any) => (
+                <button
+                  key={s.value}
+                  type="button"
+                  onClick={() => handleInlineStatusChange(lead.id, s.value)}
+                  className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition ${t.menuItem}`}
+                >
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
+                  {s.label}
                 </button>
-                <button onClick={handleBulkDelete} disabled={bulkActionLoading}
-                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-medium text-sm transition-colors">
-                  {bulkActionLoading ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
+              ))}
             </div>
-          </div>
-        )}
-
-        <div className="overflow-x-auto">
-                    <table className="w-full min-w-[640px]" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-                            <tr className="border-b border-[#e7e2d8]">
-                {editMode && <th className="px-4 py-3 w-8" />}
-                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('status')}>
-                  Status<SortIcon k="status" />
-                </th>
-                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('name')}>
-                  Client<SortIcon k="name" />
-                </th>
-                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('quote_total')}>
-                  Quote<SortIcon k="quote_total" />
-                </th>
-                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('payment_amount')}>
-                  Payment<SortIcon k="payment_amount" />
-                </th>
-                <th className={`${headerCell} cursor-pointer`} onClick={() => handleSort('scheduled_date')}>
-                  Scheduled<SortIcon k="scheduled_date" />
-                </th>
-                <th className="w-8" />
-              </tr>
-            </thead>
-            <tbody>
-                            {sortedLeads.map((lead) => {
-                const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
-                const statusHex = getHex(statusConfig.color);
-                const statusTextHex = getTextHex(statusConfig.color);
-                const isSelected = selectedIds.has(lead.id);
-
-                return (
-                  <tr
-                    key={lead.id}
-                    className={`border-b border-[#f0ece1] last:border-b-0 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-[#f5f1e8]' : 'hover:bg-[#faf9f5]'
-                    }`}
-                    onClick={() => editMode ? toggleSelect(lead.id) : onSelectLead(lead)}
-                  >
-                    {editMode && (
-                      <td className={cell}>
-                        <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          className="w-4 h-4 rounded text-[#1c1917] focus:ring-[#1c1917]" />
-                      </td>
-                    )}
-                                       <td className={`${cell} relative`}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setStatusPickerFor(statusPickerFor === lead.id ? null : lead.id);
-                        }}
-                        disabled={updatingStatusFor === lead.id}
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium hover:opacity-80 transition disabled:opacity-50 cursor-pointer"
-                        style={{ backgroundColor: `${statusHex}18`, color: statusTextHex }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
-                                             {updatingStatusFor === lead.id ? 'Updating…' : statusConfig.label}
-                        <ChevronDown className="w-3 h-3 opacity-60" />
-                      </button>
-                      {lead.status === 'completed' && (
-                        <div className={`mt-1 text-[11px] font-medium ${lead.review_request_sent_at ? 'text-[#a8a29e]' : 'text-amber-600'}`}>
-                          {lead.review_request_sent_at ? '★ Review sent' : '★ Ask for review'}
-                        </div>
-                      )}
-                      {statusPickerFor === lead.id && (
-                        <>
-                          <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setStatusPickerFor(null); }} />
-                          <div
-                            onClick={(e) => e.stopPropagation()}
-                            className="absolute left-0 top-full mt-1 w-48 bg-white border border-[#e7e2d8] rounded-xl shadow-lg z-30 overflow-hidden max-h-56 overflow-y-auto"
-                          >
-                            {statusOptions.map((s: any) => (
-                              <button
-                                key={s.value}
-                                onClick={() => handleInlineStatusChange(lead.id, s.value)}
-                                className="w-full text-left px-3 py-2 text-sm text-[#292524] hover:bg-[#f5f1e8] transition-colors flex items-center gap-2"
-                              >
-                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
-                                {s.label}
-                              </button>
-                            ))}
-                          </div>
-                        </>
-                      )}
-                    </td>
-                    <td className={cell}>
-                      <div className="text-sm font-semibold text-[#1c1917]">{lead.name}</div>
-                      <div className="text-xs text-[#a8a29e] mt-0.5">
-                        {lead.category ? formatCategory(lead.category) : '—'}
-                        {lead.phone && ` · ${formatPhone(lead.phone)}`}
-                      </div>
-                    </td>
-                                        <td className={`${cell} text-sm`}>
-                      {lead.quote_total ? (
-                        <span className={`font-semibold ${getPaymentDisplay(lead)?.label === 'Paid' ? 'text-emerald-600' : 'text-[#1c1917]'}`}>
-                          {formatCurrency(lead.quote_total)}
-                        </span>
-                      ) : <span className="text-[#d6d3d1]">—</span>}
-                    </td>
-                  
-                                      <td className={cell}>
-                      {(() => {
-                        const p = getPaymentDisplay(lead);
-                        if (!p) return <span className="text-[#d6d3d1]">—</span>;
-                        return (
-                          <div className="space-y-1">
-                            <span
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                              style={{ backgroundColor: `${p.hex}18`, color: p.textHex }}
-                            >
-                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.hex }} />
-                              {p.label}
-                            </span>
-                            <div className="text-xs text-[#57534e]">
-                              <span className="font-semibold text-[#1c1917]">{p.primary}</span>
-                              {p.secondary && <span className="ml-1 text-[#a8a29e]">{p.secondary}</span>}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </td>
-                    <td className={`${cell} text-sm`}>
-                      {lead.scheduled_date ? (
-                        <div>
-                          <div className="text-[#292524]">
-                            {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
-                          </div>
-                          {lead.assigned_to && <div className="text-xs text-[#a8a29e] mt-0.5">{lead.assigned_to}</div>}
-                        </div>
-                      ) : <span className="text-[#d6d3d1]">—</span>}
-                    </td>
-                    <td className="pr-4">
-                      <ChevronRight className="w-4 h-4 text-[#d6d3d1]" />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {leads.length === 0 && (
-          <div className="py-16 text-center text-[#a8a29e] text-sm">No leads to display</div>
+          </>
         )}
       </div>
     );
-  }
+  };
 
-  // ── DARK MODE — unchanged behavior, routed through the app's existing
-  // shared theme tokens, same trimmed 5-column set as light mode. ──
+  const ReviewHint = ({ lead }: { lead: any }) =>
+    lead.status === 'completed' ? (
+      <p className={`mt-1 text-[11px] font-medium ${lead.review_request_sent_at ? t.faint : isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+        {lead.review_request_sent_at ? '★ Review sent' : '★ Ask for review'}
+      </p>
+    ) : null;
+
+  const MoneyCell = ({ lead }: { lead: any }) => {
+    const m = getMoney(lead);
+    if (!m) return <span className={t.faint}>—</span>;
+    return (
+      <div>
+        <p className={`text-sm font-semibold tabular-nums ${m.tone === 'paid' ? t.paidAmount : t.text}`}>{m.amount}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${t[m.tone]}`}>{m.label}</span>
+          {m.note && <span className={`text-[11px] ${t.sub}`}>{m.note}</span>}
+        </div>
+      </div>
+    );
+  };
+
+  const Checkbox = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      onClick={(e) => e.stopPropagation()}
+      className={`h-4 w-4 cursor-pointer rounded ${t.checkbox}`}
+    />
+  );
+
+  const MenuSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <>
+      <div className={`px-3 py-2 text-[11px] font-semibold uppercase tracking-wide ${t.menuHead}`}>{title}</div>
+      <div className="max-h-40 overflow-y-auto">{children}</div>
+    </>
+  );
+
+  /* ── render ── */
+
   return (
-    <div className={`${t.tableBg} border ${t.tableBorderCol} overflow-hidden`}>
-      <div className={`${t.toolbarBg} px-4 py-3 border-b ${t.toolbarBorder} flex items-center justify-between`}>
-        <div className="flex items-center gap-4">
+    <div className={`overflow-hidden rounded-2xl ${t.card}`}>
+      {/* Toolbar */}
+      <div className={`flex items-center justify-between gap-3 border-b px-4 py-3 sm:px-6 ${t.border}`}>
+        <div className="flex min-w-0 items-center gap-3">
           {editMode ? (
             <>
-              <label className={`flex items-center gap-2 ${t.textPrimary} cursor-pointer text-sm font-medium`}>
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === leads.length && leads.length > 0}
-                  onChange={toggleSelectAll}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                />
-                {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select All'}
+              <label className={`flex cursor-pointer items-center gap-2 text-sm font-medium ${t.text}`}>
+                <Checkbox checked={selectedIds.size === leads.length && leads.length > 0} onChange={toggleSelectAll} />
+                {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
               </label>
               {selectedIds.size > 0 && (
                 <div className="relative">
                   <button
+                    type="button"
                     onClick={() => setShowActionsMenu(!showActionsMenu)}
                     disabled={bulkActionLoading}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs transition"
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${t.primaryBtn}`}
                   >
-                    {bulkActionLoading ? 'Working...' : 'Actions'}
-                    <ChevronDown className="w-3.5 h-3.5" />
+                    {bulkActionLoading ? 'Working…' : 'Actions'}
+                    <ChevronDown className="h-3.5 w-3.5" />
                   </button>
                   {showActionsMenu && (
                     <>
                       <div className="fixed inset-0 z-10" onClick={() => setShowActionsMenu(false)} />
-                      <div className={`absolute left-0 top-full mt-1 w-56 ${t.dropdownBg} border ${t.dropdownBorder} shadow-2xl z-20 overflow-hidden`}>
-                        <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>Status</div>
-                        <div className="max-h-40 overflow-y-auto">
-                          {statusOptions.map((s) => (
-                            <button key={s.value} onClick={() => handleBulkStatusChange(s.value)}
-                              className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition flex items-center gap-2`}>
-                              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
-                              {s.label}
-                            </button>
-                          ))}
-                        </div>
-                        {teamMembers.length > 0 && (
-                          <>
-                            <div className={`border-t ${t.toolbarBorder}`} />
-                            <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>Assign To</div>
-                            <div className="max-h-40 overflow-y-auto">
-                              {teamMembers.map((m) => (
-                                <button key={m.id} onClick={() => handleBulkAssign(m.name)}
-                                  className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition`}>
+                      <div className={`absolute left-0 top-full z-20 mt-2 w-56 overflow-hidden rounded-xl shadow-lg ${t.menu}`}>
+                        {onBulkUpdate && (
+                          <MenuSection title="Status">
+                            {statusOptions.map((s: any) => (
+                              <button
+                                key={s.value}
+                                type="button"
+                                onClick={() => handleBulkStatusChange(s.value)}
+                                className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition ${t.menuItem}`}
+                              >
+                                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
+                                {s.label}
+                              </button>
+                            ))}
+                          </MenuSection>
+                        )}
+                        {onBulkUpdate && teamMembers.length > 0 && (
+                          <div className={`border-t ${t.border}`}>
+                            <MenuSection title="Assign">
+                              {teamMembers.map((m: any) => (
+                                <button
+                                  key={m.id ?? m.name}
+                                  type="button"
+                                  onClick={() => handleBulkAssign(m.name)}
+                                  className={`w-full px-3 py-2 text-left text-sm transition ${t.menuItem}`}
+                                >
                                   {m.name}
                                 </button>
                               ))}
-                            </div>
-                          </>
+                            </MenuSection>
+                          </div>
                         )}
-                        {categories.length > 0 && (
-                          <>
-                            <div className={`border-t ${t.toolbarBorder}`} />
-                            <div className={`px-3 py-2 text-xs font-bold ${t.textMuted} uppercase tracking-widest ${isDark ? 'bg-slate-900' : 'bg-gray-50'}`}>Category</div>
-                            <div className="max-h-40 overflow-y-auto">
+                        {onBulkUpdate && categories.length > 0 && (
+                          <div className={`border-t ${t.border}`}>
+                            <MenuSection title="Service">
                               {categories.map((c: any) => (
-                                <button key={c.value} onClick={() => handleBulkCategoryChange(c.value)}
-                                  className={`w-full text-left px-4 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition`}>
+                                <button
+                                  key={c.value}
+                                  type="button"
+                                  onClick={() => handleBulkCategoryChange(c.value)}
+                                  className={`w-full px-3 py-2 text-left text-sm transition ${t.menuItem}`}
+                                >
                                   {c.label}
                                 </button>
                               ))}
-                            </div>
-                          </>
+                            </MenuSection>
+                          </div>
                         )}
-                        <div className={`border-t ${t.toolbarBorder}`} />
-                        <button
-                          onClick={() => { setShowActionsMenu(false); setShowDeleteConfirm(true); }}
-                          className="w-full text-left px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 transition flex items-center gap-2 font-bold"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Delete ({selectedIds.size})
-                        </button>
+                        {onBulkDelete && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowActionsMenu(false);
+                              setShowDeleteConfirm(true);
+                            }}
+                            className={`flex w-full items-center gap-2 border-t px-3 py-2.5 text-left text-sm font-medium text-red-600 transition hover:bg-red-500/10 ${t.border}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Delete ({selectedIds.size})
+                          </button>
+                        )}
                       </div>
                     </>
                   )}
@@ -540,173 +411,193 @@ export default function TableView({
               )}
             </>
           ) : (
-            <span className={`${t.textMuted} text-sm`}>{leads.length} lead{leads.length !== 1 ? 's' : ''}</span>
+            <span className={`text-sm ${t.sub}`}>
+              {leads.length} lead{leads.length !== 1 ? 's' : ''}
+            </span>
           )}
         </div>
         <button
+          type="button"
           onClick={toggleEditMode}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold text-xs transition ${
-            editMode ? `bg-slate-700 hover:bg-slate-600 border-slate-600 ${t.textPrimary} border` : 'bg-blue-600 hover:bg-blue-700 text-white'
-          }`}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${t.secondaryBtn}`}
         >
-          {editMode ? <><X className="w-3.5 h-3.5" /> Cancel</> : <><Edit2 className="w-3.5 h-3.5" /> Edit</>}
+          {editMode ? (
+            <>
+              <X className="h-3.5 w-3.5" /> Done
+            </>
+          ) : (
+            <>
+              <Edit2 className="h-3.5 w-3.5" /> Select
+            </>
+          )}
         </button>
       </div>
 
+      {/* Delete confirm */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className={`${t.dropdownBg} border ${t.dropdownBorder} max-w-sm w-full shadow-2xl`}>
-            <div className="p-5">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 bg-red-500/20 flex items-center justify-center shrink-0">
-                  <Trash2 className="w-5 h-5 text-red-400" />
-                </div>
-                <div>
-                  <h3 className={`${t.textPrimary} font-bold`}>Delete {selectedIds.size} lead{selectedIds.size !== 1 ? 's' : ''}?</h3>
-                  <p className={`${t.textMuted} text-sm`}>This cannot be undone.</p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={() => setShowDeleteConfirm(false)} disabled={bulkActionLoading}
-                  className={`flex-1 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 ${t.textPrimary} font-bold text-sm transition`}>
-                  Cancel
-                </button>
-                <button onClick={handleBulkDelete} disabled={bulkActionLoading}
-                  className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white font-bold text-sm transition">
-                  {bulkActionLoading ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-4 backdrop-blur-sm sm:items-center">
+          <div className={`w-full max-w-sm rounded-2xl p-5 shadow-xl ${t.menu}`}>
+            <h3 className={`text-base font-semibold ${t.text}`}>
+              Delete {selectedIds.size} lead{selectedIds.size !== 1 ? 's' : ''}?
+            </h3>
+            <p className={`mt-1 text-sm ${t.sub}`}>They move to Deleted leads, where you can restore them.</p>
+            <div className="mt-5 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={bulkActionLoading}
+                className={`rounded-xl py-2.5 text-sm font-semibold transition ${t.secondaryBtn}`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={bulkActionLoading}
+                className="rounded-xl bg-red-600 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-50"
+              >
+                {bulkActionLoading ? 'Deleting…' : 'Delete'}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px]" style={{ borderCollapse: 'collapse' }}>
-          <thead className={t.tableHeadBg}>
-                        <tr className={`border-b ${t.tableBorderCol}`}>
-              {editMode && <th className="px-4 py-3 w-8" />}
-              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('status')}>Status<SortIcon k="status" /></th>
-              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('name')}>Client<SortIcon k="name" /></th>
-              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('quote_total')}>Quote<SortIcon k="quote_total" /></th>
-                           <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('payment_amount')}>Payment<SortIcon k="payment_amount" /></th>
-              <th className={`px-4 py-3 lg:py-4 text-left text-xs font-bold ${t.textMuted} uppercase tracking-wider cursor-pointer hover:text-white transition`} onClick={() => handleSort('scheduled_date')}>Scheduled<SortIcon k="scheduled_date" /></th>
-              <th className="w-8" />
-            </tr>
-          </thead>
-          <tbody className={`${t.tableDivide} divide-y`}>
-            {sortedLeads.map((lead) => {
-              const statusConfig = getStatusConfig(lead.status || statusOptions[0]?.value);
-              const statusHex = getHex(statusConfig.color);
+      {leads.length === 0 ? (
+        <div className={`py-16 text-center text-sm ${t.sub}`}>No leads to show.</div>
+      ) : (
+        <>
+          {/* ── Phones: one card per lead ── */}
+          <div className={`divide-y md:hidden ${t.divide}`}>
+            {leads.map((lead) => {
               const isSelected = selectedIds.has(lead.id);
-              const isProject = !!lead.project_id;
-
               return (
-                <tr
+                <div
                   key={lead.id}
-                  className={`transition cursor-pointer ${isSelected ? t.tableRowSelected : isProject ? t.tableRowProject : t.tableRowHover}`}
-                  onClick={() => editMode ? toggleSelect(lead.id) : onSelectLead(lead)}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => (editMode ? toggleSelect(lead.id) : onSelectLead(lead))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') editMode ? toggleSelect(lead.id) : onSelectLead(lead);
+                  }}
+                  className={`flex cursor-pointer gap-3 px-4 py-4 transition ${isSelected ? t.rowSelected : t.rowHover}`}
                 >
                   {editMode && (
-                    <td className="px-4 py-3">
-                      <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(lead.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
-                    </td>
-                  )}
-                                  <td className="px-4 py-3 lg:py-5 relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setStatusPickerFor(statusPickerFor === lead.id ? null : lead.id);
-                      }}
-                      disabled={updatingStatusFor === lead.id}
-                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium hover:opacity-80 transition disabled:opacity-50 cursor-pointer"
-                      style={{ backgroundColor: `${statusHex}26`, color: statusHex }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: statusHex }} />
-                      {updatingStatusFor === lead.id ? 'Updating…' : statusConfig.label}
-                      <ChevronDown className="w-3 h-3 opacity-60" />
-                    </button>
-                    {statusPickerFor === lead.id && (
-                      <>
-                        <div className="fixed inset-0 z-20" onClick={(e) => { e.stopPropagation(); setStatusPickerFor(null); }} />
-                        <div
-                          onClick={(e) => e.stopPropagation()}
-                          className={`absolute left-0 top-full mt-1 w-48 ${t.dropdownBg} border ${t.dropdownBorder} shadow-2xl z-30 overflow-hidden max-h-56 overflow-y-auto`}
-                        >
-                          {statusOptions.map((s: any) => (
-                            <button
-                              key={s.value}
-                              onClick={() => handleInlineStatusChange(lead.id, s.value)}
-                              className={`w-full text-left px-3 py-2 text-sm ${t.textPrimary} ${t.dropdownHover} transition flex items-center gap-2`}
-                            >
-                              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getHex(s.color) }} />
-                              {s.label}
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 lg:py-5">
-                    <div className={`text-sm font-semibold ${t.textPrimary}`}>{lead.name}</div>
-                    <div className={`text-xs ${t.textMuted} mt-0.5`}>
-                      {lead.category ? formatCategory(lead.category) : '—'}
-                      {lead.phone && ` · ${formatPhone(lead.phone)}`}
+                    <div className="pt-0.5">
+                      <Checkbox checked={isSelected} onChange={() => toggleSelect(lead.id)} />
                     </div>
-                  </td>
-                                   <td className="px-4 py-3 lg:py-5 text-sm">
-                    {lead.quote_total ? (
-                      <span className={`font-bold ${getPaymentDisplay(lead)?.label === 'Paid' ? 'text-emerald-500' : t.textPrimary}`}>
-                        {formatCurrency(lead.quote_total)}
-                      </span>
-                    ) : <span className={t.textEmpty}>—</span>}
-                  </td>
-
-                                    <td className="px-4 py-3 lg:py-5">
-                    {(() => {
-                      const p = getPaymentDisplay(lead);
-                      if (!p) return <span className={t.textEmpty}>—</span>;
-                      return (
-                        <div className="space-y-1">
-                          <span
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-                            style={{ backgroundColor: `${p.hex}26`, color: p.hex }}
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: p.hex }} />
-                            {p.label}
-                          </span>
-                          <div className={`text-xs ${t.textPrimary}`}>
-                            <span className="font-bold">{p.primary}</span>
-                            {p.secondary && <span className={`ml-1 ${t.textMuted}`}>{p.secondary}</span>}
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </td>
-                                    <td className="px-4 py-3 lg:py-5 text-sm">
-                    {lead.scheduled_date ? (
-                      <div>
-                        <div className={t.textPrimary}>
-                          {(() => { const [y,m,d] = lead.scheduled_date.split('T')[0].split('-').map(Number); return new Date(y,m-1,d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })()}
-                        </div>
-                        {lead.assigned_to && <div className={`text-xs ${t.textMuted} mt-0.5`}>{lead.assigned_to}</div>}
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className={`truncate text-[15px] font-semibold ${t.text}`}>{lead.name}</p>
+                        <p className={`truncate text-[13px] ${t.sub}`}>
+                          {lead.category ? formatCategory(lead.category) : 'No service'}
+                          {lead.phone && ` · ${formatPhone(lead.phone)}`}
+                        </p>
                       </div>
-                    ) : <span className={t.textEmpty}>—</span>}
-                  </td>
-                  <td className="pr-4">
-                    <ChevronRight className={`w-4 h-4 ${t.textMuted}`} />
-                  </td>
-                </tr>
+                      <StatusPill lead={lead} />
+                    </div>
+                    <div className="mt-2.5 flex items-end justify-between gap-3">
+                      <MoneyCell lead={lead} />
+                      {lead.scheduled_date && (
+                        <p className={`shrink-0 text-right text-[13px] ${t.sub}`}>
+                          {formatShortDate(lead.scheduled_date)}
+                          {lead.assigned_to && <span className="block text-[12px]">{lead.assigned_to}</span>}
+                        </p>
+                      )}
+                    </div>
+                    <ReviewHint lead={lead} />
+                  </div>
+                </div>
               );
             })}
-          </tbody>
-        </table>
-      </div>
+          </div>
 
-      {leads.length === 0 && (
-        <div className={`py-16 text-center ${t.textMuted} text-sm`}>No leads to display</div>
+          {/* ── Tablet and desktop: the table ── */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className={`min-w-full divide-y ${t.divide}`}>
+              <thead className={t.head}>
+                <tr>
+                  {editMode && <th className="w-10 px-6 py-3" />}
+                  <SortHeader label="Lead" k="name" />
+                  <SortHeader label="Contact" className="hidden lg:table-cell" />
+                  <SortHeader label="Status" k="status" />
+                  <SortHeader label="Amount" k="quote_total" />
+                  <SortHeader label="Scheduled" k="scheduled_date" />
+                  <th className="w-10" />
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${t.divide}`}>
+                {leads.map((lead) => {
+                  const isSelected = selectedIds.has(lead.id);
+                  return (
+                    <tr
+                      key={lead.id}
+                      onClick={() => (editMode ? toggleSelect(lead.id) : onSelectLead(lead))}
+                      className={`cursor-pointer transition ${isSelected ? t.rowSelected : t.rowHover}`}
+                    >
+                      {editMode && (
+                        <td className="px-6 py-4">
+                          <Checkbox checked={isSelected} onChange={() => toggleSelect(lead.id)} />
+                        </td>
+                      )}
+
+                      {/* Lead: name + service */}
+                      <td className="px-6 py-4">
+                        <p className={`text-sm font-semibold ${t.text}`}>{lead.name}</p>
+                        {lead.category ? (
+                          <span className={`mt-1 inline-block rounded px-2 py-0.5 text-xs ${t.chip}`}>{formatCategory(lead.category)}</span>
+                        ) : (
+                          <span className={`mt-1 block text-xs ${t.faint}`}>No service</span>
+                        )}
+                      </td>
+
+                      {/* Contact: email over phone */}
+                      <td className="hidden px-6 py-4 text-sm lg:table-cell">
+                        {lead.email || lead.phone ? (
+                          <>
+                            {lead.email && <p className={`max-w-[220px] truncate ${t.text}`}>{lead.email}</p>}
+                            {lead.phone && <p className={t.sub}>{formatPhone(lead.phone)}</p>}
+                          </>
+                        ) : (
+                          <span className={t.faint}>—</span>
+                        )}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        <StatusPill lead={lead} />
+                        <ReviewHint lead={lead} />
+                      </td>
+
+                      {/* Amount + payment state */}
+                      <td className="px-6 py-4">
+                        <MoneyCell lead={lead} />
+                      </td>
+
+                      {/* Scheduled */}
+                      <td className="px-6 py-4 text-sm">
+                        {lead.scheduled_date ? (
+                          <>
+                            <p className={t.text}>{formatShortDate(lead.scheduled_date)}</p>
+                            {lead.assigned_to && <p className={`text-xs ${t.sub}`}>{lead.assigned_to}</p>}
+                          </>
+                        ) : (
+                          <span className={t.faint}>—</span>
+                        )}
+                      </td>
+
+                      <td className="pr-4">
+                        <ChevronRight className={`h-4 w-4 ${t.faint}`} />
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </div>
   );

@@ -632,7 +632,7 @@ export default function ImportTab({ company }: { company: any }) {
                 </table>
               </div>
               <p className="px-5 py-3 text-[11px] text-stone-400">
-                New leads and active jobs go to the top of your board; their original date is kept in the notes. Past
+Each lead keeps the date from your file&rsquo;s date column (or today, if there isn&rsquo;t one), and past
                 customers keep their date. Notes go on the card&rsquo;s request details. Amounts and payments aren&rsquo;t
                 imported.
               </p>

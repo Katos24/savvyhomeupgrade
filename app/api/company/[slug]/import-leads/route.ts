@@ -250,11 +250,11 @@ export async function POST(req: NextRequest, context: { params: Promise<{ slug: 
       const note = String(r.notes ?? '').trim().slice(0, 4000);
       if (note) descParts.push(`Imported note: ${note}`);
       if (rawCat && !category) descParts.push(`Service: ${rawCat}`);
-      const isoDate = typeof r.date === 'string' && DATE_RE.test(r.date) ? r.date : null;
-      // New leads and active jobs land at the top of the board (created now);
-      // their original date is kept in the notes. Past customers keep their
-      // real date so they sort into history.
-      if (isoDate && type !== 'past') descParts.push(`Original date: ${isoDate}`);
+           // The file's date becomes the lead's real date for every import type.
+      // No date (or a date in the future) → dated today.
+      const todayIso = new Date().toISOString().slice(0, 10);
+      const isoDate =
+        typeof r.date === 'string' && DATE_RE.test(r.date) && r.date <= todayIso ? r.date : null;
 
       cols.name.push(name);
       cols.email.push(email);
@@ -265,8 +265,8 @@ export async function POST(req: NextRequest, context: { params: Promise<{ slug: 
       cols.a2.push(clip(r.address_line_2, 200) || null);
       cols.city.push(clip(r.city, 100) || null);
       cols.zip.push(clip(r.zip_code, 20) || null);
-      cols.created.push(type === 'past' ? isoDate : null);
-      cols.source.push(clip(r.lead_source, 80) || null);
+      cols.created.push(isoDate);
+            cols.source.push(clip(r.lead_source, 80) || null);
     });
 
     const toImport = cols.name.length;
