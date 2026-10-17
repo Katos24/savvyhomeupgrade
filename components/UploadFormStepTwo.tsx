@@ -381,7 +381,7 @@ export default function UploadFormStepTwo({
                   type="file"
                   id="step2-file-upload"
                   multiple
-                  accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.csv"
+                  accept="image/*,video/*,.pdf"
                   onChange={onFileChange}
                   className="hidden"
                   disabled={disabled}

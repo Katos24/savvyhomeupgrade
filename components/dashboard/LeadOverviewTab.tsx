@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
   Mail, Phone, MessageSquare, Navigation, Edit2,
   Image as ImageIcon, Lock, History, NotebookPen,
-  Layers, Star, CreditCard, Check,
+  Layers, Star, CreditCard, Check, FileText,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ConvertToProjectButton from '@/components/dashboard/ConvertToProjectButton';
@@ -611,26 +611,83 @@ export default function LeadOverviewTab({
             {lead.description || <span className="text-slate-400 italic">No message from the customer.</span>}
           </div>
 
-          {/* Photos */}
-          {customerPhotos.length > 0 && (
-            <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-                <ImageIcon className="w-3.5 h-3.5" />
-                Photos ({customerPhotos.length})
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {customerPhotos.map((url: string, i: number) => (
-                  <button
-                    key={i}
-                    onClick={() => setLightbox({ photos: customerPhotos, index: i })}
-                    className="w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-xl border border-slate-200 hover:border-slate-400 transition"
-                  >
-                    <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+                  {/* Photos, videos and files from the customer */}
+          {customerPhotos.length > 0 &&
+            (() => {
+              // Sort by file extension. No extension = treat as a photo (older uploads).
+              const pathOf = (u: string) => {
+                try {
+                  return decodeURIComponent(new URL(u).pathname);
+                } catch {
+                  return u;
+                }
+              };
+              const extOf = (u: string) => (pathOf(u).match(/\.([a-z0-9]+)$/i)?.[1] || '').toLowerCase();
+              const VIDEO = ['mp4', 'mov', 'avi', 'webm', 'm4v'];
+              const IMAGE = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif', 'avif'];
+              const isVideo = (u: string) => VIDEO.includes(extOf(u));
+              const isImage = (u: string) => !isVideo(u) && (extOf(u) === '' || IMAGE.includes(extOf(u)));
+              const images = customerPhotos.filter(isImage);
+              const videos = customerPhotos.filter(isVideo);
+              const files = customerPhotos.filter((u: string) => !isImage(u) && !isVideo(u));
+              const fileName = (u: string) => pathOf(u).split('/').pop() || 'File';
+              const onlyPhotos = videos.length === 0 && files.length === 0;
+
+              return (
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
+                    <ImageIcon className="w-3.5 h-3.5" />
+                    {onlyPhotos ? 'Photos' : 'Photos and files'} ({customerPhotos.length})
+                  </p>
+
+                  {(images.length > 0 || videos.length > 0) && (
+                    <div className="flex flex-wrap gap-2">
+                      {images.map((url: string, i: number) => (
+                        <button
+                          key={url}
+                          onClick={() => setLightbox({ photos: images, index: i })}
+                          className="w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-xl border border-slate-200 hover:border-slate-400 transition"
+                        >
+                          <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                      {videos.map((url: string) => (
+                        <video
+                          key={url}
+                          src={url}
+                          controls
+                          preload="metadata"
+                          playsInline
+                          className="w-32 h-20 sm:w-40 sm:h-24 rounded-xl border border-slate-200 bg-black object-cover"
+                        />
+                      ))}
+                    </div>
+                  )}
+
+                  {files.length > 0 && (
+                    <div className={`space-y-2 ${images.length > 0 || videos.length > 0 ? 'mt-2' : ''}`}>
+                      {files.map((url: string) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5 hover:bg-slate-50 transition"
+                        >
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                            <FileText className="h-4 w-4 text-slate-600" />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-slate-900">{fileName(url)}</span>
+                            <span className="block text-xs text-slate-500">{extOf(url).toUpperCase()} file · tap to open</span>
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
         </div>
 
         {/* Details: one list — timing, address, source and custom questions */}

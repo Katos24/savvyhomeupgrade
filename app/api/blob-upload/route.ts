@@ -9,18 +9,13 @@ const MB = 1024 * 1024;
 
 const IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif'];
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/x-msvideo'];
-const DOC_TYPES = [
-  'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'text/csv',
-];
+// Booking form only: customers can send photos, videos and PDFs (e.g. an
+// insurance estimate). No Word/Excel/CSV from the public form.
+const DOC_TYPES = ['application/pdf'];
 
 const VIDEO_EXT = /\.(mp4|mov|avi)$/i;
 const IMAGE_EXT = /\.(jpe?g|png|gif|webp|heic|heif)$/i;
-const DOC_EXT = /\.(pdf|docx?|xlsx?|csv)$/i;
+const DOC_EXT = /\.pdf$/i;
 
 export async function POST(request: Request): Promise<NextResponse> {
   const body = (await request.json()) as HandleUploadBody;
