@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { Inbox, Download, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CardsView from '@/components/dashboard/views/CardsView';
@@ -84,16 +83,7 @@ export default function DashboardLeadsSection({
 }: DashboardLeadsSectionProps) {
   const buttonTextColor = getContrastTextColor(accentColor);
 
-  // The board needs every job for correct column counts and totals,
-  // so it pulls in the remaining pages one after another.
-  useEffect(() => {
-    if (
-      currentView === 'board' &&
-      window.matchMedia('(min-width: 768px)').matches &&
-      pagination.page < pagination.pages
-    ) onLoadMore();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentView, pagination.page, pagination.pages]);
+
 
   return (
     <>

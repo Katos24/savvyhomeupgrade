@@ -194,7 +194,11 @@ export default function LeadsClient({
   // Data fetching
   // -------------------------------------------------------------------------
 
+  // Only the newest request may update the list (older ones finishing late are ignored).
+  const requestSeq = useRef(0);
+
   const fetchLeads = useCallback(async (page = 1, silent = false, overrides: Record<string, string> = {}) => {
+    const mySeq = ++requestSeq.current;
     try {
       if (page === 1 && isInitialLoad) {
         // initial load handled by loader UI
@@ -221,14 +225,17 @@ export default function LeadsClient({
       if (tFilter  && tFilter  !== 'all') params.set('timeFilter', tFilter);
       if (sDate) params.set('startDate', sDate);
       if (eDate) params.set('endDate',   eDate);
-      if (sKey)  { params.set('sort', sKey); params.set('sortDir', sDir); }
+         if (sKey)  { params.set('sort', sKey); params.set('sortDir', sDir); }
+      // Board needs every matching lead at once, not 20 at a time.
+      if (currentView === 'board') params.set('all', 'true');
 
       const res = await fetch(`/api/company/${company.slug}/leads?${params}`, {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', Pragma: 'no-cache' },
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
+          const data = await res.json();
+      if (mySeq !== requestSeq.current) return; // a newer request replaced this one
       const fresh = (data.leads || []).filter((l: any) => !l.deleted);
       setAllLeads(prev => (page === 1 ? fresh : [...prev, ...fresh]));
       setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
@@ -243,8 +250,8 @@ export default function LeadsClient({
     setIsInitialLoad(false);
     setIsRefreshing(false);
   }
-  }, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir]);
-
+  }, [company.slug, isInitialLoad, searchQuery, filterStatus, filterCategory, filterAssignee, filterPayment, timeFilter, startDate, endDate, sortKey, sortDir, currentView]);
+  
     useEffect(() => {
     fetchLeads(1);
   }, []);

@@ -681,6 +681,27 @@ export default function BillingSection({
   const depositCollected = depositPayments.reduce((s: number, p: any) => s + netOf(p), 0);
   const depositRemaining = Math.max(depositAmount - depositCollected, 0);
 
+  // What was actually paid toward the deposit. Deposit terms are a % of the
+  // CURRENT quote, so if the quote changed after the deposit was paid, the
+  // two differ. The difference is already in the balance (remaining).
+  const depositPaidShown = depositPaid && depositCollected > 0.004 ? depositCollected : depositAmount;
+  const depositDiff = depositPaid ? Math.round((depositAmount - depositPaidShown) * 100) / 100 : 0;
+  // Quote total when the deposit was paid (saved on the payment row).
+  const depositQuoteTotal = (() => {
+    const p = depositPayments.find((x: any) => Number(x.amount) > 0 && Number(x.invoiced_total) > 0);
+    return p ? Number(p.invoiced_total) : null;
+  })();
+  const depositChangeNote =
+    Math.abs(depositDiff) < 0.01
+      ? null
+      : depositDiff > 0
+      ? depositQuoteTotal && total > depositQuoteTotal
+        ? `Paid on the original ${fmt(depositQuoteTotal)} quote. The ${fmt(total - depositQuoteTotal)} added since is in the balance.`
+        : 'Paid before the quote went up. The added amount is in the balance.'
+      : depositQuoteTotal && total < depositQuoteTotal
+      ? `Paid on the original ${fmt(depositQuoteTotal)} quote. The quote went down since, so the extra counts toward the balance.`
+      : 'Paid before the quote went down. The extra counts toward the balance.';
+
   // Balance card amount: the projected balance until the deposit is in,
   // then what's actually still owed (was always the full balance, even
   // after partial balance payments).
@@ -947,7 +968,7 @@ export default function BillingSection({
                     depositPaid ? 'text-lg sm:text-xl text-slate-500' : 'text-xl sm:text-2xl text-slate-900'
                   }`}
                 >
-                  {fmt(depositAmount)}
+                                  {fmt(depositPaidShown)}
                 </div>
                 {!depositPaid && depositCollected > 0 && (
                   <div className="text-xs text-slate-600 font-medium mt-0.5">
@@ -957,7 +978,10 @@ export default function BillingSection({
                 {depositPaid ? (
                   // Paid: collapse to a single line — due dates and sending no longer matter
                                     <div className="text-xs text-emerald-700 font-medium mt-1">
-                    ✓ Paid {fmtTimestampDate(lead?.deposit_paid_at) || ''}
+                                      ✓ Paid {fmtTimestampDate(lead?.deposit_paid_at) || ''}
+                    {depositChangeNote && (
+                      <span className="mt-1 block font-normal text-slate-500">{depositChangeNote}</span>
+                    )}
                   </div>
                 ) : (
                   <div className="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -1244,8 +1268,8 @@ export default function BillingSection({
                     className="font-semibold text-slate-400 flex items-center gap-1 cursor-not-allowed"
                   >
                     <Lock className="w-3 h-3" />
-                    {hasDepositTerms
-                      ? `${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)} (${fmt(depositAmount)})`
+                                       {hasDepositTerms
+                      ? `${depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)} (${depositPaid ? `paid ${fmt(depositPaidShown)}` : fmt(depositAmount)})`
                       : 'Locked'}
                   </span>
                 ) : (

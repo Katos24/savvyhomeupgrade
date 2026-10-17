@@ -75,9 +75,13 @@ export async function GET(request: Request, { params }: Props) {
     const startDate = url.searchParams.get('startDate')?.trim() || '';
     const endDate = url.searchParams.get('endDate')?.trim() || '';
 
-    const calendarAll = url.searchParams.get('calendarAll') === 'true';
+        const calendarAll = url.searchParams.get('calendarAll') === 'true';
     const CALENDAR_SAFETY_LIMIT = 2000;
-    const effectiveLimit = calendarAll ? CALENDAR_SAFETY_LIMIT : limit;
+    // Board view: every matching lead in one request (columns need all of them).
+    const boardAll = url.searchParams.get('all') === 'true';
+    const BOARD_SAFETY_LIMIT = 1000;
+    const effectiveLimit = calendarAll ? CALENDAR_SAFETY_LIMIT : boardAll ? BOARD_SAFETY_LIMIT : limit;
+    const effectiveOffset = boardAll ? 0 : offset;
 
     // Global company-wide stats (revenue/active jobs/etc.) are the same
     // regardless of search/filters, and only the pre-split combined
@@ -197,8 +201,8 @@ export async function GET(request: Request, { params }: Props) {
             (${assignee} = 'unassigned' AND p.assigned_to IS NULL) OR
             p.assigned_to = ${assignee}
           )
-        ORDER BY p.scheduled_time ASC NULLS LAST
-        LIMIT ${limit} OFFSET ${offset}
+            ORDER BY p.scheduled_time ASC NULLS LAST, l.id ASC
+        LIMIT ${effectiveLimit} OFFSET ${effectiveOffset}
       `;
     } else if (calendarAll) {
       leadsPromise = sql`
@@ -278,8 +282,8 @@ export async function GET(request: Request, { params }: Props) {
           )
           AND l.created_at >= ${fromISO}
           AND l.created_at <= ${toISO}
-        ORDER BY ${sortColumn ? sql.unsafe(`${sortColumn} ${sortDirection}, l.created_at DESC`) : sql.unsafe('l.created_at DESC')}
-        LIMIT ${limit} OFFSET ${offset}
+             ORDER BY ${sortColumn ? sql.unsafe(`${sortColumn} ${sortDirection}, l.created_at DESC, l.id DESC`) : sql.unsafe('l.created_at DESC, l.id DESC')}
+        LIMIT ${effectiveLimit} OFFSET ${effectiveOffset}
       `;
     }
 
