@@ -101,8 +101,10 @@ p.payment_due_date,
         l.lead_source,
         l.preferred_date,
         l.preferred_time,
+        COALESCE((SELECT SUM(pm.stripe_fee) FROM payments pm WHERE pm.project_id = p.id), 0) AS stripe_fees,
+        COALESCE((SELECT SUM(pm.platform_fee) FROM payments pm WHERE pm.project_id = p.id), 0) AS platform_fees,
         CASE WHEN p.id IS NOT NULL THEN 'Project' ELSE 'Lead' END as type
-      FROM leads l
+              FROM leads l
       LEFT JOIN projects p ON l.id = p.lead_id
       WHERE l.company_id = $1
         AND l.deleted = false
@@ -187,6 +189,8 @@ const qbHeaders = [
   'Payment Status',
   'Payment Date',
   'Payment Method',
+  'Stripe Fees',
+  'Lead2Project Fee',
   'Service Address',
   'City',
   'Zip',
@@ -215,6 +219,11 @@ for (const lead of invoicedLeads) {
   const paymentMethod = lead.payment_method || '';
   const amountPaid = lead.payment_amount ? parseFloat(lead.payment_amount).toFixed(2) : '';
   const totalAmount = lead.quote_total ? parseFloat(lead.quote_total).toFixed(2) : '';
+  // Card fees for this invoice (blank when none, e.g. cash, check, pay link).
+  const stripeFeesNum = parseFloat(lead.stripe_fees || '0');
+  const platformFeesNum = parseFloat(lead.platform_fees || '0');
+  const stripeFees = stripeFeesNum > 0 ? stripeFeesNum.toFixed(2) : '';
+  const platformFees = Math.abs(platformFeesNum) > 0.004 ? platformFeesNum.toFixed(2) : '';
 
   // Parse line items from quote_data
   let lineItems: any[] = [];
@@ -244,7 +253,7 @@ for (const lead of invoicedLeads) {
   escape(amountPaid),
   escape(paymentStatus),
   escape(paymentDate),
-  escape(paymentMethod),
+escape(paymentMethod), escape(stripeFees), escape(platformFees),
   escape(serviceAddress),
   escape(city),
   escape(zip),
@@ -272,7 +281,7 @@ for (const lead of invoicedLeads) {
   escape(amountPaid),
   escape(paymentStatus),
   escape(paymentDate),
-  escape(paymentMethod),
+escape(paymentMethod), escape(stripeFees), escape(platformFees),
   escape(serviceAddress),
   escape(city),
   escape(zip),
@@ -302,7 +311,7 @@ for (const lead of invoicedLeads) {
         escape(amountPaid),
         escape(paymentStatus),
         escape(paymentDate),
-        escape(paymentMethod),
+escape(paymentMethod), escape(stripeFees), escape(platformFees),
         escape(serviceAddress),
         escape(city),
         escape(zip),
@@ -344,7 +353,9 @@ for (const lead of invoicedLeads) {
         'Payment Due Date',
         'Payment Received Date',
         'Refunded Amount',
-        'Refund Date',
+                'Refund Date',
+        'Card Fees (Stripe)',
+        'Lead2Project Fee',
         'Created Date',
         'Lead Source',
                'How Soon',
@@ -412,7 +423,9 @@ escape(lead.name || ''),
           escape(lead.payment_date ? new Date(lead.payment_date).toLocaleDateString() : ''),
           escape(lead.refunded_amount ? `$${parseFloat(lead.refunded_amount).toFixed(2)}` : ''),
           escape(lead.refunded_at ? new Date(lead.refunded_at).toLocaleDateString() : ''),
-          escape(new Date(lead.created_at).toLocaleDateString()),
+          escape(parseFloat(lead.stripe_fees || '0') > 0 ? `$${parseFloat(lead.stripe_fees).toFixed(2)}` : ''),
+          escape(Math.abs(parseFloat(lead.platform_fees || '0')) > 0.004 ? `$${parseFloat(lead.platform_fees).toFixed(2)}` : ''),
+                    escape(new Date(lead.created_at).toLocaleDateString()),
           escape(lead.lead_source || ''),
                     escape(timelineLabel(lead.preferred_date) || ''),
           escape(bestTimesLabel(lead.preferred_time) || ''),

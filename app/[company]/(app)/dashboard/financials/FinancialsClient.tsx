@@ -108,7 +108,16 @@ export default function FinancialsClient({
 
   const totalQuoted = useMemo(() => withMoney.reduce((s, p) => s + p._total, 0), [withMoney]);
   const totalCollected = useMemo(() => withMoney.reduce((s, p) => s + p._collected, 0), [withMoney]);
-  const owedJobs = useMemo(() => withMoney.filter((p) => p._owed > 0.005), [withMoney]);
+  // Card fees for the same jobs and period as "Collected".
+  const totalStripeFees = useMemo(
+    () => periodFiltered.reduce((s: number, p: any) => s + (parseFloat(p.stripe_fees) || 0), 0),
+    [periodFiltered]
+  );
+  const totalPlatformFees = useMemo(
+    () => periodFiltered.reduce((s: number, p: any) => s + (parseFloat(p.platform_fees) || 0), 0),
+    [periodFiltered]
+  );
+    const owedJobs = useMemo(() => withMoney.filter((p) => p._owed > 0.005), [withMoney]);
   const totalOwed = useMemo(() => owedJobs.reduce((s, p) => s + p._owed, 0), [owedJobs]);
   const notInvoiced = useMemo(() => owedJobs.filter((p) => !p._invoiced), [owedJobs]);
   const notInvoicedTotal = useMemo(() => notInvoiced.reduce((s, p) => s + p._owed, 0), [notInvoiced]);
@@ -336,7 +345,9 @@ export default function FinancialsClient({
           <FinancialsOverview
             isDark={isDark}
             totalOwed={totalOwed}
-            totalCollected={totalCollected}
+                       totalCollected={totalCollected}
+            stripeFees={totalStripeFees}
+            platformFees={totalPlatformFees}
             totalQuoted={totalQuoted}
             overdueTotal={overdueTotal}
             owedJobsCount={owedJobs.length}

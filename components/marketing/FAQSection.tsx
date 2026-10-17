@@ -1,5 +1,6 @@
 'use client';
 
+import { platformFeeEnabled, PLATFORM_FEE_LABEL } from '@/lib/stripe/platformFee';
 import { Eyebrow } from './marketingUI';
 import { useState } from 'react';
 import { ChevronDown, ArrowRight } from 'lucide-react';
@@ -7,7 +8,9 @@ import Link from 'next/link';
 // ⚠️ Fill these in before going live — keep them exactly true.
 // If you charge a platform fee on card payments, describe it here (e.g. "plus a 1% Lead2Project fee").
 // Leave empty if you don't charge one.
-const PLATFORM_FEE_NOTE = '';
+const PLATFORM_FEE_NOTE = platformFeeEnabled()
+  ? `Card payments also include a Lead2Project fee of ${PLATFORM_FEE_LABEL} per payment, refunded if you refund the payment.`
+  : '';
 
 const FAQS: { q: string; a: string; link?: { href: string; label: string } }[] = [
   {

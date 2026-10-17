@@ -71,7 +71,11 @@ export default async function FinancialsPage({
       l.id as lead_id,
             i.deposit_sent_at as inv_deposit_sent_at,
       i.sent_at as inv_sent_at,
-      i.deposit_due_date
+          i.deposit_due_date,
+      -- Card fees on this job's payments (refund rows carry negative platform_fee,
+      -- so this is the net Lead2Project fee). NULLs (no fee / manual payments) count as 0.
+      COALESCE((SELECT SUM(pm.stripe_fee) FROM payments pm WHERE pm.project_id = p.id), 0) AS stripe_fees,
+      COALESCE((SELECT SUM(pm.platform_fee) FROM payments pm WHERE pm.project_id = p.id), 0) AS platform_fees
     FROM projects p
     JOIN leads l ON p.lead_id = l.id
     LEFT JOIN invoices i ON i.project_id = p.id

@@ -93,25 +93,44 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
 
       // Fetch card brand/last4 once at payment time so BillingSection can
       // display it without a live Stripe call on every page load.
-      let cardBrand: string | null = null;
+           let cardBrand: string | null = null;
       let cardLast4: string | null = null;
+      // Lead2Project's fee on this payment (null when no fee was taken).
+           let platformFee: number | null = null;
+      let applicationFeeId: string | null = null;
+      // Stripe's processing fee on this payment (from the charge's balance transaction).
+      let stripeFee: number | null = null;
       try {
         const intent = await stripe.paymentIntents.retrieve(
           session.payment_intent as string,
-          { expand: ['latest_charge'] },
-          { stripeAccount: eventAccountId }
+          { expand: ['latest_charge.balance_transaction'] },
+                    { stripeAccount: eventAccountId }
         );
         const charge = (intent as any).latest_charge;
         const cardDetails = charge?.payment_method_details?.card;
-        if (cardDetails) {
+                if (cardDetails) {
           cardBrand = cardDetails.brand;
           cardLast4 = cardDetails.last4;
         }
+        if (charge?.application_fee_amount) platformFee = charge.application_fee_amount / 100;
+        // fee_details splits the fee into Stripe's part and ours; keep only Stripe's.
+        const feeDetails: any[] = charge?.balance_transaction?.fee_details || [];
+        const stripeFeeCents = feeDetails
+          .filter((d) => d.type === 'stripe_fee')
+          .reduce((s, d) => s + (d.amount || 0), 0);
+        if (stripeFeeCents > 0) stripeFee = stripeFeeCents / 100;
+                if (charge?.application_fee) {
+          applicationFeeId = typeof charge.application_fee === 'string' ? charge.application_fee : charge.application_fee.id;
+        }
       } catch (err: any) {
         console.error('Failed to retrieve card details for receipt:', err.message);
-        // Non-fatal — payment still gets marked paid even if this fails
+               // Non-fatal — payment still gets marked paid even if this fails
       }
-
+      // If the charge lookup failed, fall back to the fee we put on the session.
+      if (platformFee === null) {
+        const metaFee = Number(session.metadata?.platformFeeCents ?? 0);
+        if (metaFee > 0) platformFee = metaFee / 100;
+      }
       // A session created for a balance is smaller than quote_total, so
       // classify rather than assuming this settles the job. The job's
       // deposit terms decide this, not the amount — derived here rather
@@ -141,7 +160,8 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
      INSERT INTO payments (
   project_id, company_id, amount, invoiced_total, method, kind, paid_on,
   stripe_payment_intent_id, stripe_checkout_session_id,
-  card_brand, card_last4, recorded_by, invoice_id
+    card_brand, card_last4, recorded_by, invoice_id,
+  platform_fee, stripe_application_fee_id, stripe_fee
 ) VALUES (
   ${parseInt(projectId)},
   ${projectRow.company_id},
@@ -155,7 +175,10 @@ const amountPaid = session.amount_total ? session.amount_total / 100 : null;
   ${cardBrand},
   ${cardLast4},
   'Stripe',
-  (SELECT id FROM invoices WHERE project_id = ${parseInt(projectId)})
+  (SELECT id FROM invoices WHERE project_id = ${parseInt(projectId)}),
+   ${platformFee},
+  ${applicationFeeId},
+  ${stripeFee}
 )
 ON CONFLICT (stripe_payment_intent_id) DO NOTHING
 RETURNING id
@@ -234,6 +257,192 @@ RETURNING id
       break;
     }
 
+      // ── Stripe often attaches the fee breakdown (balance transaction) and our
+    // application fee to the charge a moment AFTER checkout.session.completed.
+    // When it does, it sends charge.updated: fill in whatever the payment row
+    // is still missing. Only fills empty fields, so it's safe to run any number of times.
+    case 'charge.updated': {
+      const eventCharge = event.data.object as any;
+      const eventAccountId = (event as any).account;
+      const piId = eventCharge.payment_intent;
+      if (!piId || !eventAccountId) break;
+
+      // Only for payments we recorded (skips charges from anything else on their Stripe account).
+      const existing = await sql`
+        SELECT id FROM payments
+        WHERE stripe_payment_intent_id = ${piId}
+          AND kind <> 'refund'
+          AND (stripe_fee IS NULL OR stripe_application_fee_id IS NULL)
+        LIMIT 1
+      `;
+      if (!existing[0]) break;
+
+      let fullCharge: any;
+      try {
+        fullCharge = await stripe.charges.retrieve(
+          eventCharge.id,
+          { expand: ['balance_transaction'] },
+          { stripeAccount: eventAccountId }
+        );
+      } catch (err: any) {
+        console.error('charge.updated: could not load charge', eventCharge.id, err.message);
+        break;
+      }
+
+      const details: any[] = fullCharge?.balance_transaction?.fee_details || [];
+      const sCents = details.filter((d) => d.type === 'stripe_fee').reduce((s, d) => s + (d.amount || 0), 0);
+      const sFee = sCents > 0 ? sCents / 100 : null;
+      const appFeeId = fullCharge?.application_fee
+        ? typeof fullCharge.application_fee === 'string'
+          ? fullCharge.application_fee
+          : fullCharge.application_fee.id
+        : null;
+      const pFee = fullCharge?.application_fee_amount ? fullCharge.application_fee_amount / 100 : null;
+
+      if (sFee === null && appFeeId === null && pFee === null) break;
+
+      await sql`
+        UPDATE payments
+        SET stripe_fee = COALESCE(stripe_fee, ${sFee}),
+            stripe_application_fee_id = COALESCE(stripe_application_fee_id, ${appFeeId}),
+            platform_fee = COALESCE(platform_fee, ${pFee})
+        WHERE id = ${existing[0].id}
+      `;
+      console.log(`charge.updated: fees filled for payment ${existing[0].id} (stripe ${sFee}, ours ${pFee}, fee ${appFeeId})`);
+      break;
+    }
+
+     // ── Chargebacks. Created: flag the job (money not lost yet). Closed + lost:
+    // record a negative payment row like a refund so totals stay right.
+    // Won / inquiry closed: clear the flag. Safe to receive more than once.
+    case 'charge.dispute.created':
+    case 'charge.dispute.closed': {
+      const dispute = event.data.object as any;
+      const eventAccountId = (event as any).account;
+
+      let piId: string | null =
+        typeof dispute.payment_intent === 'string' ? dispute.payment_intent : dispute.payment_intent?.id ?? null;
+      if (!piId && dispute.charge && eventAccountId) {
+        try {
+          const ch = await stripe.charges.retrieve(
+            typeof dispute.charge === 'string' ? dispute.charge : dispute.charge.id,
+            {},
+            { stripeAccount: eventAccountId }
+          );
+          piId = (ch.payment_intent as string) || null;
+        } catch (err: any) {
+          console.error('dispute: could not load charge', err.message);
+          return NextResponse.json({ error: 'dispute_charge_lookup_failed' }, { status: 500 });
+        }
+      }
+      if (!piId) break;
+
+      const disputeRows = await sql`
+        SELECT pm.id, pm.project_id, pm.company_id, pm.invoiced_total, c.stripe_connect_account_id
+        FROM payments pm
+        JOIN companies c ON c.id = pm.company_id
+        WHERE pm.stripe_payment_intent_id = ${piId}
+          AND pm.kind <> 'refund'
+        LIMIT 1
+      `;
+      const target = disputeRows[0];
+           if (!target) {
+        // If this charge came from one of our checkout links, the payment row
+        // just hasn't been saved yet (dispute arrived before
+        // checkout.session.completed). Return 500 so Stripe retries shortly.
+        // Charges that aren't ours are skipped.
+        try {
+          const sessions = await stripe.checkout.sessions.list(
+            { payment_intent: piId, limit: 1 },
+            { stripeAccount: eventAccountId }
+          );
+          if (sessions.data[0]?.metadata?.projectId) {
+            console.log(`Dispute ${dispute.id}: payment for ${piId} not recorded yet, asking Stripe to retry`);
+            return NextResponse.json({ error: 'payment_not_recorded_yet' }, { status: 500 });
+          }
+        } catch (err: any) {
+          console.error(`Dispute ${dispute.id}: could not check session for ${piId}`, err.message);
+          return NextResponse.json({ error: 'dispute_session_lookup_failed' }, { status: 500 });
+        }
+        console.log(`Dispute ${dispute.id}: no matching payment for ${piId}, not ours`);
+        break;
+      }
+      if (target.stripe_connect_account_id !== eventAccountId) {
+        console.error(`Dispute ${dispute.id}: account mismatch (${eventAccountId})`);
+        break;
+      }
+
+      if (event.type === 'charge.dispute.created') {
+        await sql`UPDATE projects SET dispute_status = 'open' WHERE id = ${target.project_id}`;
+        console.log(`Dispute ${dispute.id} opened on project ${target.project_id}`);
+        break;
+      }
+
+      // charge.dispute.closed
+      if (dispute.status !== 'lost') {
+        // 'won' keeps a record; 'warning_closed' (inquiry ended) clears the flag.
+        await sql`
+          UPDATE projects
+          SET dispute_status = ${dispute.status === 'won' ? 'won' : null}
+          WHERE id = ${target.project_id}
+        `;
+        console.log(`Dispute ${dispute.id} closed: ${dispute.status}`);
+        break;
+      }
+
+      const lostAmount = (dispute.amount || 0) / 100;
+      if (lostAmount > 0) {
+        const insertedLoss = await sql`
+          INSERT INTO payments (
+            project_id, company_id, amount, invoiced_total, method, kind, paid_on,
+            stripe_dispute_id, note, recorded_by, reversed_payment_id, invoice_id
+          ) VALUES (
+            ${target.project_id},
+            ${target.company_id},
+            ${-Math.abs(lostAmount)},
+            ${target.invoiced_total},
+            'stripe',
+            'refund',
+            (NOW() AT TIME ZONE COALESCE((SELECT timezone FROM companies WHERE id = ${target.company_id}), 'America/New_York'))::date,
+            ${dispute.id},
+            ${`Chargeback lost (dispute ${dispute.id})`},
+            'Stripe',
+            ${target.id},
+            (SELECT id FROM invoices WHERE project_id = ${target.project_id})
+          )
+          ON CONFLICT (stripe_dispute_id) DO NOTHING
+          RETURNING id
+        `;
+
+        if (insertedLoss.length > 0) {
+          const afterLoss = await sql`
+            SELECT COALESCE(payment_amount, 0) AS net_paid, quote_total, deposit_type, deposit_value
+            FROM projects WHERE id = ${target.project_id} LIMIT 1
+          `;
+          const netPaidAfterLoss = parseFloat(afterLoss[0]?.net_paid || '0');
+          const lossDepositAmount = getDepositAmount({
+            total: Number(afterLoss[0]?.quote_total) || 0,
+            depositType: afterLoss[0]?.deposit_type,
+            depositValue: afterLoss[0]?.deposit_value,
+          });
+          const depositOk = netPaidAfterLoss > 0 && (lossDepositAmount <= 0 || netPaidAfterLoss >= lossDepositAmount);
+
+          await sql`
+            UPDATE projects
+            SET payment_status  = ${netPaidAfterLoss <= 0 ? 'refunded' : 'partially_refunded'},
+                refunded_amount = COALESCE(refunded_amount, 0) + ${lostAmount},
+                refunded_at     = NOW(),
+                deposit_paid_at = CASE WHEN ${!depositOk}::boolean THEN NULL ELSE deposit_paid_at END
+            WHERE id = ${target.project_id}
+          `;
+        }
+      }
+
+      await sql`UPDATE projects SET dispute_status = 'lost' WHERE id = ${target.project_id}`;
+      console.log(`Dispute ${dispute.id} lost: ${lostAmount} removed from project ${target.project_id}`);
+      break;
+    }
+
    case 'checkout.session.expired': {
       const session = event.data.object as any;
       console.log('Checkout session expired:', session.id, 'project:', session.metadata?.projectId);
@@ -303,8 +512,36 @@ RETURNING id
         break;
       }
  
+      // ── Give back Lead2Project's fee in proportion to what was refunded ──
+      // Compares "fee that should be refunded by now" with what Stripe says is
+      // already refunded, so retries and repeat events never refund it twice.
+      const feeId = typeof charge.application_fee === 'string' ? charge.application_fee : charge.application_fee?.id;
+      if (feeId && charge.amount > 0) {
+        try {
+          const fee = await stripe.applicationFees.retrieve(feeId);
+          const refundedCents = settledRefunds.reduce((s: number, r: any) => s + (r.amount || 0), 0);
+          const shouldBeRefunded = Math.min(
+            fee.amount,
+            Math.round((fee.amount * Math.min(refundedCents, charge.amount)) / charge.amount)
+          );
+          const toRefund = shouldBeRefunded - (fee.amount_refunded || 0);
+          if (toRefund > 0) {
+            await stripe.applicationFees.createRefund(
+              feeId,
+              { amount: toRefund },
+              { idempotencyKey: `fee-refund-${feeId}-${shouldBeRefunded}` }
+            );
+            console.log(`Refunded ${toRefund} cents of platform fee ${feeId} for charge ${charge.id}`);
+          }
+        } catch (err: any) {
+          console.error('Platform fee refund failed for charge', charge.id, err.message);
+          // 500 so Stripe retries; the refund rows below are safe to retry too.
+          return NextResponse.json({ error: 'fee_refund_failed' }, { status: 500 });
+        }
+      }
+
       const refundIds = settledRefunds.map((r) => r.id);
-      const existingRows = await sql`
+            const existingRows = await sql`
         SELECT stripe_refund_id
         FROM payments
         WHERE stripe_refund_id = ANY(${refundIds})
@@ -320,8 +557,13 @@ RETURNING id
  
       let recordedTotal = 0;
       for (const refund of newRefunds) {
-        const refundAmount = (refund.amount || 0) / 100;
+               const refundAmount = (refund.amount || 0) / 100;
         if (refundAmount <= 0) continue;
+        // The share of our fee given back for this refund (negative), if a fee was taken.
+        const refundFee =
+          charge.application_fee_amount && charge.amount > 0
+            ? -Math.round((charge.application_fee_amount * (refund.amount || 0)) / charge.amount) / 100
+            : null;
  
         // Negative row so SUM(amount) reflects what was actually kept.
         // ON CONFLICT covers the race where two events for the same charge
@@ -329,7 +571,8 @@ RETURNING id
                 const inserted = await sql`
          INSERT INTO payments (
   project_id, company_id, amount, invoiced_total, method, kind, paid_on,
-  stripe_refund_id, note, recorded_by, reversed_payment_id, invoice_id
+   stripe_refund_id, note, recorded_by, reversed_payment_id, invoice_id,
+  platform_fee
 ) VALUES (
   ${refundProjectId},
   ${refundCompanyId},
@@ -342,7 +585,8 @@ RETURNING id
   ${`Refund ${refund.id} against intent ${paymentIntentId}`},
   'Stripe',
   ${refundTarget.id},
-  (SELECT id FROM invoices WHERE project_id = ${refundProjectId})
+   (SELECT id FROM invoices WHERE project_id = ${refundProjectId}),
+  ${refundFee}
 )
 ON CONFLICT (stripe_refund_id) DO NOTHING
 RETURNING id

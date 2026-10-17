@@ -1,5 +1,6 @@
 import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
+import { platformFeeEnabled, PLATFORM_FEE_RATE, PLATFORM_FEE_CAP_CENTS } from '@/lib/stripe/platformFee';
 
 export const metadata = {
   title: 'Terms of Service | Lead2Project',
@@ -16,8 +17,10 @@ export default function TermsPage() {
           <div className="mb-12">
             <p className="text-xs font-black uppercase tracking-widest text-emerald-400 mb-4">Legal</p>
             <h1 className="text-4xl font-black text-white tracking-tight mb-3">Terms of Service</h1>
-            <p className="text-slate-400 font-bold">Last updated: September 30, 2026</p>
-          </div>
+            <p className="text-slate-400 font-bold">
+              Last updated: {platformFeeEnabled() ? 'November 16, 2026' : 'September 30, 2026'}
+            </p>
+                      </div>
 
           <div className="space-y-10 text-slate-400">
 
@@ -93,8 +96,24 @@ export default function TermsPage() {
                     <ul className="list-disc list-inside space-y-1.5 ml-3">
                       <li>Customer payments are processed by Stripe and deposited directly into your Stripe account. Lead2Project never holds or controls your funds.</li>
                       <li>You are the merchant for these payments. You can refund your customers through the Service or your Stripe account, and you are responsible for your own refund policy, prices, taxes, disputes, and chargebacks, and for complying with Stripe&rsquo;s rules.</li>
-                      <li>Stripe&rsquo;s processing fees are charged by Stripe to your Stripe account. Lead2Project does not currently charge an additional fee on customer payments; if that changes, we will notify you at least 30 days in advance.</li>
-                      <li>Payments you record manually (cash, check, Zelle, Venmo, and similar) are for your own record-keeping. Lead2Project does not process or verify them.</li>
+                      <li>Stripe&rsquo;s processing fees are charged by Stripe to your Stripe account.</li>
+                      {platformFeeEnabled() ? (
+                        <li>
+                          <span className="font-black text-white">Lead2Project platform fee.</span> For each card payment you collect
+                          through the Service, Lead2Project charges a platform fee of {PLATFORM_FEE_RATE * 100}% of the payment amount, up
+                          to a maximum of ${PLATFORM_FEE_CAP_CENTS / 100} per payment. Stripe deducts this fee from the payment when it is
+                          made, in addition to Stripe&rsquo;s own processing fees. Your customer is not charged extra. If you refund all or
+                          part of a payment, we refund the matching share of our fee. Payments through pay links (such as Venmo, Zelle,
+                          Cash App or PayPal) and payments you record manually are not subject to this fee. We will notify you at least 30
+                          days before any change to this fee.
+                        </li>
+                      ) : (
+                        <li>
+                          Lead2Project does not currently charge an additional fee on customer payments; if that changes, we will notify
+                          you at least 30 days in advance.
+                        </li>
+                      )}
+                                            <li>Payments you record manually (cash, check, Zelle, Venmo, and similar) are for your own record-keeping. Lead2Project does not process or verify them.</li>
                       <li>We are not responsible for Stripe outages, payout delays, account holds, or decisions Stripe makes about your account.</li>
                     </ul>
                   </div>

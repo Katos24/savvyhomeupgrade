@@ -1,7 +1,7 @@
 'use client';
 
 import {
-  AlertCircle, Check, X, ChevronDown, Eye, User, Mail, Phone, MapPin, Calendar, ImageIcon, Megaphone,
+  AlertCircle, Check, X, Eye, User, Mail, Phone, MapPin, Calendar, ImageIcon, Megaphone,
   Lock, ArrowUpRight, Play, Link2, ExternalLink, Loader2, FileText, Tag,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -32,6 +32,8 @@ function tokens(isDark: boolean) {
         sticky: 'border-white/10 bg-[#0f1420]/95',
         drawer: 'border-white/10 bg-[#0b0f17] text-slate-100',
         drawerBody: 'bg-black/20',
+        iconOn: 'bg-sky-400/15 text-sky-300',
+        stepBadge: 'bg-white text-slate-900',
       }
     : {
         text: 'text-slate-900',
@@ -49,6 +51,8 @@ function tokens(isDark: boolean) {
         sticky: 'border-slate-200 bg-white/95',
         drawer: 'border-slate-200 bg-white text-slate-900',
         drawerBody: 'bg-slate-50',
+        iconOn: 'bg-sky-100 text-sky-700',
+        stepBadge: 'bg-slate-900 text-white',
       };
 }
 type Tok = ReturnType<typeof tokens>;
@@ -93,8 +97,8 @@ function FieldRow({
   const active = enabled && !planLocked;
   return (
     <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.icon} ${active ? '' : 'opacity-60'}`}>
-        <Icon className="h-4 w-4" />
+      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${active ? c.iconOn : `${c.icon} opacity-60`}`}>
+                <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">
         <p className={`text-[15px] font-semibold ${active ? c.text : c.sub}`}>{label}</p>
@@ -166,6 +170,8 @@ export default function BookingFormConfig({
   const { publicUrl, linkCopied, setLinkCopied } = formLogic;
   const [isTestModeOpen, setIsTestModeOpen] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
+  const [previewStep, setPreviewStep] = useState<1 | 2>(2);
+  const [previewService, setPreviewService] = useState<string | null>(null);
   const c = tokens(isDark);
   const fieldBox = fieldBoxCls(isDark);
 
@@ -188,8 +194,9 @@ export default function BookingFormConfig({
     }
   };
 
-  // The preview shows the first service as selected, so only its questions.
-  const firstService: Category | undefined = categories?.[0];
+  // Step 2 preview shows the questions for the service picked in the drawer (first one by default).
+  const firstService: Category | undefined =
+    (categories || []).find((cat: Category) => cat.value === previewService) || categories?.[0];
   const previewQuestions = canUseCustomQuestions
     ? (customQuestions || []).filter((q: any) => !firstService || q.category === firstService.value)
     : [];
@@ -237,12 +244,40 @@ export default function BookingFormConfig({
           </div>
         )}
         {fieldConfig.address.enabled && <PhoneField label="Address" isDark={isDark}><div className={fieldBox}><MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">123 Main St, New York 12345</span></div></PhoneField>}
+
+        {/* Service questions: after address, before timing (same order as the real form) */}
+        {previewQuestions.map((q: any) => (
+          <PhoneField key={q.id} label={q.label} isDark={isDark}>
+            {q.type === 'text' && <div className={`${fieldBox} text-slate-400`}>Their answer…</div>}
+            {q.type === 'select' && (
+              <div className="flex flex-wrap gap-1.5">
+                {(q.options || []).map((o: string) => (
+                  <span key={o} className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${chipCls}`}>{o}</span>
+                ))}
+              </div>
+            )}
+            {q.type === 'checkbox' && (
+              <div className="flex gap-1.5">
+                {['Yes', 'No'].map((v) => (
+                  <span key={v} className={`rounded-lg border px-3 py-1 text-[11px] font-semibold ${chipCls}`}>{v}</span>
+                ))}
+              </div>
+            )}
+          </PhoneField>
+        ))}
+
         {fieldConfig.preferred_date.enabled && (
           <>
             <PhoneField label="How soon do you need this?" isDark={isDark}>
               <div className="flex flex-wrap gap-1.5">
                 {['ASAP', 'Within a week', 'Within a month', 'Just getting prices'].map((l, i) => (
-                  <span key={l} className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${i === 0 ? 'border-transparent bg-slate-900 text-white' : chipCls}`}>{l}</span>
+                  <span
+                    key={l}
+                    className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${i === 0 ? 'border-transparent text-white' : chipCls}`}
+                    style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : undefined}
+                  >
+                    {l}
+                  </span>
                 ))}
               </div>
             </PhoneField>
@@ -255,6 +290,7 @@ export default function BookingFormConfig({
             </PhoneField>
           </>
         )}
+
         {fieldConfig.lead_source.enabled && <PhoneField label="How did you hear about us?" isDark={isDark}><div className={fieldBox}><Megaphone className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">Google, referral, saw your truck…</span></div></PhoneField>}
         {fieldConfig.file_upload.enabled && canUsePhotoUpload && (
           <PhoneField label="Photos" isDark={isDark}>
@@ -264,26 +300,6 @@ export default function BookingFormConfig({
             </div>
           </PhoneField>
         )}
-        {previewQuestions.map((q: any) => (
-          <PhoneField key={q.id} label={q.label} isDark={isDark}>
-            {q.type === 'text' && <div className={`${fieldBox} text-slate-400`}>Their answer…</div>}
-            {q.type === 'select' && (
-              <div className={`${fieldBox} justify-between`}>
-                <span className="truncate text-slate-400">Select an option…</span>
-                <ChevronDown className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-              </div>
-            )}
-            {q.type === 'checkbox' && (
-              <div className="flex gap-4 py-1">
-                {['Yes', 'No'].map((v) => (
-                  <span key={v} className={`flex items-center gap-1.5 text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    <span className={`h-3.5 w-3.5 rounded-full border ${isDark ? 'border-slate-600' : 'border-slate-300 bg-white'}`} /> {v}
-                  </span>
-                ))}
-              </div>
-            )}
-          </PhoneField>
-        ))}
         <div className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>Submit</div>
       </div>
     </PhoneFrame>
@@ -355,8 +371,11 @@ export default function BookingFormConfig({
               </a>
             </div>
             {copyFailed && <p className="mt-2 text-xs font-medium text-rose-500">Couldn't copy. Press and hold the link to copy it.</p>}
-            <p className={`mt-2 text-[13px] ${c.faint}`}>Sending a request from the live link creates a real lead. Delete it after if it was a test.</p>
-          </div>
+            <p className={`mt-2 flex items-start gap-1.5 text-[13px] ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              Sending a request from the live link creates a real lead. Use “Test it as a customer” instead.
+            </p>
+                      </div>
 
           <div className={`flex flex-col rounded-2xl border p-4 sm:p-5 ${c.card}`}>
             <div className="flex items-center gap-2.5">
@@ -398,8 +417,11 @@ export default function BookingFormConfig({
           <div className={`overflow-hidden rounded-2xl border ${c.card}`}>
             {/* Step 1 */}
             <div className={`border-b px-4 py-4 sm:px-5 ${c.border}`}>
-              <p className={`text-sm font-semibold ${c.text}`}>Step 1 · always asked</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
+              <p className={`flex items-center gap-2 text-sm font-semibold ${c.text}`}>
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${c.stepBadge}`}>1</span>
+                Always asked
+              </p>
+                            <div className="mt-2 flex flex-wrap gap-1.5">
                 {alwaysAsked.map((f) => (
                   <span key={f} className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[13px] font-medium ${c.chip}`}>
                     <Lock className="h-3 w-3 opacity-60" /> {f}
@@ -413,8 +435,11 @@ export default function BookingFormConfig({
 
             {/* Step 2 */}
             <div className={`px-4 pt-4 sm:px-5 ${c.sub}`}>
-              <p className={`text-sm font-semibold ${c.text}`}>Step 2 · optional fields</p>
-            </div>
+              <p className={`flex items-center gap-2 text-sm font-semibold ${c.text}`}>
+                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${c.stepBadge}`}>2</span>
+                Optional fields <span className={`font-normal ${c.faint}`}>· turn on what you need</span>
+              </p>
+                          </div>
             <div className={`divide-y ${c.divide}`}>
               <FieldRow icon={MapPin} label="Address" hint="Where the job is" enabled={fieldConfig.address.enabled} onToggle={() => toggleField('address')} planLocked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
               <FieldRow icon={Calendar} label="Timing" hint="How soon they need it and the best times to reach them" enabled={fieldConfig.preferred_date.enabled} onToggle={togglePreferredDateTime} planLocked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
@@ -452,18 +477,22 @@ export default function BookingFormConfig({
               initial={{ y: 80, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 80, opacity: 0 }}
-              className={`sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-2xl border p-3 pl-4 shadow-xl backdrop-blur-md ${c.sticky}`}
+                         className={`sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-2xl border-2 border-amber-400 p-3 pl-4 shadow-2xl ${
+                isDark ? 'bg-white' : 'bg-slate-900'
+              }`}
             >
               <div className="flex items-center justify-between gap-4">
-                <p className={`flex items-center gap-2 text-sm font-medium ${c.text}`}>
-                  <span className="h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                <p className={`flex items-center gap-2 text-sm font-semibold ${isDark ? 'text-slate-900' : 'text-white'}`}>
+                  <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-amber-400" />
                   Unsaved form changes
                 </p>
                 <button
                   type="button"
                   onClick={handleSaveAll}
                   disabled={loading}
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${c.primary}`}
+                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
+                    isDark ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-900 hover:bg-slate-100'
+                  }`}
                 >
                   {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   {loading ? 'Saving…' : 'Save'}
@@ -510,19 +539,54 @@ export default function BookingFormConfig({
                 </button>
               </div>
               <div className={`flex-1 overflow-y-auto px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${c.drawerBody}`}>
-                <div className="mx-auto flex max-w-xs flex-col gap-8">
-                  <div>
-                    <p className={`mb-3 text-center text-xs font-semibold ${c.sub}`}>Step 1</p>
-                    {RequiredPhone}
+                               <div className="mx-auto max-w-xs">
+                  {/* Step tabs */}
+                  <div className={`mb-4 grid grid-cols-2 gap-1 rounded-xl border p-1 ${c.border}`}>
+                    {([1, 2] as const).map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setPreviewStep(s)}
+                        aria-pressed={previewStep === s}
+                        className={`rounded-lg py-2 text-sm font-semibold transition ${
+                          previewStep === s ? c.primary : `${c.sub} hover:opacity-80`
+                        }`}
+                      >
+                        Step {s} · {s === 1 ? 'Contact' : 'Details'}
+                      </button>
+                    ))}
                   </div>
-                  <div>
-                    <p className={`mb-1 text-center text-xs font-semibold ${c.sub}`}>Step 2</p>
-                    {firstService && previewQuestions.length > 0 && (
-                      <p className={`mb-3 text-center text-[13px] ${c.faint}`}>Showing questions for {firstService.label}</p>
-                    )}
-                    {!(firstService && previewQuestions.length > 0) && <div className="mb-3" />}
-                    {OptionalPhone}
-                  </div>
+
+                  {previewStep === 1 ? (
+                    RequiredPhone
+                  ) : (
+                    <>
+                      {/* Which service's questions to show */}
+                      {canUseCustomQuestions && (categories || []).length > 1 && (
+                        <div className="mb-4">
+                          <p className={`mb-1.5 text-center text-[13px] ${c.faint}`}>Questions for</p>
+                          <div className="flex flex-wrap justify-center gap-1.5">
+                            {(categories || []).map((cat: Category) => {
+                              const on = firstService?.value === cat.value;
+                              return (
+                                <button
+                                  key={cat.value}
+                                  type="button"
+                                  onClick={() => setPreviewService(cat.value)}
+                                  className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
+                                    on ? `border-transparent ${c.primary}` : c.btn
+                                  }`}
+                                >
+                                  {cat.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      {OptionalPhone}
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

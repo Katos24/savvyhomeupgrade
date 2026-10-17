@@ -1,6 +1,7 @@
 import { stripe } from '@/lib/stripe';
 import { adminDb as sql } from '@/lib/db';
 import { getDepositAmount, getCollectionKind, getAmountDueNow } from '@/lib/billing';
+import { platformFeeCents } from '@/lib/stripe/platformFee';
 
 export type CollectionKind = 'deposit' | 'balance';
 
@@ -107,7 +108,8 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
 
   if (amount <= 0) return { url: null, kind: null, amount: 0, reason: 'nothing_due' };
 
-  const unitAmount = Math.round(amount * 100);
+   const unitAmount = Math.round(amount * 100);
+  const feeCents = platformFeeCents(unitAmount);
 
   // Reuse an existing session ONLY if it is still open AND still for this
   // amount. Checking `status === 'open'` alone handed a customer the deposit
@@ -118,10 +120,13 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
         project.stripe_checkout_session_id,
         { stripeAccount: connectedAccountId }
       );
-      if (
+            if (
         existing.status === 'open' &&
         existing.url &&
-        existing.amount_total === unitAmount
+        existing.amount_total === unitAmount &&
+        // Same fee as now: links made before the fee was switched on (or off)
+        // get replaced instead of reused.
+        Number(existing.metadata?.platformFeeCents ?? 0) === feeCents
       ) {
         return { url: existing.url, kind, amount };
       }
@@ -165,11 +170,15 @@ export async function getOrCreateCheckoutSession(args: Args): Promise<CheckoutRe
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pay/cancelled`,
       // kind is advisory only — the webhook re-derives it from the ledger so a
       // replayed or tampered session can't mislabel a row.
-      metadata: {
+           metadata: {
         projectId: String(projectId),
         companySlug,
         collectionKind: kind,
+        platformFeeCents: String(feeCents),
       },
+      // Lead2Project's fee (Check Platform Fee for current Fee). Stripe takes it from this payment
+      // and sends it to the platform account. Omitted entirely when 0.
+      ...(feeCents > 0 ? { payment_intent_data: { application_fee_amount: feeCents } } : {}),
     },
     { stripeAccount: connectedAccountId }
   );

@@ -270,39 +270,7 @@ export default function UploadFormStepTwo({
             </div>
           )}
 
-          {/* Timing: what the customer would like, not a booking.
-              The contractor sets the real visit in the Schedule tab. */}
-          {showTimeline && (
-            <div>
-              <p className={labelClass}>How soon do you need this?</p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {TIMELINE_OPTIONS.map((opt) => {
-                  const selected = formData.preferred_date === opt.value;
-                  return pill(opt.value, selected, () => onChange('preferred_date', selected ? '' : opt.value), opt.label);
-                })}
-              </div>
-            </div>
-          )}
-
-          {showBestTimes && (
-            <div>
-              <p className={labelClass}>
-                Best time to reach you or come by <span className={hintClass}>pick any</span>
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {BEST_TIME_OPTIONS.map((opt) =>
-                  pill(
-                    opt.value,
-                    selectedBestTimes.includes(opt.value),
-                    () => onChange('preferred_time', toggleBestTime(formData.preferred_time, opt.value)),
-                    opt.label,
-                  ),
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Custom questions (all optional on this step) */}
+                   {/* Custom questions (all optional on this step) */}
           {customQuestions.length > 0 && (
             <div className="space-y-6 border-t border-gray-200 pt-6">
               <h3 className="text-lg font-bold text-gray-900">A few quick questions</h3>
@@ -345,6 +313,38 @@ export default function UploadFormStepTwo({
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+                   {/* Timing: what the customer would like, not a booking.
+              The contractor sets the real visit in the Schedule tab. */}
+          {showTimeline && (
+            <div>
+              <p className={labelClass}>How soon do you need this?</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {TIMELINE_OPTIONS.map((opt) => {
+                  const selected = formData.preferred_date === opt.value;
+                  return pill(opt.value, selected, () => onChange('preferred_date', selected ? '' : opt.value), opt.label);
+                })}
+              </div>
+            </div>
+          )}
+
+          {showBestTimes && (
+            <div>
+              <p className={labelClass}>
+                Best time to reach you or come by <span className={hintClass}>pick any</span>
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {BEST_TIME_OPTIONS.map((opt) =>
+                  pill(
+                    opt.value,
+                    selectedBestTimes.includes(opt.value),
+                    () => onChange('preferred_time', toggleBestTime(formData.preferred_time, opt.value)),
+                    opt.label,
+                  ),
+                )}
+              </div>
             </div>
           )}
 

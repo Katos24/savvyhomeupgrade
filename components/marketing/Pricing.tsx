@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { Check, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Eyebrow } from './marketingUI';
+import { platformFeeEnabled, PLATFORM_FEE_LABEL } from '@/lib/stripe/platformFee';
+
 
 // Two plans. "Pro" is the $49.99 plan ('basic' in lib/permissions).
 // Keep every line true to what each plan actually unlocks in the app.
@@ -89,7 +91,17 @@ export default function Pricing() {
                       {f}
                     </li>
                   ))}
-                </ul>
+                               </ul>
+
+                {plan.highlight && (
+                  <p className="mt-5 border-t border-slate-200 pt-4 text-sm text-[#3a3f45]">
+                    <span className="font-semibold text-[#1C1F23]">Card payments:</span> Stripe&rsquo;s 2.9% + 30¢
+                    {platformFeeEnabled() ? ` + Lead2Project ${PLATFORM_FEE_LABEL}` : ''} per payment.{' '}
+                    <Link href="/pricing#fees" className="underline underline-offset-2">
+                      All fees
+                    </Link>
+                  </p>
+                )}
 
                 <Link
                   href={plan.href}

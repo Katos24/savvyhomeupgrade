@@ -4,6 +4,7 @@ import Nav from '@/components/marketing/Nav';
 import Footer from '@/components/marketing/Footer';
 import { fontVars } from '@/components/marketing/marketingTheme';
 import { Eyebrow, TapeDivider } from '@/components/marketing/marketingUI';
+import { platformFeeEnabled, platformFeeCents, PLATFORM_FEE_LABEL, PLATFORM_FEE_CAP_CENTS } from '@/lib/stripe/platformFee';
 
 export const metadata = {
   title: 'Pricing | Lead2Project',
@@ -211,7 +212,15 @@ export default function PricingPage() {
                       {f}
                     </li>
                   ))}
-                </ul>
+                               </ul>
+
+                {plan === 'Pro' && (
+                  <a href="#fees" className="mt-6 block border-t border-slate-200 pt-4 text-sm text-[#3a3f45] hover:text-[#1C1F23]">
+                    <span className="font-semibold text-[#1C1F23]">Card payment fees:</span> Stripe&rsquo;s 2.9% + 30¢
+                    {platformFeeEnabled() ? ` + Lead2Project ${PLATFORM_FEE_LABEL}` : ''} per payment. Your customer pays the invoice
+                    amount. <span className="underline underline-offset-2">See all fees</span>
+                  </a>
+                )}
               </div>
             );
           })}
@@ -264,6 +273,68 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+          {/* ── What payments cost ── */}
+      <section id="fees" className="pb-16 sm:pb-24 px-4 scroll-mt-24">
+        <div className="max-w-3xl mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold uppercase tracking-tight">
+              What getting paid costs
+            </h2>
+            <p className="mt-2 text-[15px] text-[#3a3f45]">No surprises. Your customer always pays the invoice amount, nothing added.</p>
+          </div>
+
+          <div className="rounded-lg border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">
+            <div className="flex items-start justify-between gap-4 px-5 py-4">
+              <div>
+                <p className="font-semibold">Card payments</p>
+                <p className="text-sm text-[#3a3f45]">
+                  {platformFeeEnabled()
+                    ? 'Stripe’s processing fee plus a small Lead2Project fee, taken from each card payment.'
+                    : 'Stripe’s processing fee, taken from each card payment.'}
+                </p>
+              </div>
+              <p className="shrink-0 text-right text-sm font-semibold">
+                2.9% + 30¢ <span className="block text-xs font-normal text-slate-500">Stripe</span>
+                {platformFeeEnabled() && (
+                  <>
+                    <span className="mt-1 block">{PLATFORM_FEE_LABEL}</span>
+                    <span className="block text-xs font-normal text-slate-500">Lead2Project</span>
+                  </>
+                )}
+              </p>
+            </div>
+            <div className="flex items-start justify-between gap-4 px-5 py-4">
+              <div>
+                <p className="font-semibold">Pay links (Venmo, Zelle, Cash App, PayPal)</p>
+                <p className="text-sm text-[#3a3f45]">No fee from Lead2Project. The app itself may charge its own fees.</p>
+              </div>
+              <p className="shrink-0 text-sm font-semibold">$0 from us</p>
+            </div>
+            <div className="flex items-start justify-between gap-4 px-5 py-4">
+              <div>
+                <p className="font-semibold">Cash and check</p>
+                <p className="text-sm text-[#3a3f45]">Record it on the job. No fees.</p>
+              </div>
+              <p className="shrink-0 text-sm font-semibold">$0</p>
+            </div>
+          </div>
+
+                   {platformFeeEnabled() &&
+            (() => {
+              // Worked example built from lib/stripe/platformFee.ts, so it updates with the fee.
+              const exFee = platformFeeCents(100000) / 100;
+              const money = (n: number) => `$${n.toFixed(2).replace(/\.00$/, '')}`;
+              return (
+                <p className="mt-4 text-center text-sm text-[#3a3f45]">
+                  Example: on a $1,000 card payment, Stripe keeps $29.30, Lead2Project keeps {money(exFee)}, you get{' '}
+                  {money(1000 - 29.3 - exFee)}. Our fee is never more than {money(PLATFORM_FEE_CAP_CENTS / 100)} per payment,
+                  and it&rsquo;s refunded if you refund the payment.
+                </p>
+              );
+            })()}
         </div>
       </section>
 

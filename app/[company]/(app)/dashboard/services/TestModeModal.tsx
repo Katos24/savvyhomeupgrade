@@ -1,25 +1,22 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { motion } from 'framer-motion';
-import {
-  X, ChevronLeft, User, Mail, Phone, MapPin,
-  ImageIcon, Megaphone, Sparkles, Send, Loader2, Check, AlertCircle,
-} from 'lucide-react';
+import { X, ChevronLeft, User, Mail, Phone, MapPin, ImageIcon, FlaskConical, Send, Loader2, Check, AlertCircle } from 'lucide-react';
 import type { Category } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
 import { TIMELINE_OPTIONS, BEST_TIME_OPTIONS, bestTimesArray, toggleBestTime } from '@/lib/timing';
 
-type Theme = ReturnType<typeof themeTokens>;
-
-// (555) 123-4567 as the user types, capped at 10 digits — same shape the
-// real booking form stores.
+// (555) 123-4567 as the user types, capped at 10 digits (same as the real form).
 function formatPhone(value: string) {
   const d = value.replace(/\D/g, '').slice(0, 10);
   if (d.length <= 3) return d;
   if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
+
+// Same choices as the real form's "How did you hear about us?"
+const LEAD_SOURCES = ['Google Search', 'Facebook', 'Instagram', 'Google Ads', 'Referral', 'Yard Sign', 'Saw Your Truck', 'Other'];
 
 type TestModeStep1 = {
   name: string;
@@ -53,6 +50,7 @@ export default function TestModeModal({
   onClose: () => void;
 }) {
   const t = themeTokens(isDark);
+  const brand = `linear-gradient(135deg, ${brandColor1}, ${brandColor2})`;
 
   const [step, setStep] = useState<1 | 2>(1);
   const [step1, setStep1] = useState<TestModeStep1>({
@@ -80,34 +78,42 @@ export default function TestModeModal({
   const [emailSent, setEmailSent] = useState(false);
   const [emailError, setEmailError] = useState('');
 
-  const questionsForCategory = canUseCustomQuestions
-    ? customQuestions.filter((q: any) => q.category === step1.category)
-    : [];
+  const questionsForCategory = canUseCustomQuestions ? customQuestions.filter((q: any) => q.category === step1.category) : [];
+  const serviceLabel = categories.find((c) => c.value === step1.category)?.label || 'this service';
 
   const phoneDigits = step1.phone.replace(/\D/g, '');
-  // Same email shape check the signup route uses. Everything in Step 1 is
-  // required, matching the real public form.
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   const emailValid = EMAIL_RE.test(step1.email.trim());
-  const step1Valid = Boolean(
-    step1.name.trim() &&
-      emailValid &&
-      phoneDigits.length === 10 &&
-      step1.category &&
-      step1.description.trim()
-  );
+  const step1Valid = Boolean(step1.name.trim() && emailValid && phoneDigits.length === 10 && step1.category && step1.description.trim());
 
   // One line for the test email, e.g. "123 Main St, Apt 2B, Holbrook 11741"
-  const addressLine = [street.trim(), unit.trim(), [city.trim(), zip.trim()].filter(Boolean).join(' ')]
-    .filter(Boolean)
-    .join(', ');
+  const addressLine = [street.trim(), unit.trim(), [city.trim(), zip.trim()].filter(Boolean).join(' ')].filter(Boolean).join(', ');
 
-  // Shared input styling, theme-aware — every text/select field in this
-  // modal routes through this so light/dark stays consistent without
-  // repeating the same conditional string a dozen times.
-  const inputWrap = `flex items-center gap-2 rounded-lg border ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} px-3 py-2`;
-  const inputField = `w-full bg-transparent text-xs font-medium ${t.cardText} outline-none placeholder:${isDark ? 'text-slate-500' : 'text-slate-400'}`;
-  const labelCls = `mb-1 block text-[11px] font-bold uppercase tracking-wider ${t.subText}`;
+  /* ── Styles: readable labels, 16px inputs on phones (no iOS zoom) ── */
+  const fieldBg = isDark ? 'bg-white/5' : 'bg-white';
+  const inputWrap = `flex items-center gap-2 rounded-xl border ${t.border} ${fieldBg} px-3 py-2.5 focus-within:ring-2 ${
+    isDark ? 'focus-within:ring-white/30' : 'focus-within:ring-slate-300'
+  }`;
+  const inputField = `w-full bg-transparent text-base sm:text-sm font-medium ${t.cardText} outline-none ${
+    isDark ? 'placeholder:text-slate-500' : 'placeholder:text-slate-400'
+  }`;
+  const labelCls = `mb-1.5 block text-sm font-semibold ${t.cardText}`;
+  const hintCls = `text-[13px] font-normal ${t.subText}`;
+  const pillOff = `${t.border} ${fieldBg} ${t.cardText} ${t.hoverBg}`;
+
+  const Pill = ({ selected, onClick, children }: { selected: boolean; onClick: () => void; children: ReactNode }) => (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition active:scale-95 ${
+        selected ? 'border-transparent text-white shadow-sm' : pillOff
+      }`}
+      style={selected ? { background: brand } : undefined}
+    >
+      {children}
+    </button>
+  );
 
   const handleSendTestEmail = async () => {
     if (!step1.email.trim()) {
@@ -133,11 +139,8 @@ export default function TestModeModal({
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        setEmailSent(true);
-      } else {
-        setEmailError(data.error || 'Could not send the test email.');
-      }
+      if (data.success) setEmailSent(true);
+      else setEmailError(data.error || 'Could not send the test email.');
     } catch {
       setEmailError('Network error sending the test email.');
     } finally {
@@ -147,7 +150,7 @@ export default function TestModeModal({
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/50 backdrop-blur-xs p-0 sm:items-center sm:p-4"
+      className="fixed inset-0 z-[100] flex items-end justify-center bg-slate-900/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
       <motion.div
@@ -155,55 +158,71 @@ export default function TestModeModal({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 20 }}
         onClick={(e) => e.stopPropagation()}
-        className={`flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl ${t.overlayCard} shadow-2xl sm:rounded-2xl`}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Test your booking form"
+        className={`flex max-h-[92dvh] w-full max-w-md flex-col overflow-hidden rounded-t-2xl shadow-2xl sm:rounded-2xl ${t.overlayCard}`}
       >
-        <div
-          className="flex items-center justify-between px-5 py-4 text-white"
-          style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-        >
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-4 w-4" />
-            <span className="text-sm font-bold">Test Mode — Nothing is saved</span>
-          </div>
-          <button onClick={onClose} className="rounded-lg p-1 text-white/80 hover:bg-white/10 hover:text-white">
+        {/* Test-mode bar (app style) */}
+        <div className={`flex items-center justify-between gap-3 border-b px-5 py-3 ${t.border}`}>
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold ${
+              isDark ? 'bg-amber-400/15 text-amber-200' : 'bg-amber-50 text-amber-800'
+            }`}
+          >
+            <FlaskConical className="h-3.5 w-3.5" /> Test mode · nothing is saved
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close test"
+            className={`flex h-9 w-9 items-center justify-center rounded-lg ${t.subText} ${t.hoverBg}`}
+          >
             <X className="h-4 w-4" />
           </button>
         </div>
 
+        {/* The customer's view keeps the contractor's brand colors */}
+        {!emailSent && (
+          <div className="px-5 py-4 text-white" style={{ background: brand }}>
+            <p className="text-xs font-semibold text-white/80">Step {step} of 2</p>
+            <h3 className="mt-0.5 text-lg font-bold leading-tight">{step === 1 ? getCtaHeading() : 'A few more details'}</h3>
+            {step === 2 && <p className="mt-0.5 text-sm text-white/85">Everything here is optional.</p>}
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-5">
           {emailSent ? (
-            // Success screen — replaces the form once the test email is sent,
-            // same idea as the public form swapping to a thank-you screen.
+            /* ── Done ── */
             <div className="flex flex-col items-center py-8 text-center">
-              <div
-                className="mb-4 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md"
-                style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-              >
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full text-white shadow-md" style={{ background: brand }}>
                 <Check className="h-7 w-7" />
               </div>
-              <h3 className={`text-base font-bold ${t.cardText}`}>Test complete!</h3>
-              <p className={`mt-2 max-w-xs text-xs font-medium ${t.subText}`}>
-                We sent the test email to <span className={`font-bold ${t.cardText}`}>{step1.email}</span>.
-                Check your inbox to see exactly what your customer would receive.
+              <h3 className={`text-lg font-bold ${t.cardText}`}>Test complete</h3>
+              <p className={`mt-2 max-w-xs text-sm ${t.subText}`}>
+                We sent the test email to <span className={`font-semibold ${t.cardText}`}>{step1.email}</span>. Check your inbox to
+                see what you&rsquo;d receive.
               </p>
-              <p className={`mt-3 max-w-xs text-[11px] font-medium ${t.subText}`}>
-                Nothing was saved and no lead was added to your dashboard.
-              </p>
+              <p className={`mt-3 max-w-xs text-[13px] ${t.subText}`}>Nothing was saved and no lead was added.</p>
               <button
-                onClick={() => { setEmailSent(false); setEmailError(''); setStep(1); }}
-                className="mt-5 text-xs font-bold text-blue-600 hover:underline"
+                type="button"
+                onClick={() => {
+                  setEmailSent(false);
+                  setEmailError('');
+                  setStep(1);
+                }}
+                className={`mt-5 rounded-xl border px-4 py-2.5 text-sm font-semibold ${t.border} ${t.cardText} ${t.hoverBg}`}
               >
                 Run another test
               </button>
             </div>
           ) : step === 1 ? (
-            <div className="space-y-4">
-              <p className={`text-xs font-bold uppercase tracking-wider ${t.subText}`}>Step 1 — Required</p>
-
+            /* ── Step 1 ── */
+            <div className="space-y-5">
               <div>
-                <label className={labelCls}>Full Name</label>
+                <label className={labelCls}>Full name</label>
                 <div className={inputWrap}>
-                  <User className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
+                  <User className={`h-4 w-4 shrink-0 ${t.subText}`} />
                   <input
                     value={step1.name}
                     onChange={(e) => setStep1((s) => ({ ...s, name: e.target.value }))}
@@ -214,27 +233,29 @@ export default function TestModeModal({
               </div>
 
               <div>
-                <label className={labelCls}>Email Address</label>
+                <label className={labelCls}>
+                  Email <span className={hintCls}>· the test email goes here</span>
+                </label>
                 <div className={inputWrap}>
-                  <Mail className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
+                  <Mail className={`h-4 w-4 shrink-0 ${t.subText}`} />
                   <input
                     type="email"
                     value={step1.email}
                     onChange={(e) => setStep1((s) => ({ ...s, email: e.target.value }))}
                     onBlur={() => setEmailTouched(true)}
-                    placeholder="you@example.com — where the test email goes"
+                    placeholder="you@example.com"
                     className={inputField}
                   />
                 </div>
                 {emailTouched && step1.email.trim() && !emailValid && (
-                  <p className="mt-1 text-[10px] font-semibold text-rose-500">Enter a valid email address.</p>
+                  <p className="mt-1.5 text-[13px] font-medium text-rose-500">Enter a valid email address.</p>
                 )}
               </div>
 
               <div>
-                <label className={labelCls}>Phone Number</label>
+                <label className={labelCls}>Phone</label>
                 <div className={inputWrap}>
-                  <Phone className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
+                  <Phone className={`h-4 w-4 shrink-0 ${t.subText}`} />
                   <input
                     type="tel"
                     inputMode="numeric"
@@ -247,77 +268,61 @@ export default function TestModeModal({
                   />
                 </div>
                 {phoneDigits.length > 0 && phoneDigits.length < 10 && (
-                  <p className="mt-1 text-[10px] font-semibold text-rose-500">Enter a 10-digit phone number.</p>
+                  <p className="mt-1.5 text-[13px] font-medium text-rose-500">Enter a 10-digit phone number.</p>
                 )}
               </div>
 
               <div>
-                <label className={labelCls}>Service Needed</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {categories.map((cat: Category) => {
-                    const selected = step1.category === cat.value;
-                    return (
-                      <button
-                        key={cat.value}
-                        type="button"
-                        onClick={() => setStep1((s) => ({ ...s, category: cat.value }))}
-                        className={`rounded-md border px-2.5 py-1 text-[11px] font-bold transition ${
-                          selected
-                            ? 'border-transparent text-white'
-                            : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
-                        }`}
-                        style={selected ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
-                      >
-                        {cat.label}
-                      </button>
-                    );
-                  })}
+                <label className={labelCls}>Service needed</label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat: Category) => (
+                    <Pill
+                      key={cat.value}
+                      selected={step1.category === cat.value}
+                      onClick={() => setStep1((s) => ({ ...s, category: cat.value }))}
+                    >
+                      {cat.label}
+                    </Pill>
+                  ))}
                 </div>
               </div>
 
               <div>
-                <label className={labelCls}>Project Description</label>
+                <label className={labelCls}>Describe the job</label>
                 <textarea
                   value={step1.description}
                   onChange={(e) => setStep1((s) => ({ ...s, description: e.target.value }))}
                   rows={3}
-                  placeholder="Describe your project here..."
-                  className={`w-full resize-none rounded-lg border ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} p-2.5 text-xs font-medium ${t.cardText} outline-none`}
+                  placeholder="Describe your project here…"
+                  className={`w-full resize-none rounded-xl border ${t.border} ${fieldBg} p-3 text-base font-medium sm:text-sm ${t.cardText} outline-none ${
+                    isDark ? 'placeholder:text-slate-500' : 'placeholder:text-slate-400'
+                  }`}
                 />
               </div>
             </div>
           ) : (
-            <div className="space-y-4">
+            /* ── Step 2: same order as the real form ── */
+            <div className="space-y-6">
               <button
+                type="button"
                 onClick={() => setStep(1)}
-                className={`inline-flex items-center gap-1 text-[11px] font-bold ${t.subText} hover:${t.cardText}`}
+                className={`-ml-1 inline-flex items-center gap-1 rounded-lg px-1 py-1 text-sm font-semibold ${t.subText} ${t.hoverBg}`}
               >
-                <ChevronLeft className="h-3.5 w-3.5" /> Back to Step 1
+                <ChevronLeft className="h-4 w-4" /> Back to step 1
               </button>
-              <p className={`text-xs font-bold uppercase tracking-wider ${t.subText}`}>
-                Step 2 — Optional, for {categories.find((c) => c.value === step1.category)?.label || 'this service'}
-              </p>
 
+              {/* Address */}
               {fieldConfig.address.enabled && (
                 <div>
-                  <label className={labelCls}>Street Address</label>
+                  <label className={labelCls}>Address</label>
                   <div className="space-y-2">
                     <div className={inputWrap}>
-                      <MapPin className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
+                      <MapPin className={`h-4 w-4 shrink-0 ${t.subText}`} />
                       <input
                         value={street}
                         onChange={(e) => setStreet(e.target.value)}
                         placeholder="123 Main St"
                         autoComplete="address-line1"
-                        className={inputField}
-                      />
-                    </div>
-                    <div className={inputWrap}>
-                      <input
-                        value={unit}
-                        onChange={(e) => setUnit(e.target.value)}
-                        placeholder="Unit / Apt (optional)"
-                        autoComplete="address-line2"
                         className={inputField}
                       />
                     </div>
@@ -335,38 +340,97 @@ export default function TestModeModal({
                         <input
                           value={zip}
                           onChange={(e) => setZip(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                          placeholder="Zip code"
+                          placeholder="ZIP"
                           inputMode="numeric"
                           autoComplete="postal-code"
                           className={inputField}
                         />
                       </div>
                     </div>
+                    <div className={inputWrap}>
+                      <input
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value)}
+                        placeholder="Unit / Apt (if any)"
+                        autoComplete="address-line2"
+                        className={inputField}
+                      />
+                    </div>
                   </div>
                 </div>
               )}
 
+              {/* Service questions */}
+              {questionsForCategory.length > 0 && (
+                <div className={`space-y-5 ${fieldConfig.address.enabled ? `border-t pt-5 ${t.border}` : ''}`}>
+                  <p className={`text-base font-bold ${t.cardText}`}>A few quick questions</p>
+                  {questionsForCategory.map((q: any) => (
+                    <div key={q.id}>
+                      <label className={labelCls}>{q.label}</label>
+                      {q.type === 'text' && (
+                        <div className={inputWrap}>
+                          <input
+                            value={step2Answers[q.id] || ''}
+                            onChange={(e) => setStep2Answers((a) => ({ ...a, [q.id]: e.target.value }))}
+                            placeholder="Your answer"
+                            className={inputField}
+                          />
+                        </div>
+                      )}
+                      {q.type === 'select' && (
+                        <div className="flex flex-wrap gap-2">
+                          {(q.options || []).map((opt: string, i: number) => {
+                            const selected = step2Answers[q.id] === opt;
+                            return (
+                              <Pill
+                                key={`${opt}-${i}`}
+                                selected={selected}
+                                onClick={() => setStep2Answers((a) => ({ ...a, [q.id]: selected ? '' : opt }))}
+                              >
+                                {opt}
+                              </Pill>
+                            );
+                          })}
+                        </div>
+                      )}
+                      {q.type === 'checkbox' && (
+                        <div className="flex gap-2">
+                          {['Yes', 'No'].map((opt) => {
+                            const selected = step2Answers[q.id] === opt;
+                            return (
+                              <Pill
+                                key={opt}
+                                selected={selected}
+                                onClick={() => setStep2Answers((a) => ({ ...a, [q.id]: selected ? '' : opt }))}
+                              >
+                                <span className="px-2">{opt}</span>
+                              </Pill>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {questionsForCategory.length === 0 && canUseCustomQuestions && (
+                <p className={`rounded-xl border border-dashed px-3.5 py-3 text-[13px] ${t.border} ${t.subText}`}>
+                  No questions set up for {serviceLabel} yet. Add them on that service under Services.
+                </p>
+              )}
+
+              {/* Timing */}
               {showTimeline && (
                 <div>
                   <label className={labelCls}>How soon do you need this?</label>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-2">
                     {TIMELINE_OPTIONS.map((opt) => {
                       const selected = preferredDate === opt.value;
                       return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => setPreferredDate(selected ? '' : opt.value)}
-                          className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
-                          selected
-                            ? 'border-transparent text-white shadow-sm'
-                            : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
-                        }`}
-                          style={selected ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
-                        >
+                        <Pill key={opt.value} selected={selected} onClick={() => setPreferredDate(selected ? '' : opt.value)}>
                           {opt.label}
-                        </button>
+                        </Pill>
                       );
                     })}
                   </div>
@@ -375,136 +439,88 @@ export default function TestModeModal({
 
               {showBestTimes && (
                 <div>
-                  <label className={labelCls}>Best time to reach you or come by</label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {BEST_TIME_OPTIONS.map((opt) => {
-                      const selected = bestTimesArray(preferredTime).includes(opt.value);
+                  <label className={labelCls}>
+                    Best time to reach you or come by <span className={hintCls}>· pick any</span>
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {BEST_TIME_OPTIONS.map((opt) => (
+                      <Pill
+                        key={opt.value}
+                        selected={bestTimesArray(preferredTime).includes(opt.value)}
+                        onClick={() => setPreferredTime(toggleBestTime(preferredTime, opt.value))}
+                      >
+                        {opt.label}
+                      </Pill>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* How they found you */}
+              {fieldConfig.lead_source.enabled && (
+                <div>
+                  <label className={labelCls}>How did you hear about us?</label>
+                  <div className="flex flex-wrap gap-2">
+                    {LEAD_SOURCES.map((src) => {
+                      const selected = leadSource === src;
                       return (
-                        <button
-                          key={opt.value}
-                          type="button"
-                          aria-pressed={selected}
-                          onClick={() => setPreferredTime(toggleBestTime(preferredTime, opt.value))}
-                          className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-bold transition ${
-                          selected
-                            ? 'border-transparent text-white shadow-sm'
-                            : `${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} ${t.cardText} ${t.hoverBg}`
-                        }`}
-                          style={selected ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
-                        >
-                          {opt.label}
-                        </button>
+                        <Pill key={src} selected={selected} onClick={() => setLeadSource(selected ? '' : src)}>
+                          {src}
+                        </Pill>
                       );
                     })}
                   </div>
                 </div>
               )}
 
-              {fieldConfig.lead_source.enabled && (
-                <div>
-                  <label className={labelCls}>How did you hear about us?</label>
-                  <div className={inputWrap}>
-                    <Megaphone className={`h-3.5 w-3.5 shrink-0 ${t.subText}`} />
-                    <input
-                      value={leadSource}
-                      onChange={(e) => setLeadSource(e.target.value)}
-                      placeholder="Google, referral, saw your truck..."
-                      className={inputField}
-                    />
-                  </div>
-                </div>
-              )}
-
+              {/* Photos */}
               {fieldConfig.file_upload.enabled && (
                 <div>
-                  <label className={labelCls}>Site Photos</label>
-                  <div className={`flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed ${t.border} py-4`}>
-                    <ImageIcon className={`h-4 w-4 ${t.subText}`} />
-                    <p className={`text-[11px] font-bold ${t.subText}`}>Test mode — upload disabled here</p>
+                  <label className={labelCls}>Photos or videos</label>
+                  <div className={`flex flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed py-5 ${t.border}`}>
+                    <ImageIcon className={`h-5 w-5 ${t.subText}`} />
+                    <p className={`text-[13px] font-medium ${t.subText}`}>Uploads are turned off in test mode</p>
                   </div>
                 </div>
               )}
-
-              {questionsForCategory.length === 0 && canUseCustomQuestions && (
-                <p className={`rounded-lg border border-dashed ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50/60'} px-3 py-3 text-[11px] font-medium ${t.subText}`}>
-                  No custom questions set for this service yet — add some under Services.
-                </p>
-              )}
-
-              {questionsForCategory.map((q: any) => (
-                <div key={q.id}>
-                  <label className={labelCls}>{q.label}</label>
-                  {q.type === 'text' && (
-                    <input
-                      value={step2Answers[q.id] || ''}
-                      onChange={(e) => setStep2Answers((a) => ({ ...a, [q.id]: e.target.value }))}
-                      className={`w-full rounded-lg border ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} px-3 py-2 text-xs font-medium ${t.cardText} outline-none`}
-                    />
-                  )}
-                  {q.type === 'select' && (
-                    <select
-                      value={step2Answers[q.id] || ''}
-                      onChange={(e) => setStep2Answers((a) => ({ ...a, [q.id]: e.target.value }))}
-                      className={`w-full rounded-lg border ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50'} px-3 py-2 text-xs font-medium ${t.cardText} outline-none`}
-                    >
-                      <option value="">Select an option...</option>
-                      {(q.options || []).map((opt: string, i: number) => (
-                        <option key={i} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                  )}
-                  {q.type === 'checkbox' && (
-                    <div className="flex gap-4">
-                      {['Yes', 'No'].map((opt) => (
-                        <label key={opt} className={`flex items-center gap-1.5 text-xs font-semibold ${t.cardText}`}>
-                          <input
-                            type="radio"
-                            name={`q-${q.id}`}
-                            checked={step2Answers[q.id] === opt}
-                            onChange={() => setStep2Answers((a) => ({ ...a, [q.id]: opt }))}
-                          />
-                          {opt}
-                        </label>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
-
-              <div className={`rounded-xl border ${t.border} ${isDark ? 'bg-white/5' : 'bg-slate-50/60'} p-4`}>
-                <>
-                    <button
-                      onClick={handleSendTestEmail}
-                      disabled={sendingEmail}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
-                    >
-                      {sendingEmail ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                      {sendingEmail ? 'Sending...' : `Email Me This as a Customer Would See It`}
-                    </button>
-                    {emailError && (
-                      <p className="mt-2 flex items-center gap-1.5 text-[11px] font-semibold text-rose-500">
-                        <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {emailError}
-                      </p>
-                    )}
-                    <p className={`mt-2 text-[10px] font-medium ${t.subText}`}>
-                      Sends a real email to the address above — nothing is stored or added to your dashboard.
-                    </p>
-                </>
-              </div>
             </div>
           )}
         </div>
 
-        {step === 1 && !emailSent && (
-          <div className={`border-t ${t.border} px-5 py-4`}>
-            <button
-              onClick={() => step1Valid && setStep(2)}
-              disabled={!step1Valid}
-              className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white shadow-xs transition disabled:opacity-40"
-              style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}
-            >
-              Continue to Step 2
-            </button>
+        {/* Footer */}
+        {!emailSent && (
+          <div className={`border-t px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] ${t.border}`}>
+            {step === 1 ? (
+              <button
+                type="button"
+                onClick={() => step1Valid && setStep(2)}
+                disabled={!step1Valid}
+                className="flex h-12 w-full items-center justify-center rounded-xl text-base font-bold text-white shadow-sm transition disabled:opacity-40"
+                style={{ background: brand }}
+              >
+                Continue to step 2
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleSendTestEmail}
+                  disabled={sendingEmail}
+                  className={`inline-flex h-12 w-full items-center justify-center gap-2 rounded-xl text-sm font-semibold transition disabled:opacity-50 ${
+                    isDark ? 'bg-white text-slate-900 hover:bg-slate-100' : 'bg-slate-900 text-white hover:bg-slate-800'
+                  }`}
+                >
+                  {sendingEmail ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {sendingEmail ? 'Sending…' : 'Email me what I’d receive'}
+                </button>
+                {emailError && (
+                  <p className="mt-2 flex items-center gap-1.5 text-[13px] font-medium text-rose-500">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" /> {emailError}
+                  </p>
+                )}
+                <p className={`mt-2 text-center text-[13px] ${t.subText}`}>Sends a real email to {step1.email || 'you'}. Nothing is saved.</p>
+              </>
+            )}
           </div>
         )}
       </motion.div>

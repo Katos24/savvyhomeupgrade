@@ -103,7 +103,11 @@ export interface RecentPayment {
 type Props = {
   isDark?: boolean;
   totalOwed?: number;
-  totalCollected?: number;
+   totalCollected?: number;
+  /** Stripe's processing fees on card payments this period. */
+  stripeFees?: number;
+  /** Lead2Project's fee on card payments this period (net of refunds). */
+  platformFees?: number;
   totalQuoted?: number;
   overdueTotal?: number;
   owedJobsCount?: number;
@@ -197,7 +201,9 @@ function Row({
 export default function FinancialsOverview({
   isDark = false,
   totalOwed = 0,
-  totalCollected = 0,
+   totalCollected = 0,
+  stripeFees = 0,
+  platformFees = 0,
   totalQuoted = 0,
   overdueTotal = 0,
   owedJobsCount = 0,
@@ -269,9 +275,26 @@ export default function FinancialsOverview({
           </p>
           <span className={`text-sm font-semibold tabular-nums ${t.text}`}>{collectedPct}%</span>
         </div>
-        <div className={`mt-3 h-1.5 overflow-hidden rounded-full ${t.track}`}>
+              <div className={`mt-3 h-1.5 overflow-hidden rounded-full ${t.track}`}>
           <div className={`h-full rounded-full transition-all duration-500 ${t.bar}`} style={{ width: `${collectedPct}%` }} />
         </div>
+
+        {/* Card fees: only when there were any */}
+        {stripeFees + platformFees > 0.005 && (
+          <div className={`mt-4 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-t pt-3 text-sm ${t.border}`}>
+            <p className={t.sub}>
+              Card fees <span className={`font-semibold tabular-nums ${t.text}`}>{fmt(stripeFees + platformFees)}</span>
+              <span className="ml-1.5">
+                (Stripe {fmt(stripeFees)}
+                {platformFees > 0.005 ? ` · Lead2Project ${fmt(platformFees)}` : ''})
+              </span>
+            </p>
+            <p className={t.sub}>
+              You kept{' '}
+              <span className={`font-semibold tabular-nums ${t.text}`}>{fmt(totalCollected - stripeFees - platformFees)}</span>
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">

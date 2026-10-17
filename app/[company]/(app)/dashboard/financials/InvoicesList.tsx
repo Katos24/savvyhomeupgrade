@@ -465,8 +465,9 @@ export default function InvoicesList({
               ? (STATE_META[selected._state as InvoiceState] || STATE_META.draft).dark
               : (STATE_META[selected._state as InvoiceState] || STATE_META.draft).light),
           }}
-          onOpenBilling={() => setBillingLeadId(selected.lead_id)}
+                  onOpenBilling={() => setBillingLeadId(selected.lead_id)}
           onClose={() => setSelected(null)}
+          isDark={isDark}
         />
       )}
 

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Loader2, AlertTriangle, ExternalLink, Check, X, FileText, Plus, RefreshCw, Star, ShieldCheck, CreditCard, Landmark } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Loader2, AlertTriangle, ExternalLink, Check, X, FileText, Plus, RefreshCw, Star, ShieldCheck, CreditCard, Landmark, Lock } from 'lucide-react';
+import { platformFeeEnabled, PLATFORM_FEE_RATE, PLATFORM_FEE_CAP_CENTS, PLATFORM_FEE_LABEL } from '@/lib/stripe/platformFee';
 
 /* ─────────────────────────────────────────────────────────────
    Small card marks (shown once, as a single row)
@@ -78,10 +79,45 @@ const PAY_BUTTON_LABEL: Record<string, string> = {
   other: 'Pay invoice',
 };
 
-function describeBlockingReasons(reasons: { capability: string; code: string }[] | null | undefined): string {
-  if (!reasons || reasons.length === 0) return 'Stripe needs more information before it can pay you out.';
-  const msgs = reasons.map((r) => `${r.code.replace(/_/g, ' ')} (${r.capability.replace(/_/g, ' ')})`);
-  return `Stripe needs: ${Array.from(new Set(msgs)).join(', ')}.`;
+/* Fees on a card payment, spelled out with a real example. */
+function FeeBreakdown() {
+  const feeOn = platformFeeEnabled();
+  const example = 1000;
+  const stripeFee = Math.round((example * 0.029 + 0.3) * 100) / 100;
+  const ourFee = feeOn ? Math.min(Math.round(example * PLATFORM_FEE_RATE * 100) / 100, PLATFORM_FEE_CAP_CENTS / 100) : 0;
+  const youGet = Math.round((example - stripeFee - ourFee) * 100) / 100;
+  const money = (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+  return (
+    <div className="rounded-xl bg-slate-50 px-4 py-3">
+      <p className="text-sm font-semibold text-slate-900">Fees per card payment</p>
+      <ul className="mt-1.5 space-y-1 text-sm text-slate-700">
+        <li className="flex justify-between gap-3">
+          <span>Stripe (card processing)</span>
+          <span className="font-semibold text-slate-900">2.9% + 30¢</span>
+        </li>
+        {feeOn && (
+          <li className="flex justify-between gap-3">
+            <span>Lead2Project</span>
+            <span className="font-semibold text-slate-900">{PLATFORM_FEE_LABEL}</span>
+          </li>
+        )}
+      </ul>
+      <p className="mt-2 border-t border-slate-200 pt-2 text-[13px] text-slate-600">
+        Example: on a {money(example)} payment, Stripe keeps {money(stripeFee)}
+        {feeOn ? `, Lead2Project keeps ${money(ourFee)}` : ''}, and you get{' '}
+        <span className="font-semibold text-slate-900">{money(youGet)}</span>. Your customer pays {money(example)}, no extra charge.
+        {feeOn && ' If you refund a payment, our fee is refunded too.'}
+      </p>
+    </div>
+  );
+}
+
+function describeBlockingReasons(
+  reasons: { capability: string; code: string }[] | null | undefined): string {
+  if (!reasons || reasons.length === 0) return 'Open Stripe to see what it’s asking for.';
+  const msgs = reasons.map((r) => r.code.replace(/_/g, ' '));
+  return `Stripe says: ${Array.from(new Set(msgs)).join(', ')}.`;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -93,11 +129,62 @@ function ChoiceMark({ on, disabled }: { on: boolean; disabled?: boolean }) {
     <span
       aria-hidden
       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition ${
-        on ? 'border-emerald-600 bg-emerald-600 text-white' : disabled ? 'border-slate-200 bg-slate-50' : 'border-slate-300 bg-white'
+        on ? 'border-emerald-600 bg-emerald-600 text-white' : disabled ? 'border-slate-200 bg-slate-100 text-slate-400' : 'border-slate-300 bg-white'
       }`}
     >
-      {on && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+      {on ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : disabled ? <Lock className="h-3 w-3" /> : null}
     </span>
+  );
+}
+
+/* Stripe setup as a 3-step checklist, so it's clear where they are. */
+function StripeSteps({ state }: { state: StripeState }) {
+  const steps: { label: string; detail: string; status: 'done' | 'current' | 'problem' | 'todo' }[] = [
+    {
+      label: 'Create your Stripe account',
+      detail: 'Your business details and the bank account to pay you into.',
+      status: state === 'not_connected' ? 'current' : 'done',
+    },
+    {
+      label: 'Stripe checks your details',
+      detail:
+        state === 'needs_attention'
+          ? 'Stripe needs more information. Fix it in Stripe.'
+          : state === 'finishing'
+          ? 'Usually quick. Finish any steps Stripe still asks for.'
+          : 'Happens right after you sign up.',
+      status: state === 'active' ? 'done' : state === 'needs_attention' ? 'problem' : state === 'finishing' ? 'current' : 'todo',
+    },
+    {
+      label: 'Take card payments',
+      detail: 'Invoices and deposit requests get a card button.',
+      status: state === 'active' ? 'done' : 'todo',
+    },
+  ];
+  return (
+    <ol className="space-y-3">
+      {steps.map((st, i) => (
+        <li key={st.label} className="flex items-start gap-3">
+          <span
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+              st.status === 'done'
+                ? 'bg-slate-900 text-white'
+                : st.status === 'current'
+                ? 'border-2 border-amber-500 bg-amber-50 text-amber-800'
+                : st.status === 'problem'
+                ? 'border-2 border-rose-500 bg-rose-50 text-rose-700'
+                : 'border-2 border-slate-200 bg-white text-slate-400'
+            }`}
+          >
+            {st.status === 'done' ? <Check className="h-3.5 w-3.5 stroke-[3]" /> : st.status === 'problem' ? '!' : i + 1}
+          </span>
+          <div className="min-w-0">
+            <p className={`text-[15px] font-semibold ${st.status === 'todo' ? 'text-slate-500' : 'text-slate-900'}`}>{st.label}</p>
+            <p className="text-sm text-slate-600">{st.detail}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
 
@@ -217,13 +304,35 @@ function CardOption({
     }
   }
 
+  // Just came back from Stripe's setup pages: Stripe can take a little while
+  // to finish its checks, so look again a few times instead of showing a stale status.
+  const [cameBackFromStripe, setCameBackFromStripe] = useState(false);
+  const [autoChecks, setAutoChecks] = useState(0);
+
   useEffect(() => {
-    const sc = new URLSearchParams(window.location.search).get('stripe_connect');
+    const url = new URL(window.location.href);
+    const sc = url.searchParams.get('stripe_connect');
     if (sc === 'error' || sc === 'denied' || sc === 'already_linked') setRedirectStatus(sc);
+    else if (sc !== null) setCameBackFromStripe(true);
+    // Drop the flag from the address bar so a refresh doesn't show the message again.
+    if (sc !== null) {
+      url.searchParams.delete('stripe_connect');
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+    }
     const unsettled = !!company.stripe_connect_onboarded && company.stripe_payment_status !== 'active';
     if (sc !== null || unsettled) refreshLiveStatus();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!cameBackFromStripe || state === 'active' || checking || autoChecks >= 6) return;
+    const id = setTimeout(() => {
+      setAutoChecks((n) => n + 1);
+      refreshLiveStatus();
+    }, 5000);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameBackFromStripe, state, checking, autoChecks]);
 
   async function handleConnect() {
     setLoading(true);
@@ -244,9 +353,69 @@ function CardOption({
 
   const ready = state === 'active';
 
+  // Tapping the option: turn cards on if Stripe is ready, otherwise explain what's missing.
+  const [triedToSelect, setTriedToSelect] = useState(false);
+  const select = () => {
+    if (ready) {
+      if (!selected) onTurnOn();
+      return;
+    }
+    setTriedToSelect(true);
+  };
+
+  const actionButtons = (
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      {state === 'not_connected' && (
+        <button type="button" onClick={handleConnect} disabled={loading} className={primaryBtn}>
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />} Set up card payments
+        </button>
+      )}
+      {state === 'finishing' && (
+        <button type="button" onClick={handleConnect} disabled={loading} className={primaryBtn}>
+          {loading && <Loader2 className="h-4 w-4 animate-spin" />} Continue Stripe setup
+        </button>
+      )}
+      {state === 'needs_attention' && (
+        <>
+          <button type="button" onClick={handleConnect} disabled={loading} className={primaryBtn}>
+            {loading && <Loader2 className="h-4 w-4 animate-spin" />} Give Stripe what it needs
+          </button>
+          <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={secondaryBtn}>
+            Stripe dashboard <ExternalLink className="h-4 w-4" />
+          </a>
+        </>
+      )}
+      {(state === 'finishing' || state === 'needs_attention') && (
+        <button type="button" onClick={refreshLiveStatus} disabled={checking} className={secondaryBtn}>
+          <RefreshCw className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} /> {checking ? 'Checking…' : 'Check status'}
+        </button>
+      )}
+      {ready && !selected && (
+        <button type="button" onClick={onTurnOn} className={primaryBtn}>
+          Use card payments
+        </button>
+      )}
+      {ready && (
+        <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={secondaryBtn}>
+          Stripe dashboard <ExternalLink className="h-4 w-4" />
+        </a>
+      )}
+    </div>
+  );
+
   return (
-    <div className={`rounded-2xl border-2 bg-white p-5 transition sm:p-6 ${selected ? 'border-emerald-600' : 'border-slate-200'}`}>
-      <div className="flex items-start gap-3">
+    <div
+      className={`rounded-2xl border-2 bg-white transition ${
+        selected ? 'border-emerald-600' : triedToSelect && !ready ? 'border-amber-400' : 'border-slate-200'
+      }`}
+    >
+      {/* Tappable header: this is the "choice" */}
+      <button
+        type="button"
+        onClick={select}
+        aria-pressed={selected}
+        className="flex w-full items-start gap-3 rounded-t-2xl p-5 pb-0 text-left sm:p-6 sm:pb-0"
+      >
         <ChoiceMark on={selected} disabled={!ready} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -264,93 +433,88 @@ function CardOption({
               </span>
             ) : ready ? (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                Connected · turned off
+                Ready · turned off
               </span>
             ) : (
-              <StatusPill state={state} />
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                <Lock className="h-3 w-3" /> Not available yet
+              </span>
             )}
           </div>
           <p className="mt-1 text-[15px] text-slate-700">
             The easiest way to get paid. Customers tap the pay button on their invoice and pay in seconds.
           </p>
-
-          <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {[
-              { icon: ShieldCheck, text: 'Payments processed securely by Stripe' },
-              { icon: RefreshCw, text: 'Deposits and balances update automatically when paid' },
-              { icon: CreditCard, text: 'Cards, Apple Pay and Google Pay' },
-              { icon: Landmark, text: 'Payouts go straight to your bank account' },
-            ].map(({ icon: Icon, text }) => (
-              <li key={text} className="flex items-start gap-2 text-[15px] text-slate-800">
-                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-                  <Icon className="h-3 w-3" />
-                </span>
-                {text}
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-3 space-y-3">
-            {redirectStatus === 'error' && <Notice tone="error">Stripe setup didn&apos;t finish. Try again.</Notice>}
-            {redirectStatus === 'denied' && <Notice tone="warn">Stripe setup was cancelled. You can start again any time.</Notice>}
-            {redirectStatus === 'already_linked' && (
-              <Notice tone="error">That Stripe account is already linked to another business. Use a different Stripe account.</Notice>
-            )}
-            {connectError && <Notice tone="error">{connectError}</Notice>}
-            {state === 'finishing' && (
-              <Notice tone="warn">Stripe still needs a few details before you can take card payments.</Notice>
-            )}
-            {state === 'needs_attention' && (
-              <Notice tone="error">
-                <p className="font-semibold">Payouts are on hold</p>
-                <p className="mt-0.5">{describeBlockingReasons(blockingReasons)}</p>
-              </Notice>
-            )}
-          </div>
-
-          <div className="mt-3 flex flex-col gap-3 rounded-xl bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <CardMarks />
-            <p className="text-sm text-slate-700">
-              <span className="font-semibold text-slate-900">2.9% + 30¢</span> per payment, charged by Stripe
-            </p>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-            {state === 'not_connected' && (
-              <button type="button" onClick={handleConnect} disabled={loading} className={primaryBtn}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />} Set up card payments
-              </button>
-            )}
-            {state === 'finishing' && (
-              <button type="button" onClick={handleConnect} disabled={loading} className={primaryBtn}>
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />} Continue setup
-              </button>
-            )}
-            {state === 'needs_attention' && (
-              <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={primaryBtn}>
-                Fix it in Stripe <ExternalLink className="h-4 w-4" />
-              </a>
-            )}
-            {(state === 'finishing' || state === 'needs_attention') && (
-              <button type="button" onClick={refreshLiveStatus} disabled={checking} className={secondaryBtn}>
-                <RefreshCw className={`h-4 w-4 ${checking ? 'animate-spin' : ''}`} /> {checking ? 'Checking…' : 'Check status'}
-              </button>
-            )}
-            {ready && !selected && (
-              <button type="button" onClick={onTurnOn} className={primaryBtn}>
-                Use card payments
-              </button>
-            )}
-            {ready && (
-              <a href="https://dashboard.stripe.com" target="_blank" rel="noopener noreferrer" className={secondaryBtn}>
-                Stripe dashboard <ExternalLink className="h-4 w-4" />
-              </a>
-            )}
-          </div>
-          {state === 'not_connected' && (
-            <p className="mt-2.5 text-sm text-slate-600">Stripe asks for your business details and the bank account to pay you into.</p>
-          )}
         </div>
+      </button>
+
+      <div className="p-5 pt-3 sm:p-6 sm:pt-3 sm:pl-[3.75rem]">
+        {/* Tried to pick cards before Stripe is ready: say why, and what to do */}
+        {triedToSelect && !ready && (
+          <div className="mb-4 rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <p className="flex items-center gap-2 text-[15px] font-semibold text-amber-900">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              {state === 'needs_attention' ? 'Card payments are paused' : "You can't use card payments yet"}
+            </p>
+            <p className="mt-1 text-sm text-amber-900">
+              {state === 'not_connected' &&
+                'Set up your Stripe account first. Stripe asks for your business details and the bank account to pay you into.'}
+              {state === 'finishing' && 'Your Stripe setup isn’t finished. Continue where you left off, then card payments turn on.'}
+              {state === 'needs_attention' && `Stripe needs more information before it can pay you. ${describeBlockingReasons(blockingReasons)}`}
+            </p>
+            <div className="mt-3">{actionButtons}</div>
+          </div>
+        )}
+
+        <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {[
+            { icon: ShieldCheck, text: 'Payments processed securely by Stripe' },
+            { icon: RefreshCw, text: 'Deposits and balances update automatically when paid' },
+            { icon: CreditCard, text: 'Cards, Apple Pay and Google Pay' },
+            { icon: Landmark, text: 'Payouts go straight to your bank account' },
+          ].map(({ icon: Icon, text }) => (
+            <li key={text} className="flex items-start gap-2 text-[15px] text-slate-800">
+              <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+                <Icon className="h-3 w-3" />
+              </span>
+              {text}
+            </li>
+          ))}
+        </ul>
+
+        <div className="mt-3 space-y-3">
+          {redirectStatus === 'error' && <Notice tone="error">Stripe setup didn&apos;t finish. Try again.</Notice>}
+          {redirectStatus === 'denied' && <Notice tone="warn">Stripe setup was cancelled. You can start again any time.</Notice>}
+          {redirectStatus === 'already_linked' && (
+            <Notice tone="error">That Stripe account is already linked to another business. Use a different Stripe account.</Notice>
+          )}
+          {connectError && <Notice tone="error">{connectError}</Notice>}
+        </div>
+
+        {/* Setup progress until Stripe is active */}
+        {!ready && (
+          <div className="mt-4 rounded-xl border border-slate-200 p-4">
+            {cameBackFromStripe && state === 'finishing' && autoChecks < 6 && (
+              <p className="mb-3 flex items-center gap-2 text-sm text-slate-700">
+                <Loader2 className="h-4 w-4 animate-spin" /> Checking with Stripe. This usually takes a moment.
+              </p>
+            )}
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[15px] font-semibold text-slate-900">Stripe setup</p>
+              <StatusPill state={state} />
+            </div>
+            <StripeSteps state={state} />
+            {!triedToSelect && <div className="mt-4">{actionButtons}</div>}
+          </div>
+        )}
+
+                <div className="mt-4">
+          <CardMarks />
+        </div>
+        <div className="mt-3">
+          <FeeBreakdown />
+        </div>
+
+        {ready && <div className="mt-4">{actionButtons}</div>}
       </div>
     </div>
   );
@@ -382,6 +546,7 @@ function LinkOption({
   const [error, setError] = useState('');
 
   const dirty = linkUrl.trim() !== savedUrl || linkType !== savedType;
+  const linkInputRef = useRef<HTMLInputElement>(null);
   const method = LINK_METHODS.find((m) => m.value === linkType) || LINK_METHODS[0];
   const locked = cardSelected; // greyed while cards are the active choice
 
@@ -418,21 +583,35 @@ function LinkOption({
   return (
     <div className={`rounded-2xl border-2 bg-white p-5 transition sm:p-6 ${selected ? 'border-emerald-600' : 'border-slate-200'}`}>
       <div className="flex items-start gap-3">
-        <ChoiceMark on={selected} disabled={locked} />
+        <button
+          type="button"
+          onClick={() => (locked ? onUseInstead() : linkInputRef.current?.focus())}
+          aria-pressed={selected}
+          aria-label="Use a pay link"
+          className="mt-0.5 shrink-0 rounded-full"
+        >
+          <ChoiceMark on={selected} />
+        </button>
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className={`text-lg font-semibold ${locked ? 'text-slate-500' : 'text-slate-900'}`}>
-              Pay link <span className="text-sm font-normal text-slate-600">· Venmo, Zelle, Cash App, PayPal</span>
-            </h3>
-            {selected && (
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> On
-              </span>
-            )}
-          </div>
-          <p className={`mt-1 text-[15px] ${locked ? 'text-slate-500' : 'text-slate-700'}`}>
-            No fees. Customers pay you in that app, and <span className="font-semibold">you mark the job paid yourself</span>.
-          </p>
+          <button
+            type="button"
+            onClick={() => (locked ? onUseInstead() : linkInputRef.current?.focus())}
+            className="block w-full text-left"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <h3 className={`text-lg font-semibold ${locked ? 'text-slate-500' : 'text-slate-900'}`}>
+                Pay link <span className="text-sm font-normal text-slate-600">· Venmo, Zelle, Cash App, PayPal</span>
+              </h3>
+              {selected && (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> On
+                </span>
+              )}
+            </div>
+            <p className={`mt-1 text-[15px] ${locked ? 'text-slate-500' : 'text-slate-700'}`}>
+              No fees. Customers pay you in that app, and <span className="font-semibold">you mark the job paid yourself</span>.
+            </p>
+          </button>
 
           {locked ? (
             <div className="mt-4 flex flex-col gap-3 rounded-xl border border-dashed border-slate-300 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -467,6 +646,7 @@ function LinkOption({
               </div>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <input
+                  ref={linkInputRef}
                   type="text"
                   value={linkUrl}
                   onChange={(e) => {
@@ -754,6 +934,29 @@ export default function PaymentsTab({ company }: { company: any; currentUser?: a
             <p className="text-[15px] text-slate-700">Pick one. It&apos;s the pay button on your invoices and deposit requests.</p>
           </div>
 
+          {/* What invoices use right now */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <span className="text-sm text-slate-600">Invoices use right now:</span>
+            {cardSelected ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-sm font-semibold text-emerald-700">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Card payments
+              </span>
+            ) : linkSelected ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 px-2.5 py-1 text-sm font-semibold text-slate-800">
+                {linkLabel} link
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-sm font-semibold text-amber-800">
+                <AlertTriangle className="h-3.5 w-3.5" /> No pay button
+              </span>
+            )}
+            {stripeState !== 'active' && (
+              <span className="text-sm text-slate-600">
+                · Card payments {stripeState === 'needs_attention' ? 'are paused' : 'aren’t available until Stripe setup is done'}
+              </span>
+            )}
+          </div>
+
           <CardOption
             company={company}
             selected={cardSelected}
@@ -824,7 +1027,11 @@ export default function PaymentsTab({ company }: { company: any; currentUser?: a
           onConfirm={() => saveCardEnabled(true)}
         >
           <p>New invoices and deposit requests will have a card button. Jobs are marked paid automatically when customers pay.</p>
-          <p>Stripe charges 2.9% + 30¢ per payment.</p>
+                   <p>
+            Stripe charges 2.9% + 30¢ per payment
+            {platformFeeEnabled() ? <>, and Lead2Project&apos;s fee is {PLATFORM_FEE_LABEL}</> : null}. Your customer pays the invoice
+            amount, nothing extra.
+          </p>
           {hasLink && <p className="text-sm text-slate-600">Your {linkLabel} link stays saved but won&apos;t show on invoices.</p>}
         </ConfirmDialog>
       )}
