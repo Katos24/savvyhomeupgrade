@@ -130,10 +130,18 @@ export default function Hero() {
                     href={DEMO_URL}
                     className="w-full sm:w-auto bg-white text-[#1C1F23] hover:bg-slate-50 active:scale-[0.98] font-[family-name:var(--font-display)] text-base sm:text-lg font-bold uppercase tracking-wider px-7 py-3.5 sm:py-4 rounded-md border border-slate-300 shadow-md transition-all text-center min-h-[48px] flex items-center justify-center"
                   >
-                    Book a 15-min demo
+                                      Book a 15-min demo
                   </Link>
                 )}
               </motion.div>
+
+              <Link
+                href="/how-it-works"
+                className="group -mt-1 inline-flex items-center justify-center sm:justify-start gap-1.5 text-sm sm:text-base font-semibold text-[#00828A] hover:text-[#006e75] transition-colors"
+              >
+                Or see how it works, step by step
+                <span aria-hidden className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
+              </Link>
 
                      <motion.ul
                 initial={{ opacity: 0 }}

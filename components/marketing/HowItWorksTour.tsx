@@ -3,7 +3,21 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence, useInView, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Camera, Check, CreditCard, Mail, Send, FileText, Lock } from 'lucide-react';
+import {
+  ArrowRight,
+  Camera,
+  Check,
+  CreditCard,
+  Mail,
+  Send,
+  FileText,
+  Lock,
+  User,
+  CalendarDays,
+  Receipt,
+  ListChecks,
+  MessageCircle,
+} from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────
    /how-it-works: one roofing job, request to paid in full.
@@ -29,7 +43,6 @@ const TEMPLATE_SQ = 20;
 const MEASURED_SQ = 25;
 const qtyFor = (i: (typeof ITEMS)[number], sq: number) => (i.perSquare ? sq : i.qty ?? 1);
 const totalFor = (sq: number) => ITEMS.reduce((s, i) => s + qtyFor(i, sq) * i.price, 0);
-const TEMPLATE_TOTAL = totalFor(TEMPLATE_SQ); // 8,130
 const TOTAL = totalFor(MEASURED_SQ); // 9,880
 const DEPOSIT_PCT = 40;
 const DEPOSIT = Math.round(TOTAL * DEPOSIT_PCT) / 100; // 3,952
@@ -263,7 +276,9 @@ function FormDemo() {
 
 /* ── Step 2: the board ──────────────────────────────────── */
 
-const BOARD_T = [1800, 1700, 1700, 2600];
+// 0 board · 1 Maria's request drops in · 2 a second request drops in · 3 pointer to Maria's card
+// 4 drag to Quoted · 5 settle · 6 drag to Scheduled · 7 settle · 8 drag to Done · 9 hold
+const BOARD_T = [900, 1300, 900, 800, 1000, 900, 1000, 900, 1000, 2200];
 const COLS = ['New', 'Quoted', 'Scheduled', 'Done'];
 const STATIC_CARDS: Record<string, { name: string; sub: string }[]> = {
   New: [{ name: 'J. Carter', sub: 'Gutters' }],
@@ -273,49 +288,124 @@ const STATIC_CARDS: Record<string, { name: string; sub: string }[]> = {
 };
 
 function BoardDemo() {
-  const { ref, phase } = useDemo(BOARD_T);
-  const col = COLS[phase];
+  const { ref, phase, reduced } = useDemo(BOARD_T);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const colRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [cursor, setCursor] = useState({ x: 400, y: 280 });
 
-  const featured = (
-    <motion.div
-      key="featured"
-      layoutId="tour-featured-card"
-      transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-      className="rounded-lg border-2 border-slate-900 bg-white p-2 shadow-lg"
-    >
-      <p className="truncate text-[11px] font-semibold text-slate-900">{CUSTOMER}</p>
-      <p className="truncate text-[10px] text-slate-500">Roof replacement</p>
-      <div className="mt-1.5">
-        {phase === 0 && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">New request</span>}
-        {phase === 1 && <span className="text-[10px] font-semibold text-slate-700">{money(TOTAL)} quote</span>}
-        {phase === 2 && <span className="text-[10px] font-semibold text-emerald-700">Deposit paid</span>}
-        {phase === 3 && <span className="text-[10px] font-semibold text-emerald-700">Paid in full</span>}
-      </div>
-    </motion.div>
-  );
+  // Which column Maria's card is in, and whether it's being dragged.
+  const col = reduced ? 'Done' : phase >= 8 ? 'Done' : phase >= 6 ? 'Scheduled' : phase >= 4 ? 'Quoted' : 'New';
+  const showMaria = reduced || phase >= 1;
+  const showBrooks = reduced || phase >= 2;
+  const dragging = phase === 4 || phase === 6 || phase === 8;
+  const pressing = phase === 3;
+  const toast = phase === 1 || phase === 2;
+
+  // Pointer follows the card: onto it, then along with it to each new column.
+  useEffect(() => {
+    if (reduced) return;
+    const box = boxRef.current;
+    if (!box) return;
+    if (phase < 3) {
+      setCursor({ x: box.clientWidth * 0.85, y: box.clientHeight * 0.9 });
+      return;
+    }
+    const el = colRefs.current[col];
+    if (!el) return;
+    const b = box.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    setCursor({ x: r.left - b.left + r.width * 0.6, y: r.top - b.top + 46 });
+  }, [phase, col, reduced]);
+
+  const badge =
+    col === 'New' ? (
+      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">New request</span>
+    ) : col === 'Quoted' ? (
+      <span className="text-[10px] font-semibold text-slate-700">{money(TOTAL)} quote sent</span>
+    ) : col === 'Scheduled' ? (
+      <span className="text-[10px] font-semibold text-emerald-700">Deposit paid · Oct 24</span>
+    ) : (
+      <span className="text-[10px] font-semibold text-emerald-700">Paid in full</span>
+    );
 
   return (
     <div ref={ref}>
       <Screen title="Lead2Project · Board">
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2">
-          {COLS.map((c) => (
-            <div key={c} className="min-h-[220px] rounded-lg bg-slate-50 p-1.5">
-              <div className="mb-1.5 flex items-center justify-between px-0.5">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">{c}</span>
-                <span className="text-[10px] tabular-nums text-slate-400">{STATIC_CARDS[c].length + (col === c ? 1 : 0)}</span>
-              </div>
-              <div className="space-y-1.5">
-                {col === c && featured}
-                {STATIC_CARDS[c].map((s) => (
-                  <div key={s.name} className="rounded-lg border border-slate-200 bg-white p-2">
-                    <p className="truncate text-[11px] font-medium text-slate-800">{s.name}</p>
-                    <p className="truncate text-[10px] text-slate-500">{s.sub}</p>
-                    {c === 'Done' && <p className="mt-1 text-[10px] font-semibold text-emerald-700">Paid</p>}
+        <div ref={boxRef} className="relative">
+          <Cursor x={cursor.x} y={cursor.y} show={!reduced && phase >= 3} pressing={pressing} />
+
+          {/* "New request" notice when one comes in from the booking link */}
+          <div className="pointer-events-none absolute inset-x-0 -top-1 z-20 flex justify-center">
+            <AnimatePresence>
+              {toast && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3, ease: EASE }}
+                  className="flex items-center gap-1.5 rounded-full bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg"
+                >
+                  <Mail className="h-3 w-3" /> {phase === 1 ? `New request: ${CUSTOMER}` : 'New request: T. Brooks'}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="grid grid-cols-4 gap-1.5 pt-8 sm:gap-2">
+            {COLS.map((c) => {
+              const count = STATIC_CARDS[c].length + (showMaria && col === c ? 1 : 0) + (c === 'New' && showBrooks ? 1 : 0);
+              return (
+                <div
+                  key={c}
+                  ref={(el) => {
+                    colRefs.current[c] = el;
+                  }}
+                  className={`min-h-[250px] rounded-lg p-1.5 transition-colors ${
+                    dragging && col === c ? 'bg-slate-200/70' : 'bg-slate-50'
+                  }`}
+                >
+                  <div className="mb-1.5 flex items-center justify-between px-0.5">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">{c}</span>
+                    <span className="text-[10px] tabular-nums text-slate-400">{count}</span>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))}
+                  <div className="space-y-1.5">
+                    {showMaria && col === c && (
+                      <motion.div
+                        layoutId="tour-featured-card"
+                        initial={phase === 1 ? { opacity: 0, y: -24 } : false}
+                        animate={{ opacity: 1, y: 0, scale: dragging ? 1.06 : 1, rotate: dragging ? 2 : 0 }}
+                        transition={{ type: 'spring', stiffness: 240, damping: 24 }}
+                        className={`relative z-10 rounded-lg border-2 border-slate-900 bg-white p-2 ${dragging ? 'shadow-2xl' : 'shadow-md'}`}
+                      >
+                        <p className="truncate text-[11px] font-semibold text-slate-900">{CUSTOMER}</p>
+                        <p className="truncate text-[10px] text-slate-500">Roof replacement</p>
+                        <div className="mt-1.5">{badge}</div>
+                      </motion.div>
+                    )}
+                    {c === 'New' && showBrooks && (
+                      <motion.div
+                        initial={reduced ? false : { opacity: 0, y: -24 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ type: 'spring', stiffness: 240, damping: 24 }}
+                        className="rounded-lg border border-slate-200 bg-white p-2"
+                      >
+                        <p className="truncate text-[11px] font-medium text-slate-800">T. Brooks</p>
+                        <p className="truncate text-[10px] text-slate-500">Siding repair</p>
+                        <span className="mt-1 inline-block rounded bg-amber-100 px-1.5 py-0.5 text-[9px] font-semibold text-amber-800">New request</span>
+                      </motion.div>
+                    )}
+                    {STATIC_CARDS[c].map((s) => (
+                      <div key={s.name} className="rounded-lg border border-slate-200 bg-white p-2">
+                        <p className="truncate text-[11px] font-medium text-slate-800">{s.name}</p>
+                        <p className="truncate text-[10px] text-slate-500">{s.sub}</p>
+                        {c === 'Done' && <p className="mt-1 text-[10px] font-semibold text-emerald-700">Paid</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </Screen>
     </div>
@@ -324,90 +414,199 @@ function BoardDemo() {
 
 /* ── Step 3: estimate from a template ───────────────────── */
 
-const TEMPLATE_T = [1300, 900, 2200, 1800, 2600];
+// See TemplateDemo for what each phase does.
+const TEMPLATE_T = [1100, 600, 1700, 700, 1000, 700, 1000, 700, 1000, 900, 350, 2200];
+
+// The demo's fake mouse pointer (same look as the home page hero).
+function Cursor({ x, y, show, pressing }: { x: number; y: number; show: boolean; pressing: boolean }) {
+  return (
+    <motion.div
+      aria-hidden
+      className="pointer-events-none absolute left-0 top-0 z-30"
+      initial={false}
+      animate={{ x, y, opacity: show ? 1 : 0, scale: pressing ? 0.85 : 1 }}
+      transition={{
+        x: { duration: 0.7, ease: EASE },
+        y: { duration: 0.7, ease: EASE },
+        opacity: { duration: 0.25 },
+        scale: { duration: 0.12 },
+      }}
+    >
+      <AnimatePresence>
+        {pressing && (
+          <motion.span
+            initial={{ opacity: 0.5, scale: 0 }}
+            animate={{ opacity: 0, scale: 2.8 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            className="absolute -left-3 -top-3 h-6 w-6 rounded-full bg-[#00828A]/40"
+          />
+        )}
+      </AnimatePresence>
+      <svg width="20" height="20" viewBox="0 0 24 24" className="relative -translate-x-[3px] -translate-y-[2px] drop-shadow-md">
+        <path d="M4 2l16 9.5-7 1.6-3.6 6.4z" fill="#1C1F23" stroke="white" strokeWidth="1.6" strokeLinejoin="round" />
+      </svg>
+    </motion.div>
+  );
+}
 
 function TemplateDemo() {
   const { ref, phase, reduced } = useDemo(TEMPLATE_T);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const chipRef = useRef<HTMLSpanElement>(null);
+  const sendRef = useRef<HTMLSpanElement>(null);
+  const qtyRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const [cursor, setCursor] = useState({ x: 380, y: 260 });
+  const [counter, setCounter] = useState(TEMPLATE_SQ);
+
+  // Phases: 0 move to template · 1 click · 2 items fill in
+  // 3/5/7 move to a quantity · 4/6/8 count it up · 9 move to Send · 10 click · 11 sent
+  const editRow = phase >= 3 && phase <= 8 ? Math.floor((phase - 3) / 2) : -1; // which per-square row
+  const counting = phase === 4 || phase === 6 || phase === 8;
   const picked = phase >= 1;
   const showItems = phase >= 2;
-  const sq = phase >= 3 ? MEASURED_SQ : TEMPLATE_SQ;
-  const total = phase >= 3 ? TOTAL : TEMPLATE_TOTAL;
+  const sent = phase === 11;
+  const pressing = phase === 1 || phase === 10;
+
+  // Quantity shown for the k-th per-square row (0, 1, 2).
+  const qtyForRow = (k: number) => {
+    if (reduced) return MEASURED_SQ;
+    const countPhase = 4 + k * 2;
+    if (phase > countPhase) return MEASURED_SQ;
+    if (phase === countPhase) return counter;
+    return TEMPLATE_SQ;
+  };
+  let sqIndex = -1;
+  const rows = ITEMS.map((item) => {
+    if (!item.perSquare) return { item, k: -1, q: item.qty ?? 1 };
+    sqIndex += 1;
+    return { item, k: sqIndex, q: qtyForRow(sqIndex) };
+  });
+  const total = rows.reduce((s, r) => s + r.q * r.item.price, 0);
+  const deposit = Math.round(total * DEPOSIT_PCT) / 100;
+
+  // Move the pointer to whatever this phase is about to click.
+  useEffect(() => {
+    if (reduced) return;
+    const box = boxRef.current;
+    if (!box) return;
+    const target =
+      phase <= 1 ? chipRef.current : editRow >= 0 ? qtyRefs.current[editRow] : phase === 9 || phase === 10 ? sendRef.current : null;
+    if (!target) {
+      setCursor({ x: box.clientWidth * 0.78, y: box.clientHeight * 0.92 });
+      return;
+    }
+    const b = box.getBoundingClientRect();
+    const r = target.getBoundingClientRect();
+    setCursor({ x: r.left - b.left + r.width * 0.6, y: r.top - b.top + r.height * 0.6 });
+  }, [phase, editRow, reduced]);
+
+  // The quantity being edited counts up one at a time.
+  useEffect(() => {
+    if (reduced || !counting) return;
+    setCounter(TEMPLATE_SQ);
+    const id = setInterval(() => {
+      setCounter((v) => {
+        if (v >= MEASURED_SQ) {
+          clearInterval(id);
+          return v;
+        }
+        return v + 1;
+      });
+    }, 170);
+    return () => clearInterval(id);
+  }, [counting, phase, reduced]);
 
   return (
     <div ref={ref}>
       <Screen title={`Quote · ${CUSTOMER}`}>
-        <p className="mb-2 text-xs font-medium text-slate-500">Start from a template</p>
-        <div className="mb-3 flex flex-wrap gap-1.5">
-          {['Roof replacement', 'Roof repair', 'Gutters'].map((t) => {
-            const on = t === 'Roof replacement' && picked;
-            return (
-              <motion.span
-                key={t}
-                animate={{ scale: on && phase === 1 ? [1, 1.08, 1] : 1 }}
-                className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium ${
-                  on ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'
-                }`}
-              >
-                <FileText className="h-3 w-3" />
-                {t}
-              </motion.span>
-            );
-          })}
-        </div>
+        <div ref={boxRef} className="relative">
+          <Cursor x={cursor.x} y={cursor.y} show={!reduced && !sent} pressing={pressing} />
 
-        <div className="min-h-[178px] rounded-lg border border-slate-200">
-          {showItems ? (
-            ITEMS.map((item, i) => {
-              const q = qtyFor(item, sq);
-              const changed = phase === 3 && item.perSquare;
+          <p className="mb-2 text-xs font-medium text-slate-500">Start from a template</p>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {['Roof replacement', 'Roof repair', 'Gutters'].map((t) => {
+              const on = t === 'Roof replacement' && picked;
               return (
-                <motion.div
-                  key={item.name}
-                  initial={reduced ? false : { opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0, backgroundColor: changed ? '#fef3c7' : 'rgba(255,255,255,0)' }}
-                  transition={{ delay: phase === 2 ? i * 0.15 : 0, duration: 0.35, ease: EASE }}
-                  className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 text-xs last:border-b-0"
+                <span
+                  key={t}
+                  ref={t === 'Roof replacement' ? chipRef : undefined}
+                  className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                    on ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-600'
+                  }`}
                 >
-                  <span className="min-w-0 truncate text-slate-800">{item.name}</span>
-                  <span className="flex shrink-0 items-center gap-3 tabular-nums">
-                    <span className="w-12 text-right text-slate-500">
-                      {q} {item.unit}
-                    </span>
-                    <span className="w-14 text-right font-medium text-slate-900">{money(q * item.price)}</span>
-                  </span>
-                </motion.div>
+                  <FileText className="h-3 w-3" />
+                  {t}
+                </span>
               );
-            })
-          ) : (
-            <div className="flex h-[178px] items-center justify-center text-xs text-slate-400">Pick a template to fill in the quote</div>
-          )}
-        </div>
-
-        <div className="mt-3 space-y-1.5 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-slate-500">
-              {phase >= 3 ? `Measured: ${MEASURED_SQ} squares` : showItems ? `Template: ${TEMPLATE_SQ} squares` : ' '}
-            </span>
-            <span className="text-base font-semibold tabular-nums text-slate-900">
-              {showItems && (
-                <motion.span key={total} initial={reduced ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}>
-                  {money(total)}
-                </motion.span>
-              )}
-            </span>
+            })}
           </div>
-          <div className="flex h-9 items-center justify-between">
-            {phase >= 4 ? (
+
+          <div className="min-h-[196px] rounded-lg border border-slate-200">
+            {showItems ? (
+              rows.map(({ item, k, q }, i) => {
+                const editing = k >= 0 && k === editRow;
+                return (
+                  <motion.div
+                    key={item.name}
+                    initial={reduced ? false : { opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: phase === 2 ? i * 0.15 : 0, duration: 0.35, ease: EASE }}
+                    className="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-1.5 text-xs last:border-b-0"
+                  >
+                    <span className="min-w-0 truncate text-slate-800">{item.name}</span>
+                    <span className="flex shrink-0 items-center gap-2 tabular-nums">
+                      <span className="flex items-center gap-1 text-slate-500">
+                        <span
+                          ref={(el) => {
+                            if (k >= 0) qtyRefs.current[k] = el;
+                          }}
+                          className={`inline-flex h-6 min-w-[34px] items-center justify-center rounded border px-1 font-semibold text-slate-900 transition-colors ${
+                            editing ? 'border-slate-900 ring-2 ring-slate-900/15' : 'border-slate-200'
+                          }`}
+                        >
+                          {q}
+                          {editing && counting && <Caret />}
+                        </span>
+                        <span className="w-6">{item.unit}</span>
+                      </span>
+                      <span className="w-14 text-right font-medium text-slate-900">{money(q * item.price)}</span>
+                    </span>
+                  </motion.div>
+                );
+              })
+            ) : (
+              <div className="flex h-[196px] items-center justify-center text-xs text-slate-400">Pick a template to fill in the quote</div>
+            )}
+          </div>
+
+          <div className="mt-3 flex items-center justify-between text-sm">
+            <span className="text-slate-500">Total</span>
+            <span className="text-base font-semibold tabular-nums text-slate-900">{showItems ? money(total) : ' '}</span>
+          </div>
+          <div className="mt-1.5 flex h-9 items-center justify-between">
+            {showItems ? (
               <>
-                <span className="text-slate-600">
-                  Deposit {DEPOSIT_PCT}%: <span className="font-semibold tabular-nums text-slate-900">{money(DEPOSIT)}</span>
+                <span className="text-sm text-slate-600">
+                  Deposit {DEPOSIT_PCT}%: <span className="font-semibold tabular-nums text-slate-900">{money(deposit)}</span>
                 </span>
                 <motion.span
-                  initial={reduced ? false : { opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
+                  ref={sendRef}
+                  animate={{ scale: phase === 10 ? 0.93 : 1 }}
+                  transition={{ duration: 0.12 }}
+                  className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
+                    sent ? 'bg-slate-700' : 'bg-slate-900'
+                  }`}
                 >
-                  <Send className="h-3.5 w-3.5" /> Send quote
+                  {sent ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" strokeWidth={3} /> Quote sent
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-3.5 w-3.5" /> Send quote
+                    </>
+                  )}
                 </motion.span>
               </>
             ) : null}
@@ -702,6 +901,464 @@ function BalanceDemo() {
   );
 }
 
+/* ── Step 7: the whole job on one card ──────────────────── */
+
+const CARD_TABS = [
+  { key: 'overview', label: 'Overview', icon: User },
+  { key: 'quote', label: 'Quote', icon: FileText },
+  { key: 'schedule', label: 'Schedule', icon: CalendarDays },
+  { key: 'invoice', label: 'Invoice', icon: CreditCard },
+  { key: 'expenses', label: 'Expenses', icon: Receipt },
+  { key: 'tasks', label: 'Tasks', icon: ListChecks },
+  { key: 'activity', label: 'Activity', icon: MessageCircle },
+] as const;
+// The tabs the pointer visits, in order.
+const CARD_TOUR = ['overview', 'quote', 'schedule', 'invoice', 'activity'] as const;
+const CARD_T = CARD_TOUR.map(() => 2700);
+
+function CardRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-1.5 last:border-b-0">
+      <span className="text-slate-500">{label}</span>
+      <span className="text-right font-medium text-slate-900">{value}</span>
+    </div>
+  );
+}
+
+function CardPane({ tab }: { tab: string }) {
+  if (tab === 'overview')
+    return (
+      <div className="space-y-2">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-2 leading-snug text-slate-800">
+          Roof is about 20 years old and missing shingles. Want a price on a full replacement.
+        </div>
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-slate-300 to-slate-400">
+              <Camera className="h-3.5 w-3.5 text-white" />
+            </span>
+          ))}
+        </div>
+        <div>
+          <CardRow label="Address" value="47 Maple Ave, Levittown" />
+          <CardRow label="How soon" value="Within a month" />
+          <CardRow label="Heard about you" value="Truck QR code" />
+        </div>
+      </div>
+    );
+  if (tab === 'quote')
+    return (
+      <div>
+        <div className="mb-1.5 flex items-center justify-between">
+          <span className="font-semibold text-slate-900">Roof replacement</span>
+          <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-semibold text-white">Accepted Oct 7</span>
+        </div>
+        <div className="rounded-lg border border-slate-200 px-2">
+          {ITEMS.map((i) => (
+            <div key={i.name} className="flex justify-between border-b border-slate-100 py-1 last:border-b-0">
+              <span className="truncate text-slate-700">{i.name}</span>
+              <span className="tabular-nums text-slate-900">{money(qtyFor(i, MEASURED_SQ) * i.price)}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-1.5 flex justify-between font-semibold text-slate-900">
+          <span>Total</span>
+          <span className="tabular-nums">{money(TOTAL)}</span>
+        </div>
+      </div>
+    );
+  if (tab === 'schedule')
+    return (
+      <div className="space-y-2">
+        <div className="rounded-lg border-2 border-slate-900 p-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Scheduled</p>
+          <p className="text-sm font-semibold text-slate-900">Fri, Oct 24</p>
+          <p className="text-slate-600">8:00 AM – 4:00 PM</p>
+        </div>
+        <div>
+          <p className="mb-1 text-slate-500">Crew</p>
+          <div className="flex gap-1.5">
+            {['Mike R.', 'Jose T.'].map((n) => (
+              <span key={n} className="rounded-full border border-slate-900 px-2 py-0.5 font-medium text-slate-900">
+                {n}
+              </span>
+            ))}
+          </div>
+        </div>
+        <p className="flex items-center gap-1 text-slate-600">
+          <Check className="h-3 w-3" strokeWidth={3} /> Customer emailed the date and time
+        </p>
+      </div>
+    );
+  if (tab === 'invoice')
+    return (
+      <div className="space-y-2">
+        <div>
+          <div className="flex justify-between text-slate-500">
+            <span>Collected</span>
+            <span className="tabular-nums">of {money(TOTAL)}</span>
+          </div>
+          <p className="text-base font-semibold tabular-nums text-emerald-700">{money(DEPOSIT)}</p>
+          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full bg-emerald-600" style={{ width: `${DEPOSIT_PCT}%` }} />
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border border-slate-200 px-2 py-1.5">
+          <span className="text-slate-600">1. Deposit ({DEPOSIT_PCT}%)</span>
+          <span className="flex items-center gap-1.5">
+            <span className="tabular-nums text-slate-500">{money(DEPOSIT)}</span>
+            <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-800">Paid</span>
+          </span>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border-2 border-slate-900 px-2 py-1.5">
+          <span className="font-semibold text-slate-900">2. Balance</span>
+          <span className="flex items-center gap-1.5">
+            <span className="font-semibold tabular-nums text-slate-900">{money(BALANCE)}</span>
+            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-semibold text-slate-600">After the job</span>
+          </span>
+        </div>
+      </div>
+    );
+  // activity
+  const events: { d: string; t: string; paid?: boolean }[] = [
+    { d: 'Oct 3', t: 'Request came in from your booking link' },
+    { d: 'Oct 6', t: `Quote sent · ${money(TOTAL)}` },
+    { d: 'Oct 7', t: 'Customer accepted the quote' },
+    { d: 'Oct 7', t: `Deposit paid by card · ${money(DEPOSIT)}`, paid: true },
+    { d: 'Oct 8', t: 'Scheduled for Oct 24, customer emailed' },
+  ];
+  return (
+    <div className="space-y-1.5">
+      {events.map((e, i) => (
+        <motion.div
+          key={e.t}
+          initial={{ opacity: 0, x: -6 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: i * 0.12, duration: 0.3 }}
+          className="flex items-start gap-2"
+        >
+          <span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${e.paid ? 'bg-emerald-500' : 'bg-slate-400'}`} />
+          <span className="w-9 shrink-0 text-slate-400">{e.d}</span>
+          <span className={e.paid ? 'font-medium text-emerald-800' : 'text-slate-800'}>{e.t}</span>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+function CardDemo() {
+  const { ref, phase, reduced } = useDemo(CARD_T);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const tabRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [active, setActive] = useState<string>(reduced ? 'activity' : 'overview');
+  const [pressing, setPressing] = useState(false);
+  const [cursor, setCursor] = useState({ x: 60, y: 200 });
+
+  // Each phase: move the pointer to the next tab, click it, show it.
+  useEffect(() => {
+    if (reduced) {
+      setActive('activity');
+      return;
+    }
+    const tab = CARD_TOUR[phase];
+    const box = boxRef.current;
+    const el = tabRefs.current[tab];
+    if (box && el) {
+      const b = box.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      setCursor({ x: r.left - b.left + r.width * 0.55, y: r.top - b.top + r.height * 0.6 });
+    }
+    const press = setTimeout(() => setPressing(true), 750);
+    const show = setTimeout(() => {
+      setPressing(false);
+      setActive(tab);
+    }, 900);
+    return () => {
+      clearTimeout(press);
+      clearTimeout(show);
+    };
+  }, [phase, reduced]);
+
+  const label = CARD_TABS.find((t) => t.key === active)?.label;
+
+  return (
+    <div ref={ref}>
+      <div className="mx-auto w-full max-w-[480px] overflow-hidden rounded-xl border border-slate-200 bg-white text-[11px] shadow-2xl">
+        <div ref={boxRef} className="relative">
+          <Cursor x={cursor.x} y={cursor.y} show={!reduced} pressing={pressing} />
+
+          {/* Header: the same on every tab */}
+          <div className="bg-[#111827] px-3.5 pb-2.5 pt-3 text-white">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold">{CUSTOMER}</span>
+              <span className="rounded-full border border-white/20 px-2 py-0.5 text-[10px] font-semibold text-slate-200">Scheduled</span>
+            </div>
+            <p className="text-[10px] text-slate-400">Roof replacement · #48</p>
+            <div className="mt-2 grid grid-cols-4 divide-x divide-white/10 border-t border-white/10 pt-1.5 text-[10px]">
+              <div className="pr-1.5">
+                <p className="text-slate-400">Quote</p>
+                <p className="font-semibold">{money(TOTAL)}</p>
+              </div>
+              <div className="px-1.5">
+                <p className="text-slate-400">Deposit</p>
+                <p className="font-semibold text-emerald-400">Paid</p>
+              </div>
+              <div className="px-1.5">
+                <p className="text-slate-400">Balance</p>
+                <p className="font-semibold tabular-nums">{money(BALANCE)}</p>
+              </div>
+              <div className="pl-1.5">
+                <p className="text-slate-400">Scheduled</p>
+                <p className="font-semibold">Oct 24</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tabs + content */}
+          <div className="flex">
+            <div className="w-[104px] shrink-0 space-y-0.5 border-r border-slate-100 p-1.5">
+              {CARD_TABS.map((t) => {
+                const Icon = t.icon;
+                const on = t.key === active;
+                return (
+                  <div
+                    key={t.key}
+                    ref={(el) => {
+                      tabRefs.current[t.key] = el;
+                    }}
+                    className={`flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors ${
+                      on ? 'bg-slate-900 font-semibold text-white' : 'text-slate-600'
+                    }`}
+                  >
+                    <Icon className="h-3 w-3 shrink-0" />
+                    {t.label}
+                  </div>
+                );
+              })}
+            </div>
+            <div className="h-[236px] min-w-0 flex-1 overflow-hidden p-2.5">
+              <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={active}
+                  initial={reduced ? false : { opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <CardPane tab={active} />
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Ad: deposit and balance from the contractor's side ─── */
+
+// 0 pointer to Send deposit · 1 click · 2 sent, customer's phone slides in · 3 they tap Pay
+// 4 paid on the phone · 5 phone leaves, deposit shows Paid · 6 pointer to Send final invoice
+// 7 click · 8 sent, phone slides in · 9 they tap Pay · 10 paid · 11 paid in full
+const PAID_T = [1000, 350, 900, 1300, 900, 1100, 1000, 350, 900, 1300, 900, 2600];
+
+function PaidDemo() {
+  const { ref, phase, reduced } = useDemo(PAID_T);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const depBtnRef = useRef<HTMLSpanElement>(null);
+  const balBtnRef = useRef<HTMLSpanElement>(null);
+  const [cursor, setCursor] = useState({ x: 300, y: 300 });
+
+  const p = reduced ? 11 : phase;
+  const depSent = p >= 2;
+  const depPaid = p >= 5;
+  const balSent = p >= 8;
+  const allPaid = p >= 11;
+  const collected = allPaid ? TOTAL : depPaid ? DEPOSIT : 0;
+  const phoneFor: 'deposit' | 'balance' | null = p >= 2 && p <= 4 ? 'deposit' : p >= 8 && p <= 10 ? 'balance' : null;
+  const phonePaid = p === 4 || p === 10;
+  const tapping = p === 3 || p === 9;
+  const pressing = p === 1 || p === 7;
+
+  useEffect(() => {
+    if (reduced) return;
+    const box = boxRef.current;
+    const target = p <= 1 ? depBtnRef.current : p === 6 || p === 7 ? balBtnRef.current : null;
+    if (!box) return;
+    if (!target) {
+      setCursor({ x: box.clientWidth * 0.3, y: box.clientHeight * 0.95 });
+      return;
+    }
+    const b = box.getBoundingClientRect();
+    const r = target.getBoundingClientRect();
+    setCursor({ x: r.left - b.left + r.width * 0.6, y: r.top - b.top + r.height * 0.6 });
+  }, [p, reduced]);
+
+  const steps = [
+    { label: 'Deposit sent', done: depSent },
+    { label: 'Deposit paid', done: depPaid },
+    { label: 'Balance sent', done: balSent },
+    { label: 'Paid in full', done: allPaid },
+  ];
+  const pill = (kind: 'paid' | 'awaiting' | 'idle', text: string) => (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        kind === 'paid' ? 'bg-emerald-100 text-emerald-800' : kind === 'awaiting' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+      }`}
+    >
+      {text}
+    </span>
+  );
+
+  return (
+    <div ref={ref}>
+      <Screen title={`Invoice · ${CUSTOMER}`}>
+        <div ref={boxRef} className="relative">
+          <Cursor x={cursor.x} y={cursor.y} show={!reduced && phoneFor === null && !allPaid} pressing={pressing} />
+
+          {/* The customer's phone */}
+          <div className="pointer-events-none absolute -right-1 top-6 z-20">
+            <AnimatePresence>
+              {phoneFor && (
+                <motion.div
+                  key={phoneFor}
+                  initial={{ x: 60, opacity: 0, scale: 0.92 }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  exit={{ x: 60, opacity: 0, scale: 0.92 }}
+                  transition={{ duration: 0.4, ease: EASE }}
+                  className="relative w-[176px] rounded-[1.5rem] border border-white/10 bg-[#1C1F23] p-1.5 shadow-2xl"
+                >
+                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#1C1F23] px-2.5 py-0.5 text-[10px] font-semibold text-white">
+                    Customer&rsquo;s phone
+                  </div>
+                  <div className="overflow-hidden rounded-[1.15rem] bg-white">
+                    <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-3 py-1.5 text-[10px]">
+                      <span className="font-semibold text-slate-600">{BIZ}</span>
+                      <span className="text-slate-400">now</span>
+                    </div>
+                    {phonePaid ? (
+                      <div className="flex flex-col items-center gap-1.5 px-3 py-6 text-center">
+                        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-600">
+                          <Check className="h-5 w-5 text-white" strokeWidth={3} />
+                        </span>
+                        <p className="text-[12px] font-semibold text-slate-900">Payment sent</p>
+                        <p className="text-[10px] tabular-nums text-slate-500">{money(phoneFor === 'deposit' ? DEPOSIT : BALANCE)} paid</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2 px-3 py-3">
+                        <div>
+                          <p className="text-[12px] font-semibold leading-tight text-slate-900">
+                            {phoneFor === 'deposit' ? 'Deposit request' : 'Final invoice'}
+                          </p>
+                          <p className="text-[10px] text-slate-500">Roof replacement</p>
+                        </div>
+                        <p className="text-lg font-bold tabular-nums text-slate-900">{money(phoneFor === 'deposit' ? DEPOSIT : BALANCE)}</p>
+                        <motion.div
+                          animate={{ scale: tapping ? [1, 1, 0.92, 1] : 1 }}
+                          transition={{ duration: 1.3, times: [0, 0.75, 0.88, 1] }}
+                          className="flex items-center justify-center gap-1 rounded-lg bg-slate-900 py-1.5 text-[11px] font-semibold text-white"
+                        >
+                          <CreditCard className="h-3 w-3" /> Pay by card
+                        </motion.div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="mb-3 grid grid-cols-4 gap-1.5">
+            {steps.map((s) => (
+              <div key={s.label}>
+                <motion.div animate={{ backgroundColor: s.done ? '#059669' : '#e2e8f0' }} transition={{ duration: 0.4 }} className="h-1.5 rounded-full" />
+                <p className={`mt-1 text-[10px] leading-tight ${s.done ? 'font-semibold text-slate-800' : 'text-slate-400'}`}>{s.label}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mb-3 rounded-lg bg-slate-50 px-3 py-2">
+            <div className="flex items-baseline justify-between text-xs text-slate-500">
+              <span>Collected</span>
+              <span className="tabular-nums">of {money(TOTAL)}</span>
+            </div>
+            <p className="text-lg font-semibold tabular-nums text-emerald-700">{money(collected)}</p>
+            <div className="mt-1 h-2 overflow-hidden rounded-full bg-slate-200">
+              <motion.div className="h-full rounded-full bg-emerald-600" animate={{ width: `${(collected / TOTAL) * 100}%` }} transition={{ duration: 0.8, ease: EASE }} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className={`rounded-lg px-3 py-2.5 ${depPaid ? 'border border-slate-200' : 'border-2 border-slate-900'}`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-900">1. Deposit ({DEPOSIT_PCT}%)</p>
+                  <p className="text-base font-semibold tabular-nums text-slate-900">{money(DEPOSIT)}</p>
+                </div>
+                {depPaid ? pill('paid', 'Paid') : depSent ? pill('awaiting', 'Awaiting') : pill('idle', 'Not sent')}
+              </div>
+              {!depSent && (
+                <motion.span
+                  ref={depBtnRef}
+                  animate={{ scale: p === 1 ? 0.93 : 1 }}
+                  transition={{ duration: 0.12 }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
+                >
+                  <Send className="h-3.5 w-3.5" /> Send deposit request
+                </motion.span>
+              )}
+              {depSent && !depPaid && <p className="mt-1 text-xs text-slate-500">Sent with a pay button</p>}
+            </div>
+
+            <div
+              className={`rounded-lg px-3 py-2.5 ${
+                allPaid ? 'border border-slate-200' : depPaid ? 'border-2 border-slate-900' : 'border border-dashed border-slate-300 opacity-60'
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-900">2. Balance</p>
+                  <p className="text-base font-semibold tabular-nums text-slate-900">{money(BALANCE)}</p>
+                </div>
+                {allPaid ? pill('paid', 'Paid') : balSent ? pill('awaiting', 'Awaiting') : pill('idle', depPaid ? 'Job done' : 'After the job')}
+              </div>
+              {depPaid && !balSent && (
+                <motion.span
+                  ref={balBtnRef}
+                  animate={{ scale: p === 7 ? 0.93 : 1 }}
+                  transition={{ duration: 0.12 }}
+                  className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
+                >
+                  <Send className="h-3.5 w-3.5" /> Send final invoice
+                </motion.span>
+              )}
+              {balSent && !allPaid && <p className="mt-1 text-xs text-slate-500">Sent with a pay button</p>}
+            </div>
+          </div>
+
+          <div className="mt-2 flex h-9 items-center justify-center">
+            <AnimatePresence>
+              {allPaid && (
+                <motion.span
+                  initial={reduced ? false : { opacity: 0, scale: 1.4, rotate: -8 }}
+                  animate={{ opacity: 1, scale: 1, rotate: -4 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 260, damping: 16 }}
+                  className={`rounded border-2 border-emerald-600 px-3 py-0.5 ${D} text-lg font-extrabold uppercase tracking-wider text-emerald-700`}
+                >
+                  Paid in full · {money(TOTAL)}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </Screen>
+    </div>
+  );
+}
+
 /* ── Page layout ────────────────────────────────────────── */
 
 function PlanTag({ plan }: { plan: 'Free' | 'Pro' }) {
@@ -805,6 +1462,13 @@ export default function HowItWorksTour() {
         </p>
       </Step>
 
+      <Step n={7} title="All of it, on one card" demo={<CardDemo />}>
+        <p>
+          The request, the quote, the schedule, the deposit, the invoice and every update live on the same job card. Click any tab and it&rsquo;s right
+          there. Nothing to attach, nothing to go looking for.
+        </p>
+      </Step>
+
       <section className="bg-[#1C1F23] px-4 py-16 text-center text-white sm:py-20">
         <h2 className={`${D} text-3xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl`}>Try it on your next job</h2>
         <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/75">
@@ -828,3 +1492,7 @@ export default function HowItWorksTour() {
     </div>
   );
 }
+
+// Used by the ad recording page (app/ad/page.tsx).
+export { FormDemo, BoardDemo, TemplateDemo, QuoteDemo, DepositDemo, BalanceDemo, CardDemo, PaidDemo };
+export { FORM_T, BOARD_T, TEMPLATE_T, QUOTE_T, DEPOSIT_T, BALANCE_T, CARD_T, PAID_T };

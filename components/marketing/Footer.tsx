@@ -7,12 +7,12 @@ const columns: { heading: string; links: [string, string][] }[] = [
   {
     heading: 'Product',
     links: [
-           ['Pricing', '/#pricing'],
-      ['How it works', '/#how-it-works'],
-      ['Blog', '/blog'],
+         ['Pricing', '/#pricing'],
+      ['How it works', '/how-it-works'],
       ['Book a demo', '/book-demo'],
-           ['Deposit calculator', '/tools/deposit-calculator'],
-      ['Blog', '/blog'],
+      ['Deposit calculator', '/tools/deposit-calculator'],
+      ['Invoice maker', '/tools/invoice-generator'],
+            ['Blog', '/blog'],
       ['Sign up', '/signup'],
       ['Log in', '/login'],
     ],

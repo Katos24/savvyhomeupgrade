@@ -6,7 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Menu, X, ArrowRight, ChevronRight, ChevronDown, Calculator,
   Thermometer, Droplets, Zap, Home, Sparkles, BookOpen,
-  QrCode, LayoutDashboard, FileText, Mail, CalendarDays, CreditCard,
+  QrCode, LayoutDashboard, FileText, Mail, CalendarDays, CreditCard, Receipt,
 } from 'lucide-react';
 
 type NavItem = { label: string; desc: string; href: string; icon: React.ReactNode };
@@ -29,14 +29,16 @@ const INDUSTRY_LINKS: NavItem[] = [
   { label: 'Cleaning', desc: 'Residential & commercial cleaning', href: '/solutions/cleaning', icon: <Sparkles size={16} /> },
 ];
 
-// Free tool — its own top-level nav item (and in the site footer).
-// When there are more tools, turn this into a "Free Tools" dropdown.
-const TOOL_LINK = { label: 'Deposit Calculator', href: '/tools/deposit-calculator' };
+// Free tools: no sign-up needed. Also listed in the site footer.
+const TOOL_LINKS: NavItem[] = [
+  { label: 'Deposit Calculator', desc: 'Deposit and balance for any job, with sales tax', href: '/tools/deposit-calculator', icon: <Calculator size={16} /> },
+  { label: 'Invoice Maker', desc: 'Make a clean invoice and save it as a PDF', href: '/tools/invoice-generator', icon: <Receipt size={16} /> },
+];
 
 // Not a trade — shown as a footer row under Industries instead of an item in the list.
 const PARTNER_LINK = { label: 'Bookkeeper? Join the free partner program', href: '/partners' };
 
-type DropdownKey = 'features' | 'industries' | null;
+type DropdownKey = 'features' | 'industries' | 'tools' | null;
 
 export default function Nav() {
   const pathname = usePathname() || '/';
@@ -149,7 +151,7 @@ export default function Nav() {
 
         <div
           className={`absolute left-1/2 top-full -translate-x-1/2 pt-4 transition-all duration-200 ease-out ${
-            isFeatures ? 'w-[560px]' : 'w-[320px]'
+            isFeatures ? 'w-[560px]' : key === 'tools' ? 'w-[340px]' : 'w-[320px]'
           } ${open ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'}`}
         >
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl">
@@ -159,7 +161,9 @@ export default function Nav() {
               ))}
             </div>
 
-            {isFeatures ? (
+            {key === 'tools' ? (
+              <div className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-xs font-semibold text-slate-600">Free, no sign-up</div>
+            ) : isFeatures ? (
               <Link
                 href="/pricing"
                 onClick={() => setOpenDropdown(null)}
@@ -269,15 +273,15 @@ export default function Nav() {
 
           {/* Desktop links */}
           <div className="hidden items-center gap-8 md:flex">
+            <Link href="/how-it-works" className={navLinkClass(isActive('/how-it-works'))}>
+              How it works
+            </Link>
             {renderDesktopDropdown('features', 'Features', FEATURE_LINKS)}
             {renderDesktopDropdown('industries', 'Industries', INDUSTRY_LINKS)}
             <Link href="/pricing" className={navLinkClass(isActive('/pricing'))}>
               Pricing
             </Link>
-            <Link href={TOOL_LINK.href} className={`inline-flex items-center gap-1.5 ${navLinkClass(isActive(TOOL_LINK.href))}`}>
-              <Calculator size={15} />
-              {TOOL_LINK.label}
-            </Link>
+            {renderDesktopDropdown('tools', 'Free tools', TOOL_LINKS)}
           </div>
 
           {/* Desktop actions */}
@@ -342,19 +346,17 @@ export default function Nav() {
         </div>
 
         <div className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-4">
+          <Link href="/how-it-works" onClick={() => setMobileOpen(false)} className={mobileLinkClass(isActive('/how-it-works'))}>
+            How it works
+            <ChevronRight size={18} className="text-white/40" />
+          </Link>
           {renderMobileAccordion('features', 'Features', FEATURE_LINKS)}
           {renderMobileAccordion('industries', 'Industries', INDUSTRY_LINKS)}
           <Link href="/pricing" onClick={() => setMobileOpen(false)} className={mobileLinkClass(isActive('/pricing'))}>
             Pricing
             <ChevronRight size={18} className="text-white/40" />
           </Link>
-          <Link href={TOOL_LINK.href} onClick={() => setMobileOpen(false)} className={mobileLinkClass(isActive(TOOL_LINK.href))}>
-            <span className="inline-flex items-center gap-2">
-              <Calculator size={17} className="text-white/60" />
-              {TOOL_LINK.label}
-            </span>
-            <ChevronRight size={18} className="text-white/40" />
-          </Link>
+          {renderMobileAccordion('tools', 'Free tools', TOOL_LINKS)}
         </div>
 
         <div className="flex shrink-0 flex-col gap-2.5 border-t border-white/10 px-4 pb-8 pt-4">

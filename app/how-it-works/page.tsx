@@ -8,7 +8,6 @@ export const metadata = {
   title: 'How Lead2Project Works | From Request to Paid in Full',
   description:
     'Follow one roofing job from the customer request to the final payment: booking form, board, estimate templates, online quotes, deposits and the balance.',
-  robots: { index: false, follow: true },
 };
 
 export default function HowItWorksPage() {
