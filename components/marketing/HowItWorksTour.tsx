@@ -1414,7 +1414,7 @@ export default function HowItWorksTour() {
           From request to paid in full
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#3a3f45] sm:text-lg">
-          Follow one roofing job through Lead2Project, from the customer&rsquo;s first request to the final payment. Each step plays on its own as you scroll.
+          See exactly how a job goes from &ldquo;can you come take a look?&rdquo; to paid in full. No spreadsheets, no chasing.
         </p>
       </header>
 
