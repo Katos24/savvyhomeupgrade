@@ -36,49 +36,8 @@ import {
   ArrowUp,
 } from 'lucide-react';
 
-// Mock data for the board preview — illustrative only.
-type MockCard = { name: string; service: string; amount: string; date: string; fresh?: boolean; paid?: string; highlight?: boolean };
-
-const COLUMNS: { label: string; dot: string; cards: MockCard[]; hideOnPhone?: boolean }[] = [
-  {
-    label: 'New',
-    dot: 'bg-blue-500',
-    cards: [
-      { name: 'Maria Lopez', service: 'Roof repair', amount: '', date: 'Unscheduled', fresh: true },
-      { name: 'Dan Kim', service: 'Gutter cleaning', amount: '', date: 'Unscheduled' },
-      { name: 'L. Chen', service: 'Skylight leak', amount: '', date: 'Unscheduled' },
-    ],
-  },
-  {
-    label: 'Quoted',
-    dot: 'bg-purple-500',
-    cards: [
-      { name: 'S. Patel', service: 'Siding', amount: '$8,400', date: 'Unscheduled' },
-      { name: 'T. Brooks', service: 'Gutter install', amount: '$2,850', date: 'Unscheduled' },
-    ],
-  },
-  {
-    label: 'Scheduled',
-    dot: 'bg-amber-500',
-    cards: [
-      { name: 'M. Johnson', service: 'Roof repair', amount: '$12,000', date: 'Oct 9', paid: 'Deposit paid' },
-      { name: 'K. Nguyen', service: 'Chimney flashing', amount: '$1,900', date: 'Oct 14', paid: 'Deposit paid' },
-    ],
-  },
-  {
-    label: 'Completed',
-    dot: 'bg-emerald-500',
-    hideOnPhone: true,
-    cards: [
-      { name: 'J. Rivera', service: 'Roof repair', amount: '$4,200', date: 'Oct 2', paid: 'Paid in full' },
-      { name: 'A. Moore', service: 'Gutter guards', amount: '$950', date: 'Sep 29', paid: 'Paid in full' },
-    ],
-  },
-];
-
-
 /* ── The job card, as it looks in the app. Static, with clickable tabs. ──
-   M. Johnson is the same job as the board above, the invoice section and the profit section:
+   M. Johnson is the same job as the hero board and the invoice & profit section:
    $12,000 job, 40% deposit ($4,800) paid, $7,200 balance, expenses $7,130. */
 const fmt = (n: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
@@ -450,13 +409,20 @@ function Callouts({ side, tab, setTab }: { side: 'left' | 'right'; tab: Tab; set
   );
 }
 
-function JobCardPreview() {
+// Exported so the hero can open this same card over its board. `callouts` adds the feature call-outs on wide screens.
+// `hints` (desktop): teal dots on tabs not opened yet, a "Click to explore" label, and a clearer hover.
+export function JobCardPreview({ callouts = true, hints = false }: { callouts?: boolean; hints?: boolean } = {}) {
   const [tab, setTab] = useState<Tab>('Overview');
   const [showMore, setShowMore] = useState(false);
+  const [seen, setSeen] = useState<Tab[]>(['Overview']);
+  const pick = (t: Tab) => {
+    setTab(t);
+    setSeen((s) => (s.includes(t) ? s : [...s, t]));
+  };
 
   return (
     <div className="flex items-stretch justify-center gap-6">
-      <Callouts side="left" tab={tab} setTab={setTab} />
+      {callouts && <Callouts side="left" tab={tab} setTab={pick} />}
     <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-white/10 bg-white text-[11px] text-[#1C1F23] sm:text-xs shadow-2xl shadow-black/40 ring-4 ring-white/10">
       {/* Header */}
       <div className="bg-[#111827] px-4 sm:px-5 pt-3.5 pb-3 text-white">
@@ -512,7 +478,7 @@ function JobCardPreview() {
               type="button"
               role="tab"
               aria-selected={tab === label}
-              onClick={() => setTab(label)}
+              onClick={() => pick(label)}
               className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 font-semibold ${
                 tab === label ? 'bg-slate-900 text-white' : 'border border-slate-200 text-slate-600'
               }`}
@@ -534,21 +500,32 @@ function JobCardPreview() {
       <div className="flex">
         {/* Sidebar tabs */}
         <div className="hidden sm:block w-[132px] shrink-0 space-y-0.5 border-r border-slate-100 bg-white px-2 py-2.5" role="tablist">
-          {TABS.map(({ label, icon: Icon }) => (
-            <button
-              key={label}
-              type="button"
-              role="tab"
-              aria-selected={tab === label}
-              onClick={() => setTab(label)}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors ${
-                tab === label ? 'bg-blue-50 font-semibold text-blue-700' : 'text-slate-600 hover:bg-slate-50'
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5 shrink-0" />
-              {label}
-            </button>
-          ))}
+          {hints && (
+            <p className="mb-1.5 px-2 text-[9px] font-bold uppercase tracking-wider text-[#00828A]">Click to explore</p>
+          )}
+          {TABS.map(({ label, icon: Icon }) => {
+            const unseen = hints && !seen.includes(label);
+            return (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                aria-selected={tab === label}
+                onClick={() => pick(label)}
+                className={`flex w-full cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors ${
+                  tab === label
+                    ? 'bg-blue-50 font-semibold text-blue-700'
+                    : hints
+                      ? 'text-slate-600 hover:bg-[#00828A]/10 hover:text-[#00828A]'
+                      : 'text-slate-600 hover:bg-slate-50'
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5 shrink-0" />
+                <span className="flex-1">{label}</span>
+                {unseen && <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#00828A]" />}
+              </button>
+            );
+          })}
         </div>
 
         <div className="min-h-[420px] sm:min-h-[480px] min-w-0 flex-1 bg-slate-50/60 p-3 sm:p-4" role="tabpanel">
@@ -557,7 +534,7 @@ function JobCardPreview() {
         </div>
       </div>
     </div>
-      <Callouts side="right" tab={tab} setTab={setTab} />
+      {callouts && <Callouts side="right" tab={tab} setTab={pick} />}
     </div>
   );
 }
@@ -885,50 +862,6 @@ export default function FormAndDashboardSection() {
         </div>
       </div>
 
-    </section>
-  );
-}
-
-// "One job. One card." Rendered on its own on the home page (after the quote section).
-export function JobCardSection() {
-  return (
-    <section className="text-[#1C1F23]">
-      {/* ── Part 2: one job, one card (dark band so the card stands out) ── */}
-      <div className="relative overflow-hidden bg-slate-900 px-3 py-14 text-white sm:px-6 sm:py-20 lg:px-8">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)',
-            backgroundSize: '22px 22px',
-            maskImage: 'radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 100%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 100%)',
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 top-[60%] h-[560px] w-[820px] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00828A]/25 blur-[120px]"
-        />
-
-        <div className="relative mx-auto max-w-6xl">
-          <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
-            <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#5EC4C9]">
-              One card per job
-            </p>
-            <h2 className="mt-2 font-[family-name:var(--font-display)] text-[34px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
-              One job. One card. <span className="text-[#5EC4C9]">Everything in it.</span>
-            </h2>
-            <p className="mt-4 text-base leading-relaxed text-white/70 sm:text-lg">
-              Other tools spread a job across customers, quotes, invoices and payments. Here, open the card and it&rsquo;s all
-              there. This is M. Johnson&rsquo;s card from the board at the top of the page.
-            </p>
-            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-[#5EC4C9]">
-              Tap the tabs to look around
-            </p>
-          </div>
-          <JobCardPreview />
-        </div>
-      </div>
     </section>
   );
 }

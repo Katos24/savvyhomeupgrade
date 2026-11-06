@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useInView, useReducedMotion } from 'framer-motion';
 import {
   CheckCircle2,
   Send,
@@ -37,6 +37,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
+import { JobCardPreview } from '@/components/marketing/FormAndDashboardSection';
 
 // Your demo booking link. Leave empty to hide the "Book a demo" button.
 const DEMO_URL = '/book-demo';
@@ -91,11 +92,12 @@ const HERO_PHOTOS: HeroPhoto[] = [
   { src: '', alt: 'Work van parked at a job site', label: 'Field crews', icon: Truck, className: 'right-[12%] top-[64%] h-36 w-36 rotate-2' },
 ];
 
-// The board under the headline. Every tag is something the product really does:
+// The board under the headline. About a second after load, M. Johnson's card opens on top of it
+// (the real job card, same as in the app). Every tag is something the product really does:
 // photos with requests, quote accepted online, deposits by card, cash/check recorded,
 // automatic payment reminders, Google review requests, profit per job.
 type Tag = { icon: LucideIcon; label: string; tone: 'teal' | 'green' | 'amber' | 'slate' | 'violet' };
-type HeroCard = { name: string; service: string; amount?: string; date?: string; tags: Tag[]; fresh?: boolean };
+type HeroCard = { name: string; service: string; amount?: string; date?: string; tags: Tag[]; fresh?: boolean; opens?: boolean; desktopOnly?: boolean };
 type HeroCol = { label: string; dot: string; cards: HeroCard[] };
 
 const TAG_TONE: Record<Tag['tone'], string> = {
@@ -113,6 +115,7 @@ const HERO_BOARD: HeroCol[] = [
     cards: [
       { name: 'Maria Lopez', service: 'Roof repair', date: 'Just now', fresh: true, tags: [{ icon: Camera, label: '2 photos', tone: 'teal' }] },
       { name: 'Dan K.', service: 'Gutter cleaning', date: 'Yesterday', tags: [{ icon: FileText, label: 'Booking form', tone: 'slate' }] },
+      { name: 'L. Chen', service: 'Skylight leak', date: '2 days ago', desktopOnly: true, tags: [{ icon: Camera, label: '3 photos', tone: 'teal' }] },
     ],
   },
   {
@@ -129,12 +132,21 @@ const HERO_BOARD: HeroCol[] = [
     cards: [
       {
         name: 'M. Johnson',
-        service: 'Roof replacement',
+        service: 'Roof repair',
+        opens: true,
         amount: '$12,000',
         date: 'Thu · 8:00 AM',
         tags: [{ icon: CreditCard, label: 'Deposit paid by card', tone: 'green' }],
       },
       { name: 'K. Nguyen', service: 'Chimney flashing', amount: '$1,900', date: 'Mon · 9:00 AM', tags: [{ icon: Bell, label: 'Reminder sent', tone: 'amber' }] },
+      {
+        name: 'P. Shah',
+        service: 'Siding repair',
+        amount: '$3,200',
+        date: 'Fri · 7:30 AM',
+        desktopOnly: true,
+        tags: [{ icon: CalendarDays, label: 'Schedule email sent', tone: 'slate' }],
+      },
     ],
   },
   {
@@ -164,7 +176,7 @@ export default function Hero() {
   return (
     <div className="bg-white text-[#1C1F23] antialiased selection:bg-[#00828A]/20 overflow-x-hidden">
       {/* ── Dark hero: matches the dark nav at the top of the page ── */}
-      <section className="relative overflow-hidden bg-slate-900 px-5 pb-36 pt-24 text-white sm:px-6 sm:pb-44 sm:pt-28 lg:px-8 lg:pb-52 lg:pt-32">
+      <section className="relative overflow-hidden bg-slate-900 px-5 pb-36 pt-28 text-white sm:px-6 sm:pb-44 sm:pt-32 lg:px-8 lg:pb-52 lg:pt-36">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -177,12 +189,7 @@ export default function Hero() {
         ))}
 
         <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-sm font-medium text-white/80">
-            <span className="h-2 w-2 rounded-full bg-[#5EC4C9]" />
-            Built for roofers, plumbers, HVAC &amp; every trade
-          </div>
-
-          <h1 className="mt-5 font-[family-name:var(--font-display)] text-[44px] font-extrabold uppercase leading-[0.92] tracking-tight min-[400px]:text-[52px] sm:mt-6 sm:text-7xl lg:text-[84px]">
+          <h1 className="font-[family-name:var(--font-display)] text-[44px] font-extrabold uppercase leading-[0.92] tracking-tight min-[400px]:text-[52px] sm:text-7xl lg:text-[84px]">
             Running jobs just got{' '}
             <span className="mt-2.5 inline-block -rotate-1 whitespace-nowrap rounded-2xl bg-[#5EC4C9] px-3.5 pb-1 pt-2 text-slate-900 shadow-[0_10px_40px_-8px_rgba(94,196,201,0.6)] sm:px-5">
               easy.
@@ -259,64 +266,214 @@ function TagPill({ tag }: { tag: Tag }) {
   );
 }
 
-function HeroBoard() {
+function BoardCardTile({ c, active, onOpen }: { c: HeroCard; active: boolean; onOpen: () => void }) {
+  // Only the card that opens is highlighted, so it's clear which job the card belongs to
+  const ring = active ? 'border-[#00828A] ring-2 ring-[#00828A]/30' : 'border-slate-200';
+  const body = (
+    <>
+      <div className="flex items-baseline justify-between gap-1.5">
+        <p className="truncate text-[12px] font-bold text-slate-900">{c.name}</p>
+        {c.amount && <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-900">{c.amount}</span>}
+      </div>
+      <p className="truncate text-[11px] text-slate-500">{c.service}</p>
+      {c.date && <p className={`mt-0.5 text-[10px] ${c.fresh ? 'font-bold text-blue-600' : 'text-slate-400'}`}>{c.date}</p>}
+      <div className="mt-2 flex flex-wrap gap-1">
+        {c.tags.map((t) => (
+          <TagPill key={t.label} tag={t} />
+        ))}
+      </div>
+      {c.opens && (
+        <p className="mt-2 inline-flex items-center gap-1 text-[10px] font-bold text-[#00828A]">
+          Open job card <ArrowRight className="h-3 w-3" />
+        </p>
+      )}
+    </>
+  );
+  if (!c.opens) return <div className={`rounded-xl border bg-white p-2.5 shadow-sm ${ring}`}>{body}</div>;
   return (
-    <div className="relative" role="img" aria-label="Example Lead2Project job board with jobs moving from new request to paid">
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`block w-full rounded-xl border bg-white p-2.5 text-left shadow-sm transition-shadow hover:shadow-md ${ring}`}
+      aria-label={`Open ${c.name}'s job card`}
+    >
+      {body}
+    </button>
+  );
+}
+
+function HeroBoard() {
+  const reduceMotion = useReducedMotion();
+  // Board first. On desktop, M. Johnson's card opens once when the board is well into view.
+  // On phones it stays on the list until they tap. After any click, it's fully manual.
+  const [view, setView] = useState<'card' | 'board'>('board');
+  const touched = useRef(false);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(boardRef, { once: true, amount: 0.5 });
+
+  useEffect(() => {
+    if (touched.current) return;
+    const desktop = typeof window !== 'undefined' && window.matchMedia('(min-width: 640px)').matches;
+    if (!desktop) return;
+    if (reduceMotion) {
+      setView('card');
+      return;
+    }
+    if (!inView) return;
+    const t = setTimeout(() => {
+      if (!touched.current) setView('card');
+    }, 450);
+    return () => clearTimeout(t);
+  }, [inView, reduceMotion]);
+
+  const choose = (v: 'card' | 'board') => {
+    touched.current = true;
+    setView(v);
+  };
+  const open = view === 'card';
+  const highlight = true; // M. Johnson stays highlighted so it's clear which job the card belongs to
+  const openCard = () => choose('card');
+  const activeJobs = HERO_BOARD.filter((c) => c.label !== 'Paid').reduce((n, c) => n + c.cards.length, 0);
+  const rows = HERO_BOARD.flatMap((col) => col.cards.filter((c) => !c.desktopOnly).map((c) => ({ c, status: col.label, dot: col.dot })));
+
+  return (
+    <div className="relative">
       <div aria-hidden className="pointer-events-none absolute inset-x-10 bottom-0 top-10 -z-10 rounded-[2rem] bg-[#00828A]/35 blur-3xl" />
 
-      <div aria-hidden className="overflow-hidden rounded-2xl bg-white shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] ring-1 ring-black/5">
-        {/* Window bar */}
-        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
-          <div className="flex min-w-0 items-center gap-3">
-            <div className="hidden items-center gap-1.5 sm:flex">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-            </div>
-            <p className="truncate text-sm font-bold">Jobs</p>
-            <span className="hidden rounded-md bg-slate-100 p-0.5 text-[11px] font-semibold sm:inline-flex">
-              <span className="rounded bg-white px-2 py-0.5 shadow-sm">Board</span>
-              <span className="px-2 py-0.5 text-slate-500">Table</span>
-              <span className="px-2 py-0.5 text-slate-500">Calendar</span>
-            </span>
-          </div>
-          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Example data</span>
-        </div>
-
-        {/* Columns: side by side from tablet up, swipeable on phones */}
-        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto bg-[#F4F7F6] p-3 [scrollbar-width:none] sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-4 [&::-webkit-scrollbar]:hidden">
-          {HERO_BOARD.map((col) => (
-            <div key={col.label} className="w-[72%] shrink-0 snap-start space-y-2 sm:w-auto sm:min-w-0">
-              <div className="flex items-center gap-1.5 px-1">
-                <span className={`h-2 w-2 rounded-full ${col.dot}`} />
-                <span className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-600">{col.label}</span>
-                <span className="text-[11px] text-slate-400">{col.cards.length}</span>
-              </div>
-              {col.cards.map((c) => (
-                <div
-                  key={c.name}
-                  className={`rounded-xl border bg-white p-2.5 shadow-sm ${c.fresh ? 'border-[#00828A] ring-2 ring-[#00828A]/20' : 'border-slate-200'}`}
-                >
-                  <div className="flex items-baseline justify-between gap-1.5">
-                    <p className="truncate text-[12px] font-bold text-slate-900">{c.name}</p>
-                    {c.amount && <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-900">{c.amount}</span>}
-                  </div>
-                  <p className="truncate text-[11px] text-slate-500">{c.service}</p>
-                  {c.date && (
-                    <p className={`mt-0.5 text-[10px] ${c.fresh ? 'font-bold text-[#00828A]' : 'text-slate-400'}`}>{c.date}</p>
-                  )}
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {c.tags.map((t) => (
-                      <TagPill key={t.label} tag={t} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+      {/* Board / job card switch */}
+      <div className="mb-4 flex justify-center">
+        <div className="inline-flex rounded-full bg-white/10 p-1 ring-1 ring-white/20 backdrop-blur" role="tablist" aria-label="Show the board or a job card">
+          {([
+            { id: 'card', label: 'Job card' },
+            { id: 'board', label: 'Board' },
+          ] as const).map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              role="tab"
+              aria-selected={view === o.id}
+              onClick={() => choose(o.id)}
+              className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                view === o.id ? 'bg-white text-slate-900 shadow-sm' : 'text-white/80 hover:text-white'
+              }`}
+            >
+              {o.label}
+            </button>
           ))}
         </div>
       </div>
-      <p className="mt-3 text-center text-xs text-slate-400 sm:hidden">Swipe the board →</p>
+
+      {/* Board and card share one grid cell, so the space is reserved and nothing jumps when the card opens */}
+      <div ref={boardRef} className="grid">
+        {/* ── The board ── */}
+        <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] ring-1 ring-black/5 [grid-area:1/1] sm:min-h-[680px]">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="hidden items-center gap-1.5 sm:flex">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+              </div>
+              <p className="truncate text-sm font-bold">Jobs</p>
+              <span className="rounded-full bg-[#00828A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#00727A]">{activeJobs} active</span>
+            </div>
+            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Example data</span>
+          </div>
+
+          {/* Phones: a simple list, like the app on a phone */}
+          <ul className="flex-1 space-y-1.5 bg-[#F4F7F6] p-3 sm:hidden">
+            {rows.map(({ c, status, dot }) => {
+              const active = !!c.opens && highlight;
+              const inner = (
+                <>
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-bold text-slate-900">
+                      {c.name} {c.amount && <span className="font-semibold text-slate-500">· {c.amount}</span>}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      <TagPill tag={c.tags[0]} />
+                    </div>
+                  </div>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} /> {status}
+                  </span>
+                </>
+              );
+              const cls = `flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left ${
+                active ? 'border-[#00828A] ring-2 ring-[#00828A]/30' : 'border-slate-200'
+              }`;
+              return (
+                <li key={c.name}>
+                  {c.opens ? (
+                    <button type="button" onClick={openCard} className={cls} aria-label={`Open ${c.name}'s job card`}>
+                      {inner}
+                    </button>
+                  ) : (
+                    <div className={cls}>{inner}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+
+          {/* Tablet and up: board columns */}
+          <div className="hidden flex-1 grid-cols-4 gap-3 bg-[#F4F7F6] p-4 sm:grid">
+            {HERO_BOARD.map((col) => (
+              <div key={col.label} className="min-w-0 space-y-2">
+                <div className="flex items-center gap-1.5 px-1">
+                  <span className={`h-2 w-2 rounded-full ${col.dot}`} />
+                  <span className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-600">{col.label}</span>
+                  <span className="text-[11px] text-slate-400">{col.cards.length}</span>
+                </div>
+                {col.cards.map((c) => (
+                  <BoardCardTile key={c.name} c={c} active={!!c.opens && highlight} onOpen={openCard} />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── M. Johnson's job card, opened over the board ── */}
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              key="card"
+              className="relative z-10 flex items-start justify-center rounded-2xl px-2 pb-4 pt-14 [grid-area:1/1] sm:px-6 sm:pt-16"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <button
+                type="button"
+                aria-label="Show the board"
+                onClick={() => choose('board')}
+                className="absolute inset-0 cursor-default rounded-2xl bg-slate-900/45 backdrop-blur-[2px]"
+              />
+              <motion.div
+                className="relative w-full max-w-2xl"
+                initial={{ y: 24, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 16, opacity: 0 }}
+                transition={{ duration: 0.25, ease: EASE }}
+              >
+                <button
+                  type="button"
+                  onClick={() => choose('board')}
+                  className="absolute -top-10 right-0 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-md hover:bg-white"
+                >
+                  <X className="h-3.5 w-3.5" /> See the board
+                </button>
+                <JobCardPreview callouts={false} hints />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <p className="mt-3 text-center text-xs text-slate-400">
+        {open ? 'Click the tabs to look around, or click outside the card to see the board.' : 'Tap M. Johnson to open his job card.'}
+      </p>
     </div>
   );
 }
