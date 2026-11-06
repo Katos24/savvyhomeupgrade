@@ -81,7 +81,17 @@ type Tab = 'Quote' | 'Invoice';
 // What the customer's phone is showing.
 type PhoneStage = 'quote' | 'accepted' | 'deposit' | 'paid';
 
-export default function QuoteBuilderDemo() {
+type QuoteBuilderDemoProps = {
+  /** Restart on its own after a short pause instead of stopping on a Replay button. */
+  loop?: boolean;
+  /** 'left' (default) sits left-aligned on large screens, as on the quoting page. 'center' centers it. */
+  align?: 'left' | 'center';
+  /** White caption for dark backgrounds. */
+  dark?: boolean;
+};
+
+// Defaults keep the original behavior (used on the quoting page): plays once, left-aligned, dark caption.
+export default function QuoteBuilderDemo({ loop = false, align = 'left', dark = false }: QuoteBuilderDemoProps = {}) {
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<Phase>(0);
   const [shown, setShown] = useState(0); // how many line items are visible
@@ -231,8 +241,9 @@ export default function QuoteBuilderDemo() {
         setTab('Invoice');
         setPhase(5);
       });
-      // Play once, then stop on this frame with a Replay button
-      at(20700, () => setDone(true));
+      // Play once, then stop on this frame with a Replay button (or start over on its own when looping)
+      if (loop) at(23500, () => setRunId((n) => n + 1));
+      else at(20700, () => setDone(true));
     };
 
     run();
@@ -240,7 +251,7 @@ export default function QuoteBuilderDemo() {
       active = false;
       timers.forEach(clearTimeout);
     };
-  }, [reduceMotion, runId]);
+  }, [reduceMotion, runId, loop]);
 
   const loaded = shown > 0;
   const subtotal = ITEMS.slice(0, shown).reduce((s, i, idx) => s + qty[idx] * i.p, 0);
@@ -249,7 +260,7 @@ export default function QuoteBuilderDemo() {
   const depositDue = Math.round(total * 40) / 100;
 
   return (
-    <div className="w-full max-w-2xl mx-auto lg:ml-0">
+    <div className={`w-full max-w-2xl mx-auto ${align === 'left' ? 'lg:ml-0' : ''}`}>
       {/* Caption */}
       <div className="mb-3 min-h-6 text-center">
         <AnimatePresence mode="wait">
@@ -259,7 +270,7 @@ export default function QuoteBuilderDemo() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.25 }}
-            className="text-sm font-semibold text-[#1C1F23]"
+            className={`text-sm font-semibold ${dark ? 'text-white' : 'text-[#1C1F23]'}`}
           >
             {adjusting ? 'Change anything for this job: 22 squares becomes 25' : CAPTIONS[phase]}
           </motion.p>
@@ -685,7 +696,7 @@ export default function QuoteBuilderDemo() {
       </div>
 
       {/* Replay */}
-      <div className="mt-3 flex h-9 justify-center">
+      <div className={`mt-3 justify-center ${loop ? 'hidden' : 'flex h-9'}`}>
         <AnimatePresence>
           {done && (
             <motion.button

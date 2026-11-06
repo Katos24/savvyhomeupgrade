@@ -22,15 +22,28 @@ import {
   X,
   Download,
   Wrench,
+  ArrowRight,
+  PlayCircle,
+  Star,
+  Camera,
+  Banknote,
+  TrendingUp,
+  Home,
+  Droplets,
+  Zap,
+  Thermometer,
+  Smartphone,
+  Truck,
+  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import QuoteBuilderDemo from '@/components/marketing/QuoteBuilderDemo';
 
 // Your demo booking link. Leave empty to hide the "Book a demo" button.
 const DEMO_URL = '/book-demo';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+/* Used by JobDemo below (not shown in the hero) */
 const SIDEBAR = [
   { icon: User, label: 'Overview' },
   { icon: FileText, label: 'Quote' },
@@ -43,7 +56,6 @@ const SIDEBAR = [
   { icon: MessageCircle, label: 'Activity' },
 ];
 
-// Mobile: same bottom tab bar as the real app
 const MOBILE_TABS = [
   { icon: User, label: 'Overview' },
   { icon: FileText, label: 'Quote' },
@@ -62,119 +74,272 @@ const CAPTIONS: Record<Phase, string> = {
   3: 'Deposit secured! You are ready to start work.',
 };
 
+/* ───────────────────────── Hero content (static: no animation, fast to load) ───────────────────────── */
+
+// Optional photos beside the headline on extra-wide screens.
+// Put images in /public/hero/ and set `src`, e.g. src: '/hero/roofer.jpg'.
+// Use your own photos, photos you have permission to use, or licensed stock (Unsplash / Pexels).
+// While `src` is empty, a branded placeholder tile is shown instead.
+type HeroPhoto = { src: string; alt: string; label: string; icon: LucideIcon; className: string };
+
+const HERO_PHOTOS: HeroPhoto[] = [
+  { src: '', alt: 'Roofer installing shingles', label: 'Roofing', icon: Home, className: 'left-[3%] top-[18%] h-44 w-44 -rotate-3' },
+  { src: '', alt: 'Plumber working under a sink', label: 'Plumbing', icon: Droplets, className: 'left-[12%] top-[50%] h-36 w-36 rotate-2' },
+  { src: '', alt: 'Contractor checking a job on a phone', label: 'On the job', icon: Smartphone, className: 'left-[2%] top-[70%] h-32 w-32 -rotate-2' },
+  { src: '', alt: 'Electrician working on a panel', label: 'Electrical', icon: Zap, className: 'right-[4%] top-[16%] h-44 w-44 rotate-3' },
+  { src: '', alt: 'HVAC tech servicing an outdoor unit', label: 'HVAC', icon: Thermometer, className: 'right-[2%] top-[48%] h-32 w-32 -rotate-2' },
+  { src: '', alt: 'Work van parked at a job site', label: 'Field crews', icon: Truck, className: 'right-[12%] top-[64%] h-36 w-36 rotate-2' },
+];
+
+// The board under the headline. Every tag is something the product really does:
+// photos with requests, quote accepted online, deposits by card, cash/check recorded,
+// automatic payment reminders, Google review requests, profit per job.
+type Tag = { icon: LucideIcon; label: string; tone: 'teal' | 'green' | 'amber' | 'slate' | 'violet' };
+type HeroCard = { name: string; service: string; amount?: string; date?: string; tags: Tag[]; fresh?: boolean };
+type HeroCol = { label: string; dot: string; cards: HeroCard[] };
+
+const TAG_TONE: Record<Tag['tone'], string> = {
+  teal: 'bg-[#00828A]/10 text-[#00727A]',
+  green: 'bg-emerald-50 text-emerald-700',
+  amber: 'bg-amber-50 text-amber-800',
+  slate: 'bg-slate-100 text-slate-600',
+  violet: 'bg-violet-50 text-violet-700',
+};
+
+const HERO_BOARD: HeroCol[] = [
+  {
+    label: 'New',
+    dot: 'bg-blue-500',
+    cards: [
+      { name: 'Maria Lopez', service: 'Roof repair', date: 'Just now', fresh: true, tags: [{ icon: Camera, label: '2 photos', tone: 'teal' }] },
+      { name: 'Dan K.', service: 'Gutter cleaning', date: 'Yesterday', tags: [{ icon: FileText, label: 'Booking form', tone: 'slate' }] },
+    ],
+  },
+  {
+    label: 'Quoted',
+    dot: 'bg-purple-500',
+    cards: [
+      { name: 'S. Patel', service: 'Siding', amount: '$8,400', tags: [{ icon: Send, label: 'Quote emailed', tone: 'violet' }] },
+      { name: 'T. Brooks', service: 'Gutter install', amount: '$2,850', tags: [{ icon: Check, label: 'Accepted online', tone: 'green' }] },
+    ],
+  },
+  {
+    label: 'Scheduled',
+    dot: 'bg-amber-500',
+    cards: [
+      {
+        name: 'M. Johnson',
+        service: 'Roof replacement',
+        amount: '$12,000',
+        date: 'Thu · 8:00 AM',
+        tags: [{ icon: CreditCard, label: 'Deposit paid by card', tone: 'green' }],
+      },
+      { name: 'K. Nguyen', service: 'Chimney flashing', amount: '$1,900', date: 'Mon · 9:00 AM', tags: [{ icon: Bell, label: 'Reminder sent', tone: 'amber' }] },
+    ],
+  },
+  {
+    label: 'Paid',
+    dot: 'bg-emerald-500',
+    cards: [
+      {
+        name: 'J. Rivera',
+        service: 'Roof repair',
+        amount: '$4,200',
+        tags: [
+          { icon: TrendingUp, label: '$1,640 profit', tone: 'teal' },
+          { icon: Star, label: 'Review requested', tone: 'amber' },
+        ],
+      },
+      { name: 'A. Moore', service: 'Gutter guards', amount: '$950', tags: [{ icon: Banknote, label: 'Paid by check', tone: 'slate' }] },
+    ],
+  },
+];
+
+const DOT_GRID = 'radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px)';
+const DOT_MASK = 'radial-gradient(ellipse 70% 60% at 50% 40%, black 30%, transparent 100%)';
+
 /* ───────────────────────── Hero ───────────────────────── */
 
 export default function Hero() {
   return (
-    <div
-      className="bg-[#F4EFE6] text-[#1C1F23] antialiased selection:bg-[#00828A]/20 overflow-x-hidden"
-      style={{
-        backgroundImage:
-          'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
-        backgroundSize: '32px 32px',
-      }}
-    >
-      <section className="relative overflow-hidden pt-28 sm:pt-32 lg:pt-36 pb-14 sm:pb-20 lg:pb-24 px-5 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
-          {/* Phones: headline → demo → buttons. Desktop: text on the left (headline above buttons), demo on the right. */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-x-8 gap-y-8 sm:gap-y-10 lg:gap-y-7">
-            {/* ── Headline + subhead ── */}
-            <div className="lg:col-span-5 lg:row-start-1 lg:self-end flex flex-col space-y-5 sm:space-y-6 text-center sm:text-left">
-              <h1 className="font-[family-name:var(--font-display)] text-[52px] sm:text-7xl lg:text-[80px] xl:text-[88px] font-extrabold uppercase leading-[0.88] tracking-tight text-[#1C1F23]">
-                <span className="block">Quote it.</span>
-                <span className="block">Win it.</span>
-                <span className="relative inline-block whitespace-nowrap">
-                  <motion.span
-                    aria-hidden
-                    initial={{ scaleX: 0 }}
-                    animate={{ scaleX: 1 }}
-                    transition={{ duration: 0.6, delay: 0.25, ease: EASE }}
-                    className="absolute -left-[0.04em] -right-[0.04em] bottom-[0.02em] h-[0.3em] origin-left -rotate-[0.6deg] rounded-[0.06em] bg-[#5EC4C9]"
-                  />
-                  <span className="relative">Get paid.</span>
-                </span>
-              </h1>
+    <div className="bg-white text-[#1C1F23] antialiased selection:bg-[#00828A]/20 overflow-x-hidden">
+      {/* ── Dark hero: matches the dark nav at the top of the page ── */}
+      <section className="relative overflow-hidden bg-slate-900 px-5 pb-36 pt-24 text-white sm:px-6 sm:pb-44 sm:pt-28 lg:px-8 lg:pb-52 lg:pt-32">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ backgroundImage: DOT_GRID, backgroundSize: '22px 22px', maskImage: DOT_MASK, WebkitMaskImage: DOT_MASK }}
+        />
+        <div aria-hidden className="pointer-events-none absolute left-1/2 top-[30%] h-[520px] w-[820px] -translate-x-1/2 rounded-full bg-[#00828A]/25 blur-[140px]" />
 
-              <p className="text-[17px] sm:text-lg lg:text-xl text-[#3a3f45] leading-relaxed max-w-[36ch] mx-auto sm:mx-0 sm:max-w-[44ch]">
-                Every request becomes one card. Quote it, collect the deposit up front, schedule it, and send the
-                final invoice, all without leaving the job.
-              </p>
-            </div>
+        {HERO_PHOTOS.map((photo) => (
+          <HeroPhotoTile key={photo.label} photo={photo} />
+        ))}
 
-            {/* ── Auto-play demo ── */}
-            <motion.div
-              className="lg:col-span-7 lg:col-start-6 lg:row-start-1 lg:row-span-2 lg:self-center w-full overflow-hidden"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.15 }}
-            >
-              <QuoteBuilderDemo />
-            </motion.div>
-
-            {/* ── Buttons + checks ── */}
-            <div className="lg:col-span-5 lg:row-start-2 lg:self-start flex flex-col space-y-5 sm:space-y-6">
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.24 }}
-                className="flex flex-col sm:flex-row items-stretch sm:items-center justify-start gap-3 sm:gap-4"
-              >
-                <Link
-                  href="/signup"
-                  className="w-full sm:w-auto bg-[#00828A] hover:bg-[#006e75] active:scale-[0.98] text-white font-[family-name:var(--font-display)] text-base sm:text-lg font-bold uppercase tracking-wider px-8 py-3.5 sm:py-4 rounded-md shadow-md transition-all text-center min-h-[48px] flex items-center justify-center"
-                >
-                  Start free
-                </Link>
-                {DEMO_URL && (
-                  <Link
-                    href={DEMO_URL}
-                    className="w-full sm:w-auto bg-white text-[#1C1F23] hover:bg-slate-50 active:scale-[0.98] font-[family-name:var(--font-display)] text-base sm:text-lg font-bold uppercase tracking-wider px-7 py-3.5 sm:py-4 rounded-md border border-slate-300 shadow-md transition-all text-center min-h-[48px] flex items-center justify-center"
-                  >
-                                      Book a 15-min demo
-                  </Link>
-                )}
-              </motion.div>
-
-              <Link
-                href="/how-it-works"
-                className="group -mt-1 inline-flex items-center justify-center sm:justify-start gap-1.5 text-sm sm:text-base font-semibold text-[#00828A] hover:text-[#006e75] transition-colors"
-              >
-                Or see how it works, step by step
-                <span aria-hidden className="transition-transform group-hover:translate-x-0.5">&rarr;</span>
-              </Link>
-
-                     <motion.ul
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.32 }}
-                className="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-2 sm:gap-x-6 text-sm sm:text-base font-semibold text-[#3a3f45]"
-              >
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#00828A] shrink-0" /> Free plan
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#00828A] shrink-0" /> Card payments through Stripe
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#00828A] shrink-0" /> Quotes customers accept online
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-[#00828A] shrink-0" /> Import your old customers
-                </li>
-              </motion.ul>
-
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="text-center sm:text-left text-sm text-[#3a3f45]"
-              >
-                Already have a customer list? Upload a spreadsheet and pick up right where you left off.
-                              </motion.p>
-            </div>
+        <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-sm font-medium text-white/80">
+            <span className="h-2 w-2 rounded-full bg-[#5EC4C9]" />
+            Built for roofers, plumbers, HVAC &amp; every trade
           </div>
+
+          <h1 className="mt-5 font-[family-name:var(--font-display)] text-[44px] font-extrabold uppercase leading-[0.92] tracking-tight min-[400px]:text-[52px] sm:mt-6 sm:text-7xl lg:text-[84px]">
+            Running jobs just got{' '}
+            <span className="mt-2.5 inline-block -rotate-1 whitespace-nowrap rounded-2xl bg-[#5EC4C9] px-3.5 pb-1 pt-2 text-slate-900 shadow-[0_10px_40px_-8px_rgba(94,196,201,0.6)] sm:px-5">
+              easy.
+            </span>
+          </h1>
+
+          <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-white/70 sm:mt-6 sm:text-xl">
+            Quotes, deposits, scheduling and payments in one simple place. No training, no clutter.{' '}
+            <span className="font-semibold text-white">If you can send a text, you can use it.</span>
+          </p>
+
+          <div className="mt-7 flex w-full flex-col items-stretch justify-center gap-3 sm:w-auto sm:flex-row sm:items-center sm:gap-4">
+            {DEMO_URL && (
+              <Link
+                href={DEMO_URL}
+                className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 border-white/80 px-7 py-3.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-white hover:text-slate-900 sm:text-lg"
+              >
+                Book a demo
+                <PlayCircle className="h-5 w-5 text-[#5EC4C9]" />
+              </Link>
+            )}
+            <Link
+              href="/signup"
+              className="group flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[#00828A] px-8 py-3.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white shadow-lg shadow-[#00828A]/40 transition-colors hover:bg-[#00959e] sm:text-lg"
+            >
+              Start free
+              <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+            </Link>
+          </div>
+
+          <p className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm font-medium text-white/60 sm:gap-x-5 sm:text-base">
+            {['Free plan', 'Card payments via Stripe', 'Built on Long Island'].map((item) => (
+              <span key={item} className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-[#5EC4C9]" /> {item}
+              </span>
+            ))}
+          </p>
         </div>
       </section>
+
+      {/* ── The job board rises out of the dark hero ── */}
+      <section className="relative px-4 pb-12 sm:px-6 sm:pb-16 lg:px-8">
+        <div className="relative mx-auto -mt-28 max-w-5xl sm:-mt-36 lg:-mt-44">
+          <HeroBoard />
+        </div>
+
+        {/* Founder line */}
+        <div className="mx-auto mt-10 flex max-w-xl items-center justify-center gap-3 sm:mt-12">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C1F23] font-[family-name:var(--font-display)] text-base font-bold text-white">
+            A
+          </span>
+          <p className="text-left text-sm leading-snug text-[#3a3f45] sm:text-base">
+            <span className="font-semibold text-[#1C1F23]">Built on Long Island by Alex,</span> 8 years in payments at
+            Paymentus &amp; ACI.{' '}
+            <Link href="/how-it-works" className="inline-flex items-center gap-1 font-semibold text-[#00828A] hover:text-[#006e75]">
+              See how it works <ArrowRight className="h-3.5 w-3.5" />
+            </Link>
+          </p>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/* ───────────────────────── Hero pieces ───────────────────────── */
+
+function TagPill({ tag }: { tag: Tag }) {
+  const Icon = tag.icon;
+  return (
+    <span className={`inline-flex max-w-full items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${TAG_TONE[tag.tone]}`}>
+      <Icon className="h-3 w-3 shrink-0" />
+      <span className="truncate">{tag.label}</span>
+    </span>
+  );
+}
+
+function HeroBoard() {
+  return (
+    <div className="relative" role="img" aria-label="Example Lead2Project job board with jobs moving from new request to paid">
+      <div aria-hidden className="pointer-events-none absolute inset-x-10 bottom-0 top-10 -z-10 rounded-[2rem] bg-[#00828A]/35 blur-3xl" />
+
+      <div aria-hidden className="overflow-hidden rounded-2xl bg-white shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] ring-1 ring-black/5">
+        {/* Window bar */}
+        <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="hidden items-center gap-1.5 sm:flex">
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+            </div>
+            <p className="truncate text-sm font-bold">Jobs</p>
+            <span className="hidden rounded-md bg-slate-100 p-0.5 text-[11px] font-semibold sm:inline-flex">
+              <span className="rounded bg-white px-2 py-0.5 shadow-sm">Board</span>
+              <span className="px-2 py-0.5 text-slate-500">Table</span>
+              <span className="px-2 py-0.5 text-slate-500">Calendar</span>
+            </span>
+          </div>
+          <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Example data</span>
+        </div>
+
+        {/* Columns: side by side from tablet up, swipeable on phones */}
+        <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto bg-[#F4F7F6] p-3 [scrollbar-width:none] sm:grid sm:grid-cols-4 sm:overflow-visible sm:p-4 [&::-webkit-scrollbar]:hidden">
+          {HERO_BOARD.map((col) => (
+            <div key={col.label} className="w-[72%] shrink-0 snap-start space-y-2 sm:w-auto sm:min-w-0">
+              <div className="flex items-center gap-1.5 px-1">
+                <span className={`h-2 w-2 rounded-full ${col.dot}`} />
+                <span className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-600">{col.label}</span>
+                <span className="text-[11px] text-slate-400">{col.cards.length}</span>
+              </div>
+              {col.cards.map((c) => (
+                <div
+                  key={c.name}
+                  className={`rounded-xl border bg-white p-2.5 shadow-sm ${c.fresh ? 'border-[#00828A] ring-2 ring-[#00828A]/20' : 'border-slate-200'}`}
+                >
+                  <div className="flex items-baseline justify-between gap-1.5">
+                    <p className="truncate text-[12px] font-bold text-slate-900">{c.name}</p>
+                    {c.amount && <span className="shrink-0 text-[11px] font-bold tabular-nums text-slate-900">{c.amount}</span>}
+                  </div>
+                  <p className="truncate text-[11px] text-slate-500">{c.service}</p>
+                  {c.date && (
+                    <p className={`mt-0.5 text-[10px] ${c.fresh ? 'font-bold text-[#00828A]' : 'text-slate-400'}`}>{c.date}</p>
+                  )}
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {c.tags.map((t) => (
+                      <TagPill key={t.label} tag={t} />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mt-3 text-center text-xs text-slate-400 sm:hidden">Swipe the board →</p>
+    </div>
+  );
+}
+
+function HeroPhotoTile({ photo }: { photo: HeroPhoto }) {
+  const Icon = photo.icon;
+  return (
+    <div aria-hidden={!photo.src} className={`pointer-events-none absolute hidden 2xl:block ${photo.className}`}>
+      <div className="h-full w-full overflow-hidden rounded-2xl border border-white/10 shadow-2xl shadow-black/40">
+        {photo.src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo.src} alt={photo.alt} className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-[#00828A]/45 via-slate-800 to-slate-800">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-[#5EC4C9]">
+              <Icon className="h-6 w-6" />
+            </span>
+            <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.18em] text-white/70">
+              {photo.label}
+            </span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

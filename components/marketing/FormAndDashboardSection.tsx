@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Eyebrow } from './marketingUI';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence, useInView, useReducedMotion } from 'framer-motion';
 import {
   ArrowRight,
   ArrowDown,
@@ -37,7 +37,7 @@ import {
 } from 'lucide-react';
 
 // Mock data for the board preview — illustrative only.
-type MockCard = { name: string; service: string; amount: string; date: string; fresh?: boolean; paid?: string };
+type MockCard = { name: string; service: string; amount: string; date: string; fresh?: boolean; paid?: string; highlight?: boolean };
 
 const COLUMNS: { label: string; dot: string; cards: MockCard[]; hideOnPhone?: boolean }[] = [
   {
@@ -94,6 +94,9 @@ const TABS: { label: Tab; icon: typeof User }[] = [
   { label: 'Reminders', icon: Bell },
   { label: 'Activity', icon: MessageCircle },
 ];
+
+// Shown first on phones; the rest sit behind "More".
+const PRIMARY_TABS: Tab[] = ['Overview', 'Quote', 'Invoice', 'Expenses', 'Activity'];
 
 const QUOTE_ITEMS = [
   { d: 'Tear-off & Disposal (per sq.)', q: 25, p: 85 },
@@ -407,7 +410,7 @@ const CALLOUTS: { side: 'left' | 'right'; tab: Tab; icon: typeof User; title: st
 
 function Callouts({ side, tab, setTab }: { side: 'left' | 'right'; tab: Tab; setTab: (t: Tab) => void }) {
   return (
-    <div className="hidden xl:flex w-[200px] shrink-0 flex-col justify-center gap-4">
+    <div className="hidden lg:flex lg:w-[170px] xl:w-[200px] shrink-0 flex-col justify-center gap-4">
       {CALLOUTS.filter((c) => c.side === side).map((c) => {
         const Icon = c.icon;
         const on = tab === c.tab;
@@ -417,12 +420,12 @@ function Callouts({ side, tab, setTab }: { side: 'left' | 'right'; tab: Tab; set
             type="button"
             onClick={() => setTab(c.tab)}
             className={`group relative flex items-start gap-2.5 rounded-xl border bg-white p-3 text-left shadow-sm transition-all ${
-              on ? 'border-slate-900 shadow-md' : 'border-slate-200 hover:border-slate-400'
+              on ? 'border-[#5EC4C9] shadow-[0_0_0_3px_rgba(94,196,201,0.25)]' : 'border-transparent hover:border-white/40'
             }`}
           >
             <span
               className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors ${
-                on ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
+                on ? 'bg-[#00828A] text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -436,7 +439,7 @@ function Callouts({ side, tab, setTab }: { side: 'left' | 'right'; tab: Tab; set
             {/* little connector toward the card */}
             <span
               aria-hidden
-              className={`absolute top-1/2 h-px w-6 ${on ? 'bg-slate-900' : 'bg-slate-300'} ${
+              className={`absolute top-1/2 h-px w-6 ${on ? 'bg-[#5EC4C9]' : 'bg-white/20'} ${
                 side === 'left' ? '-right-6' : '-left-6'
               }`}
             />
@@ -449,11 +452,12 @@ function Callouts({ side, tab, setTab }: { side: 'left' | 'right'; tab: Tab; set
 
 function JobCardPreview() {
   const [tab, setTab] = useState<Tab>('Overview');
+  const [showMore, setShowMore] = useState(false);
 
   return (
     <div className="flex items-stretch justify-center gap-6">
       <Callouts side="left" tab={tab} setTab={setTab} />
-    <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-300 bg-white text-[11px] sm:text-xs shadow-2xl ring-4 ring-slate-100">
+    <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-white/10 bg-white text-[11px] text-[#1C1F23] sm:text-xs shadow-2xl shadow-black/40 ring-4 ring-white/10">
       {/* Header */}
       <div className="bg-[#111827] px-4 sm:px-5 pt-3.5 pb-3 text-white">
         <div className="flex items-start justify-between gap-3">
@@ -499,22 +503,32 @@ function JobCardPreview() {
         </div>
       </div>
 
-      {/* Tabs on phones */}
-      <div className="sm:hidden flex gap-1.5 overflow-x-auto border-b border-slate-100 px-3 py-2" role="tablist">
-        {TABS.map(({ label, icon: Icon }) => (
+      {/* Tabs on phones: the 5 that matter most, the rest behind "More" */}
+      <div className="sm:hidden border-b border-slate-100 px-3 py-2">
+        <div className="flex flex-wrap gap-1.5" role="tablist">
+          {(showMore ? TABS : TABS.filter((t) => PRIMARY_TABS.includes(t.label) || t.label === tab)).map(({ label, icon: Icon }) => (
+            <button
+              key={label}
+              type="button"
+              role="tab"
+              aria-selected={tab === label}
+              onClick={() => setTab(label)}
+              className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 font-semibold ${
+                tab === label ? 'bg-slate-900 text-white' : 'border border-slate-200 text-slate-600'
+              }`}
+            >
+              <Icon className="h-3 w-3" /> {label}
+            </button>
+          ))}
           <button
-            key={label}
             type="button"
-            role="tab"
-            aria-selected={tab === label}
-            onClick={() => setTab(label)}
-            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 font-semibold ${
-              tab === label ? 'bg-slate-900 text-white' : 'border border-slate-200 text-slate-600'
-            }`}
+            onClick={() => setShowMore((v) => !v)}
+            aria-expanded={showMore}
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-dashed border-slate-300 px-3 py-1.5 font-semibold text-slate-500"
           >
-            <Icon className="h-3 w-3" /> {label}
+            {showMore ? 'Less' : 'More'} <ChevronDown className={`h-3 w-3 transition-transform ${showMore ? 'rotate-180' : ''}`} />
           </button>
-        ))}
+        </div>
       </div>
 
       <div className="flex">
@@ -548,283 +562,371 @@ function JobCardPreview() {
   );
 }
 
-export default function FormAndDashboardSection() {
+/* ───────────── Part 1: one connected story ─────────────
+   Phases (≈1s each, loops while the section is on screen):
+   0 the "Request quote" button pulses · 1 customer taps it · 2 name filled · 3 answers picked
+   4 photos added · 5 Send tapped · 6–8 "Request sent!" */
+const PHASES = 9;
+const PHASE_MS = 1000;
+const ARRIVED = 6;
+
+function useStory() {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { margin: '-120px' });
+  const reduceMotion = useReducedMotion();
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setPhase(ARRIVED + 1);
+      return;
+    }
+    if (!inView) return;
+    const id = setInterval(() => setPhase((p) => (p + 1) % PHASES), PHASE_MS);
+    return () => clearInterval(id);
+  }, [inView, reduceMotion]);
+
+  return { ref, phase };
+}
+
+// What the customer is doing at each phase (caption under the phone)
+const PHASE_CAPTION = [
+  'They find you on Google or your website',
+  'They tap “Request quote”',
+  'They fill in their details',
+  'They answer your questions for the service',
+  'They add photos of the job',
+  'They send it',
+  'It lands on your board, ready to quote',
+  'It lands on your board, ready to quote',
+  'It lands on your board, ready to quote',
+];
+
+function Chip({ on, children }: { on: boolean; children: ReactNode }) {
   return (
-    <section className="bg-white text-[#1C1F23] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-10 sm:mb-14 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-        <div className="text-center sm:text-left">
-          <Eyebrow>Your booking form</Eyebrow>
-          <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">
-            Customers request a quote. It lands in your dashboard.
-          </h2>
-          <p className="mt-3 text-base sm:text-lg text-[#3a3f45] leading-relaxed">
-            Share your link or QR code anywhere: your Google profile, your truck, your invoices. Every request shows up
-            with the details and photos you need to quote it.
+    <span
+      className={`rounded-lg border py-1.5 text-center transition-all duration-300 ${
+        on ? 'border-[#00828A] bg-[#00828A] font-semibold text-white' : 'border-slate-200 bg-white text-slate-500'
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/* Step 1: Google profile with your link behind the button */
+function ShareMock({ phase }: { phase: number }) {
+  const tapping = phase === 1;
+  return (
+    <div aria-hidden>
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white text-[13px] shadow-xl">
+        <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
+          <Search className="h-4 w-4 text-slate-400" />
+          <span className="text-slate-600">roofer near me</span>
+        </div>
+        <div className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#1C1F23] text-sm font-extrabold text-white">SR</div>
+            <div className="min-w-0">
+              <p className="text-base font-bold text-slate-900">Summit Roofing</p>
+              <div className="mt-0.5 flex items-center gap-0.5">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                ))}
+                <span className="ml-1 truncate text-xs text-slate-500">Roofing contractor</span>
+              </div>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Holbrook, NY · <span className="font-semibold text-emerald-700">Open</span>
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+            <span className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 py-2 text-slate-600">
+              <Phone className="h-4 w-4" /> Call
+            </span>
+            <span className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 py-2 text-slate-600">
+              <MapPin className="h-4 w-4" /> Directions
+            </span>
+            <motion.span
+              animate={{ scale: tapping ? 0.9 : 1 }}
+              transition={{ duration: 0.15 }}
+              className="relative flex flex-col items-center gap-1 overflow-hidden rounded-lg bg-[#00828A] py-2 text-white shadow-md"
+            >
+              {!tapping && <span className="absolute inset-0 rounded-lg ring-2 ring-inset ring-white/70 motion-safe:animate-pulse" />}
+              <AnimatePresence>
+                {tapping && (
+                  <motion.span
+                    initial={{ opacity: 0.6, scale: 0 }}
+                    animate={{ opacity: 0, scale: 3 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.6 }}
+                    className="absolute left-1/2 top-1/2 h-10 w-10 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+                  />
+                )}
+              </AnimatePresence>
+              <CalendarDays className="relative h-4 w-4" />
+              <span className="relative">Request quote</span>
+            </motion.span>
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+        {/* Your website */}
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md">
+          <div className="flex items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-3 py-2">
+            <span className="h-2 w-2 rounded-full bg-slate-300" />
+            <span className="h-2 w-2 rounded-full bg-slate-300" />
+            <span className="ml-1 truncate rounded bg-white px-2 py-0.5 text-[10px] text-slate-500 ring-1 ring-slate-200">summitroofing.com</span>
+          </div>
+          <div className="flex items-center justify-between gap-2 px-3 py-3">
+            <p className="font-[family-name:var(--font-display)] text-sm font-extrabold uppercase leading-tight text-slate-900">
+              Roof repair you can trust
+            </p>
+            <span className="shrink-0 rounded-md bg-[#00828A] px-2.5 py-1.5 text-[11px] font-bold text-white">Get a quote</span>
+          </div>
+        </div>
+        {/* QR code */}
+        <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-md">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#1C1F23] text-white">
+            <QrCode className="h-6 w-6" />
+          </span>
+          <p className="text-xs leading-snug text-[#3a3f45]">
+            <span className="font-semibold text-[#1C1F23]">QR code</span> for your truck, signs and invoices
           </p>
-          <p className="mt-2 text-sm sm:text-base font-semibold text-[#1C1F23]">
-            Ask your own questions for each service, so you can quote without a site visit.
-            <span className="ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 align-middle font-[family-name:var(--font-display)] text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]">
-              Pro
-            </span>
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center sm:justify-start gap-2 text-xs font-semibold text-slate-600">
-            <span className="inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-2.5 py-0.5 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#00828A]">
-              <Link2 className="w-3.5 h-3.5" /> Booking link
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-2.5 py-0.5 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#00828A]">
-              <QrCode className="w-3.5 h-3.5" /> QR code
-            </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Step 2: the customer's form, filling itself in */
+function FormMock({ phase }: { phase: number }) {
+  const sent = phase >= ARRIVED;
+  return (
+    <div className="mx-auto w-full max-w-[280px] rounded-[2rem] bg-[#1C1F23] p-2.5 shadow-2xl" aria-hidden>
+      <div className="relative overflow-hidden rounded-[1.6rem] bg-white">
+        <div className="bg-[#00828A] px-5 pb-4 pt-5 text-white">
+          <p className="text-[11px] font-semibold opacity-80">Summit Roofing</p>
+          <p className="text-base font-bold">Request a free quote</p>
+        </div>
+        <div className="space-y-2.5 p-4 text-[11px]">
+          <div>
+            <p className="mb-1 font-semibold text-slate-500">Name</p>
+            <div className="h-[30px] rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 font-medium text-slate-800">
+              <motion.span initial={false} animate={{ opacity: phase >= 2 ? 1 : 0 }} transition={{ duration: 0.3 }}>
+                Maria Lopez
+              </motion.span>
+              {phase < 2 && <span className="ml-px inline-block h-3 w-px animate-pulse bg-slate-400 align-middle" />}
+            </div>
           </div>
           <div>
-            <Link
-            href="/features/lead-capture"
-            className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00828A] hover:underline underline-offset-4"
+            <p className="mb-1 font-semibold text-slate-500">Service</p>
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 font-medium text-slate-800">Roof repair</div>
+          </div>
+
+          {/* Your own questions for this service */}
+          <div className="space-y-2 rounded-xl border border-[#00828A]/30 bg-[#00828A]/[0.04] p-2.5">
+            <span className="inline-flex items-center gap-1 rounded bg-[#00828A]/10 px-1.5 py-px text-[9px] font-bold text-[#00828A]">
+              Your questions for Roof repair
+            </span>
+            <div>
+              <p className="mb-1 font-semibold text-slate-500">What&rsquo;s the problem?</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <Chip on={phase >= 3}>Leak</Chip>
+                <Chip on={false}>Storm</Chip>
+                <Chip on={false}>Shingles</Chip>
+              </div>
+            </div>
+            <div>
+              <p className="mb-1 font-semibold text-slate-500">Roof type</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <Chip on={phase >= 3}>Shingle</Chip>
+                <Chip on={false}>Metal</Chip>
+                <Chip on={false}>Flat</Chip>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-700">
+            {['object-center', 'object-[38%_50%] scale-[1.8]'].map((crop, i) => (
+              <motion.span
+                key={crop}
+                initial={false}
+                animate={{ opacity: phase >= 4 ? 1 : 0.2, scale: phase >= 4 ? 1 : 0.8 }}
+                transition={{ duration: 0.3, delay: phase >= 4 ? i * 0.12 : 0 }}
+                className="relative h-7 w-7 shrink-0 overflow-hidden rounded"
+              >
+                <Image src="/images/roof-damage.webp" alt="" fill sizes="28px" className={`object-cover ${crop}`} />
+              </motion.span>
+            ))}
+            <span className="ml-0.5">{phase >= 4 ? '2 photos added' : 'Add photos'}</span>
+          </div>
+
+          <motion.div
+            animate={{ scale: phase === 5 ? 0.94 : 1 }}
+            transition={{ duration: 0.15 }}
+            className="mt-1 rounded-lg bg-[#00828A] py-2.5 text-center text-xs font-bold text-white"
           >
-            More on your booking form <ArrowRight className="h-4 w-4" />
-          </Link>
-          </div>
+            Send request
+          </motion.div>
         </div>
 
-        {/* Your Google Business Profile, with your booking link behind the button */}
-        <div className="mx-auto w-full max-w-md" aria-hidden>
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg text-[13px]">
-            {/* Search bar */}
-            <div className="flex items-center gap-2 border-b border-slate-100 bg-slate-50 px-4 py-3">
-              <Search className="h-4 w-4 text-slate-400" />
-              <span className="text-slate-600">roofer near me</span>
+        <AnimatePresence>
+          {sent && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-white"
+            >
+              <motion.span
+                initial={{ scale: 0.5 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', damping: 14, stiffness: 260 }}
+                className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg"
+              >
+                <Check className="h-6 w-6" strokeWidth={3} />
+              </motion.span>
+              <p className="text-sm font-bold text-slate-900">Request sent!</p>
+              <p className="text-[11px] text-slate-500">Summit Roofing will be in touch.</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+export default function FormAndDashboardSection() {
+  const { ref, phase } = useStory();
+
+  return (
+    <section className="text-[#1C1F23]">
+      {/* ── Part 1: lead capture. Your link on Google / your site → the customer fills in your form ── */}
+      <div className="relative overflow-hidden bg-gradient-to-b from-[#EAF6F6] to-slate-50 px-4 pb-10 pt-14 sm:px-6 sm:pb-12 sm:pt-20 lg:px-8">
+        <div ref={ref} className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14">
+          {/* Left: the pitch + where your link lives */}
+          <div>
+            <div className="text-center lg:text-left">
+              <Eyebrow>Lead capture</Eyebrow>
+              <h2 className="mt-2 font-[family-name:var(--font-display)] text-[34px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-[56px]">
+                Catch every lead,{' '}
+                <span className="bg-[linear-gradient(transparent_64%,#5EC4C9_64%,#5EC4C9_92%,transparent_92%)] px-1 [-webkit-box-decoration-break:clone] [box-decoration-break:clone]">
+                  even after hours.
+                </span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-[48ch] text-base leading-relaxed text-[#3a3f45] sm:text-lg lg:mx-0">
+                Put your booking link on your Google profile, your website and your truck. Customers send their details,
+                answers and photos any time, and every request lands on your board. No missed calls, no lost texts.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#1C1F23] px-3 py-1 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#5EC4C9]">
+                  <Link2 className="h-3.5 w-3.5" /> Booking link
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#1C1F23] px-3 py-1 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#5EC4C9]">
+                  <QrCode className="h-3.5 w-3.5" /> QR code
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-md border border-[#1C1F23]/15 bg-white px-3 py-1 text-xs font-semibold text-[#1C1F23]">
+                  Custom questions per service
+                  <span className="rounded bg-[#1C1F23] px-1.5 py-px font-[family-name:var(--font-display)] text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]">
+                    Pro
+                  </span>
+                </span>
+              </div>
             </div>
 
-            <div className="p-4 sm:p-5">
-              <div className="flex items-start gap-3">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-[#1C1F23] text-sm font-extrabold text-white">
-                  SR
-                </div>
-                <div className="min-w-0">
-                  <p className="text-base font-bold text-slate-900">Summit Roofing</p>
-                  <div className="mt-0.5 flex items-center gap-1">
-                    {[0, 1, 2, 3, 4].map((i) => (
-                      <Star key={i} className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                    ))}
-                    <span className="ml-1 text-xs text-slate-500">Roofing contractor</span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-slate-500">
-                    Holbrook, NY · <span className="font-semibold text-emerald-700">Open</span> · Closes 6 PM
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
-                <span className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 py-2 text-slate-600">
-                  <Phone className="h-4 w-4" /> Call
-                </span>
-                <span className="flex flex-col items-center gap-1 rounded-lg border border-slate-200 py-2 text-slate-600">
-                  <MapPin className="h-4 w-4" /> Directions
-                </span>
-                {/* The button your booking link sits behind */}
-                <span className="relative flex flex-col items-center gap-1 rounded-lg bg-[#00828A] py-2 text-white shadow-md">
-<span className="absolute inset-0 rounded-lg ring-2 ring-inset ring-white/70 motion-safe:animate-pulse" />
-                  <CalendarDays className="relative h-4 w-4" />
-                  <span className="relative">Request quote</span>
-                </span>
-              </div>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.5 }}
+              className="mx-auto mt-8 w-full max-w-lg lg:mx-0"
+            >
+              <ShareMock phase={phase} />
+            </motion.div>
           </div>
 
-          {/* Callout pointing at the button */}
-          <div className="mt-3 flex items-start justify-end gap-2 pr-2 text-right">
-            <p className="text-sm font-semibold text-[#1C1F23] leading-snug">
-              Paste your booking link here.
-              <span className="block font-normal text-[#3a3f45]">Every tap lands on your board.</span>
-            </p>
-            <ArrowUp className="mt-0.5 h-5 w-5 shrink-0 text-[#00828A]" strokeWidth={2.5} />
-          </div>
-        </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[300px_auto_1fr] items-center gap-6 lg:gap-8">
-          {/* ── Phone: the customer's form ── */}
+          {/* Right: the customer's form filling itself in */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.5 }}
-            className="mx-auto w-full max-w-[300px] rounded-[2rem] bg-[#1C1F23] p-2.5 shadow-2xl"
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="relative mx-auto w-full max-w-[300px]"
           >
-            <div className="rounded-[1.6rem] bg-white overflow-hidden">
-              <div className="bg-[#00828A] px-5 pt-6 pb-4 text-white">
-                <p className="text-[11px] font-semibold opacity-80">Summit Roofing</p>
-                <p className="text-base font-bold">Request a free quote</p>
-              </div>
-              <div className="p-4 space-y-2.5 text-[11px]">
-                {[
-                  ['Name', 'Maria Lopez'],
-                  ['Service', 'Roof repair'],
-                ].map(([label, value]) => (
-                  <div key={label}>
-                    <p className="mb-1 font-semibold text-slate-500">{label}</p>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 font-medium text-slate-800">
-                      {value}
-                    </div>
-                  </div>
-                ))}
-                <div>
-                  <p className="mb-1 font-semibold text-slate-500">What do you need?</p>
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700 leading-snug">
-                    Leak over the back bedroom after the last storm.
-                  </div>
-                </div>
-                {/* Your own questions for this service */}
-                <div className="rounded-xl border border-[#00828A]/30 bg-[#00828A]/[0.03] p-2.5 space-y-2">
-                  <span className="inline-block rounded bg-[#00828A]/10 px-1.5 py-px text-[9px] font-bold text-[#00828A]">
-                    Your questions for Roof repair
-                  </span>
-                  <div>
-                    <p className="mb-1 font-semibold text-slate-500">What&rsquo;s the problem?</p>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <span className="rounded-lg border border-[#00828A] bg-white py-1.5 text-center font-semibold text-[#00828A]">Leak</span>
-                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Storm</span>
-                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Shingles</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="mb-1 font-semibold text-slate-500">Roof type</p>
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <span className="rounded-lg border border-[#00828A] bg-white py-1.5 text-center font-semibold text-[#00828A]">Shingle</span>
-                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Metal</span>
-                      <span className="rounded-lg border border-slate-200 bg-white py-1.5 text-center text-slate-500">Flat</span>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-1.5">
-                    <div>
-                      <p className="mb-1 font-semibold text-slate-500">Roof age</p>
-                      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-800">
-                        15–20 yrs <ChevronDown className="h-3 w-3 text-slate-400" />
-                      </div>
-                    </div>
-                    <div>
-                      <p className="mb-1 font-semibold text-slate-500">Stories</p>
-                      <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2 py-1.5 font-medium text-slate-800">
-                        2 <ChevronDown className="h-3 w-3 text-slate-400" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-slate-700">
-                    {['object-center', 'object-[38%_50%] scale-[1.8]'].map((crop) => (
-                      <span key={crop} className="relative h-6 w-6 shrink-0 overflow-hidden rounded">
-                        <Image src="/images/roof-damage.webp" alt="" fill sizes="24px" className={`object-cover ${crop}`} />
-                      </span>
-                    ))}
-                    <span className="ml-0.5">2 photos</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-slate-700">
-                    <CalendarDays className="w-3.5 h-3.5 text-slate-400" /> Oct 7
-                  </div>
-                </div>
-                <div className="mt-1 rounded-lg bg-[#00828A] py-2.5 text-center text-xs font-bold text-white">
-                  Send request
-                </div>
-              </div>
+            <div aria-hidden className="pointer-events-none absolute -inset-8 -z-10 rounded-full bg-[#5EC4C9]/25 blur-3xl" />
+            <FormMock phase={phase} />
+            <div className="mt-5 flex min-h-[44px] items-center justify-center gap-2 text-center">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1C1F23] text-[11px] font-bold text-[#5EC4C9]">
+                {Math.min(phase + 1, 7)}
+              </span>
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.p
+                  key={PHASE_CAPTION[phase]}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.2 }}
+                  className="text-sm font-semibold text-[#1C1F23]"
+                >
+                  {PHASE_CAPTION[phase]}
+                </motion.p>
+              </AnimatePresence>
+            </div>
+            <div className="text-center">
+              <Link
+                href="/features/lead-capture"
+                className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00828A] underline-offset-4 hover:underline"
+              >
+                More on lead capture <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           </motion.div>
-
-          {/* ── Arrow ── */}
-          <div className="flex justify-center text-[#1C1F23]">
-            <ArrowRight className="hidden lg:block w-10 h-10" strokeWidth={2.5} />
-            <ArrowDown className="lg:hidden w-9 h-9" strokeWidth={2.5} />
-          </div>
-
-          {/* ── Dashboard: the job board ── */}
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.5, delay: 0.15 }}
-            className="rounded-md border border-slate-200 bg-[#F4F7F6] p-3 sm:p-4 shadow-lg overflow-hidden"
-          >
-            {/* The email alert that comes with every new request */}
-            <div className="mb-3 flex items-center gap-2.5 rounded-lg bg-[#1C1F23] px-3 py-2.5 text-white shadow-md">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/10">
-                <Mail className="h-3.5 w-3.5 text-[#5EC4C9]" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-[12px] font-semibold">New request: Maria Lopez</p>
-                <p className="truncate text-[10px] text-slate-300">Roof repair · 2 photos · emailed to you</p>
-              </div>
-              <span className="shrink-0 text-[10px] font-semibold text-[#5EC4C9]">Just now</span>
-            </div>
-
-            <div className="mb-3 flex items-center justify-between px-1">
-              <p className="text-sm font-bold">Jobs</p>
-              <span className="text-[11px] font-semibold text-slate-500">Board view</span>
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 sm:gap-3">
-              {COLUMNS.map((col) => (
-                <div
-                  key={col.label}
-                  className={`rounded-xl bg-white/70 border border-slate-200 p-2 space-y-2 min-w-0 ${col.hideOnPhone ? 'hidden sm:block' : ''}`}
-                >
-                  <div className="flex items-center gap-1.5 px-1">
-                    <span className={`w-1.5 h-1.5 rounded-full ${col.dot}`} />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-600 truncate">{col.label}</span>
-                    <span className="text-[10px] text-slate-400">{col.cards.length}</span>
-                  </div>
-                  {col.cards.map((c) => (
-                    <div
-                      key={c.name}
-                      className={`rounded-lg border bg-white p-2 ${
-                        c.fresh ? 'border-[#00828A] ring-2 ring-[#00828A]/20' : 'border-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-baseline justify-between gap-1">
-                        <p className="text-[11px] font-bold truncate">{c.name}</p>
-                        {c.amount && <span className="text-[10px] font-bold shrink-0">{c.amount}</span>}
-                      </div>
-                      <p className="text-[10px] text-slate-500 truncate">{c.service}</p>
-                      <div className="mt-1 flex items-center justify-between gap-1">
-                        <span className="text-[9px] text-slate-400 truncate">{c.date}</span>
-                        {c.fresh && <span className="text-[9px] font-bold text-[#00828A] shrink-0">Just now</span>}
-                        {c.paid && <span className="text-[9px] font-semibold text-emerald-600 shrink-0">{c.paid}</span>}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-                   </motion.div>
         </div>
+      </div>
 
-        {/* ── One job, one card ── */}
+    </section>
+  );
+}
+
+// "One job. One card." Rendered on its own on the home page (after the quote section).
+export function JobCardSection() {
+  return (
+    <section className="text-[#1C1F23]">
+      {/* ── Part 2: one job, one card (dark band so the card stands out) ── */}
+      <div className="relative overflow-hidden bg-slate-900 px-3 py-14 text-white sm:px-6 sm:py-20 lg:px-8">
         <div
-          className="relative mt-16 sm:mt-20 -mx-4 sm:mx-0 overflow-hidden sm:rounded-3xl border-y sm:border border-slate-200 bg-slate-50 px-3 sm:px-8 py-12 sm:py-16"
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
           style={{
-            backgroundImage:
-              'linear-gradient(rgba(28,31,35,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.05) 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
+            backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)',
+            backgroundSize: '22px 22px',
+            maskImage: 'radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 50%, black 30%, transparent 100%)',
           }}
-        >
-          {/* Soft teal glow behind the card */}
-          <div
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-[55%] h-[520px] w-[720px] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full opacity-60 blur-3xl"
-            style={{ background: 'radial-gradient(closest-side, rgba(0,130,138,0.18), transparent)' }}
-          />
-          <div className="relative max-w-2xl mx-auto mb-8 sm:mb-10 text-center">
-            <Eyebrow>One card per job</Eyebrow>
-            <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]">
-              One job. One card. Everything in it.
-            </h2>
-            <p className="mt-3 text-base sm:text-lg text-[#3a3f45] leading-relaxed">
-              Other apps spread a job across customers, quotes, jobs, invoices and payments. Here, open the card and it&rsquo;s
-              all there. This is M. Johnson&rsquo;s card from the board above.
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[60%] h-[560px] w-[820px] max-w-full -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#00828A]/25 blur-[120px]"
+        />
+
+        <div className="relative mx-auto max-w-6xl">
+          <div className="mx-auto mb-10 max-w-2xl text-center sm:mb-12">
+            <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#5EC4C9]">
+              One card per job
             </p>
-            <p className="mt-3 text-sm font-semibold text-[#00828A]">Click the tabs to look around.</p>
+            <h2 className="mt-2 font-[family-name:var(--font-display)] text-[34px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-6xl">
+              One job. One card. <span className="text-[#5EC4C9]">Everything in it.</span>
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-white/70 sm:text-lg">
+              Other tools spread a job across customers, quotes, invoices and payments. Here, open the card and it&rsquo;s all
+              there. This is M. Johnson&rsquo;s card from the board at the top of the page.
+            </p>
+            <p className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-[#5EC4C9]">
+              Tap the tabs to look around
+            </p>
           </div>
-          <div className="relative">
-            <JobCardPreview />
-          </div>
+          <JobCardPreview />
         </div>
       </div>
     </section>
