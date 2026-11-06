@@ -69,7 +69,7 @@ const statusColorMap: Record<string, { dot: string; textDark: string; textLight:
   purple: { dot: 'bg-purple-500', textDark: 'text-purple-400', textLight: 'text-purple-700', bgDark: 'bg-purple-500/10', bgLight: 'bg-purple-50' },
   orange: { dot: 'bg-orange-500', textDark: 'text-orange-400', textLight: 'text-orange-700', bgDark: 'bg-orange-500/10', bgLight: 'bg-orange-50' },
   red: { dot: 'bg-rose-500', textDark: 'text-rose-400', textLight: 'text-rose-700', bgDark: 'bg-rose-500/10', bgLight: 'bg-rose-50' },
-  gray: { dot: 'bg-slate-500', textDark: 'text-slate-400', textLight: 'text-[#57534e]', bgDark: 'bg-slate-500/10', bgLight: 'bg-[#f5f1e8]' },
+  gray: { dot: 'bg-slate-500', textDark: 'text-slate-300', textLight: 'text-slate-700', bgDark: 'bg-slate-500/10', bgLight: 'bg-slate-100' },
   indigo: { dot: 'bg-indigo-500', textDark: 'text-indigo-400', textLight: 'text-indigo-700', bgDark: 'bg-indigo-500/10', bgLight: 'bg-indigo-50' },
   pink: { dot: 'bg-pink-500', textDark: 'text-pink-400', textLight: 'text-pink-700', bgDark: 'bg-pink-500/10', bgLight: 'bg-pink-50' },
 };
@@ -95,31 +95,31 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
   return (
     <div
       className={`grid grid-cols-3 gap-2 py-2.5 px-3 rounded-lg border ${
-        isDark ? 'bg-slate-950/40 border-slate-800/80' : 'bg-[#faf9f5] border-[#e7e2d8]'
+        isDark ? 'bg-slate-950/40 border-slate-800/80' : 'bg-slate-50 border-slate-200'
       }`}
     >
       <div className="flex items-center gap-1.5 min-w-0">
-        <FileText className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`} />
+        <FileText className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
         <span
-          className={`text-xs font-medium truncate ${
+          className={`text-[13px] font-medium truncate ${
             quoteAccepted
               ? 'text-emerald-500 font-semibold'
               : quoteSent
-              ? isDark ? 'text-slate-200' : 'text-[#292524]'
-              : isDark ? 'text-slate-500' : 'text-[#a8a29e]'
+              ? isDark ? 'text-slate-200' : 'text-slate-800'
+              : isDark ? 'text-slate-400' : 'text-slate-400'
           }`}
         >
-          {quoteAccepted ? 'Accepted' : quoteSent ? 'Sent' : 'No Estimate'}
+          {quoteAccepted ? 'Accepted' : quoteSent ? 'Sent' : 'No quote yet'}
         </span>
       </div>
 
       <div className="flex items-center gap-1.5 min-w-0">
-        <CalendarDays className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`} />
+        <CalendarDays className={`w-3.5 h-3.5 shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
         <span
-          className={`text-xs font-medium truncate ${
+          className={`text-[13px] font-medium truncate ${
             lead.scheduled_date
-              ? isDark ? 'text-slate-200' : 'text-[#292524]'
-              : isDark ? 'text-slate-500' : 'text-[#a8a29e]'
+              ? isDark ? 'text-slate-200' : 'text-slate-800'
+              : isDark ? 'text-slate-400' : 'text-slate-400'
           }`}
         >
                    {lead.scheduled_date
@@ -134,8 +134,8 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
             <CheckCircle2 className="w-3.5 h-3.5 shrink-0" /> Paid
           </span>
         ) : pastDue ? (
-          <span className="flex items-center gap-1 text-xs font-bold text-rose-500 truncate animate-pulse">
-            <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Past Due
+          <span className="flex items-center gap-1 text-xs font-bold text-rose-500 truncate">
+            <AlertCircle className="w-3.5 h-3.5 shrink-0" /> Past due
           </span>
         ) : isPartial ? (
           <span className="flex items-center gap-1 text-xs font-semibold text-amber-500 truncate">
@@ -146,8 +146,8 @@ function CleanProgressTracker({ lead, isDark }: { lead: any; isDark: boolean }) 
             <Clock className="w-3.5 h-3.5 shrink-0" /> Awaiting
           </span>
         ) : (
-          <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'} truncate`}>
-            Not Invoiced
+          <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'} truncate`}>
+            Not invoiced
           </span>
         )}
       </div>
@@ -169,7 +169,7 @@ export default function UltraReadableCardsView({
       variants={containerVariants}
       initial="hidden"
       animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 font-sans"
+      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
     >
       {leads.map((lead) => {
         const statusConfig = statusOptions.find((s) => s.value === lead.status) || {
@@ -203,15 +203,15 @@ export default function UltraReadableCardsView({
               isCompleted
                 ? isDark
                   ? 'bg-slate-900/40 border-slate-800/50 opacity-60'
-                  : 'bg-[#f5f1e8]/70 border-[#e7e2d8] opacity-70'
+                  : 'bg-slate-100/70 border-slate-200 opacity-70'
                 : isDark
                 ? 'bg-slate-900 border-slate-800/90 hover:bg-slate-900/90'
-                : 'bg-white border-[#e7e2d8] hover:shadow-sm'
+                : 'bg-white border-slate-200 hover:shadow-sm'
             }`}
           >
             <div className="flex items-center justify-between mb-2.5">
               <span
-                className={`inline-flex items-center gap-1.5 text-[11px] font-bold tracking-wide uppercase px-2 py-0.5 rounded-md ${
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-md ${
                   isDark ? `${statusTheme.bgDark} ${statusTheme.textDark}` : `${statusTheme.bgLight} ${statusTheme.textLight}`
                 }`}
               >
@@ -224,28 +224,28 @@ export default function UltraReadableCardsView({
                   lead.review_request_sent_at ? (
                     <span
                       title={`Review request sent ${new Date(lead.review_request_sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`}
-                      className={`flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md ${
-                        isDark ? 'text-slate-400 bg-slate-500/10' : 'text-[#57534e] bg-[#f5f1e8]'
+                      className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md ${
+                        isDark ? 'text-slate-300 bg-slate-500/10' : 'text-slate-700 bg-slate-100'
                       }`}
                     >
                       <Star className="w-3 h-3" /> Review sent
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-[11px] font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                    <span className="flex items-center gap-1 text-xs font-bold text-amber-600 bg-amber-500/10 px-2 py-0.5 rounded-md">
                       <Star className="w-3 h-3" /> Ask for review
                     </span>
                   )
                 ) : pastDue ? (
-                  <span className="flex items-center gap-1 text-[11px] font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md">
-                    <AlertCircle className="w-3 h-3" /> Payment Past Due
+                  <span className="flex items-center gap-1 text-xs font-bold text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded-md">
+                    <AlertCircle className="w-3 h-3" /> Payment past due
                   </span>
                 ) : lead.follow_up_date ? (
-                  <span className="flex items-center gap-1 text-[11px] font-medium text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md">
-                    <Bell className="w-3 h-3" /> Follow Up
+                  <span className="flex items-center gap-1 text-xs font-medium text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-md">
+                    <Bell className="w-3 h-3" /> Follow up
                   </span>
                 ) : null}
 
-                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`}>
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-400'}`}>
                   {lead.created_at
                     ? new Date(lead.created_at).toLocaleDateString('en-US', {
                         month: 'short',
@@ -257,19 +257,19 @@ export default function UltraReadableCardsView({
             </div>
 
             <div className="flex items-baseline justify-between gap-2 mb-1">
-              <h3 className={`text-base font-bold truncate ${isDark ? 'text-slate-100' : 'text-[#1c1917]'}`}>
+              <h3 className={`font-[family-name:var(--font-display)] text-[17px] font-bold tracking-tight truncate ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
                 {lead.name}
               </h3>
               {quoteAmount && (
                 <span
-                  className={`text-base font-black shrink-0 ${
+                  className={`font-[family-name:var(--font-display)] text-[17px] font-extrabold tabular-nums shrink-0 ${
                     isPaid
                       ? 'text-emerald-500'
                       : pastDue
                       ? 'text-rose-500'
                       : isDark
                       ? 'text-slate-100'
-                      : 'text-[#1c1917]'
+                      : 'text-slate-900'
                   }`}
                 >
                   ${quoteAmount}
@@ -278,8 +278,8 @@ export default function UltraReadableCardsView({
             </div>
 
             <div className="flex items-center justify-between gap-2 mb-3">
-              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-[#78716c]'}`}>
-                {lead.category?.replace(/_/g, ' ') || 'General Project'}
+              <span className={`text-[13px] capitalize ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                {lead.category?.replace(/_/g, ' ') || 'General project'}
                 {Array.isArray(lead.file_urls) && lead.file_urls.length > 0 && (
                   <> • <Camera className="w-3 h-3 inline" /> {lead.file_urls.length}</>
                 )}
@@ -292,12 +292,12 @@ export default function UltraReadableCardsView({
 
             <div
               className={`flex items-center justify-between pt-2.5 border-t ${
-                isDark ? 'border-slate-800/80' : 'border-[#f0ece1]'
+                isDark ? 'border-slate-800/80' : 'border-slate-100'
               }`}
             >
-              <div className="flex items-center gap-1.5 text-xs">
-                <User className={`w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-[#a8a29e]'}`} />
-                <span className={isDark ? 'text-slate-400' : 'text-[#57534e]'}>
+              <div className="flex items-center gap-1.5 text-[13px]">
+                <User className={`w-3.5 h-3.5 ${isDark ? 'text-slate-400' : 'text-slate-400'}`} />
+                <span className={isDark ? 'text-slate-300' : 'text-slate-700'}>
                   {lead.assigned_to || 'Unassigned'}
                 </span>
               </div>
@@ -309,7 +309,7 @@ export default function UltraReadableCardsView({
                     onClick={(e) => e.stopPropagation()}
                     aria-label="Call"
                     className={`p-1.5 rounded-lg transition-colors ${
-                      isDark ? 'text-slate-500 hover:text-slate-200 hover:bg-white/10' : 'text-[#a8a29e] hover:text-[#292524] hover:bg-[#f5f1e8]'
+                      isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-white/10' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
                     }`}
                   >
                     <Phone className="w-3.5 h-3.5" />
@@ -321,15 +321,15 @@ export default function UltraReadableCardsView({
                     onClick={(e) => e.stopPropagation()}
                     aria-label="Email"
                     className={`p-1.5 rounded-lg transition-colors ${
-                      isDark ? 'text-slate-500 hover:text-slate-200 hover:bg-white/10' : 'text-[#a8a29e] hover:text-[#292524] hover:bg-[#f5f1e8]'
+                      isDark ? 'text-slate-400 hover:text-slate-200 hover:bg-white/10' : 'text-slate-400 hover:text-slate-800 hover:bg-slate-100'
                     }`}
                   >
                     <Mail className="w-3.5 h-3.5" />
                   </a>
                 )}
                 <div
-                  className={`flex items-center gap-0.5 text-xs font-semibold group-hover:translate-x-0.5 transition-transform pl-1 ${
-                    isDark ? 'text-slate-200' : 'text-[#1c1917]'
+                  className={`flex items-center gap-0.5 text-[13px] font-semibold group-hover:translate-x-0.5 transition-transform pl-1 ${
+                    isDark ? 'text-slate-200' : 'text-slate-900'
                   }`}
                 >
                   <span>View</span>

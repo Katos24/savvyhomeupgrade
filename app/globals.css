@@ -1,4 +1,9 @@
-@import "tailwindcss";
+   @import "tailwindcss";
+
+   /* Every font-sans in the app uses Inter (loaded in app/layout.tsx) */
+   @theme inline {
+     --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+   }
 
 /* One fixed brand color for every primary action in the app. The
    contractor's own email_brand_color_1 stays on customer-facing output
@@ -14,11 +19,10 @@
 }
 
 body {
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
--webkit-font-smoothing: antialiased;
--moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
+
 html {
 scroll-behavior: smooth;
 }

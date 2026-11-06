@@ -12,6 +12,10 @@ import { useTeamMembers } from '@/hooks/useTeamMembers';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { DEFAULT_STATUSES } from '@/lib/formCategories';
 import { useQuoteTemplates } from '@/hooks/useQuoteTemplates';
+import { fontVars } from '@/components/marketing/marketingTheme';
+
+// Same fonts as the marketing site: Inter for text, Plus Jakarta Sans for headings and big numbers.
+const DISPLAY = 'font-[family-name:var(--font-display)]';
 
 // --- Dynamic imports for heavy modals & widgets ---
 const Sidebar = dynamic(() => import('@/components/dashboard/Sidebar'), { ssr: false });
@@ -120,8 +124,8 @@ function themeTokens(isDark: boolean) {
         page: 'bg-[#0b0f17]',
         card: 'bg-[#0f1420] border border-white/10',
         text: 'text-white',
-        sub: 'text-slate-400',
-        faint: 'text-slate-500',
+        sub: 'text-slate-300',
+        faint: 'text-slate-400',
         divide: 'divide-white/10',
         border: 'border-white/10',
         hover: 'hover:bg-white/[0.04]',
@@ -135,8 +139,8 @@ function themeTokens(isDark: boolean) {
         page: 'bg-slate-50',
         card: 'bg-white border border-slate-200',
         text: 'text-slate-900',
-        sub: 'text-slate-500',
-        faint: 'text-slate-400',
+        sub: 'text-slate-600',
+        faint: 'text-slate-500',
         divide: 'divide-slate-100',
         border: 'border-slate-200',
         hover: 'hover:bg-slate-50',
@@ -152,7 +156,7 @@ type Tokens = ReturnType<typeof themeTokens>;
 function SectionHeader({ title, action, t }: { title: string; action?: React.ReactNode; t: Tokens }) {
   return (
     <div className="mb-2.5 flex items-baseline justify-between gap-3">
-      <h2 className={`text-sm font-semibold ${t.text}`}>{title}</h2>
+      <h2 className={`${DISPLAY} text-base font-bold tracking-tight ${t.text}`}>{title}</h2>
       {action}
     </div>
   );
@@ -160,7 +164,7 @@ function SectionHeader({ title, action, t }: { title: string; action?: React.Rea
 
 function LinkButton({ children, onClick, t }: { children: React.ReactNode; onClick: () => void; t: Tokens }) {
   return (
-    <button type="button" onClick={onClick} className={`inline-flex items-center gap-1 text-xs font-semibold transition hover:opacity-70 ${t.sub}`}>
+    <button type="button" onClick={onClick} className={`inline-flex items-center gap-1 text-[13px] font-semibold transition hover:opacity-70 ${t.sub}`}>
       {children} <ArrowRight className="h-3.5 w-3.5" />
     </button>
   );
@@ -192,12 +196,12 @@ function ConnectStripeCard({ companySlug, t, isConnected }: { companySlug: strin
       </span>
       <div className="min-w-0 flex-1">
         <p className={`text-sm font-semibold ${t.text}`}>Connect Stripe to take card payments</p>
-        <p className={`text-xs ${t.sub}`}>Customers pay deposits and invoices online, and jobs update the moment they do.</p>
+        <p className={`text-[13px] leading-snug ${t.sub}`}>Customers pay deposits and invoices online, and jobs update the moment they do.</p>
       </div>
       <button
         type="button"
         onClick={() => router.push(`/${companySlug}/home?section=payments`)}
-        className={`hidden shrink-0 rounded-xl px-3.5 py-2 text-xs font-semibold transition sm:inline-flex ${t.primary}`}
+        className={`hidden shrink-0 rounded-xl px-3.5 py-2 text-sm font-semibold transition sm:inline-flex ${t.primary}`}
       >
         Connect
       </button>
@@ -280,14 +284,14 @@ function Pipeline({
               r.value ? t.hover : 'cursor-default'
             }`}
           >
-            <span className={`truncate text-sm ${r.count ? t.text : t.faint}`}>{r.label}</span>
+            <span className={`truncate text-[15px] ${r.count ? t.text : t.faint}`}>{r.label}</span>
             <span className={`h-1.5 overflow-hidden rounded-full ${t.track}`}>
               <span
                 className={`block h-full rounded-full transition-all duration-500 ${t.bar}`}
                 style={{ width: r.count ? `max(6px, ${(r.count / max) * 100}%)` : '0%' }}
               />
             </span>
-                       <span className={`text-right text-sm font-semibold tabular-nums ${r.count ? t.text : t.faint}`}>{r.count}</span>
+            <span className={`text-right text-[15px] font-semibold tabular-nums ${r.count ? t.text : t.faint}`}>{r.count}</span>
           </button>
         ))}
         <button
@@ -496,14 +500,14 @@ export default function CompanyDashboardClient({ company }: { company: Company }
 
   if (loading) {
     return (
-      <div className={`flex min-h-screen items-center justify-center ${t.page}`} role="status" aria-label="Loading dashboard">
+      <div className={`${fontVars} flex min-h-screen items-center justify-center ${t.page}`} role="status" aria-label="Loading dashboard">
         <Loader2 className={`h-7 w-7 animate-spin ${t.sub}`} />
       </div>
     );
   }
 
   return (
-    <div className={`relative min-h-screen transition-colors ${t.page}`}>
+    <div className={`${fontVars} relative min-h-screen font-[family-name:var(--font-body)] antialiased transition-colors ${t.page}`}>
       <Toaster position="top-right" richColors />
 
       {/* Sidebar overlay (mobile/tablet) */}
@@ -540,15 +544,15 @@ export default function CompanyDashboardClient({ company }: { company: Company }
         <PaymentToastPoller slug={company.slug} onSelectLead={(leadId) => openLead(leadId)} />
       </div>
 
-      <main className="relative z-10 mx-auto max-w-6xl px-4 py-5 font-sans sm:px-6 sm:py-8 lg:px-8">
+      <main className="relative z-10 mx-auto max-w-6xl px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
         {/* ── Header ── */}
         <header className="mb-6 flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className={`text-xs font-medium ${t.sub}`}>{todayLabel}</p>
-            <h1 className={`mt-0.5 truncate text-2xl font-semibold tracking-tight sm:text-3xl ${t.text}`}>
+            <p className={`text-[13px] font-medium ${t.sub}`}>{todayLabel}</p>
+            <h1 className={`${DISPLAY} mt-0.5 truncate text-2xl font-extrabold tracking-tight sm:text-3xl ${t.text}`}>
               {greeting}, {currentUser?.name?.split(' ')[0] || 'there'}
             </h1>
-            <p className={`mt-1 flex items-center gap-1.5 text-xs ${t.sub}`}>
+            <p className={`mt-1 flex items-center gap-1.5 text-[13px] ${t.sub}`}>
               {company.logo_url ? (
                 <img src={company.logo_url} alt="" className="h-4 w-4 rounded-full bg-white object-contain" />
               ) : null}
@@ -560,7 +564,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <button
               type="button"
               onClick={() => router.push(`/${company.slug}/leads`)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${t.iconBtn}`}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition ${t.iconBtn}`}
             >
               <LayoutList className="h-4 w-4" />
               Leads
@@ -568,7 +572,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
             <button
               type="button"
               onClick={handleOpenCreateModal}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${t.primary}`}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold transition ${t.primary}`}
               aria-label="Add lead"
             >
               <Plus className="h-4 w-4" />
@@ -657,12 +661,12 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                               onClick={() => openLead(job.lead_id)}
                               className={`flex w-full items-center gap-4 px-4 py-3 text-left transition ${t.hover}`}
                             >
-                              <span className={`w-16 shrink-0 text-xs font-semibold tabular-nums ${t.sub}`}>
+                              <span className={`w-[72px] shrink-0 text-[13px] font-semibold tabular-nums ${t.sub}`}>
                                 {fmtTime(job.scheduled_time) || 'Any time'}
                               </span>
                               <span className="min-w-0 flex-1">
-                                <span className={`block truncate text-sm font-semibold ${t.text}`}>{job.customer_name}</span>
-                                <span className={`block truncate text-xs ${t.sub}`}>{formatCategoryLabel(job.category) || 'General'}</span>
+                                <span className={`block truncate text-[15px] font-semibold ${t.text}`}>{job.customer_name}</span>
+                                <span className={`block truncate text-[13px] ${t.sub}`}>{formatCategoryLabel(job.category) || 'General'}</span>
                               </span>
                               <ArrowRight className={`h-4 w-4 shrink-0 ${t.faint}`} />
                             </button>
@@ -690,10 +694,10 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                   />
                   <div className={`rounded-2xl ${t.card}`}>
                     <div className="px-4 pb-3 pt-4">
-                      <p className={`text-xs ${t.sub}`}>Collected this month</p>
-                      <p className={`mt-0.5 text-3xl font-semibold tabular-nums ${t.text}`}>{fmtMoney(stats.revenue_this_month)}</p>
+                      <p className={`text-[13px] font-medium ${t.sub}`}>Collected this month</p>
+                      <p className={`${DISPLAY} mt-0.5 text-3xl font-extrabold tabular-nums tracking-tight ${t.text}`}>{fmtMoney(stats.revenue_this_month)}</p>
                     </div>
-                    <dl className={`divide-y border-t text-sm ${t.divide} ${t.border}`}>
+                    <dl className={`divide-y border-t text-[15px] ${t.divide} ${t.border}`}>
                       <div className="flex justify-between px-4 py-2.5">
                         <dt className={t.sub}>Awaiting payment</dt>
                         <dd className={`font-semibold tabular-nums ${t.text}`}>{stats.invoices.awaiting_payment}</dd>
@@ -744,8 +748,8 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                               className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition ${t.hover}`}
                             >
                               <span className="min-w-0">
-                                <span className={`block truncate text-sm font-medium ${t.text}`}>{p.customer_name}</span>
-                                <span className={`block text-xs ${t.sub}`}>
+                                <span className={`block truncate text-[15px] font-medium ${t.text}`}>{p.customer_name}</span>
+                                <span className={`block text-[13px] ${t.sub}`}>
                                   {p.kind === 'deposit' ? 'Deposit' : p.kind === 'balance' ? 'Balance' : p.kind === 'refund' ? 'Refund' : 'Payment'}
                                   {' · '}
                                   {fmtShortDate(p.paid_on)}
@@ -753,7 +757,7 @@ export default function CompanyDashboardClient({ company }: { company: Company }
                                 </span>
                               </span>
                               <span
-                                className={`shrink-0 text-sm font-semibold tabular-nums ${
+                                className={`shrink-0 text-[15px] font-semibold tabular-nums ${
                                   isRefund ? t.sub : isDark ? 'text-emerald-400' : 'text-emerald-600'
                                 }`}
                               >

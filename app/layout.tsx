@@ -3,7 +3,9 @@ import "./globals.css";
 import Script from "next/script";
 import UnhandledRejectionLogger from "@/components/UnhandledRejectionLogger";
 import QueryProvider from "@/app/QueryProvider";
-
+// Inter (text) + Plus Jakarta Sans (headings), loaded once for the whole app:
+// marketing pages, dashboard, popups and widgets all pick these up.
+import { fontVars } from "@/components/marketing/marketingTheme";
 
 export const metadata: Metadata = {
   title: {
@@ -64,16 +66,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
-           <body className="antialiased">
-                    <UnhandledRejectionLogger />
+    <html lang="en" data-scroll-behavior="smooth" className={fontVars}>
+      <body className="font-[family-name:var(--font-body)] antialiased">
+        <UnhandledRejectionLogger />
         <QueryProvider>{children}</QueryProvider>
-      <Script
-                   src="https://www.googletagmanager.com/gtag/js?id=G-4TG9X39EQ5"
-          strategy="lazyOnload"
-        />
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-4TG9X39EQ5" strategy="lazyOnload" />
         <Script id="google-analytics" strategy="lazyOnload">
-                    {`
+          {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}
             gtag('js', new Date());
@@ -81,15 +80,20 @@ export default function RootLayout({
           `}
         </Script>
         <Script id="meta-pixel" strategy="lazyOnload">
-                    {`
+          {`
             !function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');
             fbq('init', '1029001909797956');
             fbq('track', 'PageView');
           `}
         </Script>
         <noscript>
-          <img height="1" width="1" style={{ display: 'none' }}
-            src="https://www.facebook.com/tr?id=1029001909797956&ev=PageView&noscript=1" alt="" />
+          <img
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src="https://www.facebook.com/tr?id=1029001909797956&ev=PageView&noscript=1"
+            alt=""
+          />
         </noscript>
       </body>
     </html>

@@ -597,7 +597,7 @@ export default function LeadsClient({
     return (
       <div
         className={`min-h-screen flex items-center justify-center relative overflow-hidden transition-colors ${
-          isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
+          isDark ? 'bg-[#0b0f17]' : 'bg-slate-50'
         }`}
         role="status"
         aria-label="Loading leads"
@@ -658,12 +658,12 @@ export default function LeadsClient({
             </div>
           </div>
 
-          <p className={`text-base font-semibold tracking-wide ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
+          <p className={`font-[family-name:var(--font-display)] text-lg font-bold tracking-tight ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
             Loading leads
           </p>
 
           <div
-            className="mt-2.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase shadow-xs transition-colors"
+            className="mt-2.5 px-3 py-1 rounded-full text-sm font-semibold shadow-xs transition-colors"
             style={{
               backgroundColor: brandColor1,
               color: isBrand1Dark ? '#ffffff' : '#0f172a',
@@ -681,8 +681,8 @@ export default function LeadsClient({
   // -------------------------------------------------------------------------
 
   return (
-    <div className={`min-h-screen relative selection:bg-blue-500/30 transition-colors ${
-      isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'
+    <div className={`min-h-screen relative selection:bg-blue-500/30 antialiased transition-colors ${
+      isDark ? 'bg-[#0b0f17]' : 'bg-slate-50'
     }`}>
       <div
         className="pointer-events-none fixed inset-x-0 top-0 h-[480px] z-0"
@@ -713,7 +713,7 @@ export default function LeadsClient({
         />
       </div>
 
-      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10 font-sans">
+      <main id="main-content" className="max-w-7xl mx-auto px-4 sm:px-10 py-6 sm:py-12 relative z-10">
         <DashboardHeader
           company={company}
           isDark={isDark}
@@ -737,12 +737,12 @@ export default function LeadsClient({
         </div>
 
         {loadError && (
-          <div className="mb-8 p-4 sm:p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-xs sm:text-sm font-bold flex items-center justify-between animate-in fade-in slide-in-from-top-2">
+          <div className="mb-8 p-4 sm:p-5 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-500 text-sm sm:text-[15px] font-semibold flex items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
               <span>{loadError}</span>
             </div>
-            <button onClick={() => fetchLeads(1)} className="uppercase tracking-widest text-[10px] bg-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-600 transition-colors">Retry</button>
+            <button onClick={() => fetchLeads(1)} className="shrink-0 text-sm font-semibold bg-red-500 text-white px-3.5 py-2 rounded-lg hover:bg-red-600 transition-colors">Retry</button>
           </div>
         )}
 
