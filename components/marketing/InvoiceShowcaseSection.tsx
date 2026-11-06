@@ -260,234 +260,154 @@ export function InvoiceMock({ custom }: { custom?: Custom } = {}) {
   );
 }
 
-const cents = (n: number) => Math.round(n * 100) / 100;
 
-// Example jobs for the demo. Each preset's line items add up to its total.
-const PRESETS: { job: string; mode: 'percent' | 'amount'; deposit: string; items: Item[]; brand: Brand }[] = [
-  { job: 'Roof replacement', mode: 'percent', deposit: '40', items: ITEMS, brand: SUMMIT },
-  {
-    job: 'Deck stain',
-    brand: {
-      name: 'Oak & Grain Decks',
-      initials: 'OG',
-      color: '#7c5a3a',
-      phone: '(555) 019-4471',
-      email: 'hello@oakandgraindecks.co',
-      mark: 'deck',
-    },
-    mode: 'amount',
-    deposit: '500',
-    items: [
-      { description: 'Power Wash & Prep', qty: 1, price: 250 },
-      { description: 'Semi-Transparent Stain (gal)', qty: 6, price: 55 },
-      { description: 'Board Replacement', qty: 4, price: 45 },
-      { description: 'Labor', qty: 1, price: 1040 },
-    ],
-  },
-  {
-    job: 'AC install',
-    brand: {
-      name: 'Coolside HVAC',
-      initials: 'CH',
-      color: '#0284c7',
-      phone: '(555) 012-8830',
-      email: 'service@coolsidehvac.co',
-      mark: 'hvac',
-    },
-    mode: 'percent',
-    deposit: '30',
-    items: [
-      { description: '3-Ton Condenser', qty: 1, price: 3400 },
-      { description: 'Evaporator Coil', qty: 1, price: 1250 },
-      { description: 'Line Set & Refrigerant', qty: 1, price: 450 },
-      { description: 'Smart Thermostat', qty: 1, price: 180 },
-      { description: 'Labor & Installation', qty: 1, price: 2220 },
-    ],
-  },
-  {
-    job: 'Kitchen remodel',
-    brand: {
-      name: 'Hearth Remodeling',
-      initials: 'HR',
-      color: '#7c3aed',
-      phone: '(555) 016-3105',
-      email: 'projects@hearthremodeling.co',
-      mark: 'remodel',
-    },
-    mode: 'percent',
-    deposit: '25',
-    items: [
-      { description: 'Demo & Disposal', qty: 1, price: 1650 },
-      { description: 'Cabinets', qty: 1, price: 14500 },
-      { description: 'Quartz Countertops (sq ft)', qty: 45, price: 95 },
-      { description: 'Backsplash Tile (sq ft)', qty: 30, price: 28 },
-      { description: 'Plumbing & Electrical', qty: 1, price: 3800 },
-      { description: 'Labor & Installation', qty: 1, price: 12935 },
-    ],
-  },
+// ── Home page: "Get paid. See what you kept." ──
+// One job (M. Johnson, the same job used across the page): the invoice on the left,
+// that job's profit on the right. Replaces the separate "Try it" invoice demo and ProfitSection.
+// Numbers add up: 12,000 total, 4,800 deposit, 7,200 balance; expenses 4,150 + 2,600 + 380 = 7,130; kept 4,870.
+
+const JOB_EXPENSES = [
+  { d: 'Shingles & underlayment', c: 'Materials', a: 4150 },
+  { d: 'Crew labor', c: 'Labor', a: 2600 },
+  { d: 'Dumpster rental', c: 'Equipment', a: 380 },
+];
+const JOB_TOTAL = ITEMS.reduce((s, i) => s + i.qty * i.price, 0);
+const JOB_SPENT = JOB_EXPENSES.reduce((s, e) => s + e.a, 0);
+const JOB_KEPT = JOB_TOTAL - JOB_SPENT;
+const JOB_MARGIN = Math.round((JOB_KEPT / JOB_TOTAL) * 100);
+
+const VIEWS: { id: InvoiceView; label: string }[] = [
+  { id: 'deposit', label: 'Deposit invoice' },
+  { id: 'balance', label: 'Balance invoice' },
+  { id: 'paid', label: 'Paid in full' },
 ];
 
-const sumItems = (items: Item[]) => items.reduce((s, i) => s + i.qty * i.price, 0);
-
-const STEPS = ['Deposit sent', 'Deposit paid', 'Balance sent', 'Paid in full'];
-
 export default function InvoiceShowcaseSection() {
-  const [presetIdx, setPresetIdx] = useState(0);
-  const preset = PRESETS[presetIdx];
-
-  const total = cents(sumItems(preset.items));
-  const depositNum = parseFloat(preset.deposit) || 0;
-  const deposit = cents(Math.min(preset.mode === 'percent' ? (total * depositNum) / 100 : depositNum, total));
-  const balance = cents(total - deposit);
-
-  // 0 not sent · 1 deposit sent, waiting · 2 deposit paid · 3 balance sent, waiting · 4 paid in full
-  const [step, setStep] = useState(0);
-  const [toast, setToast] = useState<string | null>(null);
-
-  // Picking another job starts the demo over.
-  useEffect(() => {
-    setStep(0);
-    setToast(null);
-  }, [presetIdx]);
-
-  // The customer "pays" a moment after each invoice goes out.
-  useEffect(() => {
-    if (step !== 1 && step !== 3) return;
-    const t = setTimeout(() => {
-      setToast(`Customer paid ${fmt(step === 1 ? deposit : balance)} by card`);
-      setStep(step + 1);
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [step, deposit, balance]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 2400);
-    return () => clearTimeout(t);
-  }, [toast]);
-
-  const view: InvoiceView = step <= 1 ? 'deposit' : step === 4 ? 'paid' : 'balance';
-  const waiting = step === 1 || step === 3;
-
-  const action = () => {
-    if (step === 0) setStep(1);
-    else if (step === 2) setStep(3);
-    else if (step === 4) setStep(0);
-  };
-  const actionLabel = waiting
-    ? 'Waiting for payment…'
-    : step === 0
-      ? `Send deposit invoice · ${fmt(deposit)}`
-      : step === 2
-        ? `Send balance invoice · ${fmt(balance)}`
-        : 'Start over';
-  const ActionIcon = waiting ? Loader2 : step === 4 ? RotateCcw : Send;
+  const [view, setView] = useState<InvoiceView>('deposit');
 
   return (
-    <section className="bg-slate-50 px-4 py-14 text-[#1C1F23] sm:px-6 sm:py-20 lg:px-8">
-      <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
-        {/* Copy + try it */}
-        <div className="lg:order-2">
-          <div className="text-center lg:text-left">
-            <Eyebrow>Try it</Eyebrow>
-            <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl lg:text-[44px]">
-              Send the invoice. <span className="text-[#00828A]">Get paid.</span>
-            </h2>
-            <p className="mx-auto mt-3 max-w-[44ch] text-[15px] leading-relaxed text-[#3a3f45] lg:mx-0">
-              Your customer gets a clean PDF with your logo, every line item, what&rsquo;s been paid, and a QR code to pay the
-              rest.
-            </p>
-          </div>
+    <section className="relative overflow-hidden bg-slate-900 px-4 py-14 text-white sm:px-6 sm:py-20 lg:px-8">
+      <div aria-hidden className="pointer-events-none absolute -left-32 top-1/4 h-[480px] w-[480px] rounded-full bg-[#00828A]/25 blur-[130px]" />
+      <div aria-hidden className="pointer-events-none absolute -right-32 bottom-0 h-[380px] w-[380px] rounded-full bg-[#5EC4C9]/15 blur-[120px]" />
 
-          {/* Job picker */}
-          <div className="mt-6 flex flex-wrap justify-center gap-2 lg:justify-start">
-            {PRESETS.map((p, idx) => (
-              <button
-                key={p.job}
-                type="button"
-                onClick={() => setPresetIdx(idx)}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-semibold transition-all ${
-                  idx === presetIdx
-                    ? 'bg-[#1C1F23] text-white shadow-md'
-                    : 'bg-white text-slate-600 ring-1 ring-slate-200 hover:text-slate-900 hover:ring-slate-300'
-                }`}
-              >
-                {p.job}
-              </button>
-            ))}
-          </div>
-
-          {/* Progress */}
-          <ol className="mt-6 grid grid-cols-4 gap-2">
-            {STEPS.map((label, i) => {
-              const done = step > i || (step === 4 && i === 3);
-              const active = !done && (step === i || (waiting && step - 1 === i));
-              return (
-                <li key={label} className="min-w-0">
-                  <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                    <motion.div
-                      className="h-full rounded-full bg-[#00828A]"
-                      initial={false}
-                      animate={{ width: done ? '100%' : active ? '45%' : '0%' }}
-                      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                    />
-                  </div>
-                  <p
-                    className={`mt-1.5 flex items-center gap-1 truncate text-[11px] font-semibold sm:text-xs ${
-                      done ? 'text-[#00828A]' : 'text-slate-400'
-                    }`}
-                  >
-                    {done && <Check className="h-3 w-3 shrink-0" strokeWidth={3} />}
-                    {label}
-                  </p>
-                </li>
-              );
-            })}
-          </ol>
-
-          <button
-            type="button"
-            onClick={action}
-            disabled={waiting}
-            className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#00828A] px-5 py-3.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white shadow-lg shadow-[#00828A]/25 transition-all hover:-translate-y-0.5 hover:bg-[#006e75] disabled:cursor-wait disabled:opacity-80 disabled:hover:translate-y-0"
-          >
-            <ActionIcon className={`h-4 w-4 ${waiting ? 'animate-spin' : ''}`} />
-            {actionLabel}
-          </button>
-          <p className="mt-2 text-center text-xs text-slate-400">Demo only. Nothing is sent.</p>
+      <div className="relative mx-auto max-w-6xl">
+        <div className="mx-auto max-w-2xl text-center">
+          <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#5EC4C9]">
+            Invoices &amp; profit
+          </p>
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[32px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl">
+            Get paid. <span className="text-[#5EC4C9]">See what you kept.</span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-[52ch] text-[15px] leading-relaxed text-white/70 sm:text-base">
+            Your customer gets a clean PDF with your logo and a QR code to pay. Log your costs on the job, and you see exactly
+            what you made.
+          </p>
         </div>
 
-        {/* Invoice */}
-        <motion.div
-          initial={{ opacity: 0, y: 16, rotate: -1.5 }}
-          whileInView={{ opacity: 1, y: 0, rotate: -1.5 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.5 }}
-          className="mx-auto w-full max-w-[380px] lg:order-1"
-          aria-label="Example Lead2Project invoice"
-        >
-          <div className="relative">
-            <div aria-hidden className="pointer-events-none absolute -inset-6 -z-10 rounded-[2rem] bg-[#5EC4C9]/20 blur-2xl" />
-            <InvoiceMock custom={{ items: preset.items, total, deposit, view, brand: preset.brand }} />
-            <AnimatePresence>
-              {toast && (
-                <motion.div
-                  key={toast}
-                  initial={{ opacity: 0, y: -12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  transition={{ duration: 0.25 }}
-                  className="absolute inset-x-0 top-3 z-10 flex justify-center"
-                  role="status"
+        <div className="mt-10 grid grid-cols-1 items-center gap-10 sm:mt-12 lg:grid-cols-2 lg:gap-14">
+          {/* ── Invoice ── */}
+          <div className="mx-auto w-full max-w-[400px]">
+            <div className="mb-4 grid grid-cols-3 gap-1 rounded-xl bg-white/10 p-1 ring-1 ring-white/15" role="tablist" aria-label="Invoice stage">
+              {VIEWS.map((v) => (
+                <button
+                  key={v.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={view === v.id}
+                  onClick={() => setView(v.id)}
+                  className={`rounded-lg px-1 py-2 text-[12px] font-bold transition-colors sm:text-[13px] ${
+                    view === v.id ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'
+                  }`}
                 >
-                  <span className="flex items-center gap-2 whitespace-nowrap rounded-full bg-emerald-600 px-4 py-2 text-xs font-semibold text-white shadow-lg sm:text-sm">
-                    <CreditCard className="h-4 w-4" /> {toast}
-                  </span>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 16, rotate: -1.5 }}
+              whileInView={{ opacity: 1, y: 0, rotate: -1.5 }}
+              viewport={{ once: true, margin: '-60px' }}
+              transition={{ duration: 0.5 }}
+              aria-label="Example Lead2Project invoice"
+            >
+              <InvoiceMock custom={{ items: ITEMS, total: JOB_TOTAL, deposit: DEPOSIT, view, brand: SUMMIT }} />
+            </motion.div>
           </div>
-        </motion.div>
+
+          {/* ── Profit for the same job ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="mx-auto w-full max-w-md"
+          >
+            <div className="overflow-hidden rounded-2xl bg-white text-[#1C1F23] shadow-2xl shadow-black/40">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold">M. Johnson · Roof replacement</p>
+                  <p className="text-xs text-slate-400">#INV-041 · Job profit</p>
+                </div>
+                <span className="shrink-0 rounded-full bg-[#00828A]/10 px-2.5 py-1 text-xs font-bold text-[#00828A]">{JOB_MARGIN}% kept</span>
+              </div>
+
+              <div className="space-y-4 px-5 py-4">
+                <div>
+                  <p className="mb-1.5 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-emerald-700">
+                    Came in <span className="tabular-nums">{fmt(JOB_TOTAL)}</span>
+                  </p>
+                  <div className="space-y-1 text-[13px] text-slate-700">
+                    <div className="flex justify-between">
+                      <span>Deposit · paid by card</span>
+                      <span className="tabular-nums">{fmt(DEPOSIT)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Balance · paid by card</span>
+                      <span className="tabular-nums">{fmt(JOB_TOTAL - DEPOSIT)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <p className="mb-1.5 flex items-center justify-between text-[11px] font-semibold uppercase tracking-wide text-rose-600">
+                    Went out <span className="tabular-nums">{fmt(JOB_SPENT)}</span>
+                  </p>
+                  <div className="space-y-1 text-[13px] text-slate-700">
+                    {JOB_EXPENSES.map((e) => (
+                      <div key={e.d} className="flex justify-between gap-3">
+                        <span className="min-w-0 truncate">
+                          {e.d} <span className="text-slate-400">({e.c})</span>
+                        </span>
+                        <span className="shrink-0 tabular-nums">{fmt(e.a)}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-100 bg-slate-50 px-5 py-4">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-sm font-bold">You kept</span>
+                  <span className="font-[family-name:var(--font-display)] text-3xl font-extrabold tabular-nums text-[#00828A]">{fmt(JOB_KEPT)}</span>
+                </div>
+                <div className="mt-2 flex h-2 overflow-hidden rounded-full bg-slate-200" aria-hidden>
+                  <span className="h-full bg-rose-400" style={{ width: `${100 - JOB_MARGIN}%` }} />
+                  <span className="h-full bg-[#00828A]" style={{ width: `${JOB_MARGIN}%` }} />
+                </div>
+              </div>
+            </div>
+
+            <ul className="mt-5 flex flex-wrap justify-center gap-2 lg:justify-start">
+              {['Profit on every job', 'Log costs as you go', 'CSV & QuickBooks export'].map((label) => (
+                <li
+                  key={label}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white ring-1 ring-white/15"
+                >
+                  <Check className="h-3.5 w-3.5 text-[#5EC4C9]" strokeWidth={3} /> {label}
+                </li>
+              ))}
+            </ul>
+          </motion.div>
+        </div>
       </div>
     </section>
   );
