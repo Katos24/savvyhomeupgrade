@@ -69,7 +69,9 @@ export default function QuoteSection() {
         <div ref={ref} className="relative min-h-[520px] w-full lg:order-1">
           <div aria-hidden className="pointer-events-none absolute inset-x-6 bottom-6 top-12 rounded-[2rem] bg-black/25 blur-3xl" />
           {inView && (
-            <div className="relative">
+            // text-[#1C1F23]: the demo card leaves some text colors unset, so it must not inherit this section's white text.
+            // The demo's own captions set white explicitly (dark prop), so they stay readable on teal.
+            <div className="relative text-[#1C1F23]">
               <QuoteBuilderDemo dark />
             </div>
           )}

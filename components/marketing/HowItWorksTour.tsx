@@ -17,10 +17,13 @@ import {
   Receipt,
   ListChecks,
   MessageCircle,
+  Star,
+  Download,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 /* ─────────────────────────────────────────────────────────
-   /how-it-works: one roofing job, request to paid in full.
+   /how-it-works: one roofing job, request to paid in full, then the review and tax time.
    Every demo is a mock (no real data, no API calls). Each one
    plays only while it's on screen, loops, and shows its final
    frame for people who turn off motion in their device settings.
@@ -889,7 +892,7 @@ function BalanceDemo() {
                 animate={{ opacity: 1, scale: 1, rotate: -4 }}
                 exit={{ opacity: 0 }}
                 transition={{ type: 'spring', stiffness: 260, damping: 16 }}
-                className={`rounded border-2 border-emerald-600 px-3 py-0.5 ${D} text-lg font-extrabold uppercase tracking-wider text-emerald-700`}
+                className={`rounded border-2 border-emerald-600 px-3 py-0.5 font-[family-name:var(--font-display)] text-lg font-extrabold text-emerald-700`}
               >
                 Paid in full · {money(TOTAL)}
               </motion.span>
@@ -1346,7 +1349,7 @@ function PaidDemo() {
                   animate={{ opacity: 1, scale: 1, rotate: -4 }}
                   exit={{ opacity: 0 }}
                   transition={{ type: 'spring', stiffness: 260, damping: 16 }}
-                  className={`rounded border-2 border-emerald-600 px-3 py-0.5 ${D} text-lg font-extrabold uppercase tracking-wider text-emerald-700`}
+                  className={`rounded border-2 border-emerald-600 px-3 py-0.5 font-[family-name:var(--font-display)] text-lg font-extrabold text-emerald-700`}
                 >
                   Paid in full · {money(TOTAL)}
                 </motion.span>
@@ -1359,12 +1362,206 @@ function PaidDemo() {
   );
 }
 
+/* ── Step 8: the Google review request ──────────────────── */
+
+// 0 inbox, thank-you email arrives · 1 email open · 2 they tap the review button
+// 3 Google review page, stars fill in · 4 hold
+const REVIEW_T = [1500, 2300, 900, 1900, 2600];
+
+function ReviewDemo() {
+  const { ref, phase, reduced } = useDemo(REVIEW_T);
+  const p = reduced ? 4 : phase;
+  const stars = p >= 4 ? 5 : p === 3 ? 5 : 0;
+
+  return (
+    <div ref={ref}>
+      <Phone>
+        <AnimatePresence mode="wait">
+          {p === 0 && (
+            <motion.div key="inbox" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="px-4">
+              <p className="mb-3 text-lg font-semibold text-slate-900">Inbox</p>
+              <motion.div
+                animate={{ backgroundColor: ['#ffffff', '#f1f5f9', '#ffffff'] }}
+                transition={{ duration: 1.2, delay: 0.3 }}
+                className="rounded-xl border border-slate-200 p-3"
+              >
+                <p className="text-sm font-semibold text-slate-900">{BIZ}</p>
+                <p className="text-sm text-slate-800">Thanks for choosing us, Maria!</p>
+                <p className="mt-0.5 text-xs text-slate-500">Your roof replacement is all done</p>
+              </motion.div>
+              {['Your order shipped', 'Weekly deals'].map((s) => (
+                <div key={s} className="mt-2 rounded-xl border border-slate-100 p-3 opacity-50">
+                  <p className="text-sm text-slate-700">{s}</p>
+                </div>
+              ))}
+            </motion.div>
+          )}
+
+          {(p === 1 || p === 2) && (
+            <motion.div key="email" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}>
+              <BizHeader />
+              <div className="px-4 pt-4">
+                <p className="text-base font-semibold text-slate-900">Thanks for choosing us, Maria!</p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                  Your roof replacement is all done. If you were happy with the work, a quick Google review would mean a lot to our small
+                  team.
+                </p>
+                <div className="mt-4 flex justify-center gap-1">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <Star key={i} className="h-6 w-6 text-amber-400" fill="currentColor" />
+                  ))}
+                </div>
+                <motion.div
+                  animate={{ scale: p === 2 ? 0.94 : 1 }}
+                  className={`mt-4 rounded-lg py-2.5 text-center text-sm font-semibold text-white ${p === 2 ? 'bg-slate-700' : 'bg-slate-900'}`}
+                >
+                  Leave a Google review
+                </motion.div>
+                <p className="mt-3 text-center text-[11px] text-slate-400">Thanks again, the Summit Roofing crew</p>
+              </div>
+            </motion.div>
+          )}
+
+          {p >= 3 && (
+            <motion.div key="google" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="px-4 pt-2">
+              <p className="text-xs font-medium text-slate-500">Google review page</p>
+              <p className="mt-1 text-base font-semibold text-slate-900">{BIZ}</p>
+              <p className="text-xs text-slate-500">Roofing contractor</p>
+              <p className="mt-5 text-sm font-medium text-slate-800">Rate your experience</p>
+              <div className="mt-2 flex gap-1.5">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <motion.span
+                    key={i}
+                    initial={false}
+                    animate={{ scale: i < stars ? [1, 1.25, 1] : 1 }}
+                    transition={{ delay: reduced ? 0 : i * 0.18, duration: 0.3 }}
+                  >
+                    <Star
+                      className={`h-8 w-8 transition-colors duration-200 ${i < stars ? 'text-amber-400' : 'text-slate-300'}`}
+                      fill="currentColor"
+                      style={{ transitionDelay: reduced ? '0ms' : `${i * 180}ms` }}
+                    />
+                  </motion.span>
+                ))}
+              </div>
+              <div className="mt-4 h-20 rounded-lg border border-slate-200 px-3 py-2 text-sm leading-snug text-slate-800">
+                {p >= 4 ? 'Showed up on time, cleaned up everything, and the price matched the quote.' : ''}
+              </div>
+              <div className="mt-3 rounded-lg bg-slate-900 py-2 text-center text-sm font-semibold text-white">Post</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Phone>
+
+      <Notice show={p >= 3}>
+        <Star className="h-4 w-4 text-amber-500" fill="currentColor" />
+        Sent when you marked the job done
+      </Notice>
+    </div>
+  );
+}
+
+/* ── Step 9: tax time, export for the bookkeeper ────────── */
+
+// Year-to-date numbers for the export screen. They add up:
+// 54,300 + 38,900 + 6,480 + 3,300 = 102,980 expenses; 184,250 − 102,980 = 81,270 profit.
+const YEAR = { income: 184250, expenses: 102980 };
+const YEAR_COSTS = [
+  { c: 'Materials', a: 54300 },
+  { c: 'Labor', a: 38900 },
+  { c: 'Equipment', a: 6480 },
+  { c: 'Other', a: 3300 },
+];
+
+// 0 the year's numbers · 1 the Export button lights up · 2 click · 3 file ready · 4 hold
+const EXPORT_T = [1600, 1000, 450, 1500, 2800];
+
+function ExportDemo() {
+  const { ref, phase, reduced } = useDemo(EXPORT_T);
+  const p = reduced ? 4 : phase;
+  const ready = p >= 3;
+  const profit = YEAR.income - YEAR.expenses;
+
+  return (
+    <div ref={ref}>
+      <Screen title="Lead2Project · Financials · 2026">
+        <div className="grid grid-cols-3 gap-2 text-center">
+          {[
+            { l: 'Income', v: YEAR.income, tone: 'text-emerald-700' },
+            { l: 'Expenses', v: YEAR.expenses, tone: 'text-rose-600' },
+            { l: 'Profit', v: profit, tone: 'text-slate-900' },
+          ].map((x) => (
+            <div key={x.l} className="rounded-lg bg-slate-50 px-2 py-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{x.l}</p>
+              <p className={`text-sm font-semibold tabular-nums sm:text-base ${x.tone}`}>{money(x.v)}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-3 space-y-1.5">
+          {YEAR_COSTS.map((x) => (
+            <div key={x.c} className="text-xs">
+              <div className="flex justify-between text-slate-700">
+                <span>{x.c}</span>
+                <span className="tabular-nums">{money(x.a)}</span>
+              </div>
+              <div className="mt-0.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                <div className="h-full rounded-full bg-slate-400" style={{ width: `${(x.a / YEAR.expenses) * 100}%` }} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+          <span className="text-xs text-slate-500">Every job, payment and expense</span>
+          <motion.span
+            animate={{ scale: p === 2 ? 0.93 : p === 1 ? [1, 1.06, 1] : 1 }}
+            transition={{ duration: p === 1 ? 0.8 : 0.12 }}
+            className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-white ${
+              p === 1 ? 'bg-[#00828A] ring-4 ring-[#00828A]/20' : 'bg-slate-900'
+            }`}
+          >
+            <Download className="h-3.5 w-3.5" /> Export
+          </motion.span>
+        </div>
+
+        <div className="mt-3 h-[76px]">
+          <AnimatePresence>
+            {ready && (
+              <motion.div
+                initial={reduced ? false : { opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: EASE }}
+                className="space-y-1.5"
+              >
+                {['lead2project-2026.csv', 'lead2project-2026-quickbooks.csv'].map((f) => (
+                  <div key={f} className="flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-1.5 text-xs">
+                    <FileSpreadsheet className="h-4 w-4 shrink-0 text-emerald-700" />
+                    <span className="min-w-0 flex-1 truncate font-medium text-slate-800">{f}</span>
+                    <Check className="h-3.5 w-3.5 shrink-0 text-emerald-700" strokeWidth={3} />
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </Screen>
+
+      <Notice show={ready}>
+        <Check className="h-4 w-4 text-emerald-600" strokeWidth={3} />
+        Ready for your bookkeeper
+      </Notice>
+    </div>
+  );
+}
+
 /* ── Page layout ────────────────────────────────────────── */
 
 function PlanTag({ plan }: { plan: 'Free' | 'Pro' }) {
   return (
     <span
-      className={`ml-2 inline-block rounded px-1.5 py-0.5 align-middle ${D} text-[11px] font-bold uppercase tracking-wider ${
+      className={`ml-2 inline-block rounded px-1.5 py-0.5 align-middle font-[family-name:var(--font-display)] text-[11px] font-bold ${
         plan === 'Pro' ? 'bg-[#1C1F23] text-[#5EC4C9]' : 'border border-[#1C1F23]/20 text-[#3a3f45]'
       }`}
     >
@@ -1389,15 +1586,15 @@ function Step({
   flip?: boolean;
 }) {
   return (
-    <section className="border-t border-[#1C1F23]/10 py-14 sm:py-20">
+    <section className={`py-14 sm:py-20 ${n % 2 === 0 ? 'bg-slate-50' : 'bg-white'}`}>
       <div className={`mx-auto grid max-w-6xl items-center gap-10 px-4 sm:px-6 md:grid-cols-2 md:gap-16`}>
         <div className={flip ? 'md:order-2' : ''}>
-          <p className={`${D} text-5xl font-extrabold text-[#00828A] sm:text-6xl`}>{String(n).padStart(2, '0')}</p>
-          <h2 className={`${D} mt-2 text-3xl font-extrabold uppercase leading-[0.95] tracking-tight text-[#1C1F23] sm:text-4xl`}>
+          <p className={`font-[family-name:var(--font-display)] text-5xl font-extrabold text-[#00828A] sm:text-6xl`}>{String(n).padStart(2, '0')}</p>
+          <h2 className={`font-[family-name:var(--font-display)] mt-2 text-3xl font-extrabold leading-[1.1] tracking-tight text-[#1C1F23] sm:text-4xl`}>
             {title}
             {plan && <PlanTag plan={plan} />}
           </h2>
-          <div className="mt-4 space-y-3 text-base leading-relaxed text-[#3a3f45] sm:text-lg">{children}</div>
+          <div className="mt-4 space-y-3 text-base leading-relaxed text-[#2a2f35] sm:text-lg">{children}</div>
         </div>
         <div className={flip ? 'md:order-1' : ''}>{demo}</div>
       </div>
@@ -1407,15 +1604,18 @@ function Step({
 
 export default function HowItWorksTour() {
   return (
-    <div className="bg-[#F4EFE6] text-[#1C1F23]">
-      <header className="mx-auto max-w-3xl px-4 pb-10 pt-28 text-center sm:px-6 sm:pt-36">
-        <p className={`${D} text-sm font-bold uppercase tracking-[0.2em] text-[#00828A]`}>How it works</p>
-        <h1 className={`${D} mt-3 text-4xl font-extrabold uppercase leading-[0.92] tracking-tight sm:text-6xl`}>
+    <div className="bg-white text-[#1C1F23]">
+      <header className="bg-gradient-to-b from-[#EAF6F6] to-white px-4 pb-10 pt-28 text-center sm:px-6 sm:pt-36">
+        <div className="mx-auto max-w-3xl">
+        <p className={`font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#00828A]`}>How it works</p>
+        <h1 className={`font-[family-name:var(--font-display)] mt-3 text-[32px] font-extrabold leading-[1.1] tracking-tight sm:text-6xl`}>
           From request to paid in full
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#3a3f45] sm:text-lg">
-          See exactly how a job goes from &ldquo;can you come take a look?&rdquo; to paid in full. No spreadsheets, no chasing.
+        <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#2a2f35] sm:text-lg">
+          See exactly how a job goes from &ldquo;can you come take a look?&rdquo; to paid in full, reviewed, and ready for tax time. No
+          spreadsheets, no chasing.
         </p>
+        </div>
       </header>
 
       <Step n={1} title="The customer requests an estimate" plan="Free" demo={<FormDemo />}>
@@ -1423,7 +1623,7 @@ export default function HowItWorksTour() {
           You get your own booking link. Put it on your website, your Google profile, or a QR code on the truck. Customers send their address, what they
           need and what&rsquo;s going on.
         </p>
-        <p className="text-sm text-[#5a6068]">Photo and video uploads on the form are part of Pro.</p>
+        <p className="text-sm text-[#3f454c]">Photo and video uploads on the form are part of Pro.</p>
       </Step>
 
       <Step n={2} title="Every job on one board" plan="Free" demo={<BoardDemo />} flip>
@@ -1452,7 +1652,7 @@ export default function HowItWorksTour() {
           Send the deposit request in one tap, or turn on automatic deposit requests so it goes out as soon as they accept. They pay by card, and the job
           shows the deposit as paid.
         </p>
-        <p className="text-sm text-[#5a6068]">Card payments go through Stripe, straight to your bank account.</p>
+        <p className="text-sm text-[#3f454c]">Card payments go through Stripe, straight to your bank account.</p>
       </Step>
 
       <Step n={6} title="Collect the balance" plan="Pro" demo={<BalanceDemo />} flip>
@@ -1469,21 +1669,43 @@ export default function HowItWorksTour() {
         </p>
       </Step>
 
-      <section className="bg-[#1C1F23] px-4 py-16 text-center text-white sm:py-20">
-        <h2 className={`${D} text-3xl font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl`}>Try it on your next job</h2>
+      <Step n={8} title="Ask for the Google review" plan="Pro" demo={<ReviewDemo />} flip>
+        <p>
+          Mark the job done and your customer gets a thank-you email with a button straight to your Google review page, while the job is still fresh in
+          their mind.
+        </p>
+        <p className="text-sm text-[#3f454c]">You choose per job, so a rough one doesn&rsquo;t get a request. More reviews help you stand out when neighbors search for your trade.</p>
+      </Step>
+
+      <Step n={9} title="Tax time, without the shoebox" plan="Pro" demo={<ExportDemo />}>
+        <p>
+          Every payment, invoice and expense is already logged on the job. At tax time, export the whole year in one click, including a QuickBooks
+          format, and hand it to your bookkeeper. No digging through receipts and texts.
+        </p>
+        <p className="text-sm text-[#3f454c]">
+          Bookkeeper? Join the{' '}
+          <Link href="/partners" className="font-semibold text-[#00828A] underline underline-offset-2">
+            free partner program
+          </Link>
+          .
+        </p>
+      </Step>
+
+      <section className="bg-slate-900 px-4 py-16 text-center text-white sm:py-20">
+        <h2 className={`font-[family-name:var(--font-display)] text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-5xl`}>Try it on your next job</h2>
         <p className="mx-auto mt-4 max-w-lg text-base leading-relaxed text-white/75">
-          Free to start, with your booking link and board. Pro adds templates, deposits and card payments, with a 14-day free trial.
+          Free to start, with your booking link and board. Pro adds templates, deposits, card payments, review requests and exports, with a 14-day free trial.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href="/signup"
-            className={`inline-flex items-center gap-2 rounded-md bg-[#00828A] px-7 py-3 ${D} text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-[#006e75]`}
+            className={`inline-flex items-center gap-2 rounded-md bg-[#00828A] px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold text-white transition-colors hover:bg-[#006e75]`}
           >
             Start free <ArrowRight className="h-4 w-4" />
           </Link>
           <Link
             href="/book-demo"
-            className={`inline-flex items-center gap-2 rounded-md border border-white/30 px-7 py-3 ${D} text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-white/10`}
+            className={`inline-flex items-center gap-2 rounded-md border border-white/30 px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold text-white transition-colors hover:bg-white/10`}
           >
             Get help setting it up
           </Link>
@@ -1494,5 +1716,5 @@ export default function HowItWorksTour() {
 }
 
 // Used by the ad recording page (app/ad/page.tsx).
-export { FormDemo, BoardDemo, TemplateDemo, QuoteDemo, DepositDemo, BalanceDemo, CardDemo, PaidDemo };
-export { FORM_T, BOARD_T, TEMPLATE_T, QUOTE_T, DEPOSIT_T, BALANCE_T, CARD_T, PAID_T };
+export { FormDemo, BoardDemo, TemplateDemo, QuoteDemo, DepositDemo, BalanceDemo, CardDemo, PaidDemo, ReviewDemo, ExportDemo };
+export { FORM_T, BOARD_T, TEMPLATE_T, QUOTE_T, DEPOSIT_T, BALANCE_T, CARD_T, PAID_T, REVIEW_T, EXPORT_T };
