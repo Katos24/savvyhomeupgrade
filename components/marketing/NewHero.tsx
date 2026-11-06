@@ -176,7 +176,7 @@ export default function Hero() {
   return (
     <div className="bg-white text-[#1C1F23] antialiased selection:bg-[#00828A]/20 overflow-x-hidden">
       {/* ── Dark hero: matches the dark nav at the top of the page ── */}
-      <section className="relative overflow-hidden bg-slate-900 px-5 pb-36 pt-28 text-white sm:px-6 sm:pb-44 sm:pt-32 lg:px-8 lg:pb-52 lg:pt-36">
+      <section className="relative overflow-hidden bg-slate-900 px-5 pb-36 pt-24 text-white sm:px-6 sm:pb-44 sm:pt-32 lg:px-8 lg:pb-52 lg:pt-36">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0"
@@ -213,7 +213,7 @@ export default function Hero() {
             )}
             <Link
               href="/signup"
-              className="group flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[#00828A] px-8 py-3.5 font-[family-name:var(--font-display)] text-base font-bold text-white shadow-lg shadow-[#00828A]/40 transition-colors hover:bg-[#00959e] sm:text-lg"
+              className="group order-first flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[#00828A] px-8 sm:order-none py-3.5 font-[family-name:var(--font-display)] text-base font-bold text-white shadow-lg shadow-[#00828A]/40 transition-colors hover:bg-[#00959e] sm:text-lg"
             >
               Start free
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -329,6 +329,12 @@ function HeroBoard() {
   const choose = (v: 'card' | 'board') => {
     touched.current = true;
     setView(v);
+    // On phones the card opens at the top of the board, which may be above where they tapped
+    const phone = typeof window !== 'undefined' && !window.matchMedia('(min-width: 640px)').matches;
+    if (phone && boardRef.current) {
+      const top = boardRef.current.getBoundingClientRect().top + window.scrollY - 130; // keep the nav and the switch in view
+      if (Math.abs(window.scrollY - top) > 40) window.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
+    }
   };
   const open = view === 'card';
   const highlight = true; // M. Johnson stays highlighted so it's clear which job the card belongs to
@@ -353,7 +359,7 @@ function HeroBoard() {
               role="tab"
               aria-selected={view === o.id}
               onClick={() => choose(o.id)}
-              className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+              className={`min-h-[40px] rounded-full px-5 py-2 text-[15px] font-bold transition-colors sm:min-h-0 sm:px-4 sm:py-1.5 sm:text-sm ${
                 view === o.id ? 'bg-white text-slate-900 shadow-sm' : 'text-white/90 hover:text-white'
               }`}
             >
@@ -438,7 +444,7 @@ function HeroBoard() {
           {open && (
             <motion.div
               key="card"
-              className="relative z-10 flex items-start justify-center rounded-2xl px-2 pb-4 pt-14 [grid-area:1/1] sm:px-6 sm:pt-16"
+              className="relative z-10 flex items-start justify-center rounded-2xl px-2 pb-4 pt-16 [grid-area:1/1] sm:px-6 sm:pt-16"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -460,7 +466,7 @@ function HeroBoard() {
                 <button
                   type="button"
                   onClick={() => choose('board')}
-                  className="absolute -top-10 right-0 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-bold text-slate-900 shadow-md hover:bg-white"
+                  className="absolute -top-11 right-0 inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-2 text-sm font-bold text-slate-900 shadow-md hover:bg-white sm:-top-10 sm:min-h-0 sm:py-1.5 sm:text-xs"
                 >
                   <X className="h-3.5 w-3.5" /> See the board
                 </button>

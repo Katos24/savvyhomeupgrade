@@ -544,6 +544,8 @@ export function JobCardPreview({ callouts = true, hints = false }: { callouts?: 
    0 the "Request quote" button pulses · 1 customer taps it · 2 name filled · 3 answers picked
    4 photos added · 5 Send tapped · 6–8 "Request sent!" */
 const PHASES = 9;
+// The home page shows this one frame, fully filled in, with no animation.
+const STATIC_FILLED = 4;
 const PHASE_MS = 1000;
 const ARRIVED = 6;
 
@@ -629,7 +631,7 @@ function ShareMock({ phase }: { phase: number }) {
               transition={{ duration: 0.15 }}
               className="relative flex flex-col items-center gap-1 overflow-hidden rounded-lg bg-[#00828A] py-2 text-white shadow-md"
             >
-              {!tapping && <span className="absolute inset-0 rounded-lg ring-2 ring-inset ring-white/70 motion-safe:animate-pulse" />}
+              {!tapping && <span className="absolute inset-0 rounded-lg ring-2 ring-inset ring-white/70" />}
               <AnimatePresence>
                 {tapping && (
                   <motion.span
@@ -775,13 +777,14 @@ function FormMock({ phase }: { phase: number }) {
 }
 
 export default function FormAndDashboardSection() {
-  const { ref, phase } = useStory();
+  // Static: the form is shown filled in (name, answers and photos), with no animation.
+  const phase = STATIC_FILLED;
 
   return (
     <section className="text-[#1C1F23]">
       {/* ── Part 1: lead capture. Your link on Google / your site → the customer fills in your form ── */}
       <div className="relative overflow-hidden bg-gradient-to-b from-[#EAF6F6] to-white px-4 pb-14 pt-14 sm:px-6 sm:pb-16 sm:pt-20 lg:px-8">
-        <div ref={ref} className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14">
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14">
           {/* Left: the pitch + where your link lives */}
           <div>
             <div className="text-center lg:text-left">
@@ -833,23 +836,9 @@ export default function FormAndDashboardSection() {
           >
             <div aria-hidden className="pointer-events-none absolute -inset-8 -z-10 rounded-full bg-[#5EC4C9]/25 blur-3xl" />
             <FormMock phase={phase} />
-            <div className="mt-5 flex min-h-[44px] items-center justify-center gap-2 text-center">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#1C1F23] text-[11px] font-bold text-[#5EC4C9]">
-                {Math.min(phase + 1, 7)}
-              </span>
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.p
-                  key={PHASE_CAPTION[phase]}
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -4 }}
-                  transition={{ duration: 0.2 }}
-                  className="text-sm font-semibold text-[#1C1F23]"
-                >
-                  {PHASE_CAPTION[phase]}
-                </motion.p>
-              </AnimatePresence>
-            </div>
+            <p className="mt-5 flex items-center justify-center gap-2 text-center text-[15px] font-semibold text-[#1C1F23]">
+              <Check className="h-4 w-4 shrink-0 text-[#00828A]" strokeWidth={3} /> Sent straight to your board, ready to quote
+            </p>
             <div className="text-center">
               <Link
                 href="/features/lead-capture"
