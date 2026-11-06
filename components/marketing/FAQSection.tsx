@@ -48,13 +48,13 @@ export default function FAQSection() {
         {/* Heading + help */}
         <div className="text-center lg:text-left">
           <Eyebrow>Questions</Eyebrow>
-          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl lg:text-5xl">
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
             Common questions
           </h2>
 
           <div className="mx-auto mt-6 max-w-sm rounded-2xl bg-slate-900 p-5 text-left text-white lg:mx-0">
-            <p className="font-[family-name:var(--font-display)] text-lg font-extrabold uppercase leading-tight">Want help getting set up?</p>
-            <p className="mt-1.5 text-sm leading-relaxed text-white/70">
+            <p className="font-[family-name:var(--font-display)] text-lg font-extrabold leading-tight">Want help getting set up?</p>
+            <p className="mt-1.5 text-sm leading-relaxed text-white/85">
               Book a quick call and I&rsquo;ll help set up your services, deposits and booking form, and bring over your customer
               list.
             </p>
@@ -79,7 +79,7 @@ export default function FAQSection() {
                   aria-expanded={isOpen}
                   className="group flex w-full items-center justify-between gap-4 py-4 text-left"
                 >
-                  <span className={`text-[15px] font-bold transition-colors sm:text-base ${isOpen ? 'text-[#00828A]' : 'group-hover:text-[#00828A]'}`}>
+                  <span className={`text-base font-bold transition-colors sm:text-base ${isOpen ? 'text-[#00828A]' : 'group-hover:text-[#00828A]'}`}>
                     {item.q}
                   </span>
                   <span
@@ -99,7 +99,7 @@ export default function FAQSection() {
                       transition={{ duration: 0.2 }}
                       className="overflow-hidden"
                     >
-                      <p className="pb-4 pr-10 text-[14px] leading-relaxed text-[#3a3f45] sm:text-[15px]">{item.a}</p>
+                      <p className="pb-4 pr-10 text-[15px] leading-relaxed text-[#2a2f35] sm:text-[15px]">{item.a}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>

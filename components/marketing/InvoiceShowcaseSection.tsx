@@ -295,10 +295,10 @@ export default function InvoiceShowcaseSection() {
           <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#5EC4C9]">
             Invoices &amp; profit
           </p>
-          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[32px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl">
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[32px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl">
             Get paid. <span className="text-[#5EC4C9]">See what you kept.</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-[52ch] text-[15px] leading-relaxed text-white/70 sm:text-base">
+          <p className="mx-auto mt-4 max-w-[52ch] text-base leading-relaxed text-white/85 sm:text-base">
             Your customer gets a clean PDF with your logo and a QR code to pay. Log your costs on the job, and you see exactly
             what you made.
           </p>
@@ -316,7 +316,7 @@ export default function InvoiceShowcaseSection() {
                   aria-selected={view === v.id}
                   onClick={() => setView(v.id)}
                   className={`rounded-lg px-1 py-2 text-[12px] font-bold transition-colors sm:text-[13px] ${
-                    view === v.id ? 'bg-white text-slate-900' : 'text-white/70 hover:text-white'
+                    view === v.id ? 'bg-white text-slate-900' : 'text-white/85 hover:text-white'
                   }`}
                 >
                   {v.label}

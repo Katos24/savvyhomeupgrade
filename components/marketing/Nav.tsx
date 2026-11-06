@@ -195,7 +195,7 @@ export default function Nav() {
         <span className="mt-0.5 shrink-0 text-[#00828A]">{item.icon}</span>
         <span className="min-w-0">
           <span
-            className={`block text-[15px] font-semibold leading-tight transition-colors ${
+            className={`block text-base font-semibold leading-tight transition-colors ${
               active ? 'text-[#00828A]' : 'text-slate-900 group-hover:text-[#00828A]'
             }`}
           >
@@ -249,7 +249,7 @@ export default function Nav() {
                         <GroupIcon size={22} strokeWidth={2.25} />
                       </span>
                     )}
-                    <span className="text-lg font-extrabold tracking-tight text-slate-900" style={{ fontFamily: 'Inter, sans-serif' }}>
+                    <span className="text-lg font-extrabold tracking-tight text-slate-900" >
                       {group.title}
                     </span>
                   </div>
@@ -373,7 +373,7 @@ export default function Nav() {
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">{item.icon}</span>
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-white">{item.label}</span>
-                      <span className="block truncate text-xs text-white/50">{item.desc}</span>
+                      <span className="block truncate text-xs text-white/70">{item.desc}</span>
                     </span>
                   </Link>
                 ))}
@@ -383,7 +383,7 @@ export default function Nav() {
               <Link
                 href={PARTNER_LINK.href}
                 onClick={() => setMobileOpen(false)}
-                className="mt-1 flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white/60 hover:bg-white/10"
+                className="mt-1 flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-white/80 hover:bg-white/10"
               >
                 <BookOpen size={14} />
                 {PARTNER_LINK.label}
@@ -420,7 +420,7 @@ export default function Nav() {
             />
             <span
               className={`text-lg font-extrabold tracking-tight transition-colors sm:text-xl ${solid ? 'text-slate-900' : 'text-white'}`}
-              style={{ fontFamily: 'Inter, sans-serif' }}
+              
             >
               Lead2Project
             </span>
@@ -461,7 +461,7 @@ export default function Nav() {
             <Link
               href="/signup"
               className="inline-flex items-center gap-1.5 rounded-xl bg-[#00828A] px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-[#00828A]/20 transition-all hover:bg-[#006e75] active:scale-[0.98]"
-              style={{ fontFamily: 'Inter, sans-serif' }}
+              
             >
               Start free
               <ArrowRight size={15} strokeWidth={2.5} />
@@ -507,11 +507,11 @@ export default function Nav() {
         <div className="flex shrink-0 items-center justify-between px-6 pb-6 pt-6">
           <div className="flex items-center gap-2">
             <img src="/Lead2ProjectLogo.webp" width={24} height={24} className="h-6 w-6 brightness-0 invert" alt="" />
-            <span className="text-base font-extrabold text-white" style={{ fontFamily: 'Inter, sans-serif' }}>
+            <span className="text-base font-extrabold text-white" >
               Lead2Project
             </span>
           </div>
-          <button onClick={() => setMobileOpen(false)} className="p-2 text-white/50 hover:text-white" aria-label="Close menu">
+          <button onClick={() => setMobileOpen(false)} className="p-2 text-white/70 hover:text-white" aria-label="Close menu">
             <X size={22} strokeWidth={2.25} />
           </button>
         </div>
@@ -535,7 +535,7 @@ export default function Nav() {
             href="/signup"
             onClick={() => setMobileOpen(false)}
             className="flex items-center justify-center gap-2 rounded-xl bg-[#00828A] py-3.5 font-bold text-white shadow-sm hover:bg-[#006e75]"
-            style={{ fontFamily: 'Inter, sans-serif' }}
+            
           >
             Start free
             <ArrowRight size={17} strokeWidth={2.5} />
@@ -543,14 +543,14 @@ export default function Nav() {
           <Link
             href="/login"
             onClick={() => setMobileOpen(false)}
-            className="flex items-center justify-center rounded-xl border border-white/20 py-3 font-semibold text-white/80 transition-colors hover:bg-white/10"
+            className="flex items-center justify-center rounded-xl border border-white/20 py-3 font-semibold text-white/90 transition-colors hover:bg-white/10"
           >
             Log in
           </Link>
           {PHONE && (
             <a
               href={`tel:${PHONE.replace(/[^\d+]/g, '')}`}
-              className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white/70 hover:text-white"
+              className="flex items-center justify-center gap-2 py-2 text-sm font-semibold text-white/85 hover:text-white"
             >
               <Phone size={15} /> {PHONE}
             </a>

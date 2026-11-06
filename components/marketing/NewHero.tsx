@@ -189,14 +189,14 @@ export default function Hero() {
         ))}
 
         <div className="relative mx-auto flex max-w-3xl flex-col items-center text-center">
-          <h1 className="font-[family-name:var(--font-display)] text-[44px] font-extrabold uppercase leading-[0.92] tracking-tight min-[400px]:text-[52px] sm:text-7xl lg:text-[84px]">
+          <h1 className="font-[family-name:var(--font-display)] text-[36px] font-extrabold leading-[1.1] tracking-tight min-[400px]:text-[40px] sm:text-6xl lg:text-[64px]">
             Running jobs just got{' '}
             <span className="mt-2.5 inline-block -rotate-1 whitespace-nowrap rounded-2xl bg-[#5EC4C9] px-3.5 pb-1 pt-2 text-slate-900 shadow-[0_10px_40px_-8px_rgba(94,196,201,0.6)] sm:px-5">
               easy.
             </span>
           </h1>
 
-          <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-white/70 sm:mt-6 sm:text-xl">
+          <p className="mt-5 max-w-[42ch] text-base leading-relaxed text-white/85 sm:mt-6 sm:text-xl">
             Quotes, deposits, scheduling and payments in one simple place. No training, no clutter.{' '}
             <span className="font-semibold text-white">If you can send a text, you can use it.</span>
           </p>
@@ -205,7 +205,7 @@ export default function Hero() {
             {DEMO_URL && (
               <Link
                 href={DEMO_URL}
-                className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 border-white/80 px-7 py-3.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white transition-colors hover:bg-white hover:text-slate-900 sm:text-lg"
+                className="flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 border-white/80 px-7 py-3.5 font-[family-name:var(--font-display)] text-base font-bold text-white transition-colors hover:bg-white hover:text-slate-900 sm:text-lg"
               >
                 Book a demo
                 <PlayCircle className="h-5 w-5 text-[#5EC4C9]" />
@@ -213,14 +213,14 @@ export default function Hero() {
             )}
             <Link
               href="/signup"
-              className="group flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[#00828A] px-8 py-3.5 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white shadow-lg shadow-[#00828A]/40 transition-colors hover:bg-[#00959e] sm:text-lg"
+              className="group flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[#00828A] px-8 py-3.5 font-[family-name:var(--font-display)] text-base font-bold text-white shadow-lg shadow-[#00828A]/40 transition-colors hover:bg-[#00959e] sm:text-lg"
             >
               Start free
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
 
-          <p className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm font-medium text-white/60 sm:gap-x-5 sm:text-base">
+          <p className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm font-medium text-white/80 sm:gap-x-5 sm:text-base">
             {['Free plan', 'Card payments via Stripe', 'Built on Long Island'].map((item) => (
               <span key={item} className="inline-flex items-center gap-1.5">
                 <CheckCircle2 className="h-4 w-4 text-[#5EC4C9]" /> {item}
@@ -241,7 +241,7 @@ export default function Hero() {
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1C1F23] font-[family-name:var(--font-display)] text-base font-bold text-white">
             A
           </span>
-          <p className="text-left text-sm leading-snug text-[#3a3f45] sm:text-base">
+          <p className="text-left text-sm leading-snug text-[#2a2f35] sm:text-base">
             <span className="font-semibold text-[#1C1F23]">Built on Long Island by Alex,</span> 8 years in payments at
             Paymentus &amp; ACI.{' '}
             <Link href="/how-it-works" className="inline-flex items-center gap-1 font-semibold text-[#00828A] hover:text-[#006e75]">
@@ -354,7 +354,7 @@ function HeroBoard() {
               aria-selected={view === o.id}
               onClick={() => choose(o.id)}
               className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-                view === o.id ? 'bg-white text-slate-900 shadow-sm' : 'text-white/80 hover:text-white'
+                view === o.id ? 'bg-white text-slate-900 shadow-sm' : 'text-white/90 hover:text-white'
               }`}
             >
               {o.label}
@@ -491,7 +491,7 @@ function HeroPhotoTile({ photo }: { photo: HeroPhoto }) {
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-[#5EC4C9]">
               <Icon className="h-6 w-6" />
             </span>
-            <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.18em] text-white/70">
+            <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.18em] text-white/85">
               {photo.label}
             </span>
           </div>

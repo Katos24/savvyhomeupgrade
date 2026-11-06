@@ -311,7 +311,7 @@ function TabBody({ tab }: { tab: Tab }) {
           { l: 'Materials', g: 'linear-gradient(135deg,#d6d3d1,#78716c)' },
         ].map((m, i) => (
           <div key={i} className="relative aspect-[4/3] overflow-hidden rounded-lg" style={{ background: m.g }}>
-            <ImageIcon className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-white/60" />
+            <ImageIcon className="absolute left-1/2 top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 text-white/80" />
             <span className="absolute bottom-1 left-1 rounded bg-black/50 px-1.5 py-0.5 text-[9px] font-semibold text-white">{m.l}</span>
           </div>
         ))}
@@ -390,7 +390,7 @@ function Callouts({ side, tab, setTab }: { side: 'left' | 'right'; tab: Tab; set
               <Icon className="h-4 w-4" />
             </span>
             <span className="min-w-0">
-              <span className="block font-[family-name:var(--font-display)] text-base font-bold uppercase leading-tight text-[#1C1F23]">
+              <span className="block font-[family-name:var(--font-display)] text-base font-bold leading-tight text-[#1C1F23]">
                 {c.title}
               </span>
               <span className="mt-0.5 block text-xs leading-snug text-slate-500">{c.desc}</span>
@@ -656,7 +656,7 @@ function ShareMock({ phase }: { phase: number }) {
             <span className="ml-1 truncate rounded bg-white px-2 py-0.5 text-[10px] text-slate-500 ring-1 ring-slate-200">summitroofing.com</span>
           </div>
           <div className="flex items-center justify-between gap-2 px-3 py-3">
-            <p className="font-[family-name:var(--font-display)] text-sm font-extrabold uppercase leading-tight text-slate-900">
+            <p className="font-[family-name:var(--font-display)] text-sm font-extrabold leading-tight text-slate-900">
               Roof repair you can trust
             </p>
             <span className="shrink-0 rounded-md bg-[#00828A] px-2.5 py-1.5 text-[11px] font-bold text-white">Get a quote</span>
@@ -667,7 +667,7 @@ function ShareMock({ phase }: { phase: number }) {
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-[#1C1F23] text-white">
             <QrCode className="h-6 w-6" />
           </span>
-          <p className="text-xs leading-snug text-[#3a3f45]">
+          <p className="text-xs leading-snug text-[#2a2f35]">
             <span className="font-semibold text-[#1C1F23]">QR code</span> for your truck, signs and invoices
           </p>
         </div>
@@ -780,32 +780,32 @@ export default function FormAndDashboardSection() {
   return (
     <section className="text-[#1C1F23]">
       {/* ── Part 1: lead capture. Your link on Google / your site → the customer fills in your form ── */}
-      <div className="relative overflow-hidden bg-gradient-to-b from-[#EAF6F6] to-slate-50 px-4 pb-10 pt-14 sm:px-6 sm:pb-12 sm:pt-20 lg:px-8">
+      <div className="relative overflow-hidden bg-gradient-to-b from-[#EAF6F6] to-white px-4 pb-14 pt-14 sm:px-6 sm:pb-16 sm:pt-20 lg:px-8">
         <div ref={ref} className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-14">
           {/* Left: the pitch + where your link lives */}
           <div>
             <div className="text-center lg:text-left">
               <Eyebrow>Lead capture</Eyebrow>
-              <h2 className="mt-2 font-[family-name:var(--font-display)] text-[34px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl lg:text-[56px]">
+              <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
                 Catch every lead,{' '}
                 <span className="bg-[linear-gradient(transparent_64%,#5EC4C9_64%,#5EC4C9_92%,transparent_92%)] px-1 [-webkit-box-decoration-break:clone] [box-decoration-break:clone]">
                   even after hours.
                 </span>
               </h2>
-              <p className="mx-auto mt-4 max-w-[48ch] text-base leading-relaxed text-[#3a3f45] sm:text-lg lg:mx-0">
+              <p className="mx-auto mt-4 max-w-[48ch] text-base leading-relaxed text-[#2a2f35] sm:text-lg lg:mx-0">
                 Put your booking link on your Google profile, your website and your truck. Customers send their details,
                 answers and photos any time, and every request lands on your board. No missed calls, no lost texts.
               </p>
               <div className="mt-5 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#1C1F23] px-3 py-1 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#5EC4C9]">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#1C1F23] px-3 py-1 font-[family-name:var(--font-display)] text-sm font-bold text-[#5EC4C9]">
                   <Link2 className="h-3.5 w-3.5" /> Booking link
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#1C1F23] px-3 py-1 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#5EC4C9]">
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-[#1C1F23] px-3 py-1 font-[family-name:var(--font-display)] text-sm font-bold text-[#5EC4C9]">
                   <QrCode className="h-3.5 w-3.5" /> QR code
                 </span>
                 <span className="inline-flex items-center gap-1.5 rounded-md border border-[#1C1F23]/15 bg-white px-3 py-1 text-xs font-semibold text-[#1C1F23]">
                   Custom questions per service
-                  <span className="rounded bg-[#1C1F23] px-1.5 py-px font-[family-name:var(--font-display)] text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]">
+                  <span className="rounded bg-[#1C1F23] px-1.5 py-px font-[family-name:var(--font-display)] text-[10px] font-bold text-[#5EC4C9]">
                     Pro
                   </span>
                 </span>

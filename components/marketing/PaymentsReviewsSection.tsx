@@ -60,10 +60,10 @@ export default function PaymentsReviewsSection() {
           <p className="relative font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#A6E3E6]">
             Payments by Stripe
           </p>
-          <h2 className="relative mt-2 font-[family-name:var(--font-display)] text-[28px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl">
+          <h2 className="relative mt-2 font-[family-name:var(--font-display)] text-[28px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl">
             Customers pay by card. The money goes to your bank.
           </h2>
-          <p className="relative mt-3 max-w-[46ch] text-[15px] leading-relaxed text-white/80">
+          <p className="relative mt-3 max-w-[46ch] text-base leading-relaxed text-white/90">
             Connect your own Stripe account once. Every deposit and invoice gets a secure pay link, and payouts go straight to
             your bank account.
           </p>
@@ -136,10 +136,10 @@ export default function PaymentsReviewsSection() {
           <p className="relative font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-amber-800">
             Google reviews
           </p>
-          <h2 className="relative mt-2 font-[family-name:var(--font-display)] text-[28px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl">
+          <h2 className="relative mt-2 font-[family-name:var(--font-display)] text-[28px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl">
             Ask for the review while the job is fresh.
           </h2>
-          <p className="relative mt-3 max-w-[46ch] text-[15px] leading-relaxed text-[#3a3f45]">
+          <p className="relative mt-3 max-w-[46ch] text-base leading-relaxed text-[#2a2f35]">
             Mark a job complete and your customer gets a thank-you email with a button to your Google review page. More reviews
             help you show up higher when neighbors search for your trade.
           </p>

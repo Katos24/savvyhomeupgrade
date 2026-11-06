@@ -3,10 +3,10 @@
 import type { ReactNode } from 'react';
 import { Hammer, Wrench, HardHat, Ruler, PaintRoller, Zap, Droplets, Thermometer } from 'lucide-react';
 
-/** A subtle measuring-tape strip — use between sections. */
+/** A subtle measuring-tape strip between sections. Not used on the home page anymore, but other pages still use it. */
 export function TapeDivider() {
   return (
-    <div className="relative h-6 w-full overflow-hidden bg-[#F4EFE6] border-y border-[#1C1F23]/10" aria-hidden>
+    <div className="relative h-6 w-full overflow-hidden border-y border-[#1C1F23]/10 bg-[#F4EFE6]" aria-hidden>
       {/* minor ticks every 8px */}
       <div
         className="absolute inset-x-0 top-0 h-1.5"
@@ -20,7 +20,7 @@ export function TapeDivider() {
       {/* inch numbers */}
       <div className="absolute inset-x-0 bottom-0.5 flex font-[family-name:var(--font-display)] text-[10px] font-semibold text-[#1C1F23]/40">
         {Array.from({ length: 60 }).map((_, i) => (
-          <span key={i} className="shrink-0 w-16 pl-1">
+          <span key={i} className="w-16 shrink-0 pl-1">
             {i + 1}
           </span>
         ))}
@@ -33,7 +33,7 @@ export function TapeDivider() {
 export function Stamp({ label, className = '' }: { label: string; className?: string }) {
   return (
     <div
-      className={`pointer-events-none select-none rounded-md border-[3px] border-[#C0392B] px-3 py-1 font-[family-name:var(--font-display)] font-extrabold uppercase tracking-widest text-[#C0392B] opacity-80 ${className}`}
+      className={`pointer-events-none select-none rounded-md border-[3px] border-[#C0392B] px-3 py-1 font-[family-name:var(--font-display)] font-extrabold text-[#C0392B] opacity-80 ${className}`}
       style={{ transform: 'rotate(-12deg)', mixBlendMode: 'multiply' }}
       aria-hidden
     >
@@ -56,28 +56,27 @@ const TRADES = [
 /** "Built for the trades" band. */
 export function TradesStrip() {
   return (
-    <div className="bg-[#1C1F23] text-white py-4 px-4 overflow-hidden">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-6 gap-y-2.5">
+    <div className="overflow-hidden bg-[#1C1F23] px-4 py-4 text-white">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-6 gap-y-2.5">
         <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.18em] text-[#5EC4C9]">
           Built for
         </span>
         {TRADES.map(({ icon: Icon, label }, i) => (
           <span
             key={label}
-            className={`${i >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'} items-center gap-1.5 font-[family-name:var(--font-display)] text-sm font-semibold uppercase tracking-wider text-slate-200`}
+            className={`${i >= 4 ? 'hidden sm:inline-flex' : 'inline-flex'} items-center gap-1.5 font-[family-name:var(--font-display)] text-sm font-semibold text-slate-200`}
           >
             <Icon className="h-4 w-4 text-[#5EC4C9]" strokeWidth={2} />
             {label}
           </span>
         ))}
-        <span className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-[#5EC4C9]">
+        <span className="font-[family-name:var(--font-display)] text-sm font-bold text-[#5EC4C9]">
           And more
         </span>
       </div>
     </div>
   );
 }
-
 
 /** Small uppercase label above section headings. */
 export function Eyebrow({ children, dark = false }: { children: ReactNode; dark?: boolean }) {

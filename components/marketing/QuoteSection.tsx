@@ -24,15 +24,21 @@ export default function QuoteSection() {
   const inView = useInView(ref, { once: true, margin: '0px 0px 200px 0px' });
 
   return (
-    <section className="bg-slate-50 px-4 py-12 text-[#1C1F23] sm:px-6 sm:py-16 lg:px-8">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:gap-12">
+    <section className="relative overflow-hidden bg-gradient-to-br from-[#00828A] via-[#006f76] to-[#0b3d44] px-4 py-14 text-white sm:px-6 sm:py-20 lg:px-8">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.12) 1px, transparent 1px)', backgroundSize: '22px 22px' }}
+      />
+      <div aria-hidden className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-[#5EC4C9]/40 blur-[110px]" />
+      <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:gap-12">
         {/* Copy (right on desktop, first on phones) */}
         <div className="text-center lg:order-2 lg:text-left">
-          <Eyebrow>Quoting</Eyebrow>
-          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[32px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-5xl">
-            Quote it in a tap. <span className="text-[#00828A]">Get the deposit first.</span>
+          <Eyebrow dark>Quoting</Eyebrow>
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[32px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl">
+            Quote it in a tap. <span className="text-[#A6E3E6]">Get the deposit first.</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-[44ch] text-base leading-relaxed text-[#3a3f45] lg:mx-0">
+          <p className="mx-auto mt-4 max-w-[44ch] text-base leading-relaxed text-white/90 lg:mx-0">
             Load a saved template, change what&rsquo;s different about this job, and send it. When your customer accepts, the
             deposit request goes out and they pay by card.
           </p>
@@ -40,12 +46,12 @@ export default function QuoteSection() {
           <ul className="mx-auto mt-6 grid max-w-md grid-cols-1 gap-3 text-left min-[480px]:grid-cols-2 lg:mx-0 lg:grid-cols-1">
             {POINTS.map(({ icon: Icon, title, desc }) => (
               <li key={title} className="flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#00828A]/10 text-[#00828A]">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/15 text-white">
                   <Icon className="h-4 w-4" />
                 </span>
                 <div>
                   <p className="text-sm font-bold leading-tight">{title}</p>
-                  <p className="mt-0.5 text-[13px] leading-snug text-[#3a3f45]">{desc}</p>
+                  <p className="mt-0.5 text-[13px] leading-snug text-white/85">{desc}</p>
                 </div>
               </li>
             ))}
@@ -53,7 +59,7 @@ export default function QuoteSection() {
 
           <Link
             href="/features/quoting"
-            className="mt-6 inline-flex items-center gap-1.5 text-sm font-semibold text-[#00828A] underline-offset-4 hover:underline"
+            className="mt-6 inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-[#00828A] transition-transform hover:-translate-y-0.5"
           >
             See how quoting works <ArrowRight className="h-4 w-4" />
           </Link>
@@ -61,8 +67,12 @@ export default function QuoteSection() {
 
         {/* Demo (left on desktop) */}
         <div ref={ref} className="relative min-h-[520px] w-full lg:order-1">
-          <div aria-hidden className="pointer-events-none absolute inset-x-6 bottom-6 top-12 -z-10 rounded-[2rem] bg-[#5EC4C9]/25 blur-3xl" />
-          {inView && <QuoteBuilderDemo />}
+          <div aria-hidden className="pointer-events-none absolute inset-x-6 bottom-6 top-12 rounded-[2rem] bg-black/25 blur-3xl" />
+          {inView && (
+            <div className="relative">
+              <QuoteBuilderDemo dark />
+            </div>
+          )}
         </div>
       </div>
     </section>

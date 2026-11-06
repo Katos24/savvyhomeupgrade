@@ -12,6 +12,11 @@ import Footer from '@/components/marketing/Footer';
 import { fontVars } from '@/components/marketing/marketingTheme';
 import { TradesStrip } from '@/components/marketing/marketingUI';
 
+// Removed from the home page (files kept, still usable elsewhere):
+// - FeaturesSection ("How it works" work orders): the hero's 4 step cards cover it now.
+// - ImportSection: merged into WhatYouGetSection.
+// - JobCardSection ("One job. One card."): the hero opens that same card over its board.
+// - ProfitSection: merged into InvoiceShowcaseSection ("Get paid. See what you kept.").
 export default function NewHome() {
   return (
     <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased overflow-x-hidden bg-white text-[#1C1F23]`}>

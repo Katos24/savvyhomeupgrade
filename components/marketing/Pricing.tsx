@@ -32,7 +32,7 @@ const PRO_MORE = [
 
 function Feature({ children, dark }: { children: ReactNode; dark?: boolean }) {
   return (
-    <li className={`flex items-start gap-2.5 text-[14px] leading-snug ${dark ? 'text-white/90' : 'text-[#1C1F23]'}`}>
+    <li className={`flex items-start gap-2.5 text-[15px] leading-snug ${dark ? 'text-white/90' : 'text-[#1C1F23]'}`}>
       <span
         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
           dark ? 'bg-[#00828A] text-white' : 'bg-slate-200 text-[#1C1F23]'
@@ -53,10 +53,10 @@ export default function Pricing() {
       <div className="mx-auto max-w-4xl">
         <div className="mb-8 text-center sm:mb-10">
           <Eyebrow>Pricing</Eyebrow>
-          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl lg:text-5xl">
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
             One job pays for <span className="text-[#00828A]">the whole year.</span>
           </h2>
-          <p className="mt-3 text-[15px] text-[#3a3f45]">Two plans. Cancel anytime. No setup fees.</p>
+          <p className="mt-3 text-base text-[#2a2f35]">Two plans. Cancel anytime. No setup fees.</p>
         </div>
 
         <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
@@ -68,12 +68,12 @@ export default function Pricing() {
             transition={{ duration: 0.4 }}
             className="flex flex-col rounded-[24px] bg-white p-6 ring-1 ring-slate-200 sm:p-7 md:mt-6"
           >
-            <h3 className="font-[family-name:var(--font-display)] text-xl font-extrabold uppercase tracking-wide text-slate-500">Free</h3>
+            <h3 className="font-[family-name:var(--font-display)] text-xl font-extrabold text-slate-500">Free</h3>
             <div className="mt-1 flex items-baseline gap-1">
               <span className="font-[family-name:var(--font-display)] text-5xl font-extrabold tracking-tight">$0</span>
-              <span className="text-sm font-semibold text-[#3a3f45]">/mo</span>
+              <span className="text-sm font-semibold text-[#2a2f35]">/mo</span>
             </div>
-            <p className="mt-2 text-[15px] text-[#3a3f45]">Take requests and keep track of every job.</p>
+            <p className="mt-2 text-base text-[#2a2f35]">Take requests and keep track of every job.</p>
 
             <ul className="mt-5 space-y-2.5">
               {FREE_FEATURES.map((f) => (
@@ -83,7 +83,7 @@ export default function Pricing() {
 
             <Link
               href="/signup"
-              className="mt-6 block w-full rounded-xl border border-slate-300 bg-white py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-colors hover:bg-slate-50"
+              className="mt-6 block w-full rounded-xl border border-slate-300 bg-white py-3 text-center font-[family-name:var(--font-display)] text-base font-bold transition-colors hover:bg-slate-50"
             >
               Start free
             </Link>
@@ -101,13 +101,13 @@ export default function Pricing() {
 
             <div className="relative flex items-start justify-between gap-3">
               <div>
-                <h3 className="font-[family-name:var(--font-display)] text-xl font-extrabold uppercase tracking-wide text-[#5EC4C9]">Pro</h3>
+                <h3 className="font-[family-name:var(--font-display)] text-xl font-extrabold text-[#5EC4C9]">Pro</h3>
                 <div className="mt-1 flex items-baseline gap-1">
                   <span className="font-[family-name:var(--font-display)] text-5xl font-extrabold tracking-tight">$49.99</span>
-                  <span className="text-sm font-semibold text-white/60">/mo</span>
+                  <span className="text-sm font-semibold text-white/80">/mo</span>
                 </div>
               </div>
-              <span className="mt-1 shrink-0 rounded-full bg-[#5EC4C9] px-2.5 py-1 font-[family-name:var(--font-display)] text-xs font-bold uppercase tracking-wider text-slate-900">
+              <span className="mt-1 shrink-0 rounded-full bg-[#5EC4C9] px-2.5 py-1 font-[family-name:var(--font-display)] text-xs font-bold text-slate-900">
                 14-day free trial
               </span>
             </div>
@@ -115,7 +115,7 @@ export default function Pricing() {
             <p className="relative mt-3 inline-flex w-fit items-center gap-1.5 rounded-lg bg-white/10 px-2.5 py-1 text-sm font-bold text-[#5EC4C9]">
               <Users className="h-4 w-4" /> Unlimited users. No per-seat fees.
             </p>
-            <p className="relative mt-2 text-[15px] text-white/70">Everything in Free, plus everything you need to quote, schedule and get paid.</p>
+            <p className="relative mt-2 text-base text-white/85">Everything in Free, plus everything you need to quote, schedule and get paid.</p>
 
             <ul className="relative mt-5 grid grid-cols-1 gap-x-5 gap-y-2.5 sm:grid-cols-2">
               {PRO_TOP.map((f) => (
@@ -155,14 +155,14 @@ export default function Pricing() {
 
             <Link
               href="/signup?plan=basic"
-              className="group relative mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#00828A] py-3.5 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white shadow-lg shadow-[#00828A]/30 transition-all hover:bg-[#00959e]"
+              className="group relative mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-[#00828A] py-3.5 text-center font-[family-name:var(--font-display)] text-base font-bold text-white shadow-lg shadow-[#00828A]/30 transition-all hover:bg-[#00959e]"
             >
               Start 14-day free trial
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
 
-            <p className="relative mt-4 text-xs leading-relaxed text-white/55">
-              <span className="font-semibold text-white/80">Card payments:</span> Stripe&rsquo;s 2.9% + 30¢
+            <p className="relative mt-4 text-xs leading-relaxed text-white/75">
+              <span className="font-semibold text-white/90">Card payments:</span> Stripe&rsquo;s 2.9% + 30¢
               {platformFeeEnabled() ? ` + Lead2Project ${PLATFORM_FEE_LABEL}` : ''} per payment.{' '}
               <Link href="/pricing#fees" className="underline underline-offset-2 hover:text-white">
                 All fees

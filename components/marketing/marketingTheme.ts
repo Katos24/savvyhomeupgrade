@@ -1,16 +1,19 @@
-import { Barlow, Barlow_Condensed } from 'next/font/google';
+import { Inter, Plus_Jakarta_Sans } from 'next/font/google';
 
-// Job-site type: condensed signage headlines + a plain, readable body.
-export const bodyFont = Barlow({
+// Readable on any screen: Inter for body text, Plus Jakarta Sans (wide, sturdy) for headlines.
+// The CSS variable names are unchanged, so every section picks these up automatically.
+export const bodyFont = Inter({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-body',
+  display: 'swap',
 });
 
-export const displayFont = Barlow_Condensed({
+export const displayFont = Plus_Jakarta_Sans({
   subsets: ['latin'],
   weight: ['600', '700', '800'],
   variable: '--font-display',
+  display: 'swap',
 });
 
 // Put this on the page wrapper so every section can use both fonts.

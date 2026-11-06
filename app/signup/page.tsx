@@ -4,14 +4,15 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { BUSINESS_TYPES } from '@/lib/formCategories';
-import { ArrowLeft, ArrowRight, Check, Eye, EyeOff, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Eye, EyeOff, Loader2, X } from 'lucide-react';
 import { fontVars } from '@/components/marketing/marketingTheme';
 
 /* ─────────────────────────────────────────────────────────
-   /signup — two steps, light, matches the marketing site.
+   /signup — two steps, matches the marketing site.
    Step 1: account (email + password)
    Step 2: business (name, company, trade, phone) + terms → create
    Free → /{slug}/home. Paid → /subscribe?plan=… (Stripe trial there).
+   Desktop: brand panel on the left, form on the right. Phones: just the form.
    ───────────────────────────────────────────────────────── */
 
 const D = 'font-[family-name:var(--font-display)]';
@@ -20,8 +21,16 @@ const PLAN_NOTE: Record<string, string> = {
   basic: 'Pro plan · Create your account first, then start your 14-day free trial. Nothing is charged for 14 days.',
 };
 
+// Left panel on desktop. Keep these true to what the product does.
+const PERKS = [
+  'Your own booking link and QR code',
+  'Quotes customers accept online',
+  'Deposits and payments by card',
+  'Free plan, no card needed',
+];
+
 /* ==========================================================================
-   ANIMATED TYPEWRITER LOADING SCREEN
+   ANIMATED TYPEWRITER LOADING SCREEN (after the account is created)
    ========================================================================== */
 interface LoadingScreenProps {
   onComplete: () => void;
@@ -35,13 +44,13 @@ function LoadingScreen({ onComplete, speed = 70 }: LoadingScreenProps) {
   const [statusIndex, setStatusIndex] = useState(0);
 
   const statusMessages = [
-    'Building custom workspace...',
-    'Generating QR code & booking URL...',
-    'Configuring pipeline stages...',
-    'Workspace ready! Redirecting...',
+    'Building your workspace…',
+    'Creating your booking link and QR code…',
+    'Setting up your job board…',
+    'All set! Taking you in…',
   ];
 
-  // Typewriter effect logic
+  // Typewriter effect
   useEffect(() => {
     if (currentIndex < fullText.length) {
       const timeout = setTimeout(() => {
@@ -69,36 +78,28 @@ function LoadingScreen({ onComplete, speed = 70 }: LoadingScreenProps) {
   const projectPart = displayedText.slice(5);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-950 text-slate-100 selection:bg-emerald-500/20">
-      {/* Background Ambient Glow */}
-      <div className="absolute w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none animate-pulse" />
+    <div className={`${fontVars} fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-900 text-white`}>
+      <div className="pointer-events-none absolute h-96 w-96 rounded-full bg-[#00828A]/30 blur-3xl" />
 
-      {/* Main Animated Branding */}
-      <div className="relative flex items-center text-3xl sm:text-5xl font-extrabold tracking-tight select-none">
+      <div className={`${D} relative flex select-none items-center text-4xl font-extrabold tracking-tight sm:text-5xl`}>
         <div
-          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center p-1.5 mr-3.5 transition-all duration-300 ${
-            displayedText.length > 0 ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
+          className={`mr-3.5 flex h-11 w-11 items-center justify-center rounded-xl bg-white p-1.5 transition-all duration-300 sm:h-12 sm:w-12 ${
+            displayedText.length > 0 ? 'scale-100 opacity-100' : 'scale-90 opacity-0'
           }`}
         >
-          <img src="/Lead2ProjectLogo.webp" alt="Lead2Project Logo" className="w-full h-full object-contain" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/Lead2ProjectLogo.webp" alt="Lead2Project logo" className="h-full w-full object-contain" />
         </div>
-
         <span className="text-white">{leadPart}</span>
-        <span className="text-emerald-400 drop-shadow-[0_0_25px_rgba(52,211,153,0.4)]">
-          {projectPart}
-        </span>
-
-        <span className="inline-block w-1 h-7 sm:h-9 bg-emerald-400 ml-1.5 rounded-full animate-pulse shadow-[0_0_10px_#34d399]" />
+        <span className="text-[#5EC4C9]">{projectPart}</span>
+        <span className="ml-1.5 inline-block h-8 w-1 animate-pulse rounded-full bg-[#5EC4C9] sm:h-10" />
       </div>
 
-      {/* Dynamic Status Text & Progress Bar */}
-      <div className="mt-8 flex flex-col items-center gap-3">
-        <p className="text-xs font-mono text-slate-400 tracking-wider uppercase h-4">
-          {statusMessages[statusIndex]}
-        </p>
-        <div className="w-48 h-1 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+      <div className="relative mt-8 flex flex-col items-center gap-3">
+        <p className="h-5 text-base font-medium text-white/85">{statusMessages[statusIndex]}</p>
+        <div className="h-1.5 w-56 overflow-hidden rounded-full bg-white/10">
           <div
-            className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+            className="h-full bg-[#5EC4C9] transition-all duration-500 ease-out"
             style={{ width: `${Math.min(((currentIndex + 1) / fullText.length) * 100, 100)}%` }}
           />
         </div>
@@ -108,7 +109,7 @@ function LoadingScreen({ onComplete, speed = 70 }: LoadingScreenProps) {
 }
 
 function Field({
-    label,
+  label,
   value,
   onChange,
   placeholder,
@@ -133,8 +134,8 @@ function Field({
   return (
     <label className="block">
       <span className="flex items-baseline justify-between gap-2">
-        <span className="text-[13px] font-semibold text-[#1C1F23]">{label}</span>
-        {optional && <span className="text-xs text-slate-400">Optional</span>}
+        <span className="text-[15px] font-semibold text-[#1C1F23]">{label}</span>
+        {optional && <span className="text-sm text-slate-500">Optional</span>}
       </span>
       <span className="relative mt-1.5 block">
         <input
@@ -144,7 +145,7 @@ function Field({
           placeholder={placeholder}
           autoComplete={autoComplete}
           inputMode={inputMode}
-          className={`w-full rounded-md border border-slate-300 bg-white px-3.5 py-3 text-base text-[#1C1F23] placeholder:text-slate-400 outline-none transition focus:border-[#00828A] focus:ring-2 focus:ring-[#00828A]/15 ${
+          className={`w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-[#1C1F23] outline-none transition placeholder:text-slate-400 focus:border-[#00828A] focus:ring-4 focus:ring-[#00828A]/15 ${
             isPassword ? 'pr-11' : ''
           }`}
         />
@@ -152,15 +153,56 @@ function Field({
           <button
             type="button"
             onClick={() => setShow((s) => !s)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
             aria-label={show ? 'Hide password' : 'Show password'}
           >
-            {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
         )}
       </span>
-      {hint && <span className="mt-1.5 block text-xs text-slate-500">{hint}</span>}
+      {hint && <span className="mt-1.5 block text-sm leading-snug text-slate-600">{hint}</span>}
     </label>
+  );
+}
+
+function BrandPanel() {
+  return (
+    <aside className="relative hidden overflow-hidden bg-slate-900 p-12 text-white lg:flex lg:flex-col lg:justify-between xl:p-16">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,0.07) 1px, transparent 1px)', backgroundSize: '22px 22px' }}
+      />
+      <div aria-hidden className="pointer-events-none absolute -left-24 top-1/3 h-[420px] w-[420px] rounded-full bg-[#00828A]/35 blur-[120px]" />
+
+      <Link href="/" className="relative flex items-center gap-2.5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/Lead2ProjectLogo.webp" alt="" className="h-9 w-9 rounded-lg bg-white object-contain p-1" />
+        <span className={`${D} text-xl font-extrabold tracking-tight`}>Lead2Project</span>
+      </Link>
+
+      <div className="relative max-w-md">
+        <h2 className={`${D} text-4xl font-extrabold leading-[1.1] tracking-tight xl:text-5xl`}>
+          Running jobs just got{' '}
+          <span className="inline-block -rotate-1 rounded-xl bg-[#5EC4C9] px-3 pb-0.5 pt-1 text-slate-900">easy.</span>
+        </h2>
+        <ul className="mt-8 space-y-3.5">
+          {PERKS.map((p) => (
+            <li key={p} className="flex items-center gap-3 text-lg text-white/90">
+              <CheckCircle2 className="h-5 w-5 shrink-0 text-[#5EC4C9]" /> {p}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="relative flex items-center gap-3">
+        <span className={`${D} flex h-11 w-11 items-center justify-center rounded-full bg-white text-lg font-extrabold text-[#00828A]`}>A</span>
+        <p className="text-base leading-snug text-white/85">
+          <span className="font-semibold text-white">Built on Long Island by Alex.</span>
+          <br />8 years building payment systems.
+        </p>
+      </div>
+    </aside>
   );
 }
 
@@ -169,7 +211,7 @@ function SignupForm() {
   // Pro isn't offered anymore; old links with ?plan=pro become Basic.
   const rawPlan = searchParams.get('plan') || 'free';
   const plan = rawPlan === 'pro' ? 'basic' : rawPlan;
-    const refCode = searchParams.get('ref') || '';
+  const refCode = searchParams.get('ref') || '';
 
   const [step, setStep] = useState<1 | 2>(1);
   const [loading, setLoading] = useState(false);
@@ -178,7 +220,7 @@ function SignupForm() {
   const [launchUrl, setLaunchUrl] = useState('');
 
   const [formData, setFormData] = useState({
-     email: '',
+    email: '',
     password: '',
     confirmPassword: '',
     ownerName: '',
@@ -219,7 +261,7 @@ function SignupForm() {
       setError('Enter a valid email address.');
       return;
     }
-       if (formData.password.length < 8) {
+    if (formData.password.length < 8) {
       setError('Use at least 8 characters for your password.');
       return;
     }
@@ -254,7 +296,7 @@ function SignupForm() {
         }),
       });
       const data = await response.json();
-            if (response.ok && data.success) {
+      if (response.ok && data.success) {
         setLaunchUrl(plan === 'free' ? `/${data.companySlug}/home?welcome=1` : `/subscribe?plan=${plan}`);
         return; // keep the button in its loading state while the animation plays
       }
@@ -265,9 +307,9 @@ function SignupForm() {
     setLoading(false);
   };
 
-   const slugPreview = formData.slug || 'your-business';
+  const slugPreview = formData.slug || 'your-business';
 
-   if (launchUrl) {
+  if (launchUrl) {
     return (
       <LoadingScreen
         speed={70}
@@ -279,33 +321,26 @@ function SignupForm() {
   }
 
   return (
-    <div
-      className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased bg-[#F4EFE6] text-[#1C1F23] px-4 py-8 sm:py-14`}
-      style={{
-        backgroundImage:
-          'linear-gradient(rgba(28,31,35,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.05) 1px, transparent 1px)',
-        backgroundSize: '32px 32px',
-      }}
-    >
-      <div className="mx-auto w-full max-w-md">
-        {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/Lead2ProjectLogo.webp" alt="" className="h-8 w-8 rounded-md bg-white object-contain p-1 shadow-sm" />
-            <span className={`${D} text-xl font-extrabold uppercase tracking-tight`}>Lead2Project</span>
-          </Link>
-          <Link href="/login" className="text-sm text-slate-600 hover:text-[#1C1F23]">
-            Have an account? <span className="font-semibold text-[#00828A]">Log in</span>
-          </Link>
-        </div>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-white text-[#1C1F23] antialiased lg:grid lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]`}>
+      <BrandPanel />
 
-        {/* Card */}
-        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
-          <div className="h-1.5 bg-[#00828A]" />
-          <div className="p-6 sm:p-8">
+      <main className="flex min-h-screen flex-col bg-gradient-to-b from-[#EAF6F6] to-white px-4 py-8 sm:px-6 sm:py-12 lg:bg-none lg:bg-white lg:px-12">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col">
+          {/* Header */}
+          <div className="mb-8 flex items-center justify-between gap-3">
+            <Link href="/" className="flex items-center gap-2.5 lg:invisible">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/Lead2ProjectLogo.webp" alt="" className="h-9 w-9 rounded-lg bg-white object-contain p-1 shadow-sm" />
+              <span className={`${D} text-xl font-extrabold tracking-tight`}>Lead2Project</span>
+            </Link>
+            <Link href="/login" className="text-[15px] text-slate-600 hover:text-[#1C1F23]">
+              Have an account? <span className="font-semibold text-[#00828A]">Log in</span>
+            </Link>
+          </div>
+
+          <div className="my-auto">
             {/* Step indicator */}
-            <div className="flex items-center gap-2 text-xs font-semibold">
+            <div className="flex items-center gap-2 text-sm font-semibold">
               {[
                 { n: 1, label: 'Account' },
                 { n: 2, label: 'Your business' },
@@ -314,52 +349,53 @@ function SignupForm() {
                 const current = step === s.n;
                 return (
                   <div key={s.n} className="flex items-center gap-2">
-                    {i > 0 && <span className="h-px w-6 bg-slate-300" />}
+                    {i > 0 && <span className="h-px w-8 bg-slate-300" />}
                     <span
-                      className={`flex h-5 w-5 items-center justify-center rounded-full text-[11px] ${
-                        done ? 'bg-[#00828A] text-white' : current ? 'bg-[#1C1F23] text-white' : 'bg-slate-200 text-slate-500'
+                      className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                        done ? 'bg-[#00828A] text-white' : current ? 'bg-[#1C1F23] text-white' : 'bg-slate-200 text-slate-600'
                       }`}
                     >
-                      {done ? <Check className="h-3 w-3" strokeWidth={3} /> : s.n}
+                      {done ? <Check className="h-3.5 w-3.5" strokeWidth={3} /> : s.n}
                     </span>
-                    <span className={current ? 'text-[#1C1F23]' : 'text-slate-400'}>{s.label}</span>
+                    <span className={current ? 'text-[#1C1F23]' : 'text-slate-500'}>{s.label}</span>
                   </div>
                 );
               })}
             </div>
 
-            <h1 className={`mt-5 ${D} text-3xl sm:text-4xl font-extrabold uppercase leading-[0.95] tracking-tight`}>
+            <h1 className={`mt-6 ${D} text-[32px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl`}>
               {step === 1 ? 'Start free.' : 'About your business.'}
             </h1>
-            <p className="mt-2 text-[15px] text-[#3a3f45]">
-              {step === 1
-                ? 'Get your booking link and job board in a couple of minutes.'
-                : 'This goes on your booking page, quotes and invoices.'}
+            <p className="mt-2 text-[17px] leading-relaxed text-[#2a2f35]">
+              {step === 1 ? 'Get your booking link and job board in a couple of minutes.' : 'This goes on your booking page, quotes and invoices.'}
             </p>
 
             {PLAN_NOTE[plan] && (
-              <p className="mt-4 rounded-md border border-[#00828A]/25 bg-[#00828A]/[0.06] px-3 py-2 text-[13px] font-medium text-[#006e75]">
+              <p className="mt-4 rounded-xl border border-[#00828A]/25 bg-[#00828A]/[0.07] px-4 py-3 text-[15px] font-medium text-[#005f65]">
                 {PLAN_NOTE[plan]}
               </p>
             )}
 
             {error && (
-              <div role="alert" className="mt-5 flex items-start justify-between gap-3 rounded-md border border-red-200 bg-red-50 px-3.5 py-2.5 text-sm text-red-700">
+              <div
+                role="alert"
+                className="mt-5 flex items-start justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-[15px] text-red-800"
+              >
                 <span>{error}</span>
-                <button type="button" onClick={() => setError('')} aria-label="Dismiss" className="mt-0.5 text-red-400 hover:text-red-600">
+                <button type="button" onClick={() => setError('')} aria-label="Dismiss" className="mt-0.5 text-red-500 hover:text-red-700">
                   <X className="h-4 w-4" />
                 </button>
               </div>
             )}
 
             {step === 1 ? (
-              <form onSubmit={goNext} className="mt-6 space-y-4" noValidate>
-                              <Field
+              <form onSubmit={goNext} className="mt-7 space-y-5" noValidate>
+                <Field
                   label="Work email"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                                   placeholder="summitroofing@gmail.com"
+                  placeholder="summitroofing@gmail.com"
                   value={formData.email}
                   onChange={set('email')}
                   hint="The email you check for work. Gmail is fine. New requests, payments and your daily digest go here."
@@ -369,7 +405,7 @@ function SignupForm() {
                   type="password"
                   autoComplete="new-password"
                   placeholder="At least 8 characters"
-                                   value={formData.password}
+                  value={formData.password}
                   onChange={set('password')}
                 />
                 <Field
@@ -382,13 +418,13 @@ function SignupForm() {
                 />
                 <button
                   type="submit"
-                  className={`mt-2 flex w-full items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3.5 text-white shadow-sm transition-colors hover:bg-[#006e75] ${D} text-base font-bold uppercase tracking-wider`}
+                  className={`mt-2 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-[#00828A] px-5 py-3.5 text-lg font-bold text-white shadow-lg shadow-[#00828A]/25 transition-colors hover:bg-[#006e75] ${D}`}
                 >
-                  Continue <ArrowRight className="h-4 w-4" />
+                  Continue <ArrowRight className="h-5 w-5" />
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
+              <form onSubmit={handleSubmit} className="mt-7 space-y-5" noValidate>
                 <Field label="Your name" autoComplete="name" placeholder="Mike Torres" value={formData.ownerName} onChange={set('ownerName')} />
                 <Field
                   label="Business name"
@@ -400,8 +436,8 @@ function SignupForm() {
                 />
 
                 <div>
-                  <span className="text-[13px] font-semibold text-[#1C1F23]">Your trade</span>
-                  <div className="mt-1.5 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <span className="text-[15px] font-semibold text-[#1C1F23]">Your trade</span>
+                  <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-3">
                     {BUSINESS_TYPES.map((type) => {
                       const active = formData.businessType === type.value;
                       const Icon = type.icon;
@@ -411,13 +447,13 @@ function SignupForm() {
                           type="button"
                           onClick={() => setFormData((f) => ({ ...f, businessType: type.value }))}
                           aria-pressed={active}
-                          className={`flex items-center gap-2 rounded-md border px-3 py-2.5 text-left text-sm transition-colors ${
+                          className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-[15px] transition-colors ${
                             active
-                              ? 'border-[#00828A] bg-[#00828A]/[0.07] font-semibold text-[#006e75]'
-                              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                              ? 'border-[#00828A] bg-[#00828A]/[0.08] font-semibold text-[#005f65] ring-2 ring-[#00828A]/15'
+                              : 'border-slate-300 bg-white text-[#2a2f35] hover:border-slate-400'
                           }`}
                         >
-                          <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-[#00828A]' : 'text-slate-400'}`} />
+                          <Icon className={`h-4 w-4 shrink-0 ${active ? 'text-[#00828A]' : 'text-slate-500'}`} />
                           <span className="truncate">{type.label}</span>
                         </button>
                       );
@@ -436,12 +472,12 @@ function SignupForm() {
                   optional
                 />
 
-                <label className="flex cursor-pointer items-start gap-2.5 pt-1 text-sm text-[#3a3f45]">
+                <label className="flex cursor-pointer items-start gap-3 pt-1 text-[15px] text-[#2a2f35]">
                   <input
                     type="checkbox"
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-[#00828A]"
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-slate-300 accent-[#00828A]"
                   />
                   <span>
                     I agree to the{' '}
@@ -463,39 +499,39 @@ function SignupForm() {
                       setError('');
                       setStep(1);
                     }}
-                    className="flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-4 py-3.5 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                    className="flex min-h-[52px] items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-4 py-3.5 text-[15px] font-semibold text-[#2a2f35] hover:bg-slate-50"
                   >
                     <ArrowLeft className="h-4 w-4" /> Back
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className={`flex flex-1 items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3.5 text-white shadow-sm transition-colors hover:bg-[#006e75] disabled:opacity-70 ${D} text-base font-bold uppercase tracking-wider`}
+                    className={`flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-xl bg-[#00828A] px-5 py-3.5 text-lg font-bold text-white shadow-lg shadow-[#00828A]/25 transition-colors hover:bg-[#006e75] disabled:opacity-70 ${D}`}
                   >
                     {loading ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Setting up
+                        <Loader2 className="h-5 w-5 animate-spin" /> Setting up
                       </>
                     ) : plan === 'free' ? (
                       <>
-                        Create my account <ArrowRight className="h-4 w-4" />
+                        Create my account <ArrowRight className="h-5 w-5" />
                       </>
                     ) : (
                       <>
-                        Continue to trial <ArrowRight className="h-4 w-4" />
+                        Continue to trial <ArrowRight className="h-5 w-5" />
                       </>
                     )}
                   </button>
                 </div>
               </form>
             )}
+
+            <p className="mt-6 text-center text-[15px] text-slate-600 lg:text-left">
+              Free plan, no card needed. Paid plans come with a 14-day free trial.
+            </p>
           </div>
         </div>
-
-        <p className="mt-6 text-center text-sm text-slate-500">
-          Free plan, no card needed. Paid plans come with a 14-day free trial.
-        </p>
-      </div>
+      </main>
     </div>
   );
 }
@@ -504,7 +540,7 @@ export default function SignupPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F4EFE6] flex items-center justify-center">
+        <div className="flex min-h-screen items-center justify-center bg-white">
           <Loader2 className="h-6 w-6 animate-spin text-[#00828A]" />
         </div>
       }

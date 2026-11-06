@@ -62,7 +62,7 @@ export default function FeaturesSection() {
         <div className="relative max-w-6xl mx-auto">
           <div className="max-w-2xl mb-10 sm:mb-14 text-center sm:text-left">
             <Eyebrow dark>How it works</Eyebrow>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95] text-white">
+            <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold tracking-tight leading-[1.1] text-white">
               Set it up once. Every job follows the same rules.
             </h2>
           </div>
@@ -94,10 +94,10 @@ export default function FeaturesSection() {
                     <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
                       <Icon className="w-5 h-5" strokeWidth={2.25} />
                     </span>
-                    <h3 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-bold uppercase leading-tight">
+                    <h3 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-bold leading-tight">
                       {step.title}
                     </h3>
-                    <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.desc}</p>
+                    <p className="mt-2 text-base text-[#2a2f35] leading-relaxed">{step.desc}</p>
                   </div>
                 </motion.li>
               );
@@ -140,7 +140,7 @@ export function WhatYouGetSection() {
       <div className="mx-auto max-w-6xl">
         <div className="mx-auto max-w-2xl text-center">
           <Eyebrow>What you get</Eyebrow>
-          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl lg:text-5xl">
+          <h2 className="mt-2 font-[family-name:var(--font-display)] text-[30px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
             Everything from first call to <span className="text-[#00828A]">paid in full.</span>
           </h2>
         </div>
@@ -161,8 +161,8 @@ export function WhatYouGetSection() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00828A]/10 text-[#00828A] transition-colors group-hover:bg-[#00828A] group-hover:text-white">
                   <Icon className="h-5 w-5" strokeWidth={2.25} />
                 </span>
-                <h3 className="mt-3 font-[family-name:var(--font-display)] text-lg font-bold uppercase leading-tight">{f.title}</h3>
-                <p className="mt-1 text-sm leading-snug text-[#3a3f45]">{f.desc}</p>
+                <h3 className="mt-3 font-[family-name:var(--font-display)] text-lg font-bold leading-tight">{f.title}</h3>
+                <p className="mt-1 text-sm leading-snug text-[#2a2f35]">{f.desc}</p>
               </motion.li>
             );
           })}
@@ -183,10 +183,10 @@ export function WhatYouGetSection() {
               <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#5EC4C9]">
                 Switching is easy
               </p>
-              <h3 className="mt-2 font-[family-name:var(--font-display)] text-[28px] font-extrabold uppercase leading-[0.95] tracking-tight sm:text-4xl">
+              <h3 className="mt-2 font-[family-name:var(--font-display)] text-[28px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl">
                 Bring your customers with you.
               </h3>
-              <p className="mx-auto mt-3 max-w-[46ch] text-[15px] leading-relaxed text-white/70 lg:mx-0">
+              <p className="mx-auto mt-3 max-w-[46ch] text-base leading-relaxed text-white/85 lg:mx-0">
                 Already have a list of leads and past customers? Upload it and your history is ready from day one. No
                 retyping, no starting from scratch.
               </p>
@@ -205,11 +205,11 @@ export function WhatYouGetSection() {
               <div className="mt-6 flex flex-col items-center gap-3 sm:flex-row lg:items-center">
                 <Link
                   href="/signup"
-                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#00828A] px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white shadow-lg shadow-[#00828A]/30 transition hover:bg-[#00959e] sm:w-auto"
+                  className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#00828A] px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold text-white shadow-lg shadow-[#00828A]/30 transition hover:bg-[#00959e] sm:w-auto"
                 >
                   Start free <ArrowRight className="h-4 w-4" />
                 </Link>
-                <p className="text-xs leading-snug text-white/50 sm:max-w-[30ch] sm:text-left">
+                <p className="text-xs leading-snug text-white/70 sm:max-w-[30ch] sm:text-left">
                   Import leads on any plan. Past customers and active jobs import as jobs on Pro.
                 </p>
               </div>

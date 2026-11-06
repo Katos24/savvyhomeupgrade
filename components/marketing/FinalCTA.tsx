@@ -30,28 +30,28 @@ export default function FinalCTA() {
             <span className="inline-block font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.2em] text-[#A6E3E6]">
               Built on Long Island
             </span>
-            <h2 className="mt-3 font-[family-name:var(--font-display)] text-[34px] font-extrabold uppercase leading-[0.92] tracking-tight sm:text-5xl lg:text-6xl">
+            <h2 className="mt-3 font-[family-name:var(--font-display)] text-[30px] font-extrabold leading-[1.1] tracking-tight sm:text-4xl lg:text-5xl">
               Built by one person, <span className="text-[#A6E3E6]">for local contractors.</span>
             </h2>
 
             <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center lg:justify-start">
               <Link
                 href="/signup"
-                className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-[#00828A] shadow-lg transition-all hover:-translate-y-0.5 sm:text-lg"
+                className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-white px-8 py-3 font-[family-name:var(--font-display)] text-base font-bold text-[#00828A] shadow-lg transition-all hover:-translate-y-0.5 sm:text-lg"
               >
                 Start free <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Link>
               {DEMO_URL && (
                 <Link
                   href={DEMO_URL}
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 border-white/60 px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-white transition-all hover:-translate-y-0.5 hover:bg-white/10 sm:text-lg"
+                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border-2 border-white/60 px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-white/10 sm:text-lg"
                 >
                   Book a 15-min demo <PlayCircle className="h-5 w-5" />
                 </Link>
               )}
             </div>
 
-            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm font-semibold text-white/80 lg:justify-start">
+            <p className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm font-semibold text-white/90 lg:justify-start">
               <span className="inline-flex items-center gap-1.5">
                 <Check className="h-4 w-4 text-[#A6E3E6]" strokeWidth={3} /> Free plan available
               </span>
@@ -82,7 +82,7 @@ export default function FinalCTA() {
               )}
               <div>
                 <p className="font-bold leading-tight">Alex</p>
-                <p className="text-sm text-white/70">Founder, Lead2Project</p>
+                <p className="text-sm text-white/85">Founder, Lead2Project</p>
               </div>
             </div>
           </div>
