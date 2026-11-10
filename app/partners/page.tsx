@@ -20,7 +20,7 @@ export const metadata = {
 
 const D = 'font-[family-name:var(--font-display)]';
 const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
-const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BODY = 'text-base sm:text-lg text-[#2a2f35] leading-relaxed';
 const BTN =
   'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
   D +
@@ -80,7 +80,7 @@ export default function PartnersPage() {
 
       {/* ── Hero ── */}
       <section
-        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        className="bg-slate-50 pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
         style={{
           backgroundImage:
             'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
@@ -89,7 +89,7 @@ export default function PartnersPage() {
       >
         <div className="max-w-4xl mx-auto text-center">
           <Eyebrow>For bookkeepers &amp; CPAs</Eyebrow>
-          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold leading-[1.1] tracking-tight`}>
             Your contractor clients, finally organized.
           </h1>
           <p className={`mt-5 max-w-2xl mx-auto ${BODY}`}>
@@ -102,12 +102,12 @@ export default function PartnersPage() {
             </Link>
             <Link
               href="/book-demo"
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold`}
             >
               See the product
             </Link>
           </div>
-          <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
+          <p className="mt-4 text-sm font-semibold text-[#2a2f35]">
             Already a partner?{' '}
             <Link href="/bookkeeper/login" className="text-[#00828A] underline underline-offset-2">
               Log in
@@ -139,7 +139,7 @@ export default function PartnersPage() {
       <TapeDivider />
 
       {/* ── What changes ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           <div className="max-w-2xl mb-10 text-center sm:text-left">
             <Eyebrow>What changes</Eyebrow>
@@ -151,8 +151,8 @@ export default function PartnersPage() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
                   <Icon className="h-5 w-5" />
                 </span>
-                <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{title}</h3>
-                <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{desc}</p>
+                <h3 className={`mt-4 ${D} text-2xl font-bold leading-tight`}>{title}</h3>
+                <p className="mt-2 text-[15px] text-[#2a2f35] leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -232,8 +232,8 @@ export default function PartnersPage() {
                 </div>
                 <div className="border-b border-dashed border-slate-300" />
                 <div className="p-5">
-                  <h3 className={`${D} text-xl font-bold uppercase leading-tight`}>{s.title}</h3>
-                  <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{s.desc}</p>
+                  <h3 className={`${D} text-xl font-bold leading-tight`}>{s.title}</h3>
+                  <p className="mt-2 text-[15px] text-[#2a2f35] leading-relaxed">{s.desc}</p>
                 </div>
               </li>
             ))}
@@ -251,20 +251,20 @@ export default function PartnersPage() {
       {/* ── Final CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]`}>
             Stop chasing receipts.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/85">Create a free partner account and get your code.</p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/bookkeeper/signup"
-              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold text-center`}
             >
               Become a partner
             </Link>
             <Link
               href="/bookkeeper/login"
-              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold text-center`}
             >
               Partner log in
             </Link>

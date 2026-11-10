@@ -6,8 +6,8 @@ import { TapeDivider } from '@/components/marketing/marketingUI';
 import DepositCalculator from './DepositCalculator';
 import { STATES, OTHER_STATE, GENERAL } from './states';
 
-const h2 = 'font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold uppercase tracking-tight';
-const p = 'mt-4 text-base leading-relaxed text-[#3a3f45]';
+const h2 = 'font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold tracking-tight';
+const p = 'mt-4 text-base leading-relaxed text-[#2a2f35]';
 
 // Shared by /tools/deposit-calculator and /tools/deposit-calculator/[state].
 // The header, calculator, rules and FAQ live in DepositCalculator so they
@@ -39,7 +39,7 @@ export default function CalculatorPage({ stateSlug = OTHER_STATE }: { stateSlug?
   };
 
   return (
-    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-[#F4EFE6] text-[#1C1F23] antialiased`}>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-slate-50 text-[#1C1F23] antialiased`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }} />
       <Nav />
@@ -55,7 +55,7 @@ export default function CalculatorPage({ stateSlug = OTHER_STATE }: { stateSlug?
       <section className="px-4 pb-16">
         <div className="mx-auto max-w-5xl flex flex-col gap-5 rounded-lg bg-[#00828A] p-6 sm:p-9 text-white shadow-lg sm:flex-row sm:items-center sm:justify-between">
           <div className="max-w-xl">
-            <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold uppercase tracking-tight leading-none">
+            <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold tracking-tight leading-[1.1]">
               Send it as a real deposit invoice
             </h2>
             <p className="mt-3 text-white/85">
@@ -66,7 +66,7 @@ export default function CalculatorPage({ stateSlug = OTHER_STATE }: { stateSlug?
           <div className="flex shrink-0 flex-col gap-2 sm:items-end">
             <Link
               href="/signup"
-              className="rounded-md bg-white px-7 py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-[#00828A] shadow-sm transition-colors hover:bg-slate-50"
+              className="rounded-md bg-white px-7 py-3 text-center font-[family-name:var(--font-display)] text-base font-bold text-[#00828A] shadow-sm transition-colors hover:bg-slate-50"
             >
               Start free
             </Link>
@@ -89,7 +89,7 @@ export default function CalculatorPage({ stateSlug = OTHER_STATE }: { stateSlug?
           </p>
 
           <h3 className="mt-8 text-xl font-bold">What to think about</h3>
-          <ul className="mt-3 space-y-3 text-base leading-relaxed text-[#3a3f45]">
+          <ul className="mt-3 space-y-3 text-base leading-relaxed text-[#2a2f35]">
             <li>
               <strong className="text-[#1C1F23]">Materials you buy up front.</strong> If you&rsquo;re ordering shingles,
               fixtures or custom pieces before day one, the deposit should cover them. You shouldn&rsquo;t be financing a

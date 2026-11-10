@@ -65,7 +65,7 @@ function Lightbox({ photos, startIndex, label, onClose }: { photos: string[]; st
     >
       {/* Top bar */}
       <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-4 py-4 z-10" onClick={e => e.stopPropagation()}>
-        <span className="text-xs font-black text-white/40 uppercase tracking-widest">
+        <span className="text-xs font-black text-white/60 uppercase tracking-widest">
           {label}{photos.length > 1 && ` · ${current + 1} / ${photos.length}`}
         </span>
         <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition">
@@ -310,7 +310,7 @@ const handleStatusChange = (newStatus: string) => {
                 </p>
               </div>
               <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-lg transition" style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)' }}>
-                <X className="w-4 h-4 text-white/60" />
+                <X className="w-4 h-4 text-white/80" />
               </button>
             </div>
 

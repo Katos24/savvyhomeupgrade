@@ -39,7 +39,7 @@ export default function DemoHeader({
 }: Props) {
   const cardBg = darkMode ? 'bg-white/[0.03] border-white/10' : 'bg-white border-gray-200';
   const textPrimary = darkMode ? 'text-white' : 'text-gray-900';
-  const textMuted = darkMode ? 'text-white/40' : 'text-gray-400';
+  const textMuted = darkMode ? 'text-white/60' : 'text-gray-400';
 
   return (
     <>
@@ -63,7 +63,7 @@ export default function DemoHeader({
               onClick={onShowSettings}
               className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition ${
                 darkMode
-                  ? 'bg-white/5 border-white/10 text-white/60 hover:bg-white/10 hover:text-white'
+                  ? 'bg-white/5 border-white/10 text-white/80 hover:bg-white/10 hover:text-white'
                   : 'bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100'
               }`}
             >

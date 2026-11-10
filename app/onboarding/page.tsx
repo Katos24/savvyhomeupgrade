@@ -96,7 +96,7 @@ function SettingsReassurance() {
       <div className="p-2 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors shrink-0">
         <Settings2 className="w-4 h-4 text-blue-400" />
       </div>
-      <p className="text-xs font-bold text-white/50 leading-snug">
+      <p className="text-xs font-bold text-white/70 leading-snug">
         Don&apos;t worry about getting this perfect right now.{' '}
         <span className="text-blue-400">
           Everything can be changed later in Settings.
@@ -443,7 +443,7 @@ if (!brandingResult.success) {
               <button
                 onClick={handleSkip}
                 disabled={saving}
-                className="text-white/40 hover:text-white text-xs font-bold transition disabled:opacity-30"
+                className="text-white/60 hover:text-white text-xs font-bold transition disabled:opacity-30"
               >
                 Skip for now
               </button>
@@ -495,7 +495,7 @@ if (!brandingResult.success) {
                   <p className="text-sm font-black text-blue-400">
                     {logoPreview ? 'Change Logo' : 'Upload Logo'}
                   </p>
-                  <p className="text-[11px] text-white/40 mt-1 uppercase tracking-widest font-bold">
+                  <p className="text-[11px] text-white/60 mt-1 uppercase tracking-widest font-bold">
                     Visible to customers
                   </p>
                 </div>
@@ -540,7 +540,7 @@ if (!brandingResult.success) {
                 },
               ].map((field, i) => (
                 <div key={i}>
-                  <label className="text-[11px] font-black text-white/40 uppercase tracking-[0.2em] mb-2.5 block ml-1">
+                  <label className="text-[11px] font-black text-white/60 uppercase tracking-[0.2em] mb-2.5 block ml-1">
                     {field.label}
                     {field.required && (
                       <span className="text-red-400 ml-1">*</span>
@@ -570,7 +570,7 @@ if (!brandingResult.success) {
                 Service Options
               </h2>
               <SettingsReassurance />
-              <p className="text-white/60 text-sm font-medium mt-2">
+              <p className="text-white/80 text-sm font-medium mt-2">
                 What kind of projects do you handle? Tap to select.
               </p>
             </div>
@@ -594,7 +594,7 @@ if (!brandingResult.success) {
                     className={`px-5 py-3 rounded-2xl font-black text-sm border-2 transition-all active:scale-95 ${
                       isSelected
                         ? 'bg-blue-600 border-blue-400 text-white shadow-lg shadow-blue-900/40'
-                        : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'
+                        : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'
                     }`}
                   >
                     {cat.emoji && <span className="mr-1.5">{cat.emoji}</span>}
@@ -628,7 +628,7 @@ if (!brandingResult.success) {
                     setShowAddCat(false);
                     setNewCatLabel('');
                   }}
-                  className="p-2 text-white/40 hover:text-white transition-colors"
+                  className="p-2 text-white/60 hover:text-white transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -636,7 +636,7 @@ if (!brandingResult.success) {
             ) : (
               <button
                 onClick={() => setShowAddCat(true)}
-                className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl flex items-center justify-center gap-2 text-white/40 font-black hover:bg-white/5 transition-all"
+                className="w-full py-4 border-2 border-dashed border-white/10 rounded-2xl flex items-center justify-center gap-2 text-white/60 font-black hover:bg-white/5 transition-all"
               >
                 <Plus className="w-5 h-5" /> Add custom service
               </button>
@@ -660,14 +660,14 @@ if (!brandingResult.success) {
                 <Sparkles className="w-10 h-10 text-white" />
               </div>
               <h2 className="text-4xl font-black mb-3">You&apos;re Live.</h2>
-              <p className="text-white/60 text-lg font-medium leading-relaxed mb-6">
+              <p className="text-white/80 text-lg font-medium leading-relaxed mb-6">
                 Your professional booking link is ready to be shared with
                 customers.
               </p>
 
               <div className="bg-white/5 border border-white/10 p-4 rounded-2xl inline-flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-blue-400 shrink-0" />
-                <p className="text-xs font-bold text-white/50">
+                <p className="text-xs font-bold text-white/70">
                   Reminder: Head to{' '}
                   <span className="text-white">Settings</span> later to
                   fine-tune your templates and team.
@@ -736,7 +736,7 @@ if (!brandingResult.success) {
               <button
                 onClick={() => setCurrentStep((prev) => prev - 1)}
                 disabled={saving}
-                className="w-16 h-16 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-white/60 hover:text-white transition-all shadow-sm disabled:opacity-30"
+                className="w-16 h-16 flex items-center justify-center bg-white/5 border border-white/10 rounded-2xl text-white/80 hover:text-white transition-all shadow-sm disabled:opacity-30"
               >
                 <ChevronLeft className="w-7 h-7" />
               </button>

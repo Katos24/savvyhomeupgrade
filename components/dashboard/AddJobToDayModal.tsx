@@ -142,7 +142,7 @@ export default function AddJobToDayModal({
 
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <div>
-              <p className="text-sm font-bold text-[#1c1917]">Add a job</p>
+              <p className="text-sm font-bold text-slate-900">Add a job</p>
               <p className="text-xs text-slate-500 font-medium">Schedule onto {dayLabel}</p>
             </div>
             <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-400" aria-label="Close">
@@ -158,7 +158,7 @@ export default function AddJobToDayModal({
                   <CalendarClock size={18} />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-sm font-bold text-[#1c1917]">Move {pendingMove.customer_name}?</p>
+                  <p className="text-sm font-bold text-slate-900">Move {pendingMove.customer_name}?</p>
                   <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs font-semibold text-slate-600">
                     <span className="rounded-md bg-slate-100 px-2 py-0.5">
                       {fmtDay(pendingMove.scheduled_date)}
@@ -230,7 +230,7 @@ export default function AddJobToDayModal({
                       className="w-full text-left p-3.5 bg-white rounded-xl border border-slate-200 hover:border-[#1a6645] hover:shadow-md transition-all duration-200"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-bold text-[#1c1917] truncate">{job.customer_name}</p>
+                        <p className="text-sm font-bold text-slate-900 truncate">{job.customer_name}</p>
                         {amount && <span className="text-xs font-bold text-slate-600 shrink-0">{amount}</span>}
                       </div>
                       {job.category && (
@@ -262,7 +262,7 @@ export default function AddJobToDayModal({
                         className="w-full text-left p-3.5 bg-slate-50 rounded-xl border border-slate-200 hover:border-amber-400 hover:bg-white transition-all duration-200"
                       >
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-sm font-bold text-[#1c1917] truncate">{job.customer_name}</p>
+                          <p className="text-sm font-bold text-slate-900 truncate">{job.customer_name}</p>
                           <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 rounded-md px-1.5 py-0.5 shrink-0">
                             {fmtDay(job.scheduled_date)}
                           </span>

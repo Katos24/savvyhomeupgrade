@@ -93,11 +93,11 @@ export default function BoardView({
     onMoveLead(lead, status);
   };
 
-  const colBg = isDark ? 'bg-slate-900/50 border-slate-800/80' : 'bg-[#f5f1e8]/60 border-[#e7e2d8]';
+  const colBg = isDark ? 'bg-slate-900/50 border-slate-800/80' : 'bg-slate-100/60 border-slate-200';
   const colBgOver = isDark ? 'bg-slate-800/70 border-slate-600' : 'bg-[#efe9dc] border-[#d6cfc0]';
-  const textMain = isDark ? 'text-slate-100' : 'text-[#1c1917]';
-  const textSub = isDark ? 'text-slate-400' : 'text-[#78716c]';
-  const textFaint = isDark ? 'text-slate-500' : 'text-[#a8a29e]';
+  const textMain = isDark ? 'text-slate-100' : 'text-slate-900';
+  const textSub = isDark ? 'text-slate-400' : 'text-slate-600';
+  const textFaint = isDark ? 'text-slate-500' : 'text-slate-500';
 
   return (
     <div className="hidden md:flex gap-3 overflow-x-auto pb-3 font-sans items-start">
@@ -172,7 +172,7 @@ export default function BoardView({
 
             <div className="flex flex-col gap-2 px-2 pb-2 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 260px)' }}>
               {col.items.length === 0 && (
-                <div className={`rounded-lg border border-dashed py-6 text-center text-[11px] ${isDark ? 'border-slate-800' : 'border-[#e7e2d8]'} ${textFaint}`}>
+                <div className={`rounded-lg border border-dashed py-6 text-center text-[11px] ${isDark ? 'border-slate-800' : 'border-slate-200'} ${textFaint}`}>
                   {onMoveLead ? 'Drop a job here' : 'No jobs'}
                 </div>
               )}
@@ -202,7 +202,7 @@ export default function BoardView({
                     } ${draggingId === lead.id ? 'opacity-40' : ''} ${
                       isDark
                         ? 'bg-slate-900 border-slate-800 hover:border-slate-600'
-                        : 'bg-white border-[#e7e2d8] hover:shadow-sm hover:border-[#d6cfc0]'
+                        : 'bg-white border-slate-200 hover:shadow-sm hover:border-[#d6cfc0]'
                     }`}
                   >
                     <div className="flex items-baseline justify-between gap-2">

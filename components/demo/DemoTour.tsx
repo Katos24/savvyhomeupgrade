@@ -297,7 +297,7 @@ export function FlowDoneCard({
           <p className="text-xs font-bold mt-0.5" style={{ color: accentColor }}>{subtitle}</p>
         </div>
       </div>
-      <p className="text-xs text-white/40 leading-relaxed mb-4">{body}</p>
+      <p className="text-xs text-white/60 leading-relaxed mb-4">{body}</p>
       <div className="flex flex-col sm:flex-row gap-2">
         <Link href="/signup"
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black text-white transition hover:opacity-90 active:scale-95"
@@ -306,7 +306,7 @@ export function FlowDoneCard({
           Start free trial <ArrowRight className="w-3.5 h-3.5" />
         </Link>
         <button onClick={onDismiss}
-          className="sm:flex-none px-4 py-3 rounded-xl text-xs font-bold text-white/40 hover:text-white/60 border border-white/10 hover:bg-white/5 transition text-center"
+          className="sm:flex-none px-4 py-3 rounded-xl text-xs font-bold text-white/60 hover:text-white/60 border border-white/10 hover:bg-white/5 transition text-center"
         >
           Explore dashboard
         </button>
@@ -352,7 +352,7 @@ export function DemoTourBanner({
           <p className={`text-sm font-black ${darkMode ? 'text-white' : 'text-slate-900'}`}>
             Try another walkthrough
           </p>
-          <p className={`text-xs mt-0.5 ${darkMode ? 'text-white/40' : 'text-slate-500'}`}>
+          <p className={`text-xs mt-0.5 ${darkMode ? 'text-white/60' : 'text-slate-500'}`}>
             Each one shows a different part of the product
           </p>
         </div>

@@ -35,7 +35,7 @@ export const metadata = {
 
 const D = 'font-[family-name:var(--font-display)]';
 const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
-const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BODY = 'text-base sm:text-lg text-[#2a2f35] leading-relaxed';
 const BTN =
   'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
   D +
@@ -44,7 +44,7 @@ const CARD = 'rounded-lg border border-slate-200 bg-white shadow-lg';
 
 function ProTag() {
   return (
-    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]`}>
+    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold text-[#5EC4C9]`}>
       Pro
     </span>
   );
@@ -165,7 +165,7 @@ function CalendarMock() {
       </div>
       <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
         {WEEK.map((d) => (
-          <div key={d.day} className="min-h-[150px] min-w-0 rounded-md border border-slate-200 bg-[#FBF8F2] p-1.5">
+          <div key={d.day} className="min-h-[150px] min-w-0 rounded-md border border-slate-200 bg-slate-50 p-1.5">
             <p className="text-[10px] font-bold uppercase text-slate-500">{d.day}</p>
             <p className="text-sm font-bold">{d.date}</p>
             <div className="mt-1.5 space-y-1.5">
@@ -193,7 +193,7 @@ export default function OperationsPage() {
 
       {/* ── Hero ── */}
       <section
-        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        className="bg-slate-50 pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
         style={{
           backgroundImage:
             'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
@@ -203,7 +203,7 @@ export default function OperationsPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="text-center sm:text-left">
             <Eyebrow>Operations</Eyebrow>
-            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold leading-[1.1] tracking-tight`}>
               From first call to paid in full.
             </h1>
             <p className={`mt-5 ${BODY}`}>
@@ -216,7 +216,7 @@ export default function OperationsPage() {
               </Link>
               <Link
                 href="/#how-it-works"
-                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold`}
               >
                 How it works <ArrowRight className="h-4 w-4" />
               </Link>
@@ -255,12 +255,12 @@ export default function OperationsPage() {
               { icon: CalendarDays, t: 'Calendar', d: 'Your week, 5 or 7 days.' },
               { icon: Columns3, t: 'Board', d: 'Drag a job to its next stage.' },
             ].map(({ icon: Icon, t, d }) => (
-              <div key={t} className="rounded-lg border border-slate-200 bg-[#FBF8F2] p-4 sm:p-5">
+              <div key={t} className="rounded-lg border border-slate-200 bg-slate-50 p-4 sm:p-5">
                 <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#1C1F23] text-[#5EC4C9]">
                   <Icon className="h-5 w-5" />
                 </span>
-                <p className={`mt-3 ${D} text-xl font-bold uppercase`}>{t}</p>
-                <p className="mt-1 text-sm text-[#3a3f45]">{d}</p>
+                <p className={`mt-3 ${D} text-xl font-bold`}>{t}</p>
+                <p className="mt-1 text-sm text-[#2a2f35]">{d}</p>
               </div>
             ))}
           </div>
@@ -270,7 +270,7 @@ export default function OperationsPage() {
       <TapeDivider />
 
       {/* ── Quotes ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="order-2 lg:order-1 w-full max-w-md mx-auto">
             <QuoteEmailMock />
@@ -341,7 +341,7 @@ export default function OperationsPage() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
                   <Icon className="h-5 w-5" />
                 </span>
-                <p className={`mt-4 ${D} text-xl font-bold uppercase`}>{t}</p>
+                <p className={`mt-4 ${D} text-xl font-bold`}>{t}</p>
                 <p className="mt-1.5 text-sm text-slate-300 leading-relaxed">{d}</p>
               </div>
             ))}
@@ -350,14 +350,14 @@ export default function OperationsPage() {
       </section>
 
       {/* ── Pipeline ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto text-center">
           <Eyebrow>Your pipeline</Eyebrow>
           <h2 className={`mt-3 ${H2}`}>One dashboard. Every stage.</h2>
           <div className="mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
             {PIPELINE.map((stage, i) => (
               <div key={stage} className="flex items-center gap-2 sm:gap-3">
-                <span className={`rounded-md border border-slate-200 bg-white px-3.5 py-2 shadow-sm ${D} text-base font-bold uppercase tracking-wide`}>
+                <span className={`rounded-md border border-slate-200 bg-white px-3.5 py-2 shadow-sm ${D} text-base font-bold`}>
                   {stage}
                 </span>
                 {i < PIPELINE.length - 1 && <ArrowRight className="h-4 w-4 text-[#00828A]" />}
@@ -372,12 +372,12 @@ export default function OperationsPage() {
             ].map(({ icon: Icon, t, d }) => (
               <div key={t} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <Icon className="h-5 w-5 text-[#00828A]" />
-                <p className={`mt-3 ${D} text-xl font-bold uppercase`}>{t}</p>
-                <p className="mt-1 text-sm text-[#3a3f45]">{d}</p>
+                <p className={`mt-3 ${D} text-xl font-bold`}>{t}</p>
+                <p className="mt-1 text-sm text-[#2a2f35]">{d}</p>
               </div>
             ))}
           </div>
-          <p className="mt-6 flex items-center justify-center gap-1.5 text-sm text-[#3a3f45]">
+          <p className="mt-6 flex items-center justify-center gap-1.5 text-sm text-[#2a2f35]">
 <Bell className="h-4 w-4" /> <Mail className="h-4 w-4" /> Plus a morning digest of your day <ProTag />
           </p>
         </div>
@@ -386,20 +386,20 @@ export default function OperationsPage() {
       {/* ── Final CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]`}>
             Your whole operation. One login.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/85">Stop juggling texts, notebooks and a spreadsheet.</p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold text-center`}
             >
               Start free
             </Link>
             <Link
               href="/pricing"
-              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold text-center`}
             >
               See pricing
             </Link>

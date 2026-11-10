@@ -117,12 +117,12 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
     'flex items-center rounded-md border border-[#1C1F23]/20 bg-white focus-within:border-[#00828A] focus-within:ring-2 focus-within:ring-[#00828A]/20 transition';
   const inputCls = 'w-full bg-transparent px-3 py-3 text-lg font-semibold tabular-nums outline-none';
   const labelCls = 'block text-sm font-bold text-[#1C1F23] mb-1.5';
-  const segWrap = 'inline-flex flex-wrap rounded-md border border-[#1C1F23]/20 bg-[#F4EFE6] p-1';
+  const segWrap = 'inline-flex flex-wrap rounded-md border border-[#1C1F23]/20 bg-slate-50 p-1';
   const segBtn = (on: boolean) =>
-    `rounded px-3.5 py-1.5 text-sm font-bold transition ${on ? 'bg-[#1C1F23] text-white' : 'text-[#3a3f45] hover:text-[#1C1F23]'}`;
+    `rounded px-3.5 py-1.5 text-sm font-bold transition ${on ? 'bg-[#1C1F23] text-white' : 'text-[#2a2f35] hover:text-[#1C1F23]'}`;
   const chipBtn = (on: boolean) =>
     `rounded-md border px-3 py-1.5 text-sm font-bold transition ${
-      on ? 'border-[#1C1F23] bg-[#1C1F23] text-white' : 'border-[#1C1F23]/20 bg-white text-[#3a3f45] hover:border-[#1C1F23]/40'
+      on ? 'border-[#1C1F23] bg-[#1C1F23] text-white' : 'border-[#1C1F23]/20 bg-white text-[#2a2f35] hover:border-[#1C1F23]/40'
     }`;
 
   const taxInput = (
@@ -137,7 +137,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
           placeholder="0"
           className={inputCls}
         />
-        <span className="pr-3 text-lg font-semibold text-[#5a6067]">%</span>
+        <span className="pr-3 text-lg font-semibold text-[#3f454c]">%</span>
       </div>
       {tax?.kind === 'by_job_type' && (
         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -156,10 +156,10 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
       {/* Header (follows the dropdown) */}
       <header className="pt-28 sm:pt-36 text-center">
         <Eyebrow>Free tool</Eyebrow>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl sm:text-7xl font-extrabold uppercase tracking-tight leading-[0.9]">
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]">
           {info ? info.heading : GENERAL.heading}
         </h1>
-        <p className="mt-4 mx-auto max-w-xl text-base sm:text-lg text-[#3a3f45]">{info ? info.intro : GENERAL.intro}</p>
+        <p className="mt-4 mx-auto max-w-xl text-base sm:text-lg text-[#2a2f35]">{info ? info.intro : GENERAL.intro}</p>
       </header>
 
       <div className="space-y-6">
@@ -185,16 +185,16 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
                     ))}
                     <option value={OTHER_STATE}>Other state</option>
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 h-5 w-5 text-[#5a6067]" />
+                  <ChevronDown className="pointer-events-none absolute right-3 h-5 w-5 text-[#3f454c]" />
                 </div>
               </div>
 
               <div>
                 <label htmlFor="price" className={labelCls}>
-                  Job price <span className="font-normal text-[#5a6067]">(before tax)</span>
+                  Job price <span className="font-normal text-[#3f454c]">(before tax)</span>
                 </label>
                 <div className={inputWrap}>
-                  <span className="pl-3 text-lg font-semibold text-[#5a6067]">$</span>
+                  <span className="pl-3 text-lg font-semibold text-[#3f454c]">$</span>
                   <input
                     id="price"
                     inputMode="decimal"
@@ -220,8 +220,8 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
                         {tax.taxableLabel}
                       </button>
                     </div>
-                    <p className="mt-2 flex items-start gap-1.5 text-sm text-[#3a3f45]">
-                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#5a6067]" />
+                    <p className="mt-2 flex items-start gap-1.5 text-sm text-[#2a2f35]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#3f454c]" />
                       <span>
                         {jobType === 'exempt' ? tax.exemptNote : tax.taxableNote} <SourceLink source={tax.source} />
                       </span>
@@ -238,8 +238,8 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
                 ) : tax?.kind === 'contractor_pays' ? (
                   <>
                     <span className={labelCls}>Sales tax</span>
-                    <p className="flex items-start gap-1.5 rounded-md bg-[#F4EFE6] px-3 py-2.5 text-sm text-[#3a3f45]">
-                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#5a6067]" />
+                    <p className="flex items-start gap-1.5 rounded-md bg-slate-50 px-3 py-2.5 text-sm text-[#2a2f35]">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#3f454c]" />
                       <span>
                         {tax.note} <SourceLink source={tax.source} />
                       </span>
@@ -248,10 +248,10 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
                 ) : (
                   <>
                     <label htmlFor="tax" className={labelCls}>
-                      Sales tax rate <span className="font-normal text-[#5a6067]">(optional)</span>
+                      Sales tax rate <span className="font-normal text-[#3f454c]">(optional)</span>
                     </label>
                     {taxInput}
-                    <p className="mt-1.5 text-xs text-[#5a6067]">
+                    <p className="mt-1.5 text-xs text-[#3f454c]">
                       Only if you charge sales tax on this job. Rules differ by state and type of work.
                     </p>
                   </>
@@ -284,7 +284,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
                         placeholder="30"
                         className={inputCls}
                       />
-                      <span className="pr-3 text-lg font-semibold text-[#5a6067]">%</span>
+                      <span className="pr-3 text-lg font-semibold text-[#3f454c]">%</span>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-1.5">
                       {QUICK_PERCENTS.map((p) => (
@@ -296,7 +296,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
                   </>
                 ) : (
                   <div className={inputWrap}>
-                    <span className="pl-3 text-lg font-semibold text-[#5a6067]">$</span>
+                    <span className="pl-3 text-lg font-semibold text-[#3f454c]">$</span>
                     <input
                       id="fixed"
                       aria-label="Deposit amount"
@@ -321,7 +321,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
             <p className="mt-1 font-[family-name:var(--font-display)] text-5xl sm:text-6xl font-extrabold tabular-nums tracking-tight">
               {money(r.deposit)}
             </p>
-            <p className="mt-1 text-sm text-white/60">{pctLabel(r.depositPct)} of the job total</p>
+            <p className="mt-1 text-sm text-white/80">{pctLabel(r.depositPct)} of the job total</p>
 
             {stateWarning && (
               <p className="mt-3 flex items-start gap-2 rounded-md bg-amber-400/10 px-3 py-2 text-sm text-amber-200">
@@ -332,11 +332,11 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
 
             <dl className="mt-6 divide-y divide-white/10 border-y border-white/10 text-sm">
               <div className="flex justify-between py-2.5">
-                <dt className="text-white/60">Job price</dt>
+                <dt className="text-white/80">Job price</dt>
                 <dd className="font-semibold tabular-nums">{money(r.subtotal)}</dd>
               </div>
               <div className="flex justify-between py-2.5">
-                <dt className="text-white/60">Sales tax{r.rate > 0 ? ` (${pctLabel(r.rate)})` : ''}</dt>
+                <dt className="text-white/80">Sales tax{r.rate > 0 ? ` (${pctLabel(r.rate)})` : ''}</dt>
                 <dd className="font-semibold tabular-nums">{r.tax > 0 ? money(r.tax) : 'None'}</dd>
               </div>
               <div className="flex justify-between py-2.5">
@@ -344,7 +344,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
                 <dd className="font-bold tabular-nums">{money(r.total)}</dd>
               </div>
               <div className="flex justify-between py-2.5">
-                <dt className="text-white/60">Deposit</dt>
+                <dt className="text-white/80">Deposit</dt>
                 <dd className="font-semibold tabular-nums">− {money(r.deposit)}</dd>
               </div>
               <div className="flex justify-between py-2.5">
@@ -359,7 +359,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
 
             <div className="mt-5 rounded-md bg-white/5 p-3.5">
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-white/50">Text for your customer</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-white/70">Text for your customer</p>
                 <button
                   type="button"
                   onClick={copy}
@@ -374,7 +374,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
           </div>
         </div>
 
-        <p className="text-center text-xs text-[#5a6067]">
+        <p className="text-center text-xs text-[#3f454c]">
           Nothing you type is saved or sent anywhere. The deposit is figured on the total including tax, rounded to the cent.
         </p>
 
@@ -385,7 +385,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
               <h2 className="text-lg font-bold text-[#1C1F23]">{info.name} deposit rules to know</h2>
               <ul className="mt-3 space-y-3">
                 {info.rules.map((rule, i) => (
-                  <li key={i} className="text-base leading-relaxed text-[#3a3f45]">
+                  <li key={i} className="text-base leading-relaxed text-[#2a2f35]">
                     {rule.text} <SourceLink source={rule.source} />
                   </li>
                 ))}
@@ -394,14 +394,14 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
           ) : (
             <>
               <h2 className="text-lg font-bold text-[#1C1F23]">Check your state&rsquo;s rules</h2>
-              <p className="mt-2 text-base leading-relaxed text-[#3a3f45]">
+              <p className="mt-2 text-base leading-relaxed text-[#2a2f35]">
                 Some states limit how big a deposit can be on home improvement jobs, or control where the money is held.
                 Sales tax rules also differ by state and type of work. Check with your state&rsquo;s consumer protection
                 office and tax department before you set your deposit.
               </p>
             </>
           )}
-          <p className="mt-4 text-sm text-[#5a6067]">
+          <p className="mt-4 text-sm text-[#3f454c]">
             General information, not legal or tax advice. Rules change and depend on the type of work, so check the
             official source or a professional for your situation.
           </p>
@@ -410,7 +410,7 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
 
       {/* FAQ (follows the dropdown) */}
       <section className="mx-auto max-w-3xl">
-        <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">
+        <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold tracking-tight">
           {info ? `${info.name} deposit & tax questions` : 'Common questions'}
         </h2>
         <div className="mt-6 divide-y divide-[#1C1F23]/10 border-y border-[#1C1F23]/10">
@@ -418,9 +418,9 @@ export default function DepositCalculator({ initialState = OTHER_STATE }: { init
             <details key={item.q} className="group py-4">
               <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-lg font-bold text-[#1C1F23]">
                 {item.q}
-                <ChevronDown className="mt-1 h-5 w-5 shrink-0 text-[#5a6067] transition-transform group-open:rotate-180" />
+                <ChevronDown className="mt-1 h-5 w-5 shrink-0 text-[#3f454c] transition-transform group-open:rotate-180" />
               </summary>
-              <p className="mt-3 text-base leading-relaxed text-[#3a3f45]">
+              <p className="mt-3 text-base leading-relaxed text-[#2a2f35]">
                 {item.a} {item.source && <SourceLink source={item.source} />}
               </p>
             </details>

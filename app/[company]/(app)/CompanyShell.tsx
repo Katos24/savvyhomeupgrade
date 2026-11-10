@@ -107,7 +107,7 @@ export default function CompanyShell({
   };
 
   return (
-    <div className={`min-h-screen lg:flex ${isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]'}`}>
+    <div className={`min-h-screen lg:flex ${isDark ? 'bg-[#0b0f17]' : 'bg-slate-50'}`}>
       {/* Desktop: pinned, always visible, part of the layout flow.
           Mobile: same overlay-drawer behavior Sidebar already had —
           isOpen/onClose still control it, just triggered from here
@@ -153,18 +153,18 @@ export default function CompanyShell({
         <div className={`lg:hidden sticky top-0 z-20 flex items-center gap-3 border-b px-4 py-3 backdrop-blur-sm transition-colors ${
           isDark
             ? 'bg-[#0b0f17]/90 border-white/10'
-            : 'bg-white/90 border-[#e7e2d8]'
+            : 'bg-white/90 border-slate-200'
         }`}>
           <button
             onClick={() => setSidebarOpen(true)}
             className={`p-1.5 -ml-1 rounded-lg transition-colors ${
-              isDark ? 'text-slate-300 hover:bg-white/10' : 'text-[#57534e] hover:bg-[#f5f1e8]'
+              isDark ? 'text-slate-300 hover:bg-white/10' : 'text-slate-700 hover:bg-slate-100'
             }`}
             aria-label="Open navigation menu"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-[#1c1917]'}`}>
+          <span className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {company.name}
           </span>
         </div>

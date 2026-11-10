@@ -12,7 +12,7 @@ const BTN = `flex w-full items-center justify-center gap-2 rounded-md bg-[#00828
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased bg-[#F4EFE6] text-[#1C1F23] px-4 py-8 sm:py-14`}
+      className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased bg-slate-50 text-[#1C1F23] px-4 py-8 sm:py-14`}
       style={{
         backgroundImage:
           'linear-gradient(rgba(28,31,35,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.05) 1px, transparent 1px)',
@@ -24,7 +24,7 @@ function Shell({ children }: { children: React.ReactNode }) {
           <Link href="/" className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/Lead2ProjectLogo.webp" alt="" className="h-8 w-8 rounded-md bg-white object-contain p-1 shadow-sm" />
-            <span className={`${D} text-xl font-extrabold uppercase tracking-tight`}>Lead2Project</span>
+            <span className={`${D} text-xl font-extrabold tracking-tight`}>Lead2Project</span>
           </Link>
           <Link href="/login" className="text-sm font-semibold text-[#00828A] hover:underline">
             Log in
@@ -124,8 +124,8 @@ function ResetPasswordForm() {
     return (
       <Shell>
         <div className="p-6 sm:p-8 text-center">
-          <h1 className={`${D} text-3xl font-extrabold uppercase leading-[0.95] tracking-tight`}>This link doesn&rsquo;t work.</h1>
-          <p className="mt-3 text-[15px] text-[#3a3f45]">The reset link is missing or incomplete. Request a new one and use the latest email.</p>
+          <h1 className={`${D} text-3xl font-extrabold leading-[1.1] tracking-tight`}>This link doesn&rsquo;t work.</h1>
+          <p className="mt-3 text-[15px] text-[#2a2f35]">The reset link is missing or incomplete. Request a new one and use the latest email.</p>
           <Link href="/forgot-password" className={`mt-7 ${BTN}`}>
             Send a new link
           </Link>
@@ -141,8 +141,8 @@ function ResetPasswordForm() {
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#00828A]/10">
             <CheckCircle2 className="h-6 w-6 text-[#00828A]" />
           </div>
-          <h1 className={`mt-4 ${D} text-3xl font-extrabold uppercase leading-[0.95] tracking-tight`}>Password updated.</h1>
-          <p className="mt-3 text-[15px] text-[#3a3f45]">You can log in with your new password now.</p>
+          <h1 className={`mt-4 ${D} text-3xl font-extrabold leading-[1.1] tracking-tight`}>Password updated.</h1>
+          <p className="mt-3 text-[15px] text-[#2a2f35]">You can log in with your new password now.</p>
           <Link href="/login" className={`mt-7 ${BTN}`}>
             Log in
           </Link>
@@ -154,8 +154,8 @@ function ResetPasswordForm() {
   return (
     <Shell>
       <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-        <h1 className={`${D} text-3xl sm:text-4xl font-extrabold uppercase leading-[0.95] tracking-tight`}>Set a new password.</h1>
-        <p className="mt-2 text-[15px] text-[#3a3f45]">Use at least 8 characters.</p>
+        <h1 className={`${D} text-3xl sm:text-4xl font-extrabold leading-[1.1] tracking-tight`}>Set a new password.</h1>
+        <p className="mt-2 text-[15px] text-[#2a2f35]">Use at least 8 characters.</p>
 
         {error && (
           <div
@@ -211,7 +211,7 @@ export default function ResetPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F4EFE6] flex items-center justify-center">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-[#00828A]" />
         </div>
       }

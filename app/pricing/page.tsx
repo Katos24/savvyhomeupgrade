@@ -149,19 +149,19 @@ function Cell({ on }: { on: boolean }) {
 
 export default function PricingPage() {
   return (
-    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-[#F4EFE6] text-[#1C1F23] antialiased`}>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-slate-50 text-[#1C1F23] antialiased`}>
       <Nav />
 
       {/* ── Header ── */}
       <section className="pt-28 sm:pt-36 pb-12 sm:pb-16 px-4 text-center">
         <Eyebrow>Pricing</Eyebrow>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl sm:text-7xl font-extrabold uppercase tracking-tight leading-[0.9]">
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]">
           One job pays for the whole year.
         </h1>
-        <p className="mt-4 text-base sm:text-lg text-[#3a3f45] max-w-xl mx-auto">
+        <p className="mt-4 text-base sm:text-lg text-[#2a2f35] max-w-xl mx-auto">
           Start free. Go Pro when you&rsquo;re ready to quote, collect deposits and get paid.
         </p>
-        <p className="mt-2 text-sm font-semibold text-[#3a3f45]">Cancel anytime · No setup fees · No contract</p>
+        <p className="mt-2 text-sm font-semibold text-[#2a2f35]">Cancel anytime · No setup fees · No contract</p>
       </section>
 
       {/* ── Plan cards ── */}
@@ -182,7 +182,7 @@ export default function PricingPage() {
                   aria-hidden
                 />
 
-                <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold uppercase">{plan}</h2>
+                <h2 className="font-[family-name:var(--font-display)] text-2xl font-extrabold">{plan}</h2>
                 <div className="mt-2 flex items-baseline gap-1">
                   <span className="font-[family-name:var(--font-display)] text-5xl font-extrabold tracking-tight">{info.price}</span>
                   <span className="text-sm text-slate-500">{info.period}</span>
@@ -192,11 +192,11 @@ export default function PricingPage() {
                     <Users className="h-4 w-4" /> Unlimited users included. No per-seat fees.
                   </p>
                 )}
-                <p className="mt-2 text-[15px] text-[#3a3f45]">{info.desc}</p>
+                <p className="mt-2 text-[15px] text-[#2a2f35]">{info.desc}</p>
 
                 <Link
                   href={info.href}
-                  className={`mt-6 block w-full rounded-md border py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-all ${
+                  className={`mt-6 block w-full rounded-md border py-3 text-center font-[family-name:var(--font-display)] text-base font-bold transition-all ${
                     info.highlight
                       ? 'bg-[#00828A] hover:bg-[#006e75] text-white border-[#00828A]'
                       : 'bg-white border-slate-300 hover:bg-slate-50'
@@ -215,7 +215,7 @@ export default function PricingPage() {
                                </ul>
 
                 {plan === 'Pro' && (
-                  <a href="#fees" className="mt-6 block border-t border-slate-200 pt-4 text-sm text-[#3a3f45] hover:text-[#1C1F23]">
+                  <a href="#fees" className="mt-6 block border-t border-slate-200 pt-4 text-sm text-[#2a2f35] hover:text-[#1C1F23]">
                     <span className="font-semibold text-[#1C1F23]">Card payment fees:</span> Stripe&rsquo;s 2.9% + 30¢
                     {platformFeeEnabled() ? ` + Lead2Project ${PLATFORM_FEE_LABEL}` : ''} per payment. Your customer pays the invoice
                     amount. <span className="underline underline-offset-2">See all fees</span>
@@ -231,7 +231,7 @@ export default function PricingPage() {
       <section className="pb-16 sm:pb-24 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-8 sm:mb-10">
-            <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold uppercase tracking-tight">Compare plans</h2>
+            <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold tracking-tight">Compare plans</h2>
             <p className="mt-2 text-sm text-slate-500">Pro includes everything on this list.</p>
           </div>
 
@@ -241,7 +241,7 @@ export default function PricingPage() {
               {PLANS.map((plan) => (
                 <div key={plan} className="px-1 sm:px-4 py-4 text-center">
                   <p
-                    className={`font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider ${
+                    className={`font-[family-name:var(--font-display)] text-sm font-bold ${
                       PLAN_INFO[plan].highlight ? 'text-[#5EC4C9]' : 'text-slate-300'
                     }`}
                   >
@@ -254,7 +254,7 @@ export default function PricingPage() {
 
             {FEATURE_TABLE.map((group) => (
               <div key={group.group}>
-                <div className="bg-[#F4EFE6] px-3 sm:px-5 py-2">
+                <div className="bg-slate-50 px-3 sm:px-5 py-2">
                   <p className="font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-[0.14em]">{group.group}</p>
                 </div>
                 {group.rows.map((row) => (
@@ -280,17 +280,17 @@ export default function PricingPage() {
       <section id="fees" className="pb-16 sm:pb-24 px-4 scroll-mt-24">
         <div className="max-w-3xl mx-auto">
           <div className="text-center mb-8">
-            <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold uppercase tracking-tight">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold tracking-tight">
               What getting paid costs
             </h2>
-            <p className="mt-2 text-[15px] text-[#3a3f45]">No surprises. Your customer always pays the invoice amount, nothing added.</p>
+            <p className="mt-2 text-[15px] text-[#2a2f35]">No surprises. Your customer always pays the invoice amount, nothing added.</p>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">
             <div className="flex items-start justify-between gap-4 px-5 py-4">
               <div>
                 <p className="font-semibold">Card payments</p>
-                <p className="text-sm text-[#3a3f45]">
+                <p className="text-sm text-[#2a2f35]">
                   {platformFeeEnabled()
                     ? 'Stripe’s processing fee plus a small Lead2Project fee, taken from each card payment.'
                     : 'Stripe’s processing fee, taken from each card payment.'}
@@ -309,14 +309,14 @@ export default function PricingPage() {
             <div className="flex items-start justify-between gap-4 px-5 py-4">
               <div>
                 <p className="font-semibold">Pay links (Venmo, Zelle, Cash App, PayPal)</p>
-                <p className="text-sm text-[#3a3f45]">No fee from Lead2Project. The app itself may charge its own fees.</p>
+                <p className="text-sm text-[#2a2f35]">No fee from Lead2Project. The app itself may charge its own fees.</p>
               </div>
               <p className="shrink-0 text-sm font-semibold">$0 from us</p>
             </div>
             <div className="flex items-start justify-between gap-4 px-5 py-4">
               <div>
                 <p className="font-semibold">Cash and check</p>
-                <p className="text-sm text-[#3a3f45]">Record it on the job. No fees.</p>
+                <p className="text-sm text-[#2a2f35]">Record it on the job. No fees.</p>
               </div>
               <p className="shrink-0 text-sm font-semibold">$0</p>
             </div>
@@ -328,7 +328,7 @@ export default function PricingPage() {
               const exFee = platformFeeCents(100000) / 100;
               const money = (n: number) => `$${n.toFixed(2).replace(/\.00$/, '')}`;
               return (
-                <p className="mt-4 text-center text-sm text-[#3a3f45]">
+                <p className="mt-4 text-center text-sm text-[#2a2f35]">
                   Example: on a $1,000 card payment, Stripe keeps $29.30, Lead2Project keeps {money(exFee)}, you get{' '}
                   {money(1000 - 29.3 - exFee)}. Our fee is never more than {money(PLATFORM_FEE_CAP_CENTS / 100)} per payment,
                   and it&rsquo;s refunded if you refund the payment.
@@ -341,20 +341,20 @@ export default function PricingPage() {
       {/* ── Final CTA ── */}
       <section className="pb-20 sm:pb-24 px-4">
         <div className="max-w-2xl mx-auto text-center rounded-lg bg-[#00828A] text-white shadow-lg p-8 sm:p-12">
-          <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold uppercase tracking-tight">Start free today.</h2>
+          <h2 className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl font-extrabold tracking-tight">Start free today.</h2>
           <p className="mt-3 text-base text-white/85">
             Get your booking link and job board for free. Go Pro when you&rsquo;re ready to quote and take payments.
           </p>
           <div className="mt-7 flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/signup"
-              className="px-8 py-3 rounded-md bg-white text-[#00828A] hover:bg-slate-50 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider shadow-sm transition-colors"
+              className="px-8 py-3 rounded-md bg-white text-[#00828A] hover:bg-slate-50 font-[family-name:var(--font-display)] text-base font-bold shadow-sm transition-colors"
             >
               Start free
             </Link>
             <Link
               href="/signup?plan=basic"
-              className="px-8 py-3 rounded-md border border-white/40 text-white hover:bg-white/10 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider transition-colors"
+              className="px-8 py-3 rounded-md border border-white/40 text-white hover:bg-white/10 font-[family-name:var(--font-display)] text-base font-bold transition-colors"
             >
               Try Pro free for 14 days
             </Link>

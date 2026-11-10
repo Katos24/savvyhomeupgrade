@@ -99,10 +99,10 @@ export default function DeletedLeadsClient({ company }: { company: Company }) {
         <div className="bg-white/10 backdrop-blur rounded-xl p-4 mb-8">
           <div className="flex items-center gap-4">
             <div>
-              <p className="text-xs text-white/70">Total Deleted</p>
+              <p className="text-xs text-white/85">Total Deleted</p>
               <p className="text-2xl font-bold text-white">{deletedLeads.length}</p>
             </div>
-            <div className="text-white/60 text-sm">
+            <div className="text-white/80 text-sm">
               Leads can be restored at any time
             </div>
           </div>

@@ -193,9 +193,9 @@ export default function PaymentRemindersWidget({
   const upcoming = visible.filter((r) => !r.is_overdue);
   const sorted = [...overdue, ...upcoming];
 
-  const cardBg = isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-[#e7e2d8]';
-  const textPrimary = isDark ? 'text-white' : 'text-[#1c1917]';
-  const textSecondary = isDark ? 'text-slate-400' : 'text-[#78716c]';
+  const cardBg = isDark ? 'bg-[#0f1420] border-white/10' : 'bg-white border-slate-200';
+  const textPrimary = isDark ? 'text-white' : 'text-slate-900';
+  const textSecondary = isDark ? 'text-slate-400' : 'text-slate-600';
   const divideBorder = isDark ? 'divide-white/10' : 'divide-[#e7e2d8]';
 
   return (

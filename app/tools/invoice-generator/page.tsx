@@ -29,7 +29,7 @@ export default function InvoiceGeneratorPage() {
   };
 
   return (
-    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-[#F4EFE6] text-[#1C1F23] antialiased print:bg-white`}>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-slate-50 text-[#1C1F23] antialiased print:bg-white`}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(appLd) }} />
       <div className="print:hidden">
         <Nav />

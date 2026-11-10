@@ -23,16 +23,16 @@ const EMBED_CODE = `<iframe src="${SITE}/YOUR-BOOKING-LINK?embed=1" data-l2p-for
 
 export default function EmbedDemoPage() {
   return (
-    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-[#F4EFE6] text-[#1C1F23] antialiased`}>
+    <div className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen bg-slate-50 text-[#1C1F23] antialiased`}>
       <Nav />
 
       {/* Header */}
       <section className="px-4 pt-28 sm:pt-36 pb-10 text-center">
         <Eyebrow>Lead capture</Eyebrow>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl sm:text-7xl font-extrabold uppercase tracking-tight leading-[0.9]">
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]">
           Your form, on your website
         </h1>
-        <p className="mt-4 mx-auto max-w-xl text-base sm:text-lg text-[#3a3f45]">
+        <p className="mt-4 mx-auto max-w-xl text-base sm:text-lg text-[#2a2f35]">
           Keep your own site. Paste two lines and your request form sits right on the page. Customers never leave, and
           every request lands on your board.
         </p>
@@ -81,11 +81,11 @@ export default function EmbedDemoPage() {
             />
           </div>
 
-          <footer className="bg-[#1f2a37] px-5 py-4 text-xs text-white/60 sm:px-8">
+          <footer className="bg-[#1f2a37] px-5 py-4 text-xs text-white/80 sm:px-8">
             © Ridge Line Roofing · Demo website for illustration
           </footer>
         </div>
-        <p className="mx-auto mt-3 max-w-4xl text-center text-xs text-[#5a6067]">
+        <p className="mx-auto mt-3 max-w-4xl text-center text-xs text-[#3f454c]">
           This is the real form in demo mode, so nothing you enter is saved or sent. Ridge Line Roofing is a made-up company.
                   </p>
       </section>
@@ -93,10 +93,10 @@ export default function EmbedDemoPage() {
       {/* How to add it */}
       <section className="px-4 pb-16">
         <div className="mx-auto max-w-3xl">
-          <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold uppercase tracking-tight">
+          <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold tracking-tight">
             Add it in two lines
           </h2>
-          <ol className="mt-5 space-y-3 text-base leading-relaxed text-[#3a3f45]">
+          <ol className="mt-5 space-y-3 text-base leading-relaxed text-[#2a2f35]">
             <li>
               <strong className="text-[#1C1F23]">1.</strong> Copy the code below and swap in your booking link (you&rsquo;ll
               find it in Settings → Booking form).
@@ -113,7 +113,7 @@ export default function EmbedDemoPage() {
           <pre className="mt-6 overflow-x-auto rounded-lg bg-[#1C1F23] p-4 text-xs leading-relaxed text-white/90 sm:text-sm">
             <code>{EMBED_CODE}</code>
           </pre>
-          <p className="mt-3 text-sm text-[#5a6067]">
+          <p className="mt-3 text-sm text-[#3f454c]">
             Don&rsquo;t want to touch your website? Just link a &ldquo;Request a quote&rdquo; button to your booking link
             instead. That works too.
           </p>
@@ -123,13 +123,13 @@ export default function EmbedDemoPage() {
       {/* CTA */}
       <section className="px-4 pb-20">
         <div className="mx-auto max-w-3xl flex flex-col items-center gap-4 rounded-lg bg-[#00828A] p-8 text-center text-white shadow-lg">
-          <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold uppercase tracking-tight leading-none">
+          <h2 className="font-[family-name:var(--font-display)] text-3xl sm:text-4xl font-extrabold tracking-tight leading-[1.1]">
             Get your form in minutes
           </h2>
           <p className="max-w-lg text-white/85">Free plan includes your booking link. Set it up, then put it on your site.</p>
           <Link
             href="/signup"
-            className="rounded-md bg-white px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-[#00828A] shadow-sm transition-colors hover:bg-slate-50"
+            className="rounded-md bg-white px-7 py-3 font-[family-name:var(--font-display)] text-base font-bold text-[#00828A] shadow-sm transition-colors hover:bg-slate-50"
           >
             Start free
           </Link>

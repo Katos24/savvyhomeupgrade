@@ -8,8 +8,8 @@ import { Eyebrow } from './marketingUI';
 import QuoteBuilderDemo from './QuoteBuilderDemo';
 
 // Home page: the step after lead capture. Shows the real quote builder demo.
-// The demo mounts just before it scrolls into view, so it starts playing when people can see it
-// and costs nothing on page load.
+// The demo mounts just before it scrolls into view (costs nothing on page load), then plays its steps
+// on its own once it's mostly on screen, and loops. People can click any step to watch it.
 
 const POINTS = [
   { icon: Layers, title: 'Saved price templates', desc: 'Your line items for each service, ready in one tap.' },
@@ -66,13 +66,13 @@ export default function QuoteSection() {
         </div>
 
         {/* Demo (left on desktop) */}
-        <div ref={ref} className="relative min-h-[520px] w-full lg:order-1">
+        <div ref={ref} className="relative min-h-[560px] w-full lg:order-1">
           <div aria-hidden className="pointer-events-none absolute inset-x-6 bottom-6 top-12 rounded-[2rem] bg-black/25 blur-3xl" />
           {inView && (
             // text-[#1C1F23]: the demo card leaves some text colors unset, so it must not inherit this section's white text.
             // The demo's own captions set white explicitly (dark prop), so they stay readable on teal.
             <div className="relative text-[#1C1F23]">
-              <QuoteBuilderDemo dark />
+              <QuoteBuilderDemo dark loop />
             </div>
           )}
         </div>

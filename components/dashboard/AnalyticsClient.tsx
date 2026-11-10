@@ -131,7 +131,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
               className={`px-3 sm:px-4 py-2 rounded-lg font-semibold transition text-sm ${
                 timeRange === range
                   ? 'bg-blue-600 text-white'
-                  : 'bg-white/10 text-white/70 hover:bg-white/20'
+                  : 'bg-white/10 text-white/85 hover:bg-white/20'
               }`}
             >
               {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
@@ -143,7 +143,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
         <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
           <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-white/70 text-xs sm:text-sm font-semibold">Total Projects</p>
+              <p className="text-white/85 text-xs sm:text-sm font-semibold">Total Projects</p>
               <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
             </div>
             <p className="text-3xl sm:text-4xl font-bold text-white">{data.totalProjects}</p>
@@ -151,7 +151,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
 
           <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-white/70 text-xs sm:text-sm font-semibold">Active Projects</p>
+              <p className="text-white/85 text-xs sm:text-sm font-semibold">Active Projects</p>
               <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-orange-400" />
             </div>
             <p className="text-3xl sm:text-4xl font-bold text-white">{data.activeProjects}</p>
@@ -159,7 +159,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
 
           <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-white/70 text-xs sm:text-sm font-semibold">Completed / Mo</p>
+              <p className="text-white/85 text-xs sm:text-sm font-semibold">Completed / Mo</p>
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
             </div>
             <p className="text-3xl sm:text-4xl font-bold text-white">{data.completedThisMonth}</p>
@@ -167,7 +167,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
 
           <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-white/70 text-xs sm:text-sm font-semibold">Team Members</p>
+              <p className="text-white/85 text-xs sm:text-sm font-semibold">Team Members</p>
               <Users className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />
             </div>
             <p className="text-3xl sm:text-4xl font-bold text-white">{data.teamPerformance.length}</p>
@@ -180,7 +180,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
             {data.totalQuoted != null && (
               <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-white/70 text-xs sm:text-sm font-semibold">Total Quoted</p>
+                  <p className="text-white/85 text-xs sm:text-sm font-semibold">Total Quoted</p>
                   <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400" />
                 </div>
                 <p className="text-3xl sm:text-4xl font-bold text-white">{fmt(data.totalQuoted)}</p>
@@ -189,7 +189,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
             {data.totalCollected != null && (
               <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-white/70 text-xs sm:text-sm font-semibold">Collected</p>
+                  <p className="text-white/85 text-xs sm:text-sm font-semibold">Collected</p>
                   <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
                 </div>
                 <p className="text-3xl sm:text-4xl font-bold text-white">{fmt(data.totalCollected)}</p>
@@ -198,7 +198,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
             {data.totalOutstanding != null && (
               <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-white/70 text-xs sm:text-sm font-semibold">Outstanding</p>
+                  <p className="text-white/85 text-xs sm:text-sm font-semibold">Outstanding</p>
                   <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />
                 </div>
                 <p className="text-3xl sm:text-4xl font-bold text-white">{fmt(data.totalOutstanding)}</p>
@@ -237,7 +237,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
               {data.statusBreakdown.map((s, i) => (
                 <div key={s.name} className="flex items-center gap-1.5 text-xs">
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: s.color || COLORS[i % COLORS.length] }} />
-                  <span className="text-white/60 capitalize truncate">{s.name}</span>
+                  <span className="text-white/80 capitalize truncate">{s.name}</span>
                   <span className="text-white font-semibold ml-auto">{s.value}</span>
                 </div>
               ))}
@@ -281,7 +281,7 @@ export default function AnalyticsClient({ company }: { company: Company }) {
           <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 sm:p-6 border border-white/20">
             <h3 className="text-base sm:text-lg font-bold text-white mb-4">Team Performance</h3>
             {data.teamPerformance.length === 0 ? (
-              <div className="flex items-center justify-center h-48 text-white/40 text-sm">No team data yet</div>
+              <div className="flex items-center justify-center h-48 text-white/60 text-sm">No team data yet</div>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={data.teamPerformance} layout="vertical" margin={{ left: 0, right: 8 }}>

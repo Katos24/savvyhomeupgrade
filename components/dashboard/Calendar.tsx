@@ -53,17 +53,17 @@ const ACCENT = '#1a6645';
 // like a different app. Light mode was a darker cream before.
 function theme(isDark: boolean) {
   return {
-    page: isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-[#faf9f5] text-[#1c1917]',
-    headerBar: isDark ? 'bg-[#0b0f17]/95 border-white/10' : 'bg-[#faf9f5]/95 border-[#e7e2d8]',
-    panel: isDark ? 'bg-slate-900/60 border-white/10' : 'bg-white border-[#e7e2d8]',
-    control: isDark ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-white border-[#e7e2d8] text-[#292524]',
-    subtle: isDark ? 'bg-white/[0.03]' : 'bg-[#faf9f5]',
-    divider: isDark ? 'border-white/10' : 'border-[#f0ece1]',
-    muted: isDark ? 'text-slate-500' : 'text-[#a8a29e]',
-    soft: isDark ? 'text-slate-400' : 'text-[#78716c]',
-    strong: isDark ? 'text-white' : 'text-[#1c1917]',
+    page: isDark ? 'bg-[#0b0f17] text-slate-100' : 'bg-slate-50 text-slate-900',
+    headerBar: isDark ? 'bg-[#0b0f17]/95 border-white/10' : 'bg-slate-50/95 border-slate-200',
+    panel: isDark ? 'bg-slate-900/60 border-white/10' : 'bg-white border-slate-200',
+    control: isDark ? 'bg-white/5 border-white/10 text-slate-200' : 'bg-white border-slate-200 text-slate-800',
+    subtle: isDark ? 'bg-white/[0.03]' : 'bg-slate-50',
+    divider: isDark ? 'border-white/10' : 'border-slate-100',
+    muted: isDark ? 'text-slate-500' : 'text-slate-500',
+    soft: isDark ? 'text-slate-400' : 'text-slate-600',
+    strong: isDark ? 'text-white' : 'text-slate-900',
     hover: isDark ? 'hover:bg-white/10' : 'hover:bg-[#f5f1e8]',
-    item: isDark ? 'bg-white/5 border-white/10 hover:bg-white/[0.08]' : 'bg-white border-[#e7e2d8] hover:bg-[#faf9f5]',
+    item: isDark ? 'bg-white/5 border-white/10 hover:bg-white/[0.08]' : 'bg-white border-slate-200 hover:bg-slate-50',
     option: isDark ? 'bg-[#0b0f17]' : '',
   };
 }
@@ -477,7 +477,7 @@ export default function Calendar({ companySlug, onSelectLead, statusOptions, onS
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 220 }}
               className={`relative w-full max-w-sm h-full shadow-2xl z-10 flex flex-col border-l ${
-                isDark ? 'bg-[#0b0f17] border-white/10' : 'bg-[#faf9f5] border-[#e7e2d8]'
+                isDark ? 'bg-[#0b0f17] border-white/10' : 'bg-slate-50 border-slate-200'
               }`}
             >
               <div className={`p-4 border-b flex items-center justify-between gap-2 ${t.divider}`}>
@@ -563,7 +563,7 @@ const AddJobButton = memo(function AddJobButton({ onClick, isDark, compact }: { 
       } ${
         isDark
           ? 'border-white/15 text-slate-400 hover:border-[#1a6645] hover:text-emerald-400 hover:bg-emerald-500/5'
-          : 'border-[#d6cfc2] text-[#78716c] hover:border-[#1a6645] hover:text-[#1a6645] hover:bg-emerald-50/60'
+          : 'border-[#d6cfc2] text-slate-600 hover:border-[#1a6645] hover:text-[#1a6645] hover:bg-emerald-50/60'
       }`}
     >
       <Plus size={13} strokeWidth={2.5} /> Add job
@@ -657,7 +657,7 @@ const MonthGrid = memo(function MonthGrid({ currentDate, eventsByDay, onSelect, 
           const isToday = todayStr === dStr;
 
           const cellBg = !day
-            ? isDark ? 'bg-white/[0.02]' : 'bg-[#faf9f5]/60'
+            ? isDark ? 'bg-white/[0.02]' : 'bg-slate-50/60'
             : isToday
             ? isDark ? 'bg-emerald-500/10 cursor-pointer' : 'bg-emerald-50/60 cursor-pointer'
             : `cursor-pointer ${t.hover}`;

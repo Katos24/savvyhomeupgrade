@@ -41,7 +41,7 @@ export default function FeatureFAQ({
       <div className="max-w-3xl mx-auto">
         <div className="text-center sm:text-left">
           <Eyebrow>{eyebrow}</Eyebrow>
-          <h2 className={`mt-3 ${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`}>{heading}</h2>
+          <h2 className={`mt-3 ${D} text-3xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]`}>{heading}</h2>
         </div>
 
         <div className="mt-8 divide-y divide-[#1C1F23]/10 border-y border-[#1C1F23]/10">
@@ -49,10 +49,10 @@ export default function FeatureFAQ({
             <details key={item.q} className="group py-1">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 text-left [&::-webkit-details-marker]:hidden">
                 <h3 className="text-base sm:text-lg font-bold text-[#1C1F23]">{item.q}</h3>
-                <ChevronDown className="h-5 w-5 shrink-0 text-[#5a6067] transition-transform duration-200 group-open:rotate-180" />
+                <ChevronDown className="h-5 w-5 shrink-0 text-[#3f454c] transition-transform duration-200 group-open:rotate-180" />
               </summary>
               <div className="pb-5 pr-8">
-                <p className="text-[15px] sm:text-base leading-relaxed text-[#3a3f45]">{item.a}</p>
+                <p className="text-[15px] sm:text-base leading-relaxed text-[#2a2f35]">{item.a}</p>
                 {item.link && (
                   <Link
                     href={item.link.href}

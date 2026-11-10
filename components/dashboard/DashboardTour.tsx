@@ -296,7 +296,7 @@ function TourTooltip({
         {!isFirst && (
           <button
             onClick={onPrev}
-            className="flex items-center gap-1.5 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 hover:text-white text-sm font-bold rounded-xl transition-all"
+            className="flex items-center gap-1.5 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white text-sm font-bold rounded-xl transition-all"
           >
             <ChevronLeft className="w-3.5 h-3.5" /> Back
           </button>

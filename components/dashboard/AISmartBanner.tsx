@@ -48,7 +48,7 @@ export default function AISmartBanner({ analysis, onViewLead, onClose }: AISmart
                 AI Insight
               </span>
               {analysis.urgency && (
-                <span className="text-[10px] font-medium text-white/50 uppercase tracking-tight">
+                <span className="text-[10px] font-medium text-white/70 uppercase tracking-tight">
                   • {analysis.urgency}
                 </span>
               )}
@@ -60,7 +60,7 @@ export default function AISmartBanner({ analysis, onViewLead, onClose }: AISmart
             </h4>
             
             {analysis.next_steps?.[0] && (
-              <p className="text-white/60 text-sm mt-0.5 flex items-center gap-1.5 truncate">
+              <p className="text-white/80 text-sm mt-0.5 flex items-center gap-1.5 truncate">
                 <Zap className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
                 Next: {analysis.next_steps[0]}
               </p>

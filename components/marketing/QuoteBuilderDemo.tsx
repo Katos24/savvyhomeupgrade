@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { motion, AnimatePresence, useInView, useReducedMotion } from 'framer-motion';
 import {
   Check,
   CheckCircle2,
@@ -16,7 +16,6 @@ import {
   ImageIcon,
   Lock,
   Download,
-  RotateCcw,
   Zap,
 } from 'lucide-react';
 
@@ -81,18 +80,42 @@ type Tab = 'Quote' | 'Invoice';
 // What the customer's phone is showing.
 type PhoneStage = 'quote' | 'accepted' | 'deposit' | 'paid';
 
+// The demo is split into steps. Each step starts from a fixed state and plays a short clip,
+// so people can jump to any step (chips, or scrolling on the home page) and always see it from the start.
+export const DEMO_STEPS = ['Pick a template', 'Adjust the job', 'Send it', 'Customer accepts', 'Deposit paid'] as const;
+export const DEMO_STEP_COUNT = DEMO_STEPS.length;
+// How long each step's clip runs (ms), including a short pause at the end so people can read it.
+const STEP_MS = [6200, 5000, 3600, 3400, 7000];
+
 type QuoteBuilderDemoProps = {
-  /** Restart on its own after a short pause instead of stopping on a Replay button. */
+  /** Auto mode only: start over after the last step. With false it stops on the last step (chips still let people rewatch). */
   loop?: boolean;
   /** 'left' (default) sits left-aligned on large screens, as on the quoting page. 'center' centers it. */
   align?: 'left' | 'center';
-  /** White caption for dark backgrounds. */
+  /** White caption and step chips for dark backgrounds. */
   dark?: boolean;
+  /**
+   * Scroll mode: the parent decides the step (e.g. from scroll position) and passes it here.
+   * Leave undefined for auto mode, where the demo moves through the steps on its own.
+   */
+  step?: number;
+  /** Scroll mode: how far through the current step the reader has scrolled (0 to 1), for the progress bars. */
+  stepProgress?: number;
+  /** Scroll mode: called when someone clicks a step chip. */
+  onSelectStep?: (step: number) => void;
 };
 
-// Defaults keep the original behavior (used on the quoting page): plays once, left-aligned, dark caption.
-export default function QuoteBuilderDemo({ loop = false, align = 'left', dark = false }: QuoteBuilderDemoProps = {}) {
+export default function QuoteBuilderDemo({
+  loop = true,
+  align = 'left',
+  dark = false,
+  step: controlledStep,
+  stepProgress,
+  onSelectStep,
+}: QuoteBuilderDemoProps = {}) {
   const reduceMotion = useReducedMotion();
+  const controlled = controlledStep !== undefined;
+
   const [phase, setPhase] = useState<Phase>(0);
   const [shown, setShown] = useState(0); // how many line items are visible
   const [cursor, setCursor] = useState({ x: 0, y: 0, show: false });
@@ -107,24 +130,58 @@ export default function QuoteBuilderDemo({ loop = false, align = 'left', dark = 
   const [editing, setEditing] = useState<number | null>(null); // which row's quantity is being changed
   const [adjusting, setAdjusting] = useState(false); // shows the "change quantities" caption
   const [tab, setTab] = useState<Tab>('Quote');
-  const [done, setDone] = useState(false); // played once; show Replay
-  const [runId, setRunId] = useState(0); // bump to replay
 
+  // Auto mode state
+  const [autoStep, setAutoStep] = useState(0);
+  const [runKey, setRunKey] = useState(0); // bump to replay the current step
+  const [finished, setFinished] = useState(false); // auto mode with loop=false, after the last step
+
+  const step = Math.min(Math.max(controlled ? controlledStep : autoStep, 0), DEMO_STEP_COUNT - 1);
+
+  const rootRef = useRef<HTMLDivElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const addBtnRef = useRef<HTMLSpanElement>(null);
   const templateRef = useRef<HTMLDivElement>(null);
   const sendBtnRef = useRef<HTMLSpanElement>(null);
   const qtyRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
+  // Plays on its own once most of the demo is on screen, so nobody scrolls in halfway through.
+  // (It only stops while the section is off screen, where nobody can see it.)
+  const inView = useInView(rootRef, { amount: 0.6 });
+  const paused = !inView || finished;
+
+  // Puts everything in the state a step starts from. Step 5 = the very end (deposit paid, Invoice tab).
+  const applyStart = (s: number) => {
+    setPickerOpen(false);
+    setPicked(false);
+    setPressing(false);
+    setPhonePressing(false);
+    setEditing(null);
+    setAdjusting(false);
+    setToast(false);
+    setTab('Quote');
+    setPhase(s === 0 ? 0 : s === 1 || s === 2 ? 1 : s === 3 ? 2 : s === 4 ? 3 : 5);
+    setShown(s === 0 ? 0 : ITEMS.length);
+    setQty(s <= 1 ? START_QTY : FINAL_QTY);
+    setPhoneVisible(s === 3 || s === 4);
+    setPhoneStage(s === 4 ? 'accepted' : s >= 5 ? 'paid' : 'quote');
+    if (s === 4) setToast(true);
+    if (s >= 5) setTab('Invoice');
+    // Cursor: at rest for the contractor steps, hidden while the customer's phone is on screen
+    const card = cardRef.current;
+    if (card) {
+      const c = card.getBoundingClientRect();
+      setCursor({ x: c.width * 0.6, y: c.height * 0.9, show: s === 1 || s === 2 });
+    }
+  };
+
   useEffect(() => {
+    // Reduced motion: no clips. Each step shows where it ends up.
     if (reduceMotion) {
-      setPhase(5);
-      setShown(ITEMS.length);
-      setQty(FINAL_QTY);
-      setPhoneStage('paid');
-      setTab('Invoice');
+      applyStart(step + 1);
       return;
     }
+    if (paused) return;
 
     let active = true;
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -145,113 +202,132 @@ export default function QuoteBuilderDemo({ loop = false, align = 'left', dark = 
       setCursor((p) => ({ x: c.width * 0.6, y: c.height * 0.9, show: p.show }));
     };
 
-    const run = () => {
-      setPhase(0);
-      setShown(0);
-      setPickerOpen(false);
-      setPicked(false);
-      setPhoneVisible(false);
-      setPhoneStage('quote');
-      setToast(false);
-      setQty(START_QTY);
-      setEditing(null);
-      setAdjusting(false);
-      setTab('Quote');
-      setDone(false);
-      rest();
+    applyStart(step);
 
-      at(500, () => setCursor((p) => ({ ...p, show: true })));
-      // Open "Add from Saved"
-      at(1000, () => pointAt(addBtnRef.current));
-      at(2000, () => setPressing(true));
-      at(2200, () => {
+    if (step === 0) {
+      // Open "Add from Saved" and pick the Roof Repair template
+      at(400, () => setCursor((p) => ({ ...p, show: true })));
+      at(700, () => pointAt(addBtnRef.current));
+      at(1700, () => setPressing(true));
+      at(1900, () => {
         setPressing(false);
         setPickerOpen(true);
       });
-      // Pick the Roof Repair template
-      at(2900, () => pointAt(templateRef.current));
-      at(4000, () => setPressing(true));
-      at(4200, () => {
+      at(2500, () => pointAt(templateRef.current));
+      at(3500, () => setPressing(true));
+      at(3700, () => {
         setPressing(false);
         setPicked(true);
       });
-      at(4700, () => {
+      at(4200, () => {
         setPickerOpen(false);
         setPicked(false);
         setPhase(1);
       });
-      at(4900, () => setShown(1));
-      at(5200, () => setShown(2));
-      at(5500, () => setShown(3));
+      at(4400, () => setShown(1));
+      at(4700, () => setShown(2));
+      at(5000, () => {
+        setShown(3);
+        rest();
+      });
+    } else if (step === 1) {
       // Change the quantities for this roof: 22 -> 25 squares on the first two lines
-      at(5900, () => {
+      at(300, () => {
         setAdjusting(true);
         pointAt(qtyRefs.current[0]);
       });
-      at(6800, () => setPressing(true));
-      at(7000, () => {
+      at(1200, () => setPressing(true));
+      at(1400, () => {
         setPressing(false);
         setEditing(0);
       });
-      at(7400, () => setQty((q) => [25, q[1], q[2]]));
-      at(7900, () => pointAt(qtyRefs.current[1]));
-      at(8600, () => setPressing(true));
-      at(8800, () => {
+      at(1800, () => setQty((q) => [25, q[1], q[2]]));
+      at(2300, () => pointAt(qtyRefs.current[1]));
+      at(3000, () => setPressing(true));
+      at(3200, () => {
         setPressing(false);
         setEditing(1);
       });
-      at(9200, () => setQty((q) => [q[0], 25, q[2]]));
-      at(9700, () => {
+      at(3600, () => setQty((q) => [q[0], 25, q[2]]));
+      at(4100, () => {
         setEditing(null);
         setAdjusting(false);
         rest();
       });
-      // Send Estimate
-      at(10300, () => pointAt(sendBtnRef.current));
-      at(11300, () => setPressing(true));
-      at(11500, () => {
+    } else if (step === 2) {
+      // Send the estimate; it lands on the customer's phone
+      at(300, () => pointAt(sendBtnRef.current));
+      at(1300, () => setPressing(true));
+      at(1500, () => {
         setPressing(false);
         setPhase(2);
         setCursor((p) => ({ ...p, show: false }));
       });
+      at(1900, () => setPhoneVisible(true));
+    } else if (step === 3) {
       // Customer accepts on their phone
-      at(11900, () => setPhoneVisible(true));
-      at(13700, () => setPhonePressing(true));
-      at(13900, () => {
+      at(1200, () => setPhonePressing(true));
+      at(1400, () => {
         setPhonePressing(false);
         setPhoneStage('accepted');
         setPhase(3);
         setToast(true);
       });
-      // The deposit request arrives on its own: no click from the contractor
-      at(15400, () => {
+    } else {
+      // The deposit request goes out on its own, the customer pays, and the job card shows it
+      at(1000, () => {
         setToast(false);
         setPhoneStage('deposit');
         setPhase(4);
       });
-      // Customer pays the deposit
-      at(17400, () => setPhonePressing(true));
-      at(17600, () => {
+      at(2800, () => setPhonePressing(true));
+      at(3000, () => {
         setPhonePressing(false);
         setPhoneStage('paid');
       });
-      // Phone slides away; the job card shows the deposit paid
-      at(18900, () => setPhoneVisible(false));
-      at(19200, () => {
+      at(4200, () => setPhoneVisible(false));
+      at(4500, () => {
         setTab('Invoice');
         setPhase(5);
       });
-      // Play once, then stop on this frame with a Replay button (or start over on its own when looping)
-      if (loop) at(23500, () => setRunId((n) => n + 1));
-      else at(20700, () => setDone(true));
-    };
+    }
 
-    run();
+    // Auto mode: move on to the next step when this one is done
+    if (!controlled) {
+      at(STEP_MS[step], () => {
+        if (step < DEMO_STEP_COUNT - 1) setAutoStep(step + 1);
+        else if (loop) {
+          setAutoStep(0);
+          setRunKey((n) => n + 1);
+        } else setFinished(true);
+      });
+    }
+
     return () => {
       active = false;
       timers.forEach(clearTimeout);
     };
-  }, [reduceMotion, runId, loop]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, runKey, paused, reduceMotion, controlled, loop]);
+
+  const selectStep = (i: number) => {
+    if (controlled) {
+      onSelectStep?.(i);
+      return;
+    }
+    setFinished(false);
+    setAutoStep(i);
+    setRunKey((n) => n + 1);
+  };
+
+  // How full each step's bar is. Scroll mode follows the scroll; auto mode fills over the clip's length.
+  const barFill = (i: number) => {
+    if (i < step) return 1;
+    if (i > step) return 0;
+    if (reduceMotion || finished) return 1;
+    if (controlled) return stepProgress ?? 0;
+    return null; // auto: animated
+  };
 
   const loaded = shown > 0;
   const subtotal = ITEMS.slice(0, shown).reduce((s, i, idx) => s + qty[idx] * i.p, 0);
@@ -260,7 +336,71 @@ export default function QuoteBuilderDemo({ loop = false, align = 'left', dark = 
   const depositDue = Math.round(total * 40) / 100;
 
   return (
-    <div className={`w-full max-w-2xl mx-auto ${align === 'left' ? 'lg:ml-0' : ''}`}>
+    <div
+      ref={rootRef}
+      className={`w-full max-w-2xl mx-auto ${align === 'left' ? 'lg:ml-0' : ''}`}
+    >
+      {/* Steps: click any step to watch it from the start. The bars show progress. */}
+      <div className="mb-3">
+        <div className="grid grid-cols-5 gap-1.5" role="tablist" aria-label="Demo steps">
+          {DEMO_STEPS.map((label, i) => {
+            const fill = barFill(i);
+            const current = i === step;
+            const barColor = dark ? 'bg-white' : 'bg-[#00828A]';
+            return (
+              <button
+                key={label}
+                type="button"
+                role="tab"
+                aria-selected={current}
+                aria-label={`Step ${i + 1}: ${label}`}
+                onClick={() => selectStep(i)}
+                className="group flex min-h-[36px] flex-col justify-start gap-1.5 rounded-md pt-1 text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#5EC4C9]"
+              >
+                <span className={`block h-1.5 w-full overflow-hidden rounded-full ${dark ? 'bg-white/25' : 'bg-slate-200'}`}>
+                  {fill === null ? (
+                    <motion.span
+                      key={`${step}-${runKey}-${paused}`}
+                      className={`block h-full rounded-full ${barColor}`}
+                      initial={{ width: '0%' }}
+                      animate={{ width: paused ? '0%' : '100%' }}
+                      transition={{ duration: paused ? 0 : STEP_MS[step] / 1000, ease: 'linear' }}
+                    />
+                  ) : (
+                    <span
+                      className={`block h-full rounded-full transition-[width] duration-150 ${barColor}`}
+                      style={{ width: `${fill * 100}%` }}
+                    />
+                  )}
+                </span>
+                <span
+                  className={`hidden truncate text-[11px] font-semibold sm:block ${
+                    current
+                      ? dark
+                        ? 'text-white'
+                        : 'text-[#1C1F23]'
+                      : dark
+                      ? 'text-white/60 group-hover:text-white/90'
+                      : 'text-slate-400 group-hover:text-slate-600'
+                  }`}
+                >
+                  {i + 1}. {label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        {/* Phones: the current step's name under the bars */}
+        <p className={`mt-1.5 text-center text-[12px] font-semibold sm:hidden ${dark ? 'text-white/80' : 'text-slate-500'}`}>
+          Step {step + 1} of {DEMO_STEP_COUNT}: {DEMO_STEPS[step]}
+        </p>
+        {controlled && (
+          <p className={`mt-1 hidden text-center text-[11px] sm:block ${dark ? 'text-white/60' : 'text-slate-400'}`}>
+            Scroll to step through, or click a step
+          </p>
+        )}
+      </div>
+
       {/* Caption */}
       <div className="mb-3 min-h-6 text-center">
         <AnimatePresence mode="wait">
@@ -695,23 +835,6 @@ export default function QuoteBuilderDemo({ loop = false, align = 'left', dark = 
         </div>
       </div>
 
-      {/* Replay */}
-      <div className={`mt-3 justify-center ${loop ? 'hidden' : 'flex h-9'}`}>
-        <AnimatePresence>
-          {done && (
-            <motion.button
-              type="button"
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setRunId((n) => n + 1)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
-            >
-              <RotateCcw className="h-3.5 w-3.5" /> Replay
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
     </div>
   );
 }

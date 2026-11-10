@@ -23,7 +23,7 @@ export const metadata = {
 
 const D = 'font-[family-name:var(--font-display)]';
 const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
-const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BODY = 'text-base sm:text-lg text-[#2a2f35] leading-relaxed';
 const BTN =
   'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
   D +
@@ -31,7 +31,7 @@ const BTN =
 
 function ProTag() {
   return (
-    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]`}>
+    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold text-[#5EC4C9]`}>
       Pro
     </span>
   );
@@ -144,7 +144,7 @@ export default function PaymentsPage() {
 
       {/* ── Hero ── */}
       <section
-        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        className="bg-slate-50 pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
         style={{
           backgroundImage:
             'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
@@ -154,7 +154,7 @@ export default function PaymentsPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="text-center sm:text-left">
             <Eyebrow>Payments &amp; invoicing</Eyebrow>
-            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold leading-[1.1] tracking-tight`}>
               Get the deposit before you buy materials.
             </h1>
             <p className={`mt-5 ${BODY}`}>
@@ -167,12 +167,12 @@ export default function PaymentsPage() {
               </Link>
               <Link
                 href="/pricing"
-                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold`}
               >
                 See pricing <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <p className="mt-4 text-sm font-semibold text-[#3a3f45]">
+            <p className="mt-4 text-sm font-semibold text-[#2a2f35]">
               Card payments through Stripe · Venmo, Zelle, Cash App and PayPal links · Included on Pro
             </p>
           </div>
@@ -216,7 +216,7 @@ export default function PaymentsPage() {
       <TapeDivider />
 
       {/* ── Invoice email ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="order-2 lg:order-1 w-full max-w-md mx-auto">
             <InvoiceEmailMock />
@@ -267,23 +267,23 @@ export default function PaymentsPage() {
                 d: 'Mark it paid with the amount, method and date. The balance and progress update right away.',
               },
             ].map(({ icon: Icon, t, d }) => (
-              <div key={t} className="rounded-lg border border-slate-200 bg-[#FBF8F2] p-6">
+              <div key={t} className="rounded-lg border border-slate-200 bg-slate-50 p-6">
                 <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
                   <Icon className="h-5 w-5" />
                 </span>
-                <p className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{t}</p>
-                <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{d}</p>
+                <p className={`mt-4 ${D} text-2xl font-bold leading-tight`}>{t}</p>
+                <p className="mt-2 text-[15px] text-[#2a2f35] leading-relaxed">{d}</p>
               </div>
             ))}
           </div>
-          <p className="mt-6 text-sm text-[#3a3f45]">
+          <p className="mt-6 text-sm text-[#2a2f35]">
             Stripe charges its standard processing fee on card payments. Lead2Project doesn&rsquo;t take a cut.
           </p>
         </div>
       </section>
 
       {/* ── Receipts & reminders ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div>
             <Eyebrow>Receipts &amp; reminders</Eyebrow>
@@ -341,25 +341,25 @@ export default function PaymentsPage() {
       </section>
 
       {/* ── FAQ ── */}
-      <FeatureFAQ heading="Deposits & getting paid: questions" items={PAYMENTS_FAQ} className="bg-[#F4EFE6]" />
+      <FeatureFAQ heading="Deposits & getting paid: questions" items={PAYMENTS_FAQ} className="bg-slate-50" />
 
       {/* ── Final CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]`}>
             Know exactly who owes you money.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/85">Set up your services and send your first invoice today.</p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold text-center`}
             >
               Start free
             </Link>
             <Link
               href="/pricing"
-              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold text-center`}
             >
               See pricing
             </Link>

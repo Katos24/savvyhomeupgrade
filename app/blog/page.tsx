@@ -27,7 +27,7 @@ const categoryLabel = (cat: string) => (BLOG_CATEGORIES.find((c) => c.value === 
 function Meta({ category, readTime }: { category: string; readTime: number }) {
   return (
     <div className="flex items-center gap-3">
-      <span className={`rounded bg-[#00828A]/10 px-2 py-0.5 ${D} text-[11px] font-bold uppercase tracking-wider text-[#00828A]`}>
+      <span className={`rounded bg-[#00828A]/10 px-2 py-0.5 ${D} text-[11px] font-bold text-[#00828A]`}>
         {categoryLabel(category)}
       </span>
       <span className="flex items-center gap-1 text-xs font-semibold text-slate-500">
@@ -48,7 +48,7 @@ export default function BlogPage() {
 
       {/* ── Hero ── */}
       <section
-        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8"
+        className="bg-slate-50 pt-28 sm:pt-36 pb-14 sm:pb-20 px-4 sm:px-6 lg:px-8"
         style={{
           backgroundImage:
             'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
@@ -57,10 +57,10 @@ export default function BlogPage() {
       >
         <div className="max-w-3xl mx-auto text-center">
           <Eyebrow>The Lead2Project blog</Eyebrow>
-          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl font-extrabold uppercase leading-[0.9] tracking-tight`}>
+          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight`}>
             Run a tighter business.
           </h1>
-          <p className="mt-5 text-base sm:text-lg text-[#3a3f45] leading-relaxed">
+          <p className="mt-5 text-base sm:text-lg text-[#2a2f35] leading-relaxed">
             Practical advice for contractors who want more jobs, faster payments and less chaos.
           </p>
         </div>
@@ -74,11 +74,11 @@ export default function BlogPage() {
               <div className="h-1.5 bg-[#00828A]" />
               <div className="p-6 sm:p-10">
                 <Meta category={featured.category} readTime={featured.readTime} />
-                <h2 className={`mt-4 ${D} text-3xl sm:text-4xl font-extrabold uppercase leading-[0.95] tracking-tight group-hover:text-[#00828A] transition-colors`}>
+                <h2 className={`mt-4 ${D} text-3xl sm:text-4xl font-extrabold leading-[1.1] tracking-tight group-hover:text-[#00828A] transition-colors`}>
                   {featured.title}
                 </h2>
-                <p className="mt-3 max-w-2xl text-base sm:text-lg text-[#3a3f45] leading-relaxed">{featured.excerpt}</p>
-                <span className={`mt-5 inline-flex items-center gap-2 ${D} text-sm font-bold uppercase tracking-wider text-[#00828A]`}>
+                <p className="mt-3 max-w-2xl text-base sm:text-lg text-[#2a2f35] leading-relaxed">{featured.excerpt}</p>
+                <span className={`mt-5 inline-flex items-center gap-2 ${D} text-sm font-bold text-[#00828A]`}>
                   Read the article <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </span>
               </div>
@@ -92,11 +92,11 @@ export default function BlogPage() {
             <Link key={post.slug} href={`/blog/${post.slug}`} className="group">
               <article className="flex h-full flex-col rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow group-hover:shadow-md">
                 <Meta category={post.category} readTime={post.readTime} />
-                <h3 className={`mt-3 ${D} text-2xl font-bold uppercase leading-tight group-hover:text-[#00828A] transition-colors`}>
+                <h3 className={`mt-3 ${D} text-2xl font-bold leading-tight group-hover:text-[#00828A] transition-colors`}>
                   {post.title}
                 </h3>
-                <p className="mt-2 flex-1 text-[15px] text-[#3a3f45] leading-relaxed">{post.excerpt}</p>
-                <span className={`mt-4 inline-flex items-center gap-1.5 ${D} text-sm font-bold uppercase tracking-wider text-[#00828A]`}>
+                <p className="mt-2 flex-1 text-[15px] text-[#2a2f35] leading-relaxed">{post.excerpt}</p>
+                <span className={`mt-4 inline-flex items-center gap-1.5 ${D} text-sm font-bold text-[#00828A]`}>
                   Read <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </span>
               </article>
@@ -108,7 +108,7 @@ export default function BlogPage() {
       {/* ── CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className={`${D} text-4xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+          <h2 className={`${D} text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.1]`}>
             Ready to stop losing jobs?
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/85">
@@ -117,13 +117,13 @@ export default function BlogPage() {
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold text-center`}
             >
               Start free
             </Link>
             <Link
               href="/book-demo"
-              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold text-center`}
             >
               Book a demo
             </Link>

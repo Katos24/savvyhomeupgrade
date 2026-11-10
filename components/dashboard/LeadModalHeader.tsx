@@ -207,11 +207,11 @@ export default function LeadModalHeader({
           <div className="flex items-center gap-1 flex-shrink-0">
             {onMoreMenu && (
               <button onClick={onMoreMenu} className={iconBtn} aria-label="More actions">
-                <MoreVertical className="w-3.5 h-3.5 text-white/50" />
+                <MoreVertical className="w-3.5 h-3.5 text-white/70" />
               </button>
             )}
             <button onClick={onClose} className={iconBtn} aria-label="Close">
-              <X className="w-3.5 h-3.5 text-white/50" />
+              <X className="w-3.5 h-3.5 text-white/70" />
             </button>
           </div>
         </div>

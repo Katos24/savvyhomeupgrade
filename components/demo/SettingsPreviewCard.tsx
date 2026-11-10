@@ -56,9 +56,9 @@ export default function SettingsPreviewCard({ onClose }: { onClose: () => void }
             <span className="text-xs font-black text-blue-400 uppercase tracking-widest">LEAD2PROJECT</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-white/40">← Dashboard</span>
+            <span className="text-xs text-white/60">← Dashboard</span>
             <button onClick={onClose} className="p-1.5 bg-white/5 hover:bg-white/10 rounded-lg transition">
-              <X className="w-4 h-4 text-white/50" />
+              <X className="w-4 h-4 text-white/70" />
             </button>
           </div>
         </div>

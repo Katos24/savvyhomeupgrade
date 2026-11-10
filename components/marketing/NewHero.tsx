@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode, RefObject } from 'react';
 import { motion, AnimatePresence, useInView, useReducedMotion } from 'framer-motion';
 import {
   CheckCircle2,
@@ -23,6 +24,7 @@ import {
   Download,
   Wrench,
   ArrowRight,
+  ArrowLeft,
   PlayCircle,
   Star,
   Camera,
@@ -302,14 +304,97 @@ function BoardCardTile({ c, active, onOpen }: { c: HeroCard; active: boolean; on
   );
 }
 
+type Pane = 'board' | 'card';
+type PaneAnim = { x: number; y: number; scale: number; rotateY: number };
+
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+// Watches the width of the stage so the wheel can place the back item where it stays visible.
+// Measures before the first paint, so phones never flash the desktop layout.
+function useStageWidth(ref: RefObject<HTMLDivElement | null>) {
+  const [width, setWidth] = useState(0);
+  const [ready, setReady] = useState(false);
+  useIsoLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setWidth(el.getBoundingClientRect().width);
+    update();
+    const raf = requestAnimationFrame(() => setReady(true));
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro.disconnect();
+    };
+  }, [ref]);
+  return { width, ready };
+}
+
+// One item on the wheel. In front it works normally. Behind, it stays fully visible
+// where it sticks out, and clicking it brings it to the front.
+function WheelPane({
+  width,
+  anim,
+  isFront,
+  peek,
+  label,
+  onBring,
+  instant,
+  children,
+}: {
+  width: number;
+  anim: PaneAnim;
+  isFront: boolean;
+  peek: 'left' | 'right' | 'top';
+  label: string;
+  onBring: () => void;
+  instant: boolean;
+  children: ReactNode;
+}) {
+  const pillPos =
+    peek === 'left' ? 'left-3 top-5' : peek === 'right' ? 'right-3 top-5' : 'left-1/2 top-2 -translate-x-1/2 text-[13px]';
+  return (
+    <motion.div
+      className="relative self-start justify-self-center [grid-area:1/1]"
+      style={{ width: width || '100%', zIndex: isFront ? 20 : 10, transformOrigin: 'center top' }}
+      initial={false}
+      animate={anim}
+      transition={instant ? { duration: 0 } : { duration: 0.6, ease: EASE }}
+    >
+      <div className={isFront ? '' : 'pointer-events-none select-none'} aria-hidden={!isFront}>
+        {children}
+      </div>
+
+      {!isFront && (
+        <button
+          type="button"
+          onClick={onBring}
+          aria-label={`Show the ${label.toLowerCase()}`}
+          className="group absolute inset-0 z-10 cursor-pointer rounded-2xl ring-2 ring-white/20 transition hover:ring-[#5EC4C9]"
+        >
+          <span
+            className={`absolute inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-slate-900/90 px-3 py-1.5 text-xs font-bold text-white shadow-lg ring-1 ring-white/15 transition-colors group-hover:bg-[#00828A] ${pillPos}`}
+          >
+            {peek === 'left' && <ArrowLeft className="h-3.5 w-3.5" />}
+            View {label}
+            {peek === 'right' && <ArrowRight className="h-3.5 w-3.5" />}
+          </span>
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
 function HeroBoard() {
   const reduceMotion = useReducedMotion();
-  // Board first. On desktop, M. Johnson's card opens once when the board is well into view.
-  // On phones it stays on the list until they tap. After any click, it's fully manual.
-  const [view, setView] = useState<'card' | 'board'>('board');
+  // Board first. On desktop, the job card rotates to the front once the board is well into view.
+  // On phones it stays on the board until they tap. After any click, it's fully manual.
+  const [view, setView] = useState<Pane>('board');
   const touched = useRef(false);
   const boardRef = useRef<HTMLDivElement>(null);
   const inView = useInView(boardRef, { once: true, amount: 0.5 });
+  const { width: W, ready } = useStageWidth(boardRef);
+  const instant = !!reduceMotion || !ready; // no animation until the layout is measured
 
   useEffect(() => {
     if (touched.current) return;
@@ -326,21 +411,45 @@ function HeroBoard() {
     return () => clearTimeout(t);
   }, [inView, reduceMotion]);
 
-  const choose = (v: 'card' | 'board') => {
+  const choose = (v: Pane) => {
     touched.current = true;
     setView(v);
-    // On phones the card opens at the top of the board, which may be above where they tapped
+    // On phones, keep the top of the stage (and the switch) in view after switching
     const phone = typeof window !== 'undefined' && !window.matchMedia('(min-width: 640px)').matches;
     if (phone && boardRef.current) {
-      const top = boardRef.current.getBoundingClientRect().top + window.scrollY - 130; // keep the nav and the switch in view
+      const top = boardRef.current.getBoundingClientRect().top + window.scrollY - 130;
       if (Math.abs(window.scrollY - top) > 40) window.scrollTo({ top, behavior: reduceMotion ? 'auto' : 'smooth' });
     }
   };
-  const open = view === 'card';
   const highlight = true; // M. Johnson stays highlighted so it's clear which job the card belongs to
   const openCard = () => choose('card');
   const activeJobs = HERO_BOARD.filter((c) => c.label !== 'Paid').reduce((n, c) => n + c.cards.length, 0);
   const rows = HERO_BOARD.flatMap((col) => col.cards.filter((c) => !c.desktopOnly).map((c) => ({ c, status: col.label, dot: col.dot })));
+
+  /* ── Wheel layout ──
+     Wide screens: the front item sits to one side and the back item sticks out on the other side
+     (board behind on the left, job card behind on the right), so you can read what's behind.
+     Phones: a stacked deck, with the back item peeking out above the front one. */
+  const side = W >= 760;
+  const peekPx = side ? Math.round(Math.min(260, Math.max(170, W * 0.22))) : 0;
+  const boardW = side ? W - peekPx : W;
+  const cardW = side ? Math.min(672, W - peekPx) : W;
+  const BACK = side ? 0.86 : 0.93;
+  const TOP_PEEK = 44; // how far the back item peeks out on phones (44px = comfortable tap target)
+
+  const boardAnim: PaneAnim =
+    view === 'board'
+      ? { x: side ? -peekPx / 2 : 0, y: 0, scale: 1, rotateY: 0 }
+      : side
+      ? { x: -W / 2 + (BACK * boardW) / 2, y: 16, scale: BACK, rotateY: 10 }
+      : { x: 0, y: -TOP_PEEK, scale: BACK, rotateY: 0 };
+
+  const cardAnim: PaneAnim =
+    view === 'card'
+      ? { x: side ? peekPx / 2 : 0, y: 0, scale: 1, rotateY: 0 }
+      : side
+      ? { x: W / 2 - (BACK * cardW) / 2, y: 16, scale: BACK, rotateY: -10 }
+      : { x: 0, y: -TOP_PEEK, scale: BACK, rotateY: 0 };
 
   return (
     <div className="relative">
@@ -369,116 +478,112 @@ function HeroBoard() {
         </div>
       </div>
 
-      {/* Board and card share one grid cell, so the space is reserved and nothing jumps when the card opens */}
-      <div ref={boardRef} className="grid">
+      {/* The wheel: both items share one grid cell. The one in front is fully usable;
+          the one behind sticks out to the side (or top on phones) and is clickable. */}
+      <div ref={boardRef} className={`relative grid transition-opacity duration-300 ${side ? '' : 'pt-14'}`}
+        style={{ perspective: 1800, opacity: ready ? 1 : 0 }}>
         {/* ── The board ── */}
-        <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] ring-1 ring-black/5 [grid-area:1/1] sm:min-h-[680px]">
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="hidden items-center gap-1.5 sm:flex">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
-                <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-              </div>
-              <p className="truncate text-sm font-bold">Jobs</p>
-              <span className="rounded-full bg-[#00828A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#00727A]">{activeJobs} active</span>
-            </div>
-            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Example data</span>
-          </div>
-
-          {/* Phones: a simple list, like the app on a phone */}
-          <ul className="flex-1 space-y-1.5 bg-[#F4F7F6] p-3 sm:hidden">
-            {rows.map(({ c, status, dot }) => {
-              const active = !!c.opens && highlight;
-              const inner = (
-                <>
-                  <div className="min-w-0">
-                    <p className="truncate text-[13px] font-bold text-slate-900">
-                      {c.name} {c.amount && <span className="font-semibold text-slate-500">· {c.amount}</span>}
-                    </p>
-                    <div className="mt-1 flex flex-wrap gap-1">
-                      <TagPill tag={c.tags[0]} />
-                    </div>
-                  </div>
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
-                    <span className={`h-1.5 w-1.5 rounded-full ${dot}`} /> {status}
-                  </span>
-                </>
-              );
-              const cls = `flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left ${
-                active ? 'border-[#00828A] ring-2 ring-[#00828A]/30' : 'border-slate-200'
-              }`;
-              return (
-                <li key={c.name}>
-                  {c.opens ? (
-                    <button type="button" onClick={openCard} className={cls} aria-label={`Open ${c.name}'s job card`}>
-                      {inner}
-                    </button>
-                  ) : (
-                    <div className={cls}>{inner}</div>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-
-          {/* Tablet and up: board columns */}
-          <div className="hidden flex-1 grid-cols-4 gap-3 bg-[#F4F7F6] p-4 sm:grid">
-            {HERO_BOARD.map((col) => (
-              <div key={col.label} className="min-w-0 space-y-2">
-                <div className="flex items-center gap-1.5 px-1">
-                  <span className={`h-2 w-2 rounded-full ${col.dot}`} />
-                  <span className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-600">{col.label}</span>
-                  <span className="text-[11px] text-slate-400">{col.cards.length}</span>
+        <WheelPane
+          width={boardW}
+          anim={boardAnim}
+          isFront={view === 'board'}
+          peek={side ? 'left' : 'top'}
+          label="Board"
+          onBring={() => choose('board')}
+          instant={instant}
+        >
+          <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)] ring-1 ring-black/5 sm:min-h-[680px]">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="hidden items-center gap-1.5 sm:flex">
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
                 </div>
-                {col.cards.map((c) => (
-                  <BoardCardTile key={c.name} c={c} active={!!c.opens && highlight} onOpen={openCard} />
-                ))}
+                <p className="truncate text-sm font-bold">Jobs</p>
+                <span className="rounded-full bg-[#00828A]/10 px-2 py-0.5 text-[11px] font-semibold text-[#00727A]">{activeJobs} active</span>
               </div>
-            ))}
-          </div>
-        </div>
+              <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">Example data</span>
+            </div>
 
-        {/* ── M. Johnson's job card, opened over the board ── */}
-        <AnimatePresence initial={false}>
-          {open && (
-            <motion.div
-              key="card"
-              className="relative z-10 flex items-start justify-center rounded-2xl px-2 pb-4 pt-16 [grid-area:1/1] sm:px-6 sm:pt-16"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-            >
-              <button
-                type="button"
-                aria-label="Show the board"
-                onClick={() => choose('board')}
-                className="absolute inset-0 cursor-default rounded-2xl bg-slate-900/45 backdrop-blur-[2px]"
-              />
-              <motion.div
-                className="relative w-full max-w-2xl"
-                initial={{ y: 24, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 16, opacity: 0 }}
-                transition={{ duration: 0.25, ease: EASE }}
-              >
-                <button
-                  type="button"
-                  onClick={() => choose('board')}
-                  className="absolute -top-11 right-0 inline-flex min-h-[36px] items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-2 text-sm font-bold text-slate-900 shadow-md hover:bg-white sm:-top-10 sm:min-h-0 sm:py-1.5 sm:text-xs"
-                >
-                  <X className="h-3.5 w-3.5" /> See the board
-                </button>
-                <JobCardPreview callouts={false} hints />
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            {/* Phones: a simple list, like the app on a phone */}
+            <ul className="flex-1 space-y-1.5 bg-[#F4F7F6] p-3 sm:hidden">
+              {rows.map(({ c, status, dot }) => {
+                const active = !!c.opens && highlight;
+                const inner = (
+                  <>
+                    <div className="min-w-0">
+                      <p className="truncate text-[13px] font-bold text-slate-900">
+                        {c.name} {c.amount && <span className="font-semibold text-slate-500">· {c.amount}</span>}
+                      </p>
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        <TagPill tag={c.tags[0]} />
+                      </div>
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                      <span className={`h-1.5 w-1.5 rounded-full ${dot}`} /> {status}
+                    </span>
+                  </>
+                );
+                const cls = `flex w-full items-center justify-between gap-2 rounded-xl border bg-white px-3 py-2 text-left ${
+                  active ? 'border-[#00828A] ring-2 ring-[#00828A]/30' : 'border-slate-200'
+                }`;
+                return (
+                  <li key={c.name}>
+                    {c.opens ? (
+                      <button type="button" onClick={openCard} className={cls} aria-label={`Open ${c.name}'s job card`}>
+                        {inner}
+                      </button>
+                    ) : (
+                      <div className={cls}>{inner}</div>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+
+            {/* Tablet and up: board columns */}
+            <div className="hidden flex-1 grid-cols-4 gap-3 bg-[#F4F7F6] p-4 sm:grid">
+              {HERO_BOARD.map((col) => (
+                <div key={col.label} className="min-w-0 space-y-2">
+                  <div className="flex items-center gap-1.5 px-1">
+                    <span className={`h-2 w-2 rounded-full ${col.dot}`} />
+                    <span className="truncate text-[11px] font-bold uppercase tracking-wider text-slate-600">{col.label}</span>
+                    <span className="text-[11px] text-slate-400">{col.cards.length}</span>
+                  </div>
+                  {col.cards.map((c) => (
+                    <BoardCardTile key={c.name} c={c} active={!!c.opens && highlight} onOpen={openCard} />
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </WheelPane>
+
+        {/* ── M. Johnson's job card ── */}
+        <WheelPane
+          width={cardW}
+          anim={cardAnim}
+          isFront={view === 'card'}
+          peek={side ? 'right' : 'top'}
+          label="Job card"
+          onBring={openCard}
+          instant={instant}
+        >
+          <div className="rounded-2xl shadow-[0_40px_90px_-30px_rgba(15,23,42,0.6)]">
+            <JobCardPreview callouts={false} hints />
+          </div>
+        </WheelPane>
       </div>
 
       <p className="mt-3 text-center text-xs text-slate-400">
-        {open ? 'Click the tabs to look around, or click outside the card to see the board.' : 'Tap M. Johnson to open his job card.'}
+        {view === 'card'
+          ? side
+            ? 'Click the tabs to look around, or click the board behind to switch back.'
+            : 'Tap the tabs to look around, or tap the board above to switch back.'
+          : side
+          ? 'Click M. Johnson, or the job card behind the board, to open it.'
+          : 'Tap M. Johnson, or the job card above, to open it.'}
       </p>
     </div>
   );

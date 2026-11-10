@@ -209,7 +209,7 @@ export default function EmailTemplatesTab({
   };
 
   return (
-    <div className="w-full text-[#1c1917]">
+    <div className="w-full text-slate-900">
       <div className="w-full space-y-6">
         {(company.plan_tier === 'free' || company.plan_tier === 'basic') && (
           <SettingsUpgradeBanner
@@ -220,10 +220,10 @@ export default function EmailTemplatesTab({
           />
         )}
 
-        <div className="flex flex-col justify-between gap-4 border-b border-[#e7e2d8] pb-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-4 sm:flex-row sm:items-center">
           <div>
-            <h2 className="text-xl font-semibold tracking-tight text-[#1c1917]">Emails</h2>
-            <p className="mt-0.5 text-xs font-medium text-[#78716c]">
+            <h2 className="text-xl font-semibold tracking-tight text-slate-900">Emails</h2>
+            <p className="mt-0.5 text-xs font-medium text-slate-600">
               Every automated email customers can receive — which ones you can customize, and which you can&apos;t.
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function EmailTemplatesTab({
             <button
               onClick={handleSave}
               disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1c1917] px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-[#292524] disabled:opacity-50 sm:text-sm"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-xs font-semibold text-white shadow-xs transition hover:bg-slate-800 disabled:opacity-50 sm:text-sm"
             >
               {loading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -281,11 +281,11 @@ export default function EmailTemplatesTab({
                   <button
                     key={key}
                     onClick={() => setActiveTemplate(key)}
-                    className="group flex flex-col justify-between rounded-2xl border border-[#e7e2d8] bg-white p-4 text-left transition-colors hover:border-[#d6d3d1]"
+                    className="group flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-4 text-left transition-colors hover:border-[#d6d3d1]"
                   >
                     <div>
                       <div className="mb-3 flex items-center justify-between">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f5f1e8] text-[#57534e]">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
                           {config.icon}
                         </div>
                         <div className="flex items-center gap-2">
@@ -295,20 +295,20 @@ export default function EmailTemplatesTab({
                               Customized
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#f5f1e8] px-2 py-0.5 text-[10px] font-medium text-[#78716c]">
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-600">
                               Default
                             </span>
                           )}
                           <ChevronRight className="h-4 w-4 text-[#d6d3d1] transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </div>
-                      <h3 className="text-sm font-semibold text-[#1c1917]">{config.label}</h3>
-                      <p className="mt-1 text-xs leading-relaxed text-[#78716c]">{config.description}</p>
+                      <h3 className="text-sm font-semibold text-slate-900">{config.label}</h3>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-600">{config.description}</p>
                     </div>
 
-                    <div className="mt-3 border-t border-[#f0ece1] pt-2.5">
-                      <p className="truncate font-mono text-[11px] text-[#a8a29e]">
-                        <span className="font-medium text-[#78716c]">Subj:</span> {templates[key].subject}
+                    <div className="mt-3 border-t border-slate-100 pt-2.5">
+                      <p className="truncate font-mono text-[11px] text-slate-500">
+                        <span className="font-medium text-slate-600">Subj:</span> {templates[key].subject}
                       </p>
                     </div>
                   </button>
@@ -317,11 +317,11 @@ export default function EmailTemplatesTab({
 
               <button
                 onClick={() => setShowConfirmationInfo((v) => !v)}
-                className="flex flex-col justify-between rounded-2xl border border-dashed border-[#e7e2d8] bg-[#faf9f5] p-4 text-left transition-colors hover:border-[#d6d3d1]"
+                className="flex flex-col justify-between rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-4 text-left transition-colors hover:border-[#d6d3d1]"
               >
                 <div>
                   <div className="mb-3 flex items-center justify-between">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#f5f1e8] text-[#57534e]">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
                       <CheckCircle2 className="h-4 w-4" />
                     </div>
                                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
@@ -329,13 +329,13 @@ export default function EmailTemplatesTab({
                       Automatic
                     </span>
                   </div>
-                  <h3 className="text-sm font-semibold text-[#1c1917]">Payment Confirmation</h3>
-                  <p className="mt-1 text-xs leading-relaxed text-[#78716c]">
+                  <h3 className="text-sm font-semibold text-slate-900">Payment Confirmation</h3>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600">
                                        Sent automatically every time a payment is recorded, card or manual. Shows the amount
                     and what&apos;s left; when the job is paid in full, the final invoice PDF is attached.
                   </p>
                 </div>
-                <div className="mt-3 flex items-center gap-1.5 border-t border-[#f0ece1] pt-2.5 text-[11px] font-medium text-[#78716c]">
+                <div className="mt-3 flex items-center gap-1.5 border-t border-slate-100 pt-2.5 text-[11px] font-medium text-slate-600">
                   <Info className="h-3 w-3" />
                   {showConfirmationInfo ? 'Hide details' : 'Why isn\u2019t this editable?'}
                 </div>
@@ -350,7 +350,7 @@ export default function EmailTemplatesTab({
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-3 rounded-2xl border border-[#e7e2d8] bg-white p-4 text-xs leading-relaxed text-[#57534e]">
+                  <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-xs leading-relaxed text-slate-700">
                                      <p>
                       This receipt is built from the payment itself (amount paid, balance remaining,
                       and the card used for card payments), so there&apos;s no template to edit. It goes
@@ -374,15 +374,15 @@ export default function EmailTemplatesTab({
               transition={springTransition}
               className="space-y-6"
             >
-              <div className="flex items-center justify-between border-b border-[#e7e2d8] pb-4">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
                 <button
                   onClick={() => setActiveTemplate(null)}
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#f5f1e8] px-3 py-1.5 text-xs font-semibold text-[#57534e] transition hover:bg-[#e7e2d8]"
+                  className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-200"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> All Emails
                 </button>
 
-                <div className="inline-flex items-center gap-2 rounded-full bg-[#f5f1e8] px-3 py-1 text-xs font-semibold text-[#57534e]">
+                <div className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                   {templateConfig[activeTemplate].icon}
                   <span>{templateConfig[activeTemplate].label}</span>
                 </div>
@@ -390,13 +390,13 @@ export default function EmailTemplatesTab({
 
               <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className="space-y-5">
-                  <div className="rounded-2xl border border-[#e7e2d8] bg-white">
-                    <div className="flex items-center justify-between border-b border-[#e7e2d8] bg-[#faf9f5] px-4 py-3">
+                  <div className="rounded-2xl border border-slate-200 bg-white">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4 text-amber-500" />
-                        <p className="text-xs font-semibold text-[#1c1917]">Dynamic Variables</p>
+                        <p className="text-xs font-semibold text-slate-900">Dynamic Variables</p>
                       </div>
-                      <span className="text-[10px] font-medium text-[#a8a29e]">Click to copy</span>
+                      <span className="text-[10px] font-medium text-slate-500">Click to copy</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 p-4">
                       {availableVariables[activeTemplate].map((variable) => (
@@ -407,66 +407,66 @@ export default function EmailTemplatesTab({
                           className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 font-mono text-[11px] font-medium transition active:scale-95 ${
                             copiedVar === variable
                               ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
-                              : 'border-[#e7e2d8] bg-[#faf9f5] text-[#57534e] hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'
+                              : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-indigo-300 hover:bg-indigo-50/50 hover:text-indigo-600'
                           }`}
                         >
                           {variable}
                           {copiedVar === variable ? (
                             <Check className="h-3 w-3 text-emerald-600" />
                           ) : (
-                            <Copy className="h-3 w-3 text-[#a8a29e]" />
+                            <Copy className="h-3 w-3 text-slate-500" />
                           )}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="overflow-hidden rounded-2xl border border-[#e7e2d8] bg-white">
-                    <div className="flex items-center justify-between border-b border-[#e7e2d8] bg-[#faf9f5] px-4 py-3">
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                    <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-3">
                       <div className="flex items-center gap-2">
                         <Mail className="h-4 w-4 text-indigo-500" />
-                        <p className="text-xs font-semibold text-[#1c1917]">Email Content</p>
+                        <p className="text-xs font-semibold text-slate-900">Email Content</p>
                       </div>
                       <button
                         type="button"
                         onClick={handleReset}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-[#e7e2d8] bg-white px-2.5 py-1 text-[11px] font-medium text-[#57534e] transition hover:bg-[#f5f1e8]"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 transition hover:bg-slate-100"
                       >
-                        <RotateCcw className="h-3 w-3 text-[#a8a29e]" /> Reset Default
+                        <RotateCcw className="h-3 w-3 text-slate-500" /> Reset Default
                       </button>
                     </div>
 
                     <div className="space-y-4 p-4">
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-[#78716c]">
+                        <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-slate-600">
                           Subject Line
                         </label>
                         <input
                           type="text"
                           value={templates[activeTemplate].subject}
                           onChange={(e) => handleUpdateTemplate('subject', e.target.value)}
-                          className="w-full rounded-xl border border-[#e7e2d8] bg-[#faf9f5] px-3.5 py-2.5 text-sm font-medium text-[#1c1917] outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                         />
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-[#78716c]">
+                        <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wide text-slate-600">
                           Email Body
                         </label>
                         <textarea
                           value={templates[activeTemplate].body}
                           onChange={(e) => handleUpdateTemplate('body', e.target.value)}
                           rows={12}
-                          className="w-full rounded-xl border border-[#e7e2d8] bg-[#faf9f5] p-3.5 font-mono text-xs leading-relaxed text-[#292524] outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
+                          className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3.5 font-mono text-xs leading-relaxed text-slate-800 outline-none transition focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-100"
                         />
                       </div>
                     </div>
 
-                    <div className="border-t border-[#e7e2d8] bg-[#faf9f5] p-4">
+                    <div className="border-t border-slate-200 bg-slate-50 p-4">
                       <button
                         onClick={handleSave}
                         disabled={loading}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#1c1917] py-3 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-[#292524] disabled:opacity-50"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-xs font-semibold uppercase tracking-wide text-white transition hover:bg-slate-800 disabled:opacity-50"
                       >
                         {loading ? (
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
@@ -480,8 +480,8 @@ export default function EmailTemplatesTab({
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wide text-[#78716c]">
-                    <Eye className="h-3.5 w-3.5 text-[#a8a29e]" /> Live Preview
+                  <div className="flex items-center gap-2 px-1 text-xs font-medium uppercase tracking-wide text-slate-600">
+                    <Eye className="h-3.5 w-3.5 text-slate-500" /> Live Preview
                   </div>
                   <EmailPreviewPane
                     activeTemplate={activeTemplate}

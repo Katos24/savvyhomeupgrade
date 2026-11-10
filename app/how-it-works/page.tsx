@@ -12,7 +12,7 @@ export const metadata = {
 
 export default function HowItWorksPage() {
   return (
-    <div className={`${fontVars} min-h-screen bg-[#F4EFE6] font-[family-name:var(--font-body)]`}>
+    <div className={`${fontVars} min-h-screen bg-slate-50 font-[family-name:var(--font-body)]`}>
       <Nav />
       <main>
         <HowItWorksTour />

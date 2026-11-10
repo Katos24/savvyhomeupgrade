@@ -15,7 +15,7 @@ import { Eyebrow, TapeDivider, TradesStrip } from '@/components/marketing/market
 
 const D = 'font-[family-name:var(--font-display)]';
 const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
-const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BODY = 'text-base sm:text-lg text-[#2a2f35] leading-relaxed';
 const BTN =
   'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
   D +
@@ -98,7 +98,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
 
       {/* ── Hero ── */}
       <section
-        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        className="bg-slate-50 pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
         style={{
           backgroundImage:
             'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
@@ -107,7 +107,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
       >
         <div className="max-w-4xl mx-auto text-center">
           <Eyebrow>{content.badge}</Eyebrow>
-          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+          <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold leading-[1.1] tracking-tight`}>
             {content.hero.headline}
           </h1>
           <p className={`mt-5 max-w-2xl mx-auto ${BODY}`}>{content.hero.sub}</p>
@@ -117,7 +117,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
             </Link>
             <Link
               href="#how-it-works"
-              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+              className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold`}
             >
               How it works <ArrowRight className="h-4 w-4" />
             </Link>
@@ -150,7 +150,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
       <TapeDivider />
 
       {/* ── Form → board ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div>
             <Eyebrow>Your booking link</Eyebrow>
@@ -199,8 +199,8 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
                 </div>
                 <div className="border-b border-dashed border-slate-300" />
                 <div className="p-5 sm:p-6">
-                  <h3 className={`${D} text-2xl font-bold uppercase leading-tight`}>{step.title}</h3>
-                  <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.description}</p>
+                  <h3 className={`${D} text-2xl font-bold leading-tight`}>{step.title}</h3>
+                  <p className="mt-2 text-[15px] text-[#2a2f35] leading-relaxed">{step.description}</p>
                 </div>
               </li>
             ))}
@@ -218,7 +218,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {content.features.map((f) => (
               <div key={f.title} className="rounded-lg border border-white/10 bg-white/[0.04] p-5">
-                <h3 className={`${D} text-xl font-bold uppercase leading-tight text-white`}>{f.title}</h3>
+                <h3 className={`${D} text-xl font-bold leading-tight text-white`}>{f.title}</h3>
                 <p className="mt-2 text-sm text-slate-300 leading-relaxed">{f.description}</p>
               </div>
             ))}
@@ -227,7 +227,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
       </section>
 
       {/* ── Confirmation email ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div>
             <Eyebrow>Customer email</Eyebrow>
@@ -248,7 +248,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
       {/* ── Final CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]`}>
             Stop losing jobs to missed calls.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/85">
@@ -257,7 +257,7 @@ export default function IndustryLandingPage({ content }: { content: IndustryCont
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold text-center`}
             >
               Get your free booking link
             </Link>

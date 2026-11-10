@@ -203,7 +203,7 @@ function StatusBadge({ status }: { status: StepStatus }) {
     case 'locked':
     default:
       return (
-        <span className={`${baseClasses} bg-[#f5f1e8] text-[#a8a29e]`}>
+        <span className={`${baseClasses} bg-slate-100 text-slate-500`}>
           <Lock className="w-3 h-3" /> Locked
         </span>
       );
@@ -220,22 +220,22 @@ function PhaseBox({ step }: { step: Step }) {
     <div
       className={`rounded-2xl border p-4 sm:p-5 h-full flex flex-col ${
         isLocked
-          ? 'border-dashed border-[#e7e2d8] bg-[#faf9f5]/60 opacity-60'
+          ? 'border-dashed border-slate-200 bg-slate-50/60 opacity-60'
           : step.status === 'done'
           ? 'border-emerald-200 bg-emerald-50/30'
           : step.status === 'overdue'
           ? 'border-rose-200 bg-rose-50/30'
-          : 'border-[#e7e2d8] bg-white'
+          : 'border-slate-200 bg-white'
       }`}
     >
             <div className="flex items-start justify-between gap-2 mb-2 flex-wrap">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wide text-[#a8a29e]">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">
             {step.title}
           </p>
           <p
             className={`text-xl sm:text-2xl font-bold tabular-nums mt-0.5 ${
-              isLocked ? 'text-[#d6d3d1]' : 'text-[#1c1917]'
+              isLocked ? 'text-[#d6d3d1]' : 'text-slate-900'
             }`}
           >
             {fmt(step.amount)}
@@ -255,7 +255,7 @@ function PhaseBox({ step }: { step: Step }) {
               ? 'text-amber-800 font-semibold'
               : step.status === 'ready'
               ? 'text-brand-700 font-medium'
-              : 'text-[#a8a29e]'
+              : 'text-slate-500'
           }`}
         >
           {step.sub}
@@ -264,9 +264,9 @@ function PhaseBox({ step }: { step: Step }) {
 
       {!isLocked && step.editDueDateAction && (
         <div className="flex items-center justify-between gap-2 mb-3 text-[11px]">
-          <span className="text-[#a8a29e]">Due</span>
+          <span className="text-slate-500">Due</span>
           {step.dueDateLocked ? (
-            <span className="font-medium text-[#57534e]">
+            <span className="font-medium text-slate-700">
               {step.dueDate ? fmtDate(step.dueDate) : 'Not set'}
             </span>
           ) : (
@@ -278,7 +278,7 @@ function PhaseBox({ step }: { step: Step }) {
                   ? 'text-rose-700 hover:bg-rose-100'
                   : !step.dueDate
                   ? 'text-amber-700 hover:bg-amber-100'
-                  : 'text-[#1c1917] hover:text-brand-700'
+                  : 'text-slate-900 hover:text-brand-700'
               }`}
             >
               <Calendar className="w-3 h-3" />
@@ -301,7 +301,7 @@ function PhaseBox({ step }: { step: Step }) {
         )}
 
         {step.needsUpgrade && (
-          <p className="text-[11px] text-[#a8a29e] text-center">
+          <p className="text-[11px] text-slate-500 text-center">
             {step.sub}
           </p>
         )}
@@ -310,7 +310,7 @@ function PhaseBox({ step }: { step: Step }) {
           <button
             type="button"
             onClick={step.editAction.onClick}
-            className="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-3 py-1.5 text-[11px] font-semibold text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+            className="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-700 hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
           >
             <Edit2 className="w-3 h-3" />
             {step.editAction.label}
@@ -379,32 +379,32 @@ export default function BillingSummaryPanel({
   const completeStep = steps.find((s) => s.key === 'complete');
 
   return (
-    <div className="bg-white border border-[#e7e2d8] rounded-2xl overflow-hidden">
+    <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
             <div className="p-3 sm:p-5 lg:p-7 grid gap-6 lg:gap-8 lg:grid-cols-[1fr_300px] items-start">
         {/* LEFT COLUMN */}
                <div className="space-y-3 min-w-0">
-          <div className="rounded-xl border border-[#e7e2d8] p-3 sm:p-5">
+          <div className="rounded-xl border border-slate-200 p-3 sm:p-5">
             {/* Header / Invoice Metadata */}
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[11px] font-medium uppercase tracking-wide text-[#a8a29e]">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
                 Total
               </span>
               <span
                 className={`text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full ${
-                  invoiceSent ? 'bg-emerald-50 text-emerald-700' : 'bg-[#f5f1e8] text-[#78716c]'
+                  invoiceSent ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'
                 }`}
               >
                 {invoiceNumber} · {invoiceSent ? 'Sent' : 'Draft'}
               </span>
             </div>
 
-            <p className="text-3xl font-semibold text-[#1c1917] tabular-nums leading-tight">
+            <p className="text-3xl font-semibold text-slate-900 tabular-nums leading-tight">
               {fmt(total)}
             </p>
 
             {taxLocked ? (
               invoiceTaxRate > 0 && (
-                <p className="text-[11px] text-[#a8a29e] mt-0.5 tabular-nums">
+                <p className="text-[11px] text-slate-500 mt-0.5 tabular-nums">
                   Incl. {invoiceTaxRate}% tax
                 </p>
               )
@@ -412,7 +412,7 @@ export default function BillingSummaryPanel({
               <button
                 type="button"
                 onClick={openTaxEditor}
-                className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#e7e2d8] bg-white px-2.5 py-0.5 text-[11px] font-medium text-[#78716c] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
+                className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-[11px] font-medium text-slate-600 hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50 transition-colors"
               >
                 <Edit2 className="w-2.5 h-2.5" />
                 {invoiceTaxRate > 0 ? `Incl. ${invoiceTaxRate}% tax` : 'Add tax'}
@@ -488,7 +488,7 @@ export default function BillingSummaryPanel({
                   </div>
                 )}
 
-                            <div className="border-t border-[#f0ece1] my-4" />
+                            <div className="border-t border-slate-100 my-4" />
 
                 {/* TWO-BOX GRID — stacked on mobile, side by side from sm
                     up. A single box (no-deposit jobs) just fills the
@@ -507,20 +507,20 @@ export default function BillingSummaryPanel({
                 {(depositPayments.length > 1 || balancePayments.length > 1) && (
                   <div className="mt-3 space-y-3">
                     {depositPayments.length > 1 && (
-                      <div className="rounded-lg border border-[#e7e2d8] p-3">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-[#a8a29e] mb-1.5">
+                      <div className="rounded-lg border border-slate-200 p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">
                           Deposit payments
                         </p>
                         <div className="space-y-1">
                           {depositPayments.map((p) => {
                             const refunded = reversedAmountFor(p.id);
                             return (
-                              <div key={p.id} className="flex items-center justify-between text-[11px] text-[#78716c]">
+                              <div key={p.id} className="flex items-center justify-between text-[11px] text-slate-600">
                                 <span>
                                   {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
                                   {refunded > 0 && <span className="text-amber-700"> · {fmt(refunded)} refunded</span>}
                                 </span>
-                                <span className="tabular-nums font-medium text-[#57534e]">
+                                <span className="tabular-nums font-medium text-slate-700">
                                   {fmt(Math.max(p.amount - refunded, 0))}
                                 </span>
                               </div>
@@ -530,20 +530,20 @@ export default function BillingSummaryPanel({
                       </div>
                     )}
                     {balancePayments.length > 1 && (
-                      <div className="rounded-lg border border-[#e7e2d8] p-3">
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-[#a8a29e] mb-1.5">
+                      <div className="rounded-lg border border-slate-200 p-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 mb-1.5">
                           Balance payments
                         </p>
                         <div className="space-y-1">
                           {balancePayments.map((p) => {
                             const refunded = reversedAmountFor(p.id);
                             return (
-                              <div key={p.id} className="flex items-center justify-between text-[11px] text-[#78716c]">
+                              <div key={p.id} className="flex items-center justify-between text-[11px] text-slate-600">
                                 <span>
                                   {p.method?.replace('_', ' ') || 'Payment'} · {fmtDate(p.paid_on)}
                                   {refunded > 0 && <span className="text-amber-700"> · {fmt(refunded)} refunded</span>}
                                 </span>
-                                <span className="tabular-nums font-medium text-[#57534e]">
+                                <span className="tabular-nums font-medium text-slate-700">
                                   {fmt(Math.max(p.amount - refunded, 0))}
                                 </span>
                               </div>
@@ -559,13 +559,13 @@ export default function BillingSummaryPanel({
           </div>
 
           {/* Action Toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#e7e2d8] bg-[#faf9f5] px-4 py-3">
-            <div className="inline-flex rounded-lg border border-[#e7e2d8] bg-white overflow-hidden shrink-0">
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+            <div className="inline-flex rounded-lg border border-slate-200 bg-white overflow-hidden shrink-0">
               <button
                 type="button"
                 onClick={handleDownload}
                 disabled={downloading}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 transition-colors disabled:opacity-50"
               >
                 {downloading ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -579,7 +579,7 @@ export default function BillingSummaryPanel({
                 <button
                   type="button"
                   onClick={handleGetPaymentLink}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] border-l border-[#e7e2d8] transition-colors"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-100 border-l border-slate-200 transition-colors"
                 >
                   <QrCode className="w-3.5 h-3.5" />
                   In-Person Payment
@@ -593,7 +593,7 @@ export default function BillingSummaryPanel({
                   type="button"
                   onClick={() => setShowReminderConfirm(true)}
                   disabled={daysSinceReminder === 0}
-                  className="inline-flex items-center gap-1 px-2 py-2 rounded-lg text-[10px] font-medium text-[#a8a29e] hover:text-[#57534e] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-2 rounded-lg text-[10px] font-medium text-slate-500 hover:text-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <Clock className="w-3 h-3" />
                   {daysSinceReminder === 0 ? 'Reminder sent today' : 'Send reminder'}
@@ -615,11 +615,11 @@ export default function BillingSummaryPanel({
 
           {/* Payment Transactions History */}
           {payments.length > 0 && (
-            <div className="rounded-xl border border-[#e7e2d8] overflow-hidden">
-              <div className="px-4 pt-3.5 pb-2 text-[11px] font-medium uppercase tracking-wide text-[#a8a29e] bg-[#faf9f5]">
+            <div className="rounded-xl border border-slate-200 overflow-hidden">
+              <div className="px-4 pt-3.5 pb-2 text-[11px] font-medium uppercase tracking-wide text-slate-500 bg-slate-50">
                 Payment Transactions
               </div>
-              <div className="divide-y divide-[#f0ece1]">
+              <div className="divide-y divide-slate-100">
                 {payments.map((p) => {
                   const reversedAmt = reversedAmountFor(p.id);
                   const canReverse = !p.is_stripe && p.kind !== 'refund' && reversedAmt < p.amount;
@@ -627,15 +627,15 @@ export default function BillingSummaryPanel({
                   return (
                     <div key={p.id} className="flex items-center justify-between px-4 py-3 text-xs">
                       <div>
-                        <div className="flex items-center gap-2 font-semibold text-[#1c1917] tabular-nums">
+                        <div className="flex items-center gap-2 font-semibold text-slate-900 tabular-nums">
                           <span>
                             {p.amount < 0 ? `− ${fmt(Math.abs(p.amount))}` : fmt(p.amount)}
                           </span>
-                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-[#f5f1e8] text-[#57534e] whitespace-nowrap">
+                          <span className="text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 whitespace-nowrap">
                             {paymentBadgeLabel(p)}
                           </span>
                         </div>
-                        <p className="text-[11px] text-[#a8a29e] capitalize mt-0.5">
+                        <p className="text-[11px] text-slate-500 capitalize mt-0.5">
                           {p.is_stripe && p.card_brand
                             ? `${p.card_brand} ····${p.card_last4}`
                             : !p.is_stripe && p.method === 'stripe'
@@ -691,30 +691,30 @@ export default function BillingSummaryPanel({
         </div>
 
         {/* RIGHT COLUMN: Settings & Outbox Log */}
-        <div className="bg-[#faf9f5] border border-[#e7e2d8] rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
+        <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-5 lg:sticky lg:top-4">
           <div>
-            <p className="text-[11px] font-medium text-[#a8a29e] uppercase tracking-wide mb-2.5">
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-2.5">
               Invoice Settings
             </p>
             <div className="space-y-2.5 text-xs">
               {hasDepositTerms && (
                 <div className="flex justify-between items-center">
-                  <span className="text-[#78716c]">Deposit</span>
-                  <span className="font-medium text-[#1c1917] tabular-nums">
+                  <span className="text-slate-600">Deposit</span>
+                  <span className="font-medium text-slate-900 tabular-nums">
                     {depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)}{' '}
-                    <span className="text-[#a8a29e]">({fmt(depositAmount)})</span>
+                    <span className="text-slate-500">({fmt(depositAmount)})</span>
                   </span>
                 </div>
               )}
 
               <div className="flex justify-between items-center">
-                <span className="text-[#78716c]">Payment Link Gateway</span>
+                <span className="text-slate-600">Payment Link Gateway</span>
                 {hasPayLink ? (
-                  <span className="font-medium text-[#1c1917]">{activeMethodLabel}</span>
+                  <span className="font-medium text-slate-900">{activeMethodLabel}</span>
                 ) : (
                   <a
                     href={`/${company?.slug}/home#payments`}
-                    className="text-[#78716c] hover:text-[#1c1917] underline"
+                    className="text-slate-600 hover:text-slate-900 underline"
                   >
                     Not Configured
                   </a>
@@ -723,13 +723,13 @@ export default function BillingSummaryPanel({
             </div>
           </div>
 
-          <div className="border-t border-[#e7e2d8] pt-4">
-            <p className="text-[11px] font-medium text-[#a8a29e] uppercase tracking-wide mb-2.5">
+          <div className="border-t border-slate-200 pt-4">
+            <p className="text-[11px] font-medium text-slate-500 uppercase tracking-wide mb-2.5">
               Outbox &amp; Email History ({activityLog.length})
             </p>
             <div className="max-h-[280px] overflow-y-auto space-y-2 pr-1">
               {activityLog.length === 0 ? (
-                <p className="text-xs text-[#a8a29e] py-2 text-center">No emails sent yet.</p>
+                <p className="text-xs text-slate-500 py-2 text-center">No emails sent yet.</p>
               ) : (
                 activityLog.map((entry) => {
                   const { dateStr, timeStr } = fmtShortDateTime(entry.created_at);
@@ -750,7 +750,7 @@ export default function BillingSummaryPanel({
                   return (
                     <div
                       key={entry.id}
-                      className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-[#e7e2d8] text-xs"
+                      className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white border border-slate-200 text-xs"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div
@@ -759,8 +759,8 @@ export default function BillingSummaryPanel({
                           }`}
                         />
                         <div className="min-w-0">
-                          <p className="font-medium text-[#292524] truncate">{label}</p>
-                          <p className="text-[11px] text-[#a8a29e]">
+                          <p className="font-medium text-slate-800 truncate">{label}</p>
+                          <p className="text-[11px] text-slate-500">
                             {dateStr} · {timeStr}
                           </p>
                         </div>
@@ -770,7 +770,7 @@ export default function BillingSummaryPanel({
                         <button
                           type="button"
                           onClick={() => loadPreview(entry.id)}
-                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-[#e7e2d8] text-[#57534e] hover:text-[#1c1917] hover:bg-[#f5f1e8] rounded-lg text-[11px] font-medium transition-colors"
+                          className="shrink-0 flex items-center gap-1 px-2.5 py-1 border border-slate-200 text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg text-[11px] font-medium transition-colors"
                         >
                           <Eye className="w-3 h-3" /> Preview
                         </button>

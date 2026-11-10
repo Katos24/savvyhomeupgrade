@@ -605,45 +605,45 @@ export default function BillingModals({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => deletingPaymentId === null && setConfirmDeletePayment(null)}
-            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-base font-semibold text-[#1c1917]">Remove this payment?</h3>
+                <h3 className="text-base font-semibold text-slate-900">Remove this payment?</h3>
                 <button
                   type="button"
                   onClick={() => setConfirmDeletePayment(null)}
                   disabled={deletingPaymentId !== null}
-                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-3 bg-[#faf9f5] rounded-xl border border-[#e7e2d8] mb-3 flex items-center justify-between text-sm">
-                <span className="text-[#57534e] capitalize">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3 flex items-center justify-between text-sm">
+                <span className="text-slate-700 capitalize">
                   {confirmDeletePayment.kind} · {confirmDeletePayment.method?.replace('_', ' ')}
                 </span>
-                <span className="font-bold text-[#1c1917] tabular-nums">
+                <span className="font-bold text-slate-900 tabular-nums">
                   {fmt(confirmDeletePayment.amount)}
                 </span>
               </div>
 
               <div className="space-y-3 mb-4">
                                <div>
-                  <label className="block text-xs font-medium text-[#57534e] mb-1">Amount to reverse</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Amount to reverse</label>
                   <div
                     className={`flex items-center gap-1.5 rounded-lg border px-3 py-2 focus-within:border-brand-700 ${
-                      reverseTooMuch ? 'border-rose-300 bg-rose-50/40' : 'border-[#e7e2d8]'
+                      reverseTooMuch ? 'border-rose-300 bg-rose-50/40' : 'border-slate-200'
                     }`}
                   >
-                    <span className="text-sm font-semibold text-[#a8a29e]">$</span>
+                    <span className="text-sm font-semibold text-slate-500">$</span>
                     <input
                       type="text"
                       inputMode="decimal"
@@ -672,7 +672,7 @@ export default function BillingModals({
                       Full amount · {fmt(reverseMax)}
                     </button>
                                        {reverseAlreadyReversed > 0 && (
-                      <span className="text-[11px] text-[#a8a29e]">
+                      <span className="text-[11px] text-slate-500">
                         {fmt(reverseAlreadyReversed)} already reversed
                       </span>
                     )}
@@ -683,17 +683,17 @@ export default function BillingModals({
                       Can&rsquo;t reverse more than {fmt(reverseMax)}.
                     </p>
                   ) : (
-                    <p className="mt-1.5 text-[11px] text-[#a8a29e]">Tap the full amount, or type a smaller one for a partial correction.</p>
+                    <p className="mt-1.5 text-[11px] text-slate-500">Tap the full amount, or type a smaller one for a partial correction.</p>
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#57534e] mb-1">Reason</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">Reason</label>
                   <input
                     type="text"
                     value={reverseNoteDraft}
                     onChange={(e) => setReverseNoteDraft(e.target.value)}
                     placeholder="e.g. entered wrong amount"
-                    className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm outline-none focus:border-brand-700"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-brand-700"
                   />
                 </div>
               </div>
@@ -711,7 +711,7 @@ export default function BillingModals({
                   type="button"
                   onClick={() => setConfirmDeletePayment(null)}
                   disabled={deletingPaymentId !== null}
-                  className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium text-xs rounded-xl hover:bg-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
@@ -742,20 +742,20 @@ export default function BillingModals({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !savingPayment && setShowRecordPayment(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-[#1c1917]">Record Manual Payment</h3>
+                <h3 className="text-base font-semibold text-slate-900">Record Manual Payment</h3>
                 <button
                   onClick={() => !savingPayment && setShowRecordPayment(false)}
-                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -763,9 +763,9 @@ export default function BillingModals({
 
               <div className="space-y-3 mb-5 text-xs">
                 <div>
-                  <label htmlFor="record-payment-amount" className="block font-medium text-[#57534e] mb-1">Amount Collected</label>
-                  <div className="flex items-center gap-1.5 px-3 py-2.5 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg focus-within:bg-white focus-within:border-brand-700">
-                    <span className="text-sm font-bold text-[#a8a29e] shrink-0">$</span>
+                  <label htmlFor="record-payment-amount" className="block font-medium text-slate-700 mb-1">Amount Collected</label>
+                  <div className="flex items-center gap-1.5 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-lg focus-within:bg-white focus-within:border-brand-700">
+                    <span className="text-sm font-bold text-slate-500 shrink-0">$</span>
                     <input
                       id="record-payment-amount"
                       type="text"
@@ -820,7 +820,7 @@ export default function BillingModals({
                           className={`w-full p-2 rounded-lg border flex items-center justify-between transition-colors text-[11px] ${
                             isSelected
                               ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                              : 'border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8]'
+                              : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                           }`}
                         >
                           <span className="inline-flex items-center gap-1.5">
@@ -849,7 +849,7 @@ export default function BillingModals({
                           className={`w-full p-2 rounded-lg border flex items-center justify-between transition-colors text-[11px] ${
                             isSelected
                               ? 'border-emerald-300 bg-emerald-50 text-emerald-800'
-                              : 'border-[#e7e2d8] bg-[#faf9f5] hover:bg-[#f5f1e8]'
+                              : 'border-slate-200 bg-slate-50 hover:bg-slate-100'
                           }`}
                         >
                           <span className="inline-flex items-center gap-1.5">
@@ -864,11 +864,11 @@ export default function BillingModals({
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#57534e] mb-1">Payment Method</label>
+                  <label className="block font-medium text-slate-700 mb-1">Payment Method</label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
                   >
                     <option value="">Select Method...</option>
                     <option value="cash">Cash</option>
@@ -882,12 +882,12 @@ export default function BillingModals({
                 </div>
 
                 <div>
-                  <label className="block font-medium text-[#57534e] mb-1">Payment Date</label>
+                  <label className="block font-medium text-slate-700 mb-1">Payment Date</label>
                   <input
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:bg-white focus:border-brand-700 font-medium"
                   />
                 </div>
               </div>
@@ -896,7 +896,7 @@ export default function BillingModals({
                 <button
                   onClick={() => setShowRecordPayment(false)}
                   disabled={savingPayment}
-                  className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium text-xs rounded-xl hover:bg-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
@@ -921,17 +921,17 @@ export default function BillingModals({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !savingDeposit && setShowDepositEditor(false)}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-[#1c1917]">
+                <h3 className="text-base font-semibold text-slate-900">
                   {hasDepositTerms ? 'Edit Deposit Terms' : 'Collect a Deposit First?'}
                 </h3>
                 <button
@@ -939,18 +939,18 @@ export default function BillingModals({
                   onClick={() => !savingDeposit && setShowDepositEditor(false)}
                   disabled={savingDeposit}
                   aria-label="Close"
-                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="space-y-3 mb-5">
-                <p className="text-xs font-medium text-[#57534e]">
+                <p className="text-xs font-medium text-slate-700">
                   {hasDepositTerms ? 'Change the deposit amount' : 'How much is the deposit?'}
                 </p>
                 <div className="flex items-center gap-2">
-                  <div className="inline-flex overflow-hidden rounded-lg border border-[#e7e2d8] shrink-0">
+                  <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
                     {(['percent', 'fixed'] as const).map((t) => (
                       <button
                         key={t}
@@ -958,7 +958,7 @@ export default function BillingModals({
                         className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                           depositTypeDraft === t
                             ? 'bg-brand-700 text-white'
-                            : 'bg-white text-[#57534e] hover:bg-[#f5f1e8]'
+                            : 'bg-white text-slate-700 hover:bg-slate-100'
                         }`}
                       >
                         {t === 'percent' ? '%' : '$'}
@@ -974,7 +974,7 @@ export default function BillingModals({
                     value={depositValueDraft}
                     onChange={(e) => setDepositValueDraft(e.target.value)}
                     placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
-                    className="min-w-0 flex-1 rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                   />
                 </div>
               </div>
@@ -984,7 +984,7 @@ export default function BillingModals({
                   type="button"
                   onClick={() => setShowDepositEditor(false)}
                   disabled={savingDeposit}
-                  className="px-3 py-2 rounded-lg border border-[#e7e2d8] text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1021,17 +1021,17 @@ export default function BillingModals({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !savingTax && setShowTaxEditor(false)}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-[#1c1917]">
+                <h3 className="text-base font-semibold text-slate-900">
                   {invoiceTaxRate > 0 ? 'Edit Tax Rate' : 'Add Tax'}
                 </h3>
                 <button
@@ -1039,7 +1039,7 @@ export default function BillingModals({
                   onClick={() => !savingTax && setShowTaxEditor(false)}
                   disabled={savingTax}
                   aria-label="Close"
-                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1056,7 +1056,7 @@ export default function BillingModals({
               )}
 
               <div className="space-y-3 mb-5">
-                <p className="text-xs font-medium text-[#57534e]">Tax rate for this quote</p>
+                <p className="text-xs font-medium text-slate-700">Tax rate for this quote</p>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -1064,9 +1064,9 @@ export default function BillingModals({
                     value={taxRateDraft}
                     onChange={(e) => setTaxRateDraft(e.target.value)}
                     placeholder="8.625"
-                    className="min-w-0 flex-1 rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
+                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-brand-700"
                   />
-                  <span className="text-sm font-semibold text-[#78716c] shrink-0">%</span>
+                  <span className="text-sm font-semibold text-slate-600 shrink-0">%</span>
                 </div>
               </div>
 
@@ -1075,7 +1075,7 @@ export default function BillingModals({
                   type="button"
                   onClick={() => setShowTaxEditor(false)}
                   disabled={savingTax}
-                  className="px-3 py-2 rounded-lg border border-[#e7e2d8] text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1112,17 +1112,17 @@ export default function BillingModals({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !savingDueDate && setShowDueDateEditor(false)}
-            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-[#1c1917]">
+                <h3 className="text-base font-semibold text-slate-900">
                   Edit {dueDateEditorPhase === 'deposit' ? 'Deposit' : 'Balance'} Due Date
                 </h3>
                                 <button
@@ -1130,7 +1130,7 @@ export default function BillingModals({
                   onClick={() => !savingDueDate && setShowDueDateEditor(false)}
                   disabled={savingDueDate}
                   aria-label="Close"
-                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1147,13 +1147,13 @@ export default function BillingModals({
               )}
 
               <div className="space-y-3 mb-5">
-                <p className="text-xs font-medium text-[#57534e]">When is payment due?</p>
+                <p className="text-xs font-medium text-slate-700">When is payment due?</p>
                 <input
                   type="date"
                   value={dueDateDraft || ''}
                   disabled={savingDueDate}
                   onChange={(e) => setDueDateDraft(e.target.value)}
-                  className="w-full rounded-lg border border-[#e7e2d8] px-3 py-2 text-sm font-semibold text-[#1c1917] outline-none focus:border-brand-700"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-brand-700"
                 />
                 <div className="flex flex-wrap gap-1.5">
                   {[
@@ -1175,7 +1175,7 @@ export default function BillingModals({
                         className={`px-3 py-2 rounded-full border text-[11px] font-semibold transition-colors disabled:opacity-50 ${
                           isSelected
                             ? 'bg-brand-700 border-brand-700 text-white'
-                            : 'border-[#e7e2d8] text-[#57534e] hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50'
+                            : 'border-slate-200 text-slate-700 hover:border-brand-700 hover:text-brand-700 hover:bg-brand-50'
                         }`}
                       >
                         {preset.label}
@@ -1190,7 +1190,7 @@ export default function BillingModals({
                   type="button"
                   onClick={() => setShowDueDateEditor(false)}
                   disabled={savingDueDate}
-                  className="px-3 py-2 rounded-lg border border-[#e7e2d8] text-xs font-medium text-[#57534e] hover:bg-[#f5f1e8] disabled:opacity-50"
+                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -1227,20 +1227,20 @@ export default function BillingModals({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setShowPaymentLinkModal(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-[#1c1917]">In-Person Payment</h3>
+                <h3 className="text-base font-semibold text-slate-900">In-Person Payment</h3>
                 <button
                   onClick={() => setShowPaymentLinkModal(false)}
-                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                   aria-label="Close"
                 >
                   <X className="w-4 h-4" />
@@ -1248,7 +1248,7 @@ export default function BillingModals({
               </div>
 
               {loadingPaymentLink ? (
-                <div className="py-10 flex flex-col items-center gap-2 text-[#a8a29e]">
+                <div className="py-10 flex flex-col items-center gap-2 text-slate-500">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <p className="text-xs font-medium">Generating link...</p>
                 </div>
@@ -1265,14 +1265,14 @@ export default function BillingModals({
               ) : paymentLinkData ? (
                 <div className="space-y-4">
                   <div className="text-center">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-[#a8a29e]">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
                       Customer pays
                     </p>
-                    <p className="text-2xl font-bold text-[#1c1917] tabular-nums">
+                    <p className="text-2xl font-bold text-slate-900 tabular-nums">
                       {fmt(paymentLinkData.amount)}
                     </p>
                     {paymentLinkData.kind && (
-                      <p className="text-xs text-[#78716c] capitalize mt-0.5">{paymentLinkData.kind}</p>
+                      <p className="text-xs text-slate-600 capitalize mt-0.5">{paymentLinkData.kind}</p>
                     )}
                   </div>
 
@@ -1281,22 +1281,22 @@ export default function BillingModals({
                       <img
                         src={paymentLinkQr}
                         alt="Scan to pay"
-                        className="w-48 h-48 rounded-xl border border-[#e7e2d8]"
+                        className="w-48 h-48 rounded-xl border border-slate-200"
                       />
                     </div>
                   )}
 
-                  <p className="text-center text-xs text-[#a8a29e]">
+                  <p className="text-center text-xs text-slate-500">
                     {paymentLinkQr ? 'Customer scans with their phone camera' : 'Share this link with the customer'}
                   </p>
 
-                  <div className="flex items-center gap-2 p-2.5 bg-[#faf9f5] border border-[#e7e2d8] rounded-lg">
-                    <p className="flex-1 text-[11px] text-[#57534e] truncate font-mono">
+                  <div className="flex items-center gap-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg">
+                    <p className="flex-1 text-[11px] text-slate-700 truncate font-mono">
                       {paymentLinkData.url}
                     </p>
                     <button
                       onClick={handleCopyPaymentLink}
-                      className="shrink-0 px-2.5 py-1.5 rounded-md bg-[#1c1917] text-white text-[11px] font-semibold hover:bg-[#292524] transition-colors"
+                      className="shrink-0 px-2.5 py-1.5 rounded-md bg-slate-900 text-white text-[11px] font-semibold hover:bg-slate-800 transition-colors"
                     >
                       {linkCopied ? 'Copied!' : 'Copy'}
                     </button>
@@ -1324,35 +1324,35 @@ export default function BillingModals({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => !sendingReminder && setShowReminderConfirm(false)}
-            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-[#1c1917]/50 backdrop-blur-sm"
+            className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-[#e7e2d8]"
+              className="bg-white rounded-2xl w-full max-w-sm p-5 shadow-xl border border-slate-200"
             >
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-semibold text-[#1c1917]">Send Payment Reminder</h3>
+                <h3 className="text-base font-semibold text-slate-900">Send Payment Reminder</h3>
                 <button
                   onClick={() => !sendingReminder && setShowReminderConfirm(false)}
-                  className="p-1 rounded-lg text-[#a8a29e] hover:bg-[#f5f1e8] transition-colors"
+                  className="p-1 rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-3 bg-[#faf9f5] rounded-xl border border-[#e7e2d8] mb-5 text-xs space-y-1">
-                <p className="text-[#78716c]">
-                  Recipient: <span className="font-semibold text-[#292524]">{lead?.name}</span>
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-5 text-xs space-y-1">
+                <p className="text-slate-600">
+                  Recipient: <span className="font-semibold text-slate-800">{lead?.name}</span>
                 </p>
-                <p className="text-[#78716c]">
+                <p className="text-slate-600">
                   {hasDepositTerms && !depositPaid ? 'Deposit Due' : 'Balance Outstanding'}:{' '}
-                  <span className="font-bold text-[#1c1917] tabular-nums">{fmt(currentAmountDue)}</span>
+                  <span className="font-bold text-slate-900 tabular-nums">{fmt(currentAmountDue)}</span>
                 </p>
                 {lastReminderSent && (
-                  <p className="text-[#a8a29e] pt-1">Last reminder sent {fmtDate(lastReminderSent)}</p>
+                  <p className="text-slate-500 pt-1">Last reminder sent {fmtDate(lastReminderSent)}</p>
                 )}
               </div>
 
@@ -1360,7 +1360,7 @@ export default function BillingModals({
                 <button
                   onClick={() => setShowReminderConfirm(false)}
                   disabled={sendingReminder}
-                  className="flex-1 py-2.5 border border-[#e7e2d8] text-[#57534e] font-medium text-xs rounded-xl hover:bg-[#f5f1e8] transition-colors"
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium text-xs rounded-xl hover:bg-slate-100 transition-colors"
                 >
                   Cancel
                 </button>
@@ -1384,7 +1384,7 @@ export default function BillingModals({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[1000] bg-[#1c1917]/70 backdrop-blur-sm flex items-center justify-center p-4"
+            className="fixed inset-0 z-[1000] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4"
             onClick={() => setPreviewHtml(null)}
           >
             <motion.div
@@ -1394,18 +1394,18 @@ export default function BillingModals({
               className="bg-white rounded-2xl w-full max-w-2xl h-[85vh] flex flex-col overflow-hidden shadow-2xl"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-4 py-3 border-b border-[#e7e2d8] flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs font-semibold text-[#292524]">
-                  <Mail className="w-4 h-4 text-[#a8a29e]" /> Outbox Email Preview
+              <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-semibold text-slate-800">
+                  <Mail className="w-4 h-4 text-slate-500" /> Outbox Email Preview
                 </div>
                 <button
                   onClick={() => setPreviewHtml(null)}
-                  className="p-1 rounded-lg hover:bg-[#f5f1e8] text-[#a8a29e] transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex-1 bg-[#faf9f5] p-2">
+              <div className="flex-1 bg-slate-50 p-2">
                 <iframe
                   title="Preview"
                   srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;}*{user-select:none!important;}</style>`}

@@ -87,7 +87,7 @@ export default function DemoAIButton({ showNudge, onToggle }: { showNudge: boole
                   <p className="text-blue-400/60 text-[9px] font-bold uppercase tracking-widest">Demo mode</p>
                 </div>
               </div>
-              <button onClick={handleToggle} className="p-1.5 hover:bg-white/10 rounded-lg transition text-white/40 hover:text-white">
+              <button onClick={handleToggle} className="p-1.5 hover:bg-white/10 rounded-lg transition text-white/60 hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>

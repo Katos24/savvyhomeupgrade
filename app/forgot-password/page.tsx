@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div
-      className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased bg-[#F4EFE6] text-[#1C1F23] px-4 py-8 sm:py-14`}
+      className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased bg-slate-50 text-[#1C1F23] px-4 py-8 sm:py-14`}
       style={{
         backgroundImage:
           'linear-gradient(rgba(28,31,35,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.05) 1px, transparent 1px)',
@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
           <Link href="/" className="flex items-center gap-2.5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/Lead2ProjectLogo.webp" alt="" className="h-8 w-8 rounded-md bg-white object-contain p-1 shadow-sm" />
-            <span className={`${D} text-xl font-extrabold uppercase tracking-tight`}>Lead2Project</span>
+            <span className={`${D} text-xl font-extrabold tracking-tight`}>Lead2Project</span>
           </Link>
           <Link href="/login" className="text-sm font-semibold text-[#00828A] hover:underline">
             Log in
@@ -69,14 +69,14 @@ export default function ForgotPasswordPage() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#00828A]/10">
                 <MailCheck className="h-6 w-6 text-[#00828A]" />
               </div>
-              <h1 className={`mt-4 ${D} text-3xl font-extrabold uppercase leading-[0.95] tracking-tight`}>Check your email.</h1>
-              <p className="mt-3 text-[15px] text-[#3a3f45]">
+              <h1 className={`mt-4 ${D} text-3xl font-extrabold leading-[1.1] tracking-tight`}>Check your email.</h1>
+              <p className="mt-3 text-[15px] text-[#2a2f35]">
                 We sent a password reset link to <span className="font-semibold text-[#1C1F23] break-all">{sentTo}</span>.
               </p>
               <p className="mt-2 text-sm text-slate-500">Don&rsquo;t see it? Check your spam folder.</p>
               <Link
                 href="/login"
-                className={`mt-7 flex w-full items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3.5 text-white shadow-sm transition-colors hover:bg-[#006e75] ${D} text-base font-bold uppercase tracking-wider`}
+                className={`mt-7 flex w-full items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3.5 text-white shadow-sm transition-colors hover:bg-[#006e75] ${D} text-base font-bold`}
               >
                 Back to login
               </Link>
@@ -90,8 +90,8 @@ export default function ForgotPasswordPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-              <h1 className={`${D} text-3xl sm:text-4xl font-extrabold uppercase leading-[0.95] tracking-tight`}>Reset your password.</h1>
-              <p className="mt-2 text-[15px] text-[#3a3f45]">Enter the email you signed up with and we&rsquo;ll send you a link.</p>
+              <h1 className={`${D} text-3xl sm:text-4xl font-extrabold leading-[1.1] tracking-tight`}>Reset your password.</h1>
+              <p className="mt-2 text-[15px] text-[#2a2f35]">Enter the email you signed up with and we&rsquo;ll send you a link.</p>
 
               {error && (
                 <div
@@ -122,7 +122,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className={`mt-7 flex w-full items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3.5 text-white shadow-sm transition-colors hover:bg-[#006e75] disabled:opacity-70 ${D} text-base font-bold uppercase tracking-wider`}
+                className={`mt-7 flex w-full items-center justify-center gap-2 rounded-md bg-[#00828A] px-5 py-3.5 text-white shadow-sm transition-colors hover:bg-[#006e75] disabled:opacity-70 ${D} text-base font-bold`}
               >
                 {loading ? (
                   <>

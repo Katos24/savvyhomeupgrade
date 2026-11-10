@@ -73,7 +73,7 @@ export default function DashboardStats({
         : null;
 
     return (
-      <section className="mb-6 sm:mb-8 flex flex-wrap md:flex-nowrap rounded-2xl border border-[#e7e2d8] bg-white overflow-hidden divide-y md:divide-y-0 md:divide-x divide-[#e7e2d8]">
+      <section className="mb-6 sm:mb-8 flex flex-wrap md:flex-nowrap rounded-2xl border border-slate-200 bg-white overflow-hidden divide-y md:divide-y-0 md:divide-x divide-slate-200">
         {stats.map((s) => {
           const dot = dotColor(s.tone);
           return (
@@ -88,14 +88,14 @@ export default function DashboardStats({
                     style={{ backgroundColor: dot }}
                   />
                 )}
-                <p className="text-xs sm:text-sm font-medium text-[#292524] truncate">
+                <p className="text-xs sm:text-sm font-medium text-slate-800 truncate">
                   {s.label}
                 </p>
               </div>
-              <p className="text-xl sm:text-2xl font-semibold text-[#1c1917] tracking-tight tabular-nums truncate">
+              <p className="text-xl sm:text-2xl font-semibold text-slate-900 tracking-tight tabular-nums truncate">
                 {s.value}
               </p>
-              <p className="text-xs text-[#a8a29e] mt-1 truncate">{s.sub}</p>
+              <p className="text-xs text-slate-500 mt-1 truncate">{s.sub}</p>
             </div>
           );
         })}

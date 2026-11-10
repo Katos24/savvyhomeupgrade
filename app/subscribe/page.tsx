@@ -14,7 +14,7 @@ const D = 'font-[family-name:var(--font-display)]';
 function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div
-      className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased bg-[#F4EFE6] text-[#1C1F23]`}
+      className={`${fontVars} font-[family-name:var(--font-body)] min-h-screen antialiased bg-slate-50 text-[#1C1F23]`}
       style={{
         backgroundImage:
           'linear-gradient(rgba(28,31,35,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.05) 1px, transparent 1px)',
@@ -124,8 +124,8 @@ function SuccessPolling() {
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#00828A] shadow-lg">
               <Check className="h-10 w-10 text-white" strokeWidth={3} />
             </div>
-            <h1 className={`${D} text-4xl font-extrabold uppercase tracking-tight`}>You&rsquo;re in.</h1>
-            <p className="mt-2 text-[#3a3f45]">Confirmed. Taking you to your dashboard…</p>
+            <h1 className={`${D} text-4xl font-extrabold tracking-tight`}>You&rsquo;re in.</h1>
+            <p className="mt-2 text-[#2a2f35]">Confirmed. Taking you to your dashboard…</p>
           </div>
         </div>
       </Shell>
@@ -139,15 +139,15 @@ function SuccessPolling() {
           <div className="w-full max-w-md overflow-hidden rounded-lg border border-slate-200 bg-white text-center shadow-lg">
             <div className="h-1.5 bg-amber-500" />
             <div className="p-8">
-              <h2 className={`${D} text-3xl font-extrabold uppercase tracking-tight`}>Taking longer than expected</h2>
-              <p className="mt-3 text-[#3a3f45]">
+              <h2 className={`${D} text-3xl font-extrabold tracking-tight`}>Taking longer than expected</h2>
+              <p className="mt-3 text-[#2a2f35]">
                 Your payment most likely went through. Stripe can take a moment to confirm.
               </p>
               <p className="mt-2 text-sm text-slate-500">Check your email for a confirmation, or log in to your dashboard.</p>
               <div className="mt-7 flex flex-col gap-3">
                 <button
                   onClick={() => router.push('/login')}
-                  className={`w-full rounded-md bg-[#00828A] py-3 text-white hover:bg-[#006e75] ${D} text-base font-bold uppercase tracking-wider`}
+                  className={`w-full rounded-md bg-[#00828A] py-3 text-white hover:bg-[#006e75] ${D} text-base font-bold`}
                 >
                   Go to login
                 </button>
@@ -198,12 +198,12 @@ function CancelledScreen({ companySlug }: { companySlug?: string }) {
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
               <X className="h-6 w-6 text-slate-500" />
             </div>
-                        <h1 className={`${D} text-3xl font-extrabold uppercase tracking-tight`}>Not ready yet?</h1>
-            <p className="mt-2 text-[#3a3f45]">No problem. Nothing was charged. Your account is on the Free plan.</p>
+                        <h1 className={`${D} text-3xl font-extrabold tracking-tight`}>Not ready yet?</h1>
+            <p className="mt-2 text-[#2a2f35]">No problem. Nothing was charged. Your account is on the Free plan.</p>
             <div className="mt-7 flex flex-col gap-3">
               <button
                 onClick={() => router.push('/subscribe')}
-                className={`w-full rounded-md bg-[#00828A] py-3 text-white hover:bg-[#006e75] ${D} text-base font-bold uppercase tracking-wider`}
+                className={`w-full rounded-md bg-[#00828A] py-3 text-white hover:bg-[#006e75] ${D} text-base font-bold`}
               >
                               See the Pro plan
               </button>
@@ -278,7 +278,7 @@ function SubscribePageContent() {
         <div className="flex items-center gap-2.5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/Lead2ProjectLogo.webp" alt="" className="h-8 w-8 rounded-md bg-white object-contain p-1 shadow-sm" />
-          <span className={`${D} text-xl font-extrabold uppercase tracking-tight`}>Lead2Project</span>
+          <span className={`${D} text-xl font-extrabold tracking-tight`}>Lead2Project</span>
         </div>
         {company?.slug && (
           <a href={`/${company.slug}/dashboard`} className="text-sm font-semibold text-slate-600 hover:text-[#1C1F23]">
@@ -290,10 +290,10 @@ function SubscribePageContent() {
       <div className="mx-auto max-w-5xl px-4 pb-16 pt-6 sm:pt-10">
         <div className="text-center">
           <p className={`${D} text-sm font-bold uppercase tracking-[0.14em] text-[#00828A]`}>Last step</p>
-          <h1 className={`mt-3 ${D} text-4xl sm:text-6xl font-extrabold uppercase leading-[0.92] tracking-tight`}>
+          <h1 className={`mt-3 ${D} text-4xl sm:text-6xl font-extrabold leading-[1.1] tracking-tight`}>
             One job pays for the whole year.
           </h1>
-          <p className="mt-4 text-base sm:text-lg text-[#3a3f45]">
+          <p className="mt-4 text-base sm:text-lg text-[#2a2f35]">
             {alreadyTrialed
               ? 'Billed monthly. Cancel anytime.'
               : 'Free for 14 days. Nothing charged today. Cancel anytime.'}
@@ -305,12 +305,12 @@ function SubscribePageContent() {
           <div className="h-1.5 bg-[#00828A]" />
           <div className="grid gap-8 p-6 sm:p-8 md:grid-cols-5">
             <div className="md:col-span-2">
-              <h2 className={`${D} text-3xl font-extrabold uppercase`}>{PAID.label}</h2>
+              <h2 className={`${D} text-3xl font-extrabold`}>{PAID.label}</h2>
               <div className="mt-1 flex items-baseline gap-1">
                 <span className={`${D} text-5xl font-extrabold tracking-tight`}>${PAID.price}</span>
-                <span className="text-sm font-semibold text-[#3a3f45]">/mo</span>
+                <span className="text-sm font-semibold text-[#2a2f35]">/mo</span>
               </div>
-              <p className="mt-2 text-[15px] text-[#3a3f45]">{PAID.description}</p>
+              <p className="mt-2 text-[15px] text-[#2a2f35]">{PAID.description}</p>
 
               <div className="mt-6">
                 {company && currentUser ? (
@@ -364,7 +364,7 @@ function SubscribePageContent() {
             ].map(({ q, a }) => (
               <div key={q}>
                 <h3 className="text-[15px] font-bold">{q}</h3>
-                <p className="mt-1 text-sm text-[#3a3f45] leading-relaxed">{a}</p>
+                <p className="mt-1 text-sm text-[#2a2f35] leading-relaxed">{a}</p>
               </div>
             ))}
           </div>
@@ -379,7 +379,7 @@ export default function SubscribePage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#F4EFE6] flex items-center justify-center">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-[#00828A]" />
         </div>
       }

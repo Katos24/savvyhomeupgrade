@@ -38,7 +38,7 @@ export const metadata = {
 
 const D = 'font-[family-name:var(--font-display)]';
 const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
-const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BODY = 'text-base sm:text-lg text-[#2a2f35] leading-relaxed';
 const BTN =
   'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
   D +
@@ -46,7 +46,7 @@ const BTN =
 
 function PlanTag({ plan }: { plan: 'Pro' | 'Pro' }) {
   return (
-    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold uppercase tracking-wider text-[#5EC4C9]`}>
+    <span className={`ml-1.5 rounded bg-[#1C1F23] px-1.5 py-0.5 ${D} text-[10px] font-bold text-[#5EC4C9]`}>
       {plan}
     </span>
   );
@@ -111,7 +111,7 @@ function LinkCardMock() {
         </div>
         <span className="shrink-0 rounded-md bg-[#00828A] px-3 py-2.5 text-sm font-bold text-white">Copy</span>
       </div>
-      <div className="mt-5 flex items-center gap-4 rounded-md border border-slate-200 bg-[#FBF8F2] p-4">
+      <div className="mt-5 flex items-center gap-4 rounded-md border border-slate-200 bg-slate-50 p-4">
         <div className="w-24 shrink-0 rounded bg-white p-1.5 shadow-sm">
           <FakeQR className="h-full w-full" />
         </div>
@@ -167,7 +167,7 @@ function WebsiteMock() {
       </div>
       <div className="flex items-center justify-between bg-[#1f2a37] px-5 py-3 text-white">
         <span className="text-sm font-extrabold">Your Company</span>
-        <span className="text-xs text-white/70">Services · Our work · Contact</span>
+        <span className="text-xs text-white/85">Services · Our work · Contact</span>
       </div>
       <div className="p-5 sm:p-6">
         <p className="text-base font-bold">Request a quote</p>
@@ -211,7 +211,7 @@ export default function LeadCapturePage() {
 
       {/* ── Hero ── */}
       <section
-        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        className="bg-slate-50 pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
         style={{
           backgroundImage:
             'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
@@ -221,7 +221,7 @@ export default function LeadCapturePage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="text-center sm:text-left">
             <Eyebrow>Lead capture</Eyebrow>
-            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold leading-[1.1] tracking-tight`}>
               Turn your truck into a quote request.
             </h1>
             <p className={`mt-5 ${BODY}`}>
@@ -234,12 +234,12 @@ export default function LeadCapturePage() {
               </Link>
               <Link
                 href="/#how-it-works"
-                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold`}
               >
                 How it works <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <p className="mt-4 text-sm font-semibold text-[#3a3f45]">Booking link and QR code are on the free plan.</p>
+            <p className="mt-4 text-sm font-semibold text-[#2a2f35]">Booking link and QR code are on the free plan.</p>
           </div>
           <div className="overflow-hidden rounded-xl border border-slate-200 shadow-lg">
             <Image
@@ -278,8 +278,8 @@ export default function LeadCapturePage() {
                     <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
                       <Icon className="h-5 w-5" />
                     </span>
-                    <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{step.title}</h3>
-                    <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{step.desc}</p>
+                    <h3 className={`mt-4 ${D} text-2xl font-bold leading-tight`}>{step.title}</h3>
+                    <p className="mt-2 text-[15px] text-[#2a2f35] leading-relaxed">{step.desc}</p>
                   </div>
                 </li>
               );
@@ -291,7 +291,7 @@ export default function LeadCapturePage() {
       <TapeDivider />
 
       {/* ── Custom form ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div>
             <Eyebrow>Your form</Eyebrow>
@@ -319,7 +319,7 @@ export default function LeadCapturePage() {
                 sizes="112px"
                 className="h-24 w-24 sm:h-28 sm:w-28 shrink-0 rounded-md object-cover"
               />
-              <figcaption className="text-sm text-[#3a3f45] leading-snug">
+              <figcaption className="text-sm text-[#2a2f35] leading-snug">
                 <span className="block font-bold text-[#1C1F23]">Photos come with the request</span>
                 See the damage before you call back, and show up with the right materials.
               </figcaption>
@@ -342,7 +342,7 @@ export default function LeadCapturePage() {
             </p>
             <div className="mt-6 grid grid-cols-2 gap-2.5">
               {['Truck doors', 'Yard signs', 'Business cards', 'Invoices', 'Door hangers', 'Your Instagram bio'].map((place) => (
-                <div key={place} className="flex items-center gap-2 rounded-md border border-slate-200 bg-[#FBF8F2] px-3 py-2.5">
+                <div key={place} className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
                   <Link2 className="h-3.5 w-3.5 shrink-0 text-[#00828A]" />
                   <span className="text-sm font-semibold">{place}</span>
                 </div>
@@ -366,7 +366,7 @@ export default function LeadCapturePage() {
       </section>
 
       {/* ── Google Business Profile ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="order-2 lg:order-1 w-full max-w-md mx-auto">
             <GoogleProfileMock />
@@ -445,20 +445,20 @@ export default function LeadCapturePage() {
       {/* ── Final CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]`}>
             Stop losing jobs to forgotten numbers.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/85">Get your booking link and QR code today. Free.</p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold text-center`}
             >
               Start free
             </Link>
             <Link
               href="/pricing"
-              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold text-center`}
             >
               See pricing
             </Link>

@@ -63,14 +63,14 @@ export const noSpinners =
 // same product instead of a visually separate settings page bolted on.
 export function themeTokens(isDark: boolean) {
   return {
-    bg: isDark ? 'bg-[#0b0f17]' : 'bg-[#faf9f5]',
-    cardBg: isDark ? 'bg-[#0f1420] border border-white/10' : 'bg-white border border-[#e7e2d8]',
-    cardText: isDark ? 'text-white' : 'text-[#1c1917]',
-    subText: isDark ? 'text-slate-400' : 'text-[#78716c]',
-    heading: isDark ? 'text-slate-100' : 'text-[#1c1917]',
-    border: isDark ? 'border-white/10' : 'border-[#e7e2d8]',
+    bg: isDark ? 'bg-[#0b0f17]' : 'bg-slate-50',
+    cardBg: isDark ? 'bg-[#0f1420] border border-white/10' : 'bg-white border border-slate-200',
+    cardText: isDark ? 'text-white' : 'text-slate-900',
+    subText: isDark ? 'text-slate-400' : 'text-slate-600',
+    heading: isDark ? 'text-slate-100' : 'text-slate-900',
+    border: isDark ? 'border-white/10' : 'border-slate-200',
     hoverBg: isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]',
-    inputBg: isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-[#e7e2d8] text-[#1c1917]',
+    inputBg: isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900',
     overlayCard: isDark ? 'bg-[#0f1420] border border-white/10' : 'bg-white',
   };
 }

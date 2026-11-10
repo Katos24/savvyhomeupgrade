@@ -23,7 +23,7 @@ export const metadata = {
 
 const D = 'font-[family-name:var(--font-display)]';
 const H2 = `${D} text-3xl sm:text-5xl font-extrabold uppercase tracking-tight leading-[0.95]`;
-const BODY = 'text-base sm:text-lg text-[#3a3f45] leading-relaxed';
+const BODY = 'text-base sm:text-lg text-[#2a2f35] leading-relaxed';
 const BTN =
   'inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-7 py-3 shadow-sm transition-colors ' +
   D +
@@ -148,7 +148,7 @@ function DigestMock() {
         <p className="mt-1 text-base font-bold">Good morning. Here&rsquo;s your day.</p>
         <div className="mt-4 space-y-2">
           {DIGEST.map(({ icon: Icon, label, n, red }) => (
-            <div key={label} className="flex items-center gap-3 rounded-md border border-slate-200 bg-[#FBF8F2] px-3 py-2.5">
+            <div key={label} className="flex items-center gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5">
               <Icon className={`h-4 w-4 ${red ? 'text-red-600' : 'text-[#00828A]'}`} />
               <span className="flex-1 text-sm font-semibold">{label}</span>
               <span className={`${D} text-xl font-extrabold ${red ? 'text-red-600' : ''}`}>{n}</span>
@@ -184,7 +184,7 @@ export default function OutboxPage() {
 
       {/* ── Hero ── */}
       <section
-        className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
+        className="bg-slate-50 pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-8"
         style={{
           backgroundImage:
             'linear-gradient(rgba(28,31,35,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(28,31,35,0.06) 1px, transparent 1px)',
@@ -194,7 +194,7 @@ export default function OutboxPage() {
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="text-center sm:text-left">
             <Eyebrow>Outbox &amp; daily digest</Eyebrow>
-            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold uppercase leading-[0.9] tracking-tight`}>
+            <h1 className={`mt-4 ${D} text-5xl sm:text-6xl lg:text-[64px] font-extrabold leading-[1.1] tracking-tight`}>
               Know what you sent. Know what&rsquo;s next.
             </h1>
             <p className={`mt-5 ${BODY}`}>
@@ -207,12 +207,12 @@ export default function OutboxPage() {
               </Link>
               <Link
                 href="/pricing"
-                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold`}
               >
                 See pricing <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
-            <p className="mt-4 text-sm font-semibold text-[#3a3f45]">Outbox and daily digest are on the Pro plan</p>
+            <p className="mt-4 text-sm font-semibold text-[#2a2f35]">Outbox and daily digest are on the Pro plan</p>
           </div>
           <OutboxMock />
         </div>
@@ -236,8 +236,8 @@ export default function OutboxPage() {
                 <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#00828A] text-white">
                   <Icon className="h-5 w-5" />
                 </span>
-                <h3 className={`mt-4 ${D} text-2xl font-bold uppercase leading-tight`}>{title}</h3>
-                <p className="mt-2 text-[15px] text-[#3a3f45] leading-relaxed">{desc}</p>
+                <h3 className={`mt-4 ${D} text-2xl font-bold leading-tight`}>{title}</h3>
+                <p className="mt-2 text-[15px] text-[#2a2f35] leading-relaxed">{desc}</p>
               </div>
             ))}
           </div>
@@ -247,7 +247,7 @@ export default function OutboxPage() {
       <TapeDivider />
 
       {/* ── Email detail ── */}
-      <section className="bg-[#F4EFE6] py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
+      <section className="bg-slate-50 py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 items-center">
           <div className="order-2 lg:order-1 w-full max-w-md mx-auto">
             <EmailDetailMock />
@@ -315,20 +315,20 @@ export default function OutboxPage() {
       {/* ── Final CTA ── */}
       <section className="bg-[#00828A] text-white py-16 sm:py-24 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto text-center">
-          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold uppercase tracking-tight leading-[0.92]`}>
+          <h2 className={`${D} text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.1]`}>
             Stop wondering what you sent.
           </h2>
           <p className="mt-4 text-base sm:text-lg text-white/85">Outbox and daily digest come with Pro.</p>
           <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/signup"
-              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md bg-white text-[#00828A] hover:bg-slate-50 px-8 py-3 shadow-sm transition-colors ${D} text-base font-bold text-center`}
             >
               Start free
             </Link>
             <Link
               href="/pricing"
-              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold uppercase tracking-wider text-center`}
+              className={`w-full sm:w-auto rounded-md border border-white/40 text-white hover:bg-white/10 px-6 py-3 transition-colors ${D} text-base font-bold text-center`}
             >
               See pricing
             </Link>

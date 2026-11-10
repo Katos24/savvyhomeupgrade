@@ -85,20 +85,20 @@ export default async function BlogPostPage({ params }: Props) {
       <Nav />
 
       {/* ── Header ── */}
-      <header className="bg-[#F4EFE6] pt-28 sm:pt-36 pb-10 sm:pb-14 px-4 sm:px-6">
+      <header className="bg-slate-50 pt-28 sm:pt-36 pb-10 sm:pb-14 px-4 sm:px-6">
         <div className="max-w-3xl mx-auto">
           <Link
             href="/blog"
-            className={`inline-flex items-center gap-2 ${D} text-sm font-bold uppercase tracking-wider text-slate-500 hover:text-[#00828A] transition-colors`}
+            className={`inline-flex items-center gap-2 ${D} text-sm font-bold text-slate-500 hover:text-[#00828A] transition-colors`}
           >
             <ArrowLeft className="h-3.5 w-3.5" /> All articles
           </Link>
           <div className="mt-6">
-            <span className={`rounded bg-[#00828A]/10 px-2 py-0.5 ${D} text-[11px] font-bold uppercase tracking-wider text-[#00828A]`}>
+            <span className={`rounded bg-[#00828A]/10 px-2 py-0.5 ${D} text-[11px] font-bold text-[#00828A]`}>
               {categoryLabel(post.category)}
             </span>
           </div>
-          <h1 className={`mt-4 ${D} text-4xl sm:text-5xl font-extrabold uppercase leading-[0.95] tracking-tight`}>{post.title}</h1>
+          <h1 className={`mt-4 ${D} text-4xl sm:text-5xl font-extrabold leading-[1.1] tracking-tight`}>{post.title}</h1>
           <div className="mt-5 flex flex-wrap items-center gap-4 text-sm font-semibold text-slate-500">
             <span className="flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5" /> {publishDate}
@@ -118,23 +118,23 @@ export default async function BlogPostPage({ params }: Props) {
         <div className="mb-16 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="h-1.5 bg-[#00828A]" />
           <div className="p-6 sm:p-8">
-            <h3 className={`${D} text-2xl sm:text-3xl font-extrabold uppercase leading-tight`}>
+            <h3 className={`${D} text-2xl sm:text-3xl font-extrabold leading-tight`}>
               Take the request. Take the deposit. Get paid.
             </h3>
-            <p className="mt-3 text-[15px] text-[#3a3f45] leading-relaxed">
+            <p className="mt-3 text-[15px] text-[#2a2f35] leading-relaxed">
               Lead2Project gives you a booking link, a job board, quotes, and deposit and balance invoices your customers pay
               by card. Start free. Paid plans come with a 14-day free trial.
             </p>
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <Link
                 href="/signup"
-                className={`inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-6 py-3 shadow-sm transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+                className={`inline-flex items-center justify-center gap-2 rounded-md bg-[#00828A] hover:bg-[#006e75] text-white px-6 py-3 shadow-sm transition-colors ${D} text-base font-bold`}
               >
                 Start free
               </Link>
               <Link
                 href="/book-demo"
-                className={`inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold uppercase tracking-wider`}
+                className={`inline-flex items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-6 py-3 hover:bg-slate-50 transition-colors ${D} text-base font-bold`}
               >
                 Book a demo
               </Link>
@@ -153,14 +153,14 @@ export default async function BlogPostPage({ params }: Props) {
                   href={`/blog/${rp.slug}`}
                   className="group rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
                 >
-                  <span className={`rounded bg-[#00828A]/10 px-2 py-0.5 ${D} text-[11px] font-bold uppercase tracking-wider text-[#00828A]`}>
+                  <span className={`rounded bg-[#00828A]/10 px-2 py-0.5 ${D} text-[11px] font-bold text-[#00828A]`}>
                     {categoryLabel(rp.category)}
                   </span>
-                  <h4 className={`mt-3 ${D} text-xl font-bold uppercase leading-tight group-hover:text-[#00828A] transition-colors`}>
+                  <h4 className={`mt-3 ${D} text-xl font-bold leading-tight group-hover:text-[#00828A] transition-colors`}>
                     {rp.title}
                   </h4>
-                  <p className="mt-2 text-sm text-[#3a3f45] leading-relaxed">{rp.excerpt}</p>
-                  <span className={`mt-4 inline-flex items-center gap-1 ${D} text-sm font-bold uppercase tracking-wider text-[#00828A]`}>
+                  <p className="mt-2 text-sm text-[#2a2f35] leading-relaxed">{rp.excerpt}</p>
+                  <span className={`mt-4 inline-flex items-center gap-1 ${D} text-sm font-bold text-[#00828A]`}>
                     Read <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                   </span>
                 </Link>

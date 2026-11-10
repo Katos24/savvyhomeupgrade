@@ -147,10 +147,10 @@ export default function InvoiceGenerator() {
   const inputCls = 'w-full min-w-0 bg-transparent px-3 py-2.5 text-base sm:text-sm font-medium outline-none';
   const labelCls = 'block text-sm font-bold text-[#1C1F23] mb-1.5';
   const card = 'rounded-lg border border-[#1C1F23]/15 bg-white p-5 sm:p-6 shadow-sm';
-  const sectionTitle = 'font-[family-name:var(--font-display)] text-xl font-extrabold uppercase tracking-tight mb-4';
+  const sectionTitle = 'font-[family-name:var(--font-display)] text-xl font-extrabold tracking-tight mb-4';
   const chipBtn = (on: boolean) =>
     `rounded-md border px-3 py-1.5 text-sm font-bold transition ${
-      on ? 'border-[#1C1F23] bg-[#1C1F23] text-white' : 'border-[#1C1F23]/20 bg-white text-[#3a3f45] hover:border-[#1C1F23]/40'
+      on ? 'border-[#1C1F23] bg-[#1C1F23] text-white' : 'border-[#1C1F23]/20 bg-white text-[#2a2f35] hover:border-[#1C1F23]/40'
     }`;
 
   const field = (label: string, value: string, set: (v: string) => void, placeholder = '', opts: { type?: string; id: string }) => (
@@ -184,10 +184,10 @@ export default function InvoiceGenerator() {
 
       <header className="pt-28 text-center sm:pt-36 print:hidden">
         <Eyebrow>Free tool</Eyebrow>
-        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl font-extrabold uppercase leading-[0.9] tracking-tight sm:text-7xl">
+        <h1 className="mt-4 font-[family-name:var(--font-display)] text-5xl font-extrabold leading-[1.1] tracking-tight sm:text-6xl">
           Contractor invoice maker
         </h1>
-        <p className="mx-auto mt-4 max-w-xl text-base text-[#3a3f45] sm:text-lg">
+        <p className="mx-auto mt-4 max-w-xl text-base text-[#2a2f35] sm:text-lg">
           Make a clean invoice in a couple of minutes, with a deposit and balance if you need them. Save it as a PDF. Free, no sign-up, and nothing
           you type leaves your device.
         </p>
@@ -209,17 +209,17 @@ export default function InvoiceGenerator() {
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={logo} alt="Your logo" className="h-12 w-auto max-w-[140px] rounded border border-[#1C1F23]/10 object-contain p-1" />
-                  <button type="button" onClick={() => setLogo('')} className="inline-flex items-center gap-1 text-sm font-semibold text-[#3a3f45] hover:text-[#1C1F23]">
+                  <button type="button" onClick={() => setLogo('')} className="inline-flex items-center gap-1 text-sm font-semibold text-[#2a2f35] hover:text-[#1C1F23]">
                     <X className="h-4 w-4" /> Remove logo
                   </button>
                 </>
               ) : (
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-[#1C1F23]/30 px-3 py-2 text-sm font-semibold text-[#3a3f45] hover:border-[#1C1F23]/60">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-dashed border-[#1C1F23]/30 px-3 py-2 text-sm font-semibold text-[#2a2f35] hover:border-[#1C1F23]/60">
                   <ImagePlus className="h-4 w-4" /> Add your logo
                   <input type="file" accept="image/*" className="hidden" onChange={(e) => onLogo(e.target.files?.[0])} />
                 </label>
               )}
-              <span className="text-xs text-[#5a6067]">Remembered on this device only.</span>
+              <span className="text-xs text-[#3f454c]">Remembered on this device only.</span>
             </div>
           </div>
 
@@ -269,7 +269,7 @@ export default function InvoiceGenerator() {
                     />
                   </div>
                   <div className={`${inputWrap} sm:order-none`}>
-                    <span className="pl-3 text-sm font-semibold text-[#5a6067]">$</span>
+                    <span className="pl-3 text-sm font-semibold text-[#3f454c]">$</span>
                     <input
                       aria-label={`Item ${idx + 1} price`}
                       inputMode="decimal"
@@ -284,7 +284,7 @@ export default function InvoiceGenerator() {
                     onClick={() => removeItem(i.id)}
                     disabled={items.length === 1}
                     aria-label={`Remove item ${idx + 1}`}
-                    className="flex h-10 w-10 items-center justify-center rounded-md text-[#5a6067] transition hover:bg-[#F4EFE6] hover:text-[#1C1F23] disabled:opacity-30"
+                    className="flex h-10 w-10 items-center justify-center rounded-md text-[#3f454c] transition hover:bg-slate-50 hover:text-[#1C1F23] disabled:opacity-30"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -298,11 +298,11 @@ export default function InvoiceGenerator() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="tax" className={labelCls}>
-                  Sales tax rate <span className="font-normal text-[#5a6067]">(optional)</span>
+                  Sales tax rate <span className="font-normal text-[#3f454c]">(optional)</span>
                 </label>
                 <div className={inputWrap}>
                   <input id="tax" inputMode="decimal" value={taxRate} onChange={(e) => setTaxRate(cleanRate(e.target.value))} placeholder="0" className={`${inputCls} tabular-nums`} />
-                  <span className="pr-3 text-sm font-semibold text-[#5a6067]">%</span>
+                  <span className="pr-3 text-sm font-semibold text-[#3f454c]">%</span>
                 </div>
               </div>
             </div>
@@ -335,7 +335,7 @@ export default function InvoiceGenerator() {
                 </div>
                 <div className="max-w-[220px]">
                   <div className={inputWrap}>
-                    {depMode === 'fixed' && <span className="pl-3 text-sm font-semibold text-[#5a6067]">$</span>}
+                    {depMode === 'fixed' && <span className="pl-3 text-sm font-semibold text-[#3f454c]">$</span>}
                     <input
                       aria-label="Deposit"
                       inputMode="decimal"
@@ -344,10 +344,10 @@ export default function InvoiceGenerator() {
                       placeholder={depMode === 'percent' ? '30' : '1000'}
                       className={`${inputCls} tabular-nums`}
                     />
-                    {depMode === 'percent' && <span className="pr-3 text-sm font-semibold text-[#5a6067]">%</span>}
+                    {depMode === 'percent' && <span className="pr-3 text-sm font-semibold text-[#3f454c]">%</span>}
                   </div>
                 </div>
-                <p className="text-sm text-[#3a3f45]">
+                <p className="text-sm text-[#2a2f35]">
                   {kind === 'deposit'
                     ? `The customer pays ${money(r.deposit)} now and ${money(r.balance)} when the job is done.`
                     : `Shows the ${money(r.deposit)} deposit as already paid, with ${money(r.balance)} due.`}
@@ -357,7 +357,7 @@ export default function InvoiceGenerator() {
 
             <div className="mt-5">
               <label htmlFor="notes" className={labelCls}>
-                Notes or payment terms <span className="font-normal text-[#5a6067]">(optional)</span>
+                Notes or payment terms <span className="font-normal text-[#3f454c]">(optional)</span>
               </label>
               <textarea
                 id="notes"
@@ -377,7 +377,7 @@ export default function InvoiceGenerator() {
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 rounded-md bg-[#00828A] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wider text-white shadow-sm transition-colors hover:bg-[#006e75]"
+              className="inline-flex items-center gap-2 rounded-md bg-[#00828A] px-5 py-2.5 font-[family-name:var(--font-display)] text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#006e75]"
             >
               <Printer className="h-4 w-4" /> Save as PDF
             </button>
@@ -491,7 +491,7 @@ export default function InvoiceGenerator() {
             )}
           </div>
 
-          <p className="mt-3 text-xs text-[#5a6067] print:hidden">
+          <p className="mt-3 text-xs text-[#3f454c] print:hidden">
             &ldquo;Save as PDF&rdquo; opens your browser&rsquo;s print window. Choose <strong>Save as PDF</strong> as the printer. On a phone, use Share
             then Print, or Save to Files.
           </p>
@@ -502,7 +502,7 @@ export default function InvoiceGenerator() {
       <section className="print:hidden">
         <div className="flex flex-col gap-5 rounded-lg bg-[#00828A] p-6 text-white shadow-lg sm:flex-row sm:items-center sm:justify-between sm:p-9">
           <div className="max-w-xl">
-            <h2 className="font-[family-name:var(--font-display)] text-3xl font-extrabold uppercase leading-none tracking-tight sm:text-4xl">
+            <h2 className="font-[family-name:var(--font-display)] text-3xl font-extrabold leading-[1.1] tracking-tight sm:text-4xl">
               Want customers to pay it online?
             </h2>
             <p className="mt-3 text-white/85">
@@ -513,7 +513,7 @@ export default function InvoiceGenerator() {
           <div className="flex shrink-0 flex-col gap-2 sm:items-end">
             <Link
               href="/signup"
-              className="rounded-md bg-white px-7 py-3 text-center font-[family-name:var(--font-display)] text-base font-bold uppercase tracking-wider text-[#00828A] shadow-sm transition-colors hover:bg-slate-50"
+              className="rounded-md bg-white px-7 py-3 text-center font-[family-name:var(--font-display)] text-base font-bold text-[#00828A] shadow-sm transition-colors hover:bg-slate-50"
             >
               Start free
             </Link>

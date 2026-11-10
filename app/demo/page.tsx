@@ -270,7 +270,7 @@ function BrowserChrome({ isDark, children }: { isDark: boolean; children: React.
               <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
             <span className={`font-mono ${isDark ? 'text-white/30' : 'text-gray-400'}`}>lead2project.com/</span>
-            <span className={`font-mono font-semibold ${isDark ? 'text-white/60' : 'text-gray-700'}`}>torres/dashboard</span>
+            <span className={`font-mono font-semibold ${isDark ? 'text-white/80' : 'text-gray-700'}`}>torres/dashboard</span>
           </div>
         </div>
         <div className="w-[54px] shrink-0" />
@@ -315,7 +315,7 @@ function DemoCreateModal({ isDark, onClose }: { isDark: boolean; onClose: () => 
                 <h2 className={`text-xl font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>Add New Lead</h2>
                 <p className="text-blue-400 text-[10px] uppercase tracking-widest font-bold mt-0.5">Demo Mode</p>
               </div>
-              <button onClick={onClose} className={`p-2 rounded-xl transition ${isDark ? 'hover:bg-white/5 text-white/40' : 'hover:bg-gray-100 text-gray-400'}`}>
+              <button onClick={onClose} className={`p-2 rounded-xl transition ${isDark ? 'hover:bg-white/5 text-white/60' : 'hover:bg-gray-100 text-gray-400'}`}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -342,11 +342,11 @@ function DemoCreateModal({ isDark, onClose }: { isDark: boolean; onClose: () => 
               <Sparkles className="w-8 h-8 text-blue-400" />
             </div>
             <h3 className={`text-xl font-black mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>This is a demo!</h3>
-            <p className={`text-sm mb-6 leading-relaxed ${isDark ? 'text-white/50' : 'text-gray-500'}`}>
+            <p className={`text-sm mb-6 leading-relaxed ${isDark ? 'text-white/70' : 'text-gray-500'}`}>
               In the real app, <span className="font-bold text-blue-400">{form.name || 'this lead'}</span> would be instantly saved, notifications sent, and appear on your board.
             </p>
             <div className="flex gap-3">
-              <button onClick={onClose} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-white/5 border border-white/10 text-white/60 hover:bg-white/10' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+              <button onClick={onClose} className={`flex-1 py-3 rounded-xl font-bold text-sm transition ${isDark ? 'bg-white/5 border border-white/10 text-white/80 hover:bg-white/10' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
                 Close
               </button>
               <Link href="/signup" className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-sm transition text-center">
@@ -384,10 +384,10 @@ function DemoCalendar({ leads, isDark, onSelectLead }: { leads: Lead[]; isDark: 
       <div className={`flex items-center justify-between px-5 py-4 border-b ${border}`}>
         <h3 className={`text-base font-black ${isDark ? 'text-white' : 'text-gray-900'}`}>{monthName}</h3>
         <div className="flex items-center gap-1">
-          <button onClick={() => setCalDate(new Date(year, month - 1, 1))} className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-white/10 text-white/50' : 'hover:bg-gray-100 text-gray-400'}`}>
+          <button onClick={() => setCalDate(new Date(year, month - 1, 1))} className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-white/10 text-white/70' : 'hover:bg-gray-100 text-gray-400'}`}>
             <ChevronLeft className="w-4 h-4" />
           </button>
-          <button onClick={() => setCalDate(new Date(year, month + 1, 1))} className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-white/10 text-white/50' : 'hover:bg-gray-100 text-gray-400'}`}>
+          <button onClick={() => setCalDate(new Date(year, month + 1, 1))} className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-white/10 text-white/70' : 'hover:bg-gray-100 text-gray-400'}`}>
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
@@ -407,7 +407,7 @@ function DemoCalendar({ leads, isDark, onSelectLead }: { leads: Lead[]; isDark: 
           const todayCell = isToday(day);
           return (
             <div key={day} className={`min-h-[70px] border-r border-b p-1.5 transition ${border} ${isDark ? 'hover:bg-white/5' : 'hover:bg-gray-50'} ${(day + firstDay - 1) % 7 === 6 ? 'border-r-0' : ''}`}>
-              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black mb-1 ${todayCell ? 'bg-blue-600 text-white' : isDark ? 'text-white/50' : 'text-gray-500'}`}>
+              <div className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black mb-1 ${todayCell ? 'bg-blue-600 text-white' : isDark ? 'text-white/70' : 'text-gray-500'}`}>
                 {day}
               </div>
               <div className="space-y-0.5">
@@ -569,7 +569,7 @@ const handleTourStart = (flow: TourFlow) => {
 
   // ── shared class helpers ───────────────────────────────────────────────────
   const pillBase = `shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all`;
-  const pillOff  = isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-white border-slate-200 text-slate-500';
+  const pillOff  = isDark ? 'bg-white/5 border-white/5 text-white/60' : 'bg-white border-slate-200 text-slate-500';
 
   return (
     <div className={isDark ? 'min-h-screen bg-[#0a0f1e]' : 'min-h-screen bg-gray-200'}>
@@ -630,7 +630,7 @@ const handleTourStart = (flow: TourFlow) => {
     }`}>
       <div className="flex items-center gap-1.5 mb-1">
         <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.accent}`} />
-        <p className={`text-[9px] font-bold uppercase tracking-widest truncate ${isDark ? 'text-white/40' : 'text-slate-400'}`}>
+        <p className={`text-[9px] font-bold uppercase tracking-widest truncate ${isDark ? 'text-white/60' : 'text-slate-400'}`}>
           {s.label}
         </p>
       </div>
@@ -867,7 +867,7 @@ const handleTourStart = (flow: TourFlow) => {
                                 className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${
                                   filterStatus === s.value
                                     ? 'bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/30'
-                                    : isDark ? 'bg-white/5 border-white/5 text-white/40 hover:text-white hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-500'
+                                    : isDark ? 'bg-white/5 border-white/5 text-white/60 hover:text-white hover:bg-white/10' : 'bg-slate-100 border-slate-200 text-slate-500'
                                 }`}
                               >
                                 {s.label}
@@ -930,7 +930,7 @@ const handleTourStart = (flow: TourFlow) => {
                                     className={`px-4 py-2.5 rounded-xl text-[11px] font-black uppercase tracking-widest border transition-all ${
                                       filterStatus === s.value
                                         ? 'bg-blue-600 text-white border-blue-500'
-                                        : isDark ? 'bg-white/5 border-white/5 text-white/40' : 'bg-slate-100 border-slate-200 text-slate-500'
+                                        : isDark ? 'bg-white/5 border-white/5 text-white/60' : 'bg-slate-100 border-slate-200 text-slate-500'
                                     }`}
                                   >
                                     {s.label}
@@ -1042,7 +1042,7 @@ const handleTourStart = (flow: TourFlow) => {
                                     <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{lead.name}</p>
                                     <p className={`text-[10px] ${isDark ? 'text-white/30' : 'text-slate-400'}`}>{lead.email}</p>
                                   </td>
-                                  <td className={`px-5 py-4 text-sm whitespace-nowrap ${isDark ? 'text-white/60' : 'text-slate-500'}`}>{lead.category}</td>
+                                  <td className={`px-5 py-4 text-sm whitespace-nowrap ${isDark ? 'text-white/80' : 'text-slate-500'}`}>{lead.category}</td>
                                   <td className="px-5 py-4 whitespace-nowrap">
                                     <span className="text-[10px] font-bold px-2 py-1 rounded-full" style={{ backgroundColor: `${s?.hex}20`, color: s?.hex }}>
                                       {s?.label}
@@ -1113,7 +1113,7 @@ const handleTourStart = (flow: TourFlow) => {
                   <div className="flex flex-col items-center gap-3">
                     <div className={`px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.3em] border-2 transition-all ${
                       isDark
-                        ? 'bg-transparent border-white/10 text-white/40 cursor-default'
+                        ? 'bg-transparent border-white/10 text-white/60 cursor-default'
                         : 'bg-white border-slate-200 text-slate-400 cursor-default'
                     }`}>
                       All {filtered.length} leads loaded
