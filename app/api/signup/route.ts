@@ -94,6 +94,8 @@ export async function POST(req: NextRequest) {
     // Settings, the public form and Create Lead to disagree.
     const initialFieldConfig = JSON.stringify(defaultFieldConfig(businessType));
 
+     // plan_tier is always 'free' here: never trust the signup request;
+    // the Stripe webhook sets the paid plan after checkout.
     const [newCompany] = await sql`
       INSERT INTO companies (
         name,
@@ -120,7 +122,7 @@ export async function POST(req: NextRequest) {
         true,
         ${addressConfig.show},
                ${addressConfig.required},
-        'free',   // never trust the signup request; the Stripe webhook sets the paid plan after checkout
+        'free',
         ${initialFieldConfig}::jsonb,
         ${referred_by_code || null}
       )
