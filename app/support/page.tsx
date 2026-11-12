@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react';
 import { Send, Loader2, CheckCircle, Upload, X, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { upload } from '@vercel/blob/client';
+
 
 export default function SupportPage() {
   const [formData, setFormData] = useState({
@@ -48,19 +50,19 @@ export default function SupportPage() {
     try {
       let imageUrl = null;
 
-      // Upload image if present
+           // Upload the screenshot straight to Blob storage, same as the booking
+      // form's photos. (It used to post to /api/upload, which creates leads,
+      // so the screenshot was always silently dropped.)
       if (imageFile) {
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', imageFile);
-
-        const uploadRes = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadFormData,
-        });
-
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          imageUrl = uploadData.url;
+        try {
+          const blob = await upload(`support/${Date.now()}-${imageFile.name}`, imageFile, {
+            access: 'public',
+            handleUploadUrl: '/api/blob-upload',
+          });
+          imageUrl = blob.url;
+        } catch (uploadErr) {
+          // Still send the ticket without the screenshot.
+          console.error('Screenshot upload failed:', uploadErr);
         }
       }
 

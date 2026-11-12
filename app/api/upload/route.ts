@@ -182,8 +182,9 @@ export async function POST(request: Request) {
       //    pretend it worked, but save nothing and send no emails.
       const trap = str(body.website_url, 200);
       const elapsedMs = Number(body.form_elapsed_ms);
-      const tooFast = Number.isFinite(elapsedMs) && elapsedMs >= 0 && elapsedMs < 3000;
-      if (trap || tooFast) {
+      // The booking form always sends this. Missing = not from our form.
+      const tooFast = !Number.isFinite(elapsedMs) || elapsedMs < 3000;
+            if (trap || tooFast) {
         return NextResponse.json({ success: true, message: 'Lead submitted successfully!', leadId: null, filesUploaded: 0 });
       }
     }
