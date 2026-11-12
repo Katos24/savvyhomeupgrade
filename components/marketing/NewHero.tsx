@@ -244,8 +244,7 @@ export default function Hero() {
             A
           </span>
           <p className="text-left text-sm leading-snug text-[#2a2f35] sm:text-base">
-            <span className="font-semibold text-[#1C1F23]">Built on Long Island by Alex,</span> 8 years in payments at
-            Paymentus &amp; ACI.{' '}
+            <span className="font-semibold text-[#1C1F23]">Built on Long Island by Alex,</span> 8 years in payments.{' '}
             <Link href="/how-it-works" className="inline-flex items-center gap-1 font-semibold text-[#00828A] hover:text-[#006e75]">
               See how it works <ArrowRight className="h-3.5 w-3.5" />
             </Link>
