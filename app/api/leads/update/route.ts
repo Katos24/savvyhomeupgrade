@@ -920,6 +920,13 @@ else if (action === 'mark_quote_accepted') {
         }, { status: 409 });
       }
 
+          // Deposit due date from the Send quote dialog (YYYY-MM-DD).
+      // Missing or invalid = leave whatever is already saved.
+      const depositDueDate =
+        typeof body.deposit_due_date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(body.deposit_due_date)
+          ? body.deposit_due_date
+          : null;
+
       let quoteItems = [];
       try {
         quoteItems = typeof lead.quote_data === 'string' ? JSON.parse(lead.quote_data) : lead.quote_data;
@@ -933,7 +940,8 @@ else if (action === 'mark_quote_accepted') {
         const quoteToken = crypto.randomBytes(32).toString('hex');
 
 await sql`UPDATE projects
-  SET quote_token = ${quoteToken},
+   SET quote_token = ${quoteToken},
+      deposit_due_date = COALESCE(${depositDueDate}::date, deposit_due_date),
       quote_declined_at = NULL,
       quote_accepted_at = NULL,
       updated_at = NOW()
@@ -963,7 +971,8 @@ await sql`UPDATE projects
    depositLabel: lead.deposit_type === 'percent' && parseFloat(lead.deposit_value || '0') > 0
     ? `${parseFloat(lead.deposit_value)}%`
     : undefined,
-  depositPayOnAccept: lead.on_accept_collect === 'deposit',
+   depositPayOnAccept: lead.on_accept_collect === 'deposit',
+  depositDueDate: depositDueDate || undefined,
 });
         // Log to outbox
         try {

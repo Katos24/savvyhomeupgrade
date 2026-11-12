@@ -85,6 +85,17 @@ const fmtDay = (d: string) => {
   }
 };
 
+// YYYY-MM-DD in the user's own time zone, N days from today.
+const isoDay = (offsetDays = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return d.toLocaleDateString('en-CA');
+};
+
+// "2026-11-20" -> "Nov 20" without the UTC shift to the day before.
+const fmtDueDay = (iso: string) =>
+  iso ? new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+
 export default function SendEmailModal({
   open,
   onClose,
@@ -107,12 +118,15 @@ export default function SendEmailModal({
   const [quote, setQuote] = useState<QuotePreview | null>(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
   // Second tap for resending a quote the customer already accepted.
-  const [confirmReset, setConfirmReset] = useState(false);
+    const [confirmReset, setConfirmReset] = useState(false);
+  // Quote only: when the deposit is due. Defaults to a week out.
+  const [depositDueDate, setDepositDueDate] = useState('');
 
   useEffect(() => {
     if (!open || type !== 'quote' || !leadId) return;
     let alive = true;
     setConfirmReset(false);
+    setDepositDueDate(isoDay(7));
     setQuoteLoading(true);
     fetch(`/api/leads/${leadId}/send-preview`, { cache: 'no-store' })
       .then((r) => r.json())
@@ -132,6 +146,9 @@ export default function SendEmailModal({
     ? Math.floor((Date.now() - new Date(lastSentAt).getTime()) / 86_400_000)
     : null;
 
+    // Only ask for a due date when there's a deposit still to collect.
+  const showDueDate = type === 'quote' && !!quote?.deposit && !quote.depositPaid;
+
   const handleSend = async () => {
     setSending(true);
     try {
@@ -144,7 +161,8 @@ export default function SendEmailModal({
           user_name: currentUser?.name || 'Unknown',
           user_email: currentUser?.email || '',
           ...(type === 'quote' && confirmReset ? { confirm_resend_accepted: true } : {}),
-        }),
+          ...(showDueDate && depositDueDate ? { deposit_due_date: depositDueDate } : {}),
+                }),
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -176,11 +194,10 @@ export default function SendEmailModal({
   // What happens when the customer taps Accept.
   const acceptLine = (() => {
     if (!quote) return null;
-    if (quote.deposit && !quote.depositPaid) {
+       if (quote.deposit && !quote.depositPaid) {
+           const due = depositDueDate ? `, due ${fmtDueDay(depositDueDate)}` : '';
       if (quote.autoDeposit) {
-        return quote.payLink
-          ? `${firstName} gets the ${fmt(quote.deposit.amount)} deposit request right away and can pay by card on the spot.`
-          : `${firstName} gets the ${fmt(quote.deposit.amount)} deposit request by email right away. No card payment button — Stripe isn't connected yet.`;
+        return `${firstName} gets the ${fmt(quote.deposit.amount)} deposit request right away${due}.`;
       }
       return `You send the ${fmt(quote.deposit.amount)} deposit request yourself from the Invoice tab. To send it automatically, turn on Auto invoices in Settings.`;
     }
@@ -295,6 +312,23 @@ export default function SendEmailModal({
                         </>
                       )}
                     </div>
+
+                                       {/* Deposit due date */}
+                    {showDueDate && (
+                      <div className="border-t border-slate-100 px-3.5 py-3 flex items-center justify-between gap-3">
+                        <label htmlFor="deposit-due-date" className="text-xs text-slate-500">
+                          Deposit due
+                        </label>
+                        <input
+                          id="deposit-due-date"
+                          type="date"
+                          value={depositDueDate}
+                          min={isoDay(0)}
+                          onChange={(e) => setDepositDueDate(e.target.value)}
+                          className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-900 focus:border-slate-400 focus:outline-none"
+                        />
+                      </div>
+                    )}
 
                     {/* When they accept */}
                     <div className="border-t border-slate-100 bg-slate-50 px-3.5 py-3">

@@ -39,7 +39,7 @@ const STAGE_GUIDE: { label: string; trigger: string }[] = [
   { label: 'Quoted', trigger: 'Moves here automatically when you email a quote to the customer.' },
   { label: 'Approved', trigger: 'Moves here when the customer accepts the quote.' },
   { label: 'Scheduled', trigger: 'Moves here when you set a job date.' },
-   { label: 'In Progress', trigger: 'Moves here automatically on the scheduled date. You can also move it yourself.' },
+  { label: 'In Progress', trigger: 'Moves here automatically on the scheduled date. You can also move it yourself.' },
   { label: 'Completed', trigger: 'You move jobs here yourself once the work is done.' },
 ];
 
@@ -82,11 +82,11 @@ function GuideCard({ topic, isOpen, onToggle }: { topic: GuideTopic; isOpen: boo
 
 export default function SetupTab({
   checklistSteps,
-   onNavigateSection,
+  onNavigateSection,
   onShowQrModal,
   companySlug: propSlug,
 }: SetupTabProps) {
-    const params = useParams();
+  const params = useParams();
   const searchParams = useSearchParams();
   const isWelcome = !!searchParams.get('welcome');
   const [copied, setCopied] = useState(false);
@@ -134,6 +134,9 @@ export default function SetupTab({
             <li>Put the QR code on a truck decal, yard sign, or business card</li>
             <li>Drop it in your email signature</li>
           </ul>
+          <p className="rounded-lg bg-slate-50 px-3 py-2 text-slate-600">
+            <strong className="text-slate-800">Not sure what customers see?</strong> Open your link and send yourself a test request. It shows up in <strong className="text-slate-800">Leads</strong> right away.
+          </p>
           {publicUrl && (
             <div className="flex flex-wrap items-center gap-2 pt-1">
               <button
@@ -279,7 +282,7 @@ export default function SetupTab({
           </div>
         </div>
 
-              {/* WELCOME — only right after signup (?welcome=1) */}
+        {/* WELCOME — only right after signup (?welcome=1) */}
         {isWelcome && publicUrl && (
           <div className="overflow-hidden rounded-xl border border-teal-200 bg-white shadow-xs">
             <div className="h-1 bg-teal-600" />
@@ -305,19 +308,45 @@ export default function SetupTab({
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
                 >
-                                  <LinkIcon className="h-4 w-4" /> Open your booking page
+                  <LinkIcon className="h-4 w-4" /> Open your booking page
                 </a>
                 <button
                   type="button"
-                                   onClick={() => (onShowQrModal ? onShowQrModal() : onNavigateSection('overview'))}
+                  onClick={() => (onShowQrModal ? onShowQrModal() : onNavigateSection('overview'))}
                   className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
                 >
                   <QrCode className="h-4 w-4" /> Get QR code
                 </button>
               </div>
-              <p className="mt-3 text-sm text-slate-600">
-                Send it to your next customer, or fill it out yourself to see a request land on your board.
-              </p>
+
+              <div className="mt-4 rounded-lg bg-slate-50 px-4 py-3.5">
+                <p className="text-sm font-semibold text-slate-900">
+                  Try it out before you send it to anyone
+                </p>
+                <ol className="mt-2.5 space-y-2 text-sm text-slate-600">
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-700 text-[11px] font-bold text-white">1</span>
+                    <span>
+                      Click <strong className="text-slate-800">Open your booking page</strong>. It opens in a new tab and shows exactly what your customers will see.
+                    </span>
+                  </li>
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-700 text-[11px] font-bold text-white">2</span>
+                    <span>
+                      Fill it out like you&rsquo;re the customer. Use your own name and number, add a photo if you want, and hit submit.
+                    </span>
+                  </li>
+                  <li className="flex gap-2.5">
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-teal-700 text-[11px] font-bold text-white">3</span>
+                    <span>
+                      Click <strong className="text-slate-800">Leads</strong> in the sidebar. Your request will be sitting there as a new lead.
+                    </span>
+                  </li>
+                </ol>
+                <p className="mt-3 text-sm text-slate-600">
+                  That&rsquo;s it. Every time a customer uses your link, it lands in the same spot, even when you&rsquo;re on a roof and can&rsquo;t pick up the phone.
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -403,11 +432,10 @@ export default function SetupTab({
           </div>
         </div>
 
-        {/* HOW TO USE LEAD2PROJECT — new reference guide, entirely
-            additive. Each card covers one real workflow, written from
-            what's actually built rather than generic advice, so a
-            contractor can look up "how do I send a quote" without
-            digging through Settings tab by tab. */}
+        {/* HOW TO USE LEAD2PROJECT — reference guide. Each card covers one
+            real workflow, written from what's actually built rather than
+            generic advice, so a contractor can look up "how do I send a
+            quote" without digging through Settings tab by tab. */}
         <div>
           <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">
             How to Use Lead2Project

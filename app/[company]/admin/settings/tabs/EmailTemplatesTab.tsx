@@ -179,9 +179,18 @@ export default function EmailTemplatesTab({
       const res = await fetch(`/api/company/${company.slug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+              body: JSON.stringify({
           action: 'update-email-templates',
-          data: { email_templates: templates },
+          // Only save templates that differ from the defaults. Saving all six
+          // froze every company on the old default text forever, so they never
+          // got improvements to the defaults.
+          data: {
+            email_templates: Object.fromEntries(
+              (Object.keys(templateConfig) as TemplateKey[])
+                .filter((k) => isCustomized(k))
+                .map((k) => [k, templates[k]])
+            ),
+          },
         }),
       });
       const data = await res.json();

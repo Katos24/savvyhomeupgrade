@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb as sql } from '@/lib/db';
 import { Resend } from 'resend';
+import {
+  buildEmail,
+  buildHeading,
+  buildParagraph,
+  buildEmailSection,
+  buildEmailTable,
+  buildEmailRow,
+  EMAIL,
+} from '@/lib/emailBase';
+import { escapeHtml, L2P_FRAME } from '@/lib/emails/shared';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -55,96 +65,73 @@ export async function POST(req: NextRequest) {
       RETURNING id, created_at
     `;
 
-    // Send confirmation email to user
+    // Everything below came from a form, so escape it before it goes into HTML.
+    const safe = {
+      name: escapeHtml(String(name)),
+      email: escapeHtml(String(email)),
+      subject: escapeHtml(String(subject)),
+      message: escapeHtml(String(message)),
+      preview: escapeHtml(String(message).length > 200 ? String(message).substring(0, 200) + '…' : String(message)),
+    };
+    const safeImageUrl = typeof imageUrl === 'string' && /^https:\/\//i.test(imageUrl) ? escapeHtml(imageUrl) : '';
+
+    const ticketBox = (text: string) => `
+      <div style="margin: 0 0 28px 0; padding: 16px; border-radius: 12px; background-color: ${EMAIL.soft}; border: 1px solid ${EMAIL.border};">
+        <p style="margin: 0 0 4px 0; font-size: 13px; color: ${EMAIL.muted};">Ticket #${ticket.id}</p>
+        <p style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: ${EMAIL.ink};">${safe.subject}</p>
+        <p style="margin: 0; font-size: 14px; color: ${EMAIL.text}; line-height: 1.55; white-space: pre-wrap;">${text}</p>
+      </div>
+    `;
+
+    // Confirmation to the person who wrote in
     try {
+      const html = buildEmail({
+        ...L2P_FRAME,
+        footerNote: 'You’re getting this because you contacted Lead2Project support.',
+        bodyHtml: `
+          ${buildHeading('We got your request')}
+          ${buildParagraph(`Hi ${safe.name}, thanks for reaching out. Your ticket is logged and we’ll get back to you as soon as possible.`)}
+          ${ticketBox(safe.preview)}
+          <p style="margin: 0; color: ${EMAIL.muted}; font-size: 14px; line-height: 1.6;">
+            We typically respond within 24 hours. If it’s urgent, just reply to this email.
+          </p>
+        `,
+        preheader: `Ticket #${ticket.id} received. We'll be in touch soon.`,
+      });
+
       await resend.emails.send({
         from: 'Lead2Project Support <hello@lead2project.com>',
         to: email,
         subject: `We got your ticket (#${ticket.id})`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
-            <div style="margin-bottom: 32px;">
-              <img src="https://lead2project.com/Lead2ProjectLogo.webp" alt="Lead2Project" style="width: 36px; height: 36px;" />
-            </div>
-            <h1 style="font-size: 22px; font-weight: 700; color: #0f172a; margin: 0 0 8px;">
-              We received your request
-            </h1>
-            <p style="font-size: 15px; color: #64748b; margin: 0 0 28px; line-height: 1.6;">
-              Hi ${name}, thanks for reaching out. We have logged your ticket and will get back to you as soon as possible.
-            </p>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 28px;">
-              <p style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 4px;">
-                Ticket #${ticket.id}
-              </p>
-              <p style="font-size: 16px; font-weight: 600; color: #0f172a; margin: 0 0 12px;">
-                ${subject}
-              </p>
-              <p style="font-size: 14px; color: #64748b; margin: 0; line-height: 1.5;">
-                ${message.length > 200 ? message.substring(0, 200) + '...' : message}
-              </p>
-            </div>
-            <p style="font-size: 13px; color: #94a3b8; margin: 0; line-height: 1.5;">
-              We typically respond within 24 hours. If your issue is urgent, reply to this email directly.
-            </p>
-            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 28px 0 20px;" />
-            <p style="font-size: 12px; color: #cbd5e1; margin: 0;">
-              Lead2Project Support
-            </p>
-          </div>
-        `,
+        html,
       });
     } catch (emailError) {
       console.error('Failed to send user confirmation email:', emailError);
     }
 
-    // Send notification email to support team
+    // Notification to the support inbox
     try {
+      const html = buildEmail({
+        ...L2P_FRAME,
+        footerNote: 'Internal notification. Hit reply to answer them directly.',
+        bodyHtml: `
+          ${buildHeading(`New ticket #${ticket.id}`, safe.subject)}
+          ${buildEmailSection('From', buildEmailTable([
+            buildEmailRow('Name', safe.name),
+            buildEmailRow('Email', `<a href="mailto:${safe.email}" style="color: ${EMAIL.ink};">${safe.email}</a>`),
+            companyId ? buildEmailRow('Company', `ID ${escapeHtml(String(companyId))}`) : '',
+          ]))}
+          ${buildEmailSection('Message', `<div style="padding: 14px 16px; border-radius: 12px; background-color: ${EMAIL.soft}; border: 1px solid ${EMAIL.border}; color: ${EMAIL.text}; font-size: 14px; line-height: 1.6; white-space: pre-wrap;">${safe.message}</div>`)}
+          ${safeImageUrl ? buildEmailSection('Screenshot', `<img src="${safeImageUrl}" alt="Screenshot" style="max-width: 100%; border-radius: 8px; border: 1px solid ${EMAIL.border};" />`) : ''}
+        `,
+        preheader: `${safe.name}: ${safe.subject}`,
+      });
+
       await resend.emails.send({
         from: 'Lead2Project System <hello@lead2project.com>',
         to: 'hello@lead2project.com',
         subject: `New Ticket #${ticket.id}: ${subject}`,
-        html: `
-          <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 520px; margin: 0 auto; padding: 40px 20px;">
-            <h1 style="font-size: 20px; font-weight: 700; color: #0f172a; margin: 0 0 20px;">
-              New Support Ticket #${ticket.id}
-            </h1>
-            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 6px 0; font-size: 13px; color: #94a3b8; font-weight: 600; width: 80px; vertical-align: top;">From</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #0f172a;">${name} (${email})</td>
-                </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-size: 13px; color: #94a3b8; font-weight: 600; vertical-align: top;">Subject</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #0f172a; font-weight: 600;">${subject}</td>
-                </tr>
-                ${companyId ? `
-                <tr>
-                  <td style="padding: 6px 0; font-size: 13px; color: #94a3b8; font-weight: 600; vertical-align: top;">Company</td>
-                  <td style="padding: 6px 0; font-size: 14px; color: #0f172a;">ID: ${companyId}</td>
-                </tr>
-                ` : ''}
-              </table>
-            </div>
-            <div style="margin-bottom: 20px;">
-              <p style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px;">
-                Message
-              </p>
-              <p style="font-size: 14px; color: #334155; line-height: 1.6; margin: 0; white-space: pre-wrap;">${message}</p>
-            </div>
-            ${imageUrl ? `
-            <div style="margin-bottom: 20px;">
-              <p style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 0 0 8px;">
-                Attached Screenshot
-              </p>
-              <img src="${imageUrl}" alt="Screenshot" style="max-width: 100%; border-radius: 8px; border: 1px solid #e2e8f0;" />
-            </div>
-            ` : ''}
-            <p style="font-size: 13px; color: #94a3b8; margin: 0;">
-              Reply directly to ${email} to respond.
-            </p>
-          </div>
-        `,
+        html,
         replyTo: email,
       });
     } catch (emailError) {

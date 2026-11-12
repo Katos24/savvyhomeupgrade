@@ -26,7 +26,8 @@ async function loadProject(token: string) {
       p.quote_accepted_at,
       p.quote_declined_at,
       p.deposit_type,
-      p.deposit_value,
+           p.deposit_value,
+      p.deposit_due_date,
       p.customer_name,
       p.customer_email,
       l.id as lead_id,
@@ -210,13 +211,29 @@ export async function POST(request: NextRequest) {
       // Emails the invoice like the Send button does, and shows a Pay button here.
       let payment: { url?: string; amount: number; kind: 'deposit' | 'balance' | 'full' } | undefined;
       const mode = project.on_accept_collect || 'none';
-      if (mode === 'deposit' || mode === 'full') {
+            if (mode === 'deposit' || mode === 'full') {
         try {
+          // Keep the due date picked when the quote was sent. Without passing
+          // it, sendCollectionInvoice would overwrite it with null. If that
+          // date already passed by the time they accept, it's due today
+          // instead, so the request doesn't go out already overdue.
+          let dueDate: string | undefined;
+          if (project.deposit_due_date) {
+            const picked = String(
+              project.deposit_due_date instanceof Date
+                ? project.deposit_due_date.toISOString()
+                : project.deposit_due_date
+            ).slice(0, 10);
+            const todayET = new Date().toLocaleDateString('en-CA', { timeZone: 'America/New_York' }); // YYYY-MM-DD
+            dueDate = picked < todayET ? todayET : picked;
+          }
+
           const sent = await sendCollectionInvoice({
             leadId: project.lead_id,
             collect: mode === 'full' ? 'full' : undefined,
             onlyIfKind: mode === 'deposit' ? 'deposit' : undefined,
             skipIfAlreadySent: true,
+            dueDate,
             sentBy: { name: 'Automatic (quote accepted)', email: '' },
           });
           if (sent.ok) payment = { url: sent.paymentLinkUrl, amount: sent.amount, kind: sent.kind };
