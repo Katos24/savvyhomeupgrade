@@ -16,6 +16,7 @@ import {
   CreditCard,
   Receipt,
   Sparkles,
+  Code,
 } from 'lucide-react';
 
 type ChecklistStep =
@@ -90,7 +91,8 @@ export default function SetupTab({
   const searchParams = useSearchParams();
   const isWelcome = !!searchParams.get('welcome');
   const [copied, setCopied] = useState(false);
-  const [openTopic, setOpenTopic] = useState<string | null>('link');
+   const [openTopic, setOpenTopic] = useState<string | null>('link');
+  const [copiedEmbed, setCopiedEmbed] = useState(false);
 
   // Extract the actual route parameter if prop isn't directly passed
   const routeSlug = (params?.company ?? params?.companySlug) as string | undefined;
@@ -102,6 +104,21 @@ export default function SetupTab({
   const totalCount = checklistSteps.length;
   const allDone = totalCount > 0 && doneCount === totalCount;
   const percentComplete = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+
+   // Same snippet as /features/lead-capture/embed, with their real link filled in.
+  // embed.js (public/) resizes the frame to fit the form.
+  const embedCode = slug
+    ? `<iframe src="https://lead2project.com/${slug}?embed=1" data-l2p-form
+  style="width:100%;border:0;min-height:720px" title="Request a quote"></iframe>
+<script src="https://lead2project.com/embed.js" async></script>`
+    : '';
+
+  const handleCopyEmbed = () => {
+    if (!embedCode) return;
+    navigator.clipboard.writeText(embedCode);
+    setCopiedEmbed(true);
+    setTimeout(() => setCopiedEmbed(false), 2000);
+  };
 
   const handleCopyLink = () => {
     if (!publicUrl) return;
@@ -156,6 +173,49 @@ export default function SetupTab({
               </button>
             </div>
           )}
+        </div>
+      ),
+    },
+       {
+      key: 'embed',
+      icon: Code,
+      title: 'Add the Form to Your Website',
+      summary: 'Customers request a quote without leaving your site',
+      body: (
+        <div className="space-y-3">
+          <p>
+            Have your own website? Paste this code where you want the form to show up. Customers fill it out right on your page, and every request still lands in <strong className="text-slate-800">Leads</strong>.
+          </p>
+          {embedCode ? (
+            <>
+              <pre className="overflow-x-auto whitespace-pre-wrap break-all rounded-lg border border-slate-200 bg-slate-50 p-3 font-mono text-[11px] leading-relaxed text-slate-700">
+                {embedCode}
+              </pre>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyEmbed}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800"
+                >
+                  {copiedEmbed ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedEmbed ? 'Copied' : 'Copy code'}
+                </button>
+                <a
+                  href="/features/lead-capture/embed"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition hover:bg-slate-50"
+                >
+                  See how it looks
+                </a>
+              </div>
+            </>
+          ) : (
+            <p className="text-xs text-slate-500">Your booking link isn&rsquo;t ready yet. Refresh the page and try again.</p>
+          )}
+          <p className="text-xs text-slate-500">
+            On Wix, Squarespace, WordPress or GoDaddy, add an &ldquo;Embed&rdquo; or &ldquo;Custom HTML&rdquo; block and paste the code into it. Some website builders only allow custom code on paid plans. No website, or using Facebook only? Use your booking link instead.
+          </p>
         </div>
       ),
     },

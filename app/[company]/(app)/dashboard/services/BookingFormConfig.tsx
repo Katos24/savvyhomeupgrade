@@ -2,11 +2,12 @@
 
 import {
   AlertCircle, Check, X, Eye, User, Mail, Phone, MapPin, Calendar, ImageIcon, Megaphone,
-  Lock, ArrowUpRight, Play, Link2, ExternalLink, Loader2, FileText, Tag,
+  Lock, ArrowUpRight, Play, Link2, ExternalLink, Loader2, FileText, Tag, Share2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TestModeModal from './TestModeModal';
+import ShareFormModal from './ShareFormModal';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
 import { REQUIRED_PLAN, type Category } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
@@ -168,7 +169,8 @@ export default function BookingFormConfig({
     handleSaveAll, enabledCount,
   } = formLogic;
   const { publicUrl, linkCopied, setLinkCopied } = formLogic;
-  const [isTestModeOpen, setIsTestModeOpen] = useState(false);
+    const [isTestModeOpen, setIsTestModeOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [copyFailed, setCopyFailed] = useState(false);
   const [previewStep, setPreviewStep] = useState<1 | 2>(2);
   const [previewService, setPreviewService] = useState<string | null>(null);
@@ -345,8 +347,8 @@ export default function BookingFormConfig({
             <div className="flex items-center gap-2.5">
               <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.icon}`}><Link2 className="h-4 w-4" /></span>
               <div>
-                <p className={`text-base font-semibold ${c.text}`}>Your booking link</p>
-                <p className={`text-[13px] ${c.faint}`}>Put it on your website, Google profile and socials.</p>
+                             <p className={`text-base font-semibold ${c.text}`}>Share your form</p>
+                <p className={`text-[13px] ${c.faint}`}>Send the link, print the QR code, or put the form on your website.</p>
               </div>
             </div>
             <code className={`mt-3 block truncate rounded-lg border px-3 py-2 font-mono text-xs ${c.code}`} title={publicUrl}>
@@ -367,9 +369,16 @@ export default function BookingFormConfig({
                 rel="noopener noreferrer"
                 className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${c.btn}`}
               >
-                Open <ExternalLink className="h-3.5 w-3.5" />
+                            Open <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsShareOpen(true)}
+              className={`mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition ${c.primary}`}
+            >
+              <Share2 className="h-4 w-4" /> QR code &amp; website embed
+            </button>
             {copyFailed && <p className="mt-2 text-xs font-medium text-rose-500">Couldn't copy. Press and hold the link to copy it.</p>}
             <p className={`mt-2 flex items-start gap-1.5 text-[13px] ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -593,6 +602,14 @@ export default function BookingFormConfig({
           </>
         )}
       </AnimatePresence>
+
+            <ShareFormModal
+        open={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        publicUrl={publicUrl}
+        companyName={company.name}
+        isDark={isDark}
+      />
 
       <AnimatePresence>
         {isTestModeOpen && (
