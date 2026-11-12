@@ -10,7 +10,7 @@ const font = "'Nunito', sans-serif";
 export const metadata: Metadata = {
   title: 'Book a demo | Lead2Project',
   description:
-    'See how Lead2Project turns a booking link into leads, quotes, and payments on one board. Twenty minutes, no sales pressure.',
+    'See how Lead2Project turns a booking link into leads, quotes, and payments on one board. Fifteen minutes, no sales pressure.',
 };
 
 const POINTS = [
@@ -47,7 +47,7 @@ export default function BookDemoPage() {
           </span>
 
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-[1.08] mb-5">
-            Twenty minutes,{' '}
+            Fifteen minutes,{' '}
             <span className="text-teal-700">and you&apos;ll know.</span>
           </h1>
 
