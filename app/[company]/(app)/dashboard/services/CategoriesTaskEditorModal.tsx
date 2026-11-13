@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, X, Trash2, AlertCircle, Lock, AlertTriangle } from 'lucide-react';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -69,7 +69,7 @@ export function themeTokens(isDark: boolean) {
     subText: isDark ? 'text-slate-400' : 'text-slate-600',
     heading: isDark ? 'text-slate-100' : 'text-slate-900',
     border: isDark ? 'border-white/10' : 'border-slate-200',
-    hoverBg: isDark ? 'hover:bg-white/5' : 'hover:bg-[#faf9f5]',
+    hoverBg: isDark ? 'hover:bg-white/5' : 'hover:bg-slate-50',
     inputBg: isDark ? 'bg-white/5 border-white/10 text-white' : 'bg-white border-slate-200 text-slate-900',
     overlayCard: isDark ? 'bg-[#0f1420] border border-white/10' : 'bg-white',
   };
@@ -96,14 +96,14 @@ export function CategoriesLockedSection({ companySlug, isDark }: { companySlug: 
               'Loads into the quote on any job in one tap',
             ].map((item) => (
               <li key={item} className={`flex items-start gap-2.5 text-sm ${t.cardText}`}>
-                <span className="mt-0.5 font-bold text-blue-600">✓</span>
+                <span className={`mt-0.5 font-bold ${t.cardText}`}>✓</span>
                 {item}
               </li>
             ))}
           </ul>
           <a
             href={`/${companySlug}/home?section=billing`}
-            className="mt-7 inline-block rounded-xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700"
+            className={`mt-7 inline-block rounded-xl px-5 py-3 text-sm font-semibold transition ${isDark ? 'bg-white text-slate-900 hover:bg-slate-100' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
           >
                         Start 14-day free trial
 
@@ -223,6 +223,11 @@ type TaskEditorProps = {
   isDark: boolean;
   onClose: () => void;
   onSaved: (updatedCategories: Category[]) => void;
+  /** Rendered inside the service panel (no popup frame; stays open after saving). */
+  embedded?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+  /** Panel only: hands this tab's save to the panel ("Save and switch"). Resolves true if it saved. */
+  onRegisterSave?: (fn: (() => Promise<boolean>) | null) => void;
 };
 
 export default function CategoriesTaskEditorModal({
@@ -233,8 +238,15 @@ export default function CategoriesTaskEditorModal({
   isDark,
   onClose,
   onSaved,
+  embedded = false,
+  onDirtyChange,
+  onRegisterSave,
 }: TaskEditorProps) {
   const t = themeTokens(isDark);
+  const primaryBtn = isDark ? 'bg-white text-slate-900 hover:bg-slate-100' : 'bg-slate-900 text-white hover:bg-slate-800';
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [savedFlash, setSavedFlash] = useState(false);
   const [editingTasks, setEditingTasks] = useState<TaskTemplate[]>(category.task_templates || []);
   const [newTaskLabel, setNewTaskLabel] = useState('');
   const [taskInputError, setTaskInputError] = useState(false);
@@ -242,6 +254,13 @@ export default function CategoriesTaskEditorModal({
   useEffect(() => {
     setEditingTasks(category.task_templates || []);
   }, [category]);
+
+  const dirty =
+    !!newTaskLabel.trim() ||
+    JSON.stringify(editingTasks) !== JSON.stringify(category.task_templates || []);
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
 
   const addTask = () => {
     if (!newTaskLabel.trim()) {
@@ -256,37 +275,53 @@ export default function CategoriesTaskEditorModal({
     setTaskInputError(false);
   };
 
-  const save = async () => {
-    if (newTaskLabel.trim()) {
-      setTaskInputError(true);
-      return;
-    }
+  const save = async (): Promise<boolean> => {
+    // A step still typed in the box gets added instead of being lost.
+    const tasks = newTaskLabel.trim()
+      ? [...editingTasks, { id: `task_${Date.now()}`, label: newTaskLabel.trim(), order: editingTasks.length + 1 }]
+      : editingTasks;
     const updated = [...allCategories];
-    updated[categoryIndex] = { ...updated[categoryIndex], task_templates: editingTasks };
+    updated[categoryIndex] = { ...updated[categoryIndex], task_templates: tasks };
+    setSaving(true);
+    setSaveError('');
     try {
-      await fetch(`/api/company/${companySlug}/settings`, {
+      const res = await fetch(`/api/company/${companySlug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update-categories', data: { form_categories: updated } }),
       });
-    } catch {}
+      const result = await res.json().catch(() => ({}));
+      if (!res.ok || result?.success === false) throw new Error(result?.error || 'Could not save the checklist.');
+    } catch (err) {
+      // Used to fail silently and still say it saved.
+      setSaveError(err instanceof Error ? err.message : 'Could not save the checklist.');
+      setSaving(false);
+      return false;
+    }
+    setSaving(false);
+    setEditingTasks(tasks);
+    setNewTaskLabel('');
+    setTaskInputError(false);
     onSaved(updated);
-    onClose();
+    if (embedded) {
+      setSavedFlash(true);
+      setTimeout(() => setSavedFlash(false), 1800);
+    } else {
+      onClose();
+    }
+    return true;
   };
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    if (!onRegisterSave) return;
+    onRegisterSave(() => saveRef.current());
+    return () => onRegisterSave(null);
+  }, [onRegisterSave]);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
-      <div
-        className={`flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl ${t.overlayCard} shadow-2xl`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className={`flex items-center justify-between border-b ${t.border} px-5 py-4`}>
-          <span className={`text-sm font-semibold ${t.cardText}`}>{category.label} tasks</span>
-          <button onClick={onClose} className={`rounded-xl p-1.5 ${t.subText} transition hover:bg-white/10`} aria-label="Close">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
 
+  const inner = (
+    <>
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           <div
             className={`flex gap-2 rounded-xl border p-1 transition-colors ${
@@ -300,18 +335,28 @@ export default function CategoriesTaskEditorModal({
                 setTaskInputError(false);
               }}
               onKeyDown={(e) => e.key === 'Enter' && addTask()}
-              placeholder="Type a task step..."
+              placeholder="Add a step, e.g. Take before photos"
               className={`flex-1 bg-transparent px-3 py-2 text-sm font-medium outline-none ${t.cardText} placeholder:${t.subText}`}
             />
-            <button onClick={addTask} className="rounded-lg bg-blue-600 p-2.5 text-white transition hover:bg-blue-700" aria-label="Add task">
+            <button onClick={addTask} className={`rounded-lg p-2.5 transition ${primaryBtn}`} aria-label="Add task">
               <Plus className="h-4 w-4" />
             </button>
           </div>
 
-          {taskInputError && (
+          {taskInputError ? (
             <p className="flex items-center gap-1 text-xs font-medium text-rose-500">
-              <AlertCircle className="h-3 w-3" /> Click the + button to add your task before saving.
+              <AlertCircle className="h-3 w-3" /> Tap + to add that step first.
             </p>
+          ) : (
+            <p className={`text-xs ${t.subText}`}>Steps your crew checks off on every {category.label} job.</p>
+          )}
+          {saveError && (
+            <p className="flex items-center gap-1 text-xs font-medium text-rose-500">
+              <AlertCircle className="h-3 w-3" /> {saveError}
+            </p>
+          )}
+          {editingTasks.length === 0 && (
+            <p className={`rounded-xl border border-dashed px-4 py-6 text-center text-sm ${t.border} ${t.subText}`}>No steps yet.</p>
           )}
 
           <div className="space-y-2">
@@ -332,13 +377,32 @@ export default function CategoriesTaskEditorModal({
         </div>
 
         <div className={`grid grid-cols-2 gap-2 border-t ${t.border} p-4`}>
-          <button onClick={onClose} className={`rounded-xl border ${t.border} py-2.5 text-sm font-semibold ${t.cardText} transition hover:bg-white/5`}>
-            Cancel
+          <button onClick={embedded ? () => { setEditingTasks(category.task_templates || []); setNewTaskLabel(''); } : onClose} disabled={embedded && !dirty} className={`rounded-xl border ${t.border} py-2.5 text-sm font-semibold ${t.cardText} transition hover:bg-white/5 disabled:opacity-40`}>
+            {embedded ? 'Undo changes' : 'Cancel'}
           </button>
-          <button onClick={save} className="rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700">
-            Save checklist
+          <button onClick={() => save()} disabled={saving} className={`rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-60 ${primaryBtn}`}>
+            {saving ? 'Saving…' : savedFlash ? 'Saved' : 'Save checklist'}
           </button>
         </div>
+    </>
+  );
+
+  if (embedded) return <div className="flex min-h-0 flex-1 flex-col">{inner}</div>;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className={`flex max-h-[85vh] w-full max-w-md flex-col overflow-hidden rounded-2xl ${t.overlayCard} shadow-2xl`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={`flex items-center justify-between border-b ${t.border} px-5 py-4`}>
+          <span className={`text-sm font-semibold ${t.cardText}`}>{category.label} tasks</span>
+          <button onClick={onClose} className={`rounded-xl p-1.5 ${t.subText} transition hover:bg-white/10`} aria-label="Close">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {inner}
       </div>
     </div>
   );

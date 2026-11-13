@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, X, Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import {
@@ -24,6 +24,11 @@ type Props = {
   isDark: boolean;
   onClose: () => void;
   onSaved: (updatedTemplates: QuoteTemplate[]) => void;
+  /** Rendered inside the service panel (no popup frame; stays open after saving). */
+  embedded?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+  /** Panel only: hands this tab's save to the panel ("Save and switch"). Resolves true if it saved. */
+  onRegisterSave?: (fn: (() => Promise<boolean>) | null) => void;
 };
 
 type DepositMode = 'default' | 'custom' | 'none';
@@ -79,8 +84,12 @@ export default function CategoriesPricingModal({
   isDark,
   onClose,
   onSaved,
+  embedded = false,
+  onDirtyChange,
+  onRegisterSave,
 }: Props) {
   const c = tokens(isDark);
+  const [savedFlash, setSavedFlash] = useState(false);
 
   const [items, setItems] = useState<LineItem[]>(() =>
     existingTemplate
@@ -127,6 +136,10 @@ export default function CategoriesPricingModal({
   const [deleting, setDeleting] = useState(false);
 
   const touch = () => setDirty(true);
+
+  useEffect(() => {
+    onDirtyChange?.(dirty || !!newDesc.trim() || !!newPrice);
+  }, [dirty, newDesc, newPrice, onDirtyChange]);
 
   const requestClose = () => {
     if (saving || deleting) return;
@@ -208,29 +221,29 @@ export default function CategoriesPricingModal({
   const deposit = chosen.type ? depositFor(total, chosen.type, chosen.value) : 0;
   const balance = cents(total - deposit);
 
-  const save = async () => {
+  const save = async (): Promise<boolean> => {
     let finalItems = items;
     if (newDesc.trim() || newPrice) {
       const pending = buildNewItem();
-      if (!pending) return;
+      if (!pending) return false;
       finalItems = [...items, pending];
     }
     if (finalItems.length === 0) {
       setError('Add at least one item.');
-      return;
+      return false;
     }
     if (finalItems.some((i) => !i.description.trim())) {
       setError('Every item needs a description.');
-      return;
+      return false;
     }
     if (depositMode === 'custom') {
       if (!(customNum > 0)) {
         setError('Enter a deposit amount, or pick None.');
-        return;
+        return false;
       }
       if (customType === 'percent' && customNum > 100) {
         setError("A percent deposit can't be more than 100.");
-        return;
+        return false;
       }
     }
 
@@ -259,16 +272,37 @@ export default function CategoriesPricingModal({
       const result = await res.json();
       if (result.success) {
         onSaved(result.templates || []);
-        onClose();
-      } else {
-        setError(result.error || 'Could not save the estimate template.');
+        if (embedded) {
+          setItems(finalItems);
+          setNewDesc('');
+          setNewPrice('');
+          setNewQty('1');
+          setDirty(false);
+          setSavedFlash(true);
+          setTimeout(() => setSavedFlash(false), 1800);
+        } else {
+          onClose();
+        }
+        return true;
       }
+      setError(result.error || 'Could not save the estimate template.');
+      return false;
     } catch {
       setError('Network error. Try again.');
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  // Let the panel save this tab before switching.
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  useEffect(() => {
+    if (!onRegisterSave) return;
+    onRegisterSave(() => saveRef.current());
+    return () => onRegisterSave(null);
+  }, [onRegisterSave]);
 
   const deleteTemplate = async () => {
     if (!existingTemplate) return;
@@ -299,42 +333,13 @@ export default function CategoriesPricingModal({
   const numInput = `w-full rounded-lg border px-2.5 py-2 text-base sm:text-sm outline-none transition ${c.input} ${noSpinners}`;
   const COLS = 'sm:grid-cols-[minmax(0,1fr)_110px_64px_96px_32px]';
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={requestClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18 }}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Estimate template for ${category.label}`}
-        className={`flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border shadow-2xl sm:rounded-2xl ${c.panel}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${c.bar}`}>
-          <div className="min-w-0">
-            <h3 className={`truncate text-base font-semibold ${c.text}`}>Estimate template</h3>
-            <p className={`truncate text-xs ${c.sub}`}>{category.label}</p>
-          </div>
-          <button
-            type="button"
-            onClick={requestClose}
-            aria-label="Close"
-            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
+  const inner = (
+    <>
         {/* Body */}
         <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
           <p className={`text-sm ${c.sub}`}>
-            Your usual price for <span className={`font-semibold ${c.text}`}>{category.label}</span>. Load it into any
-            quote in one click, then adjust it for that job.
+            Your usual price for <span className={`font-semibold ${c.text}`}>{category.label}</span>. It fills in a quote
+            in one tap, and you can change anything for that job.
           </p>
 
           {/* Items */}
@@ -520,7 +525,7 @@ export default function CategoriesPricingModal({
             )}
 
             {depositMode === 'default' && !hasDefault && (
-              <p className={`mt-2 text-xs ${c.faint}`}>No default deposit is set. Set one at the top of the Services page.</p>
+              <p className={`mt-2 text-xs ${c.faint}`}>No default deposit is set. Set one under Defaults on the Services page.</p>
             )}
           </section>
 
@@ -625,17 +630,54 @@ export default function CategoriesPricingModal({
                 </button>
                 <button
                   type="button"
-                  onClick={save}
+                  onClick={() => save()}
                   disabled={saving}
                   className={`inline-flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${c.primary}`}
                 >
                   {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {saving ? 'Saving…' : 'Save'}
+                  {saving ? 'Saving…' : savedFlash ? 'Saved' : 'Save'}
                 </button>
               </div>
             </div>
           )}
         </div>
+    </>
+  );
+
+  if (embedded) return <div className="flex min-h-0 flex-1 flex-col">{inner}</div>;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={requestClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Estimate template for ${category.label}`}
+        className={`flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border shadow-2xl sm:rounded-2xl ${c.panel}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${c.bar}`}>
+          <div className="min-w-0">
+            <h3 className={`truncate text-base font-semibold ${c.text}`}>Estimate template</h3>
+            <p className={`truncate text-xs ${c.sub}`}>{category.label}</p>
+          </div>
+          <button
+            type="button"
+            onClick={requestClose}
+            aria-label="Close"
+            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {inner}
       </motion.div>
     </div>
   );

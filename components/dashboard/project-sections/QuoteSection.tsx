@@ -12,9 +12,7 @@ import {
   FileText,
   Lock,
   ChevronDown,
-  Sparkles,
    CheckCircle2,
-  X,
   Pencil
 } from 'lucide-react';
 import SendEmailModal from '@/components/dashboard/SendEmailModal';
@@ -42,6 +40,7 @@ const formatCategoryLabel = (value?: string) =>
 
 const MOBILE_ITEM_LIMIT = 6;
 
+
 const noSpinners =
   '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
 
@@ -67,29 +66,15 @@ export default function QuoteSection({
   const [lastHtmlBody, setLastHtmlBody] = useState<string | null>(null);
   const [previewHtml, setPreviewHtml] = useState<string | null>(null);
 
+  // Where contractors set up per-service pricing templates. One place to change it.
+  const servicesHref = `/${companySlug}/dashboard/services?view=services`;
+
   const { data: allTemplates = [], isLoading: templatesLoading } = useQuoteTemplates(companySlug);
   const categoryTemplate = useMemo(
     () => (lead?.category ? allTemplates.find((t: any) => t.category === lead.category) : null),
     [allTemplates, lead?.category]
   );
 
-    // Every service + whether it has a template, this lead's service first.
-  const serviceTemplateStatus = useMemo(() => {
-    let cats: any = company?.form_categories;
-    if (typeof cats === 'string') {
-      try { cats = JSON.parse(cats); } catch { cats = []; }
-    }
-    if (!Array.isArray(cats)) return [];
-    return cats
-      .filter((c: any) => c?.value)
-      .map((c: any) => ({
-        value: c.value as string,
-        label: (c.label || formatCategoryLabel(c.value)) as string,
-        template: allTemplates.find((t: any) => t.category === c.value) || null,
-      }))
-      .sort((a: any, b: any) => (a.value === lead?.category ? -1 : b.value === lead?.category ? 1 : 0));
-  }, [company?.form_categories, allTemplates, lead?.category]);
-  const servicesWithTemplate = serviceTemplateStatus.filter((s: any) => s.template).length;
 
   const [showTemplateBrowser, setShowTemplateBrowser] = useState(false);
   const [templateBannerDismissed, setTemplateBannerDismissed] = useState(false);
@@ -381,7 +366,7 @@ export default function QuoteSection({
     setQuoteData([]);
     setIsDirty(true);
     setShowClearAllConfirm(false);
-    toast.success('Quote cleared — start fresh');
+    toast.success('Quote cleared');
   };
 
   const handleUpdateCell = (id: number, field: string, value: any) => {
@@ -501,8 +486,8 @@ export default function QuoteSection({
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-bold text-slate-900">Quote</h3>
             {quoteAccepted && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Accepted
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-900 text-white">
+                <CheckCircle2 className="w-3 h-3" /> Accepted
               </span>
             )}
           </div>
@@ -511,9 +496,9 @@ export default function QuoteSection({
               <button
                 onClick={() => setShowEmailModal(true)}
                 disabled={!hasProject || hasIncompleteItems}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-teal-600 text-white hover:bg-teal-700 shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed bg-slate-900 text-white hover:bg-slate-800 shadow-xs"
                               >
-                <Mail className="w-3.5 h-3.5" /> Send Estimate
+                <Mail className="w-3.5 h-3.5" /> Send quote
               </button>
             ) : (
             <button
@@ -533,7 +518,7 @@ export default function QuoteSection({
               ) : isDirty ? (
                 <Save className="w-3.5 h-3.5" />
               ) : (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
               )}
                           {isDirty ? 'Save Changes' : 'Saved'}
             </button>
@@ -568,7 +553,7 @@ export default function QuoteSection({
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed text-left"
                         >
                           <Mail className="w-3.5 h-3.5 text-slate-400" />
-                          {outboxLog.length > 0 ? 'Resend Estimate' : 'Send Estimate'}
+                          {outboxLog.length > 0 ? 'Send quote again' : 'Send quote'}
                         </button>
                         {!quoteAccepted && (
                           <button
@@ -578,8 +563,8 @@ export default function QuoteSection({
                             }}
                             className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer border-t border-slate-100 text-left"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            Mark Accepted Manually
+                            <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
+                            Mark as accepted
                           </button>
                         )}
                         <button
@@ -590,7 +575,7 @@ export default function QuoteSection({
                           className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer border-t border-slate-100 text-left"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          Clear All Items
+                          Clear all items
                         </button>
                       </motion.div>
                     </>
@@ -603,110 +588,90 @@ export default function QuoteSection({
 
         {/* MAIN BODY */}
         <div className="p-3.5 sm:p-5 lg:p-6 space-y-5">
-                   {/* EMPTY STATE */}
+          {/* EMPTY STATE — one obvious next step */}
           {quoteData.length === 0 && (
             <div className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {templatesLoading ? (
-                  <div className="h-[104px] md:h-[150px] rounded-xl border border-slate-200 bg-slate-50 animate-pulse" />
-                ) : allTemplates.length > 0 ? (
+              {templatesLoading ? (
+                <div className="h-[140px] rounded-2xl border border-slate-200 bg-slate-50 animate-pulse" />
+              ) : categoryTemplate ? (
+                /* 1. This job's service has a template → one tap to fill the quote */
+                <div className="rounded-2xl border-2 border-slate-900 bg-white p-4 sm:p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Fastest way</p>
+                  <div className="mt-1 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-base sm:text-lg font-semibold text-slate-900">
+                        Use your {formatCategoryLabel(lead?.category)} template
+                      </p>
+                      <p className="text-sm text-slate-500 mt-0.5">
+                        {(categoryTemplate.items || []).length} item{(categoryTemplate.items || []).length === 1 ? '' : 's'} · you can edit anything after
+                      </p>
+                    </div>
+                    <p className="text-lg font-bold text-slate-900 tabular-nums shrink-0">{fmt(categoryTemplate.total || 0)}</p>
+                  </div>
                   <button
-                    onClick={() => setShowTemplateBrowser(true)}
-                    className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-50 hover:border-indigo-300 transition cursor-pointer group"
+                    onClick={() => applyTemplate(categoryTemplate)}
+                    disabled={!hasProject}
+                    className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition cursor-pointer disabled:opacity-40"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0 shadow-2xs group-hover:scale-105 transition-transform">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-indigo-950">Choose a Template</p>
-                      <p className="text-xs text-indigo-700 mt-1">
-                        {categoryTemplate
-                          ? `${formatCategoryLabel(lead?.category)} template suggested`
-                          : `Pick from ${allTemplates.length} saved template${allTemplates.length === 1 ? '' : 's'}`}
-                      </p>
-                    </div>
+                    <FileText className="w-4 h-4" /> Fill in the quote
                   </button>
-                ) : (
-                  <a
-                    href={`/${companySlug}/dashboard/services`}
-                    className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-indigo-200 bg-indigo-50/30 hover:bg-indigo-50/60 hover:border-indigo-300 transition cursor-pointer block group"
+                </div>
+              ) : (
+                /* 2. No template for this service → start from scratch, and nudge to save one */
+                <div className="rounded-2xl border-2 border-slate-900 bg-white p-4 sm:p-5">
+                  <p className="text-base sm:text-lg font-semibold text-slate-900">Build the quote</p>
+                  <p className="text-sm text-slate-500 mt-0.5">Add what you&rsquo;re charging for, line by line.</p>
+                  <button
+                    onClick={() => (window.innerWidth < 768 ? handleAddRowMobile() : handleAddRow())}
+                    disabled={!hasProject}
+                    className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition cursor-pointer disabled:opacity-40"
                   >
-                    <div className="w-9 h-9 rounded-lg bg-indigo-600 text-white flex items-center justify-center mb-3 md:mb-0 shadow-2xs group-hover:scale-105 transition-transform">
-                      <FileText className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-indigo-950">Set Up Pricing Templates</p>
-                      <p className="text-xs text-indigo-700 mt-1">Save reusable pricing so future quotes take seconds</p>
-                    </div>
-                  </a>
-                )}
+                    <Plus className="w-4 h-4" /> Add the first item
+                  </button>
+                </div>
+              )}
 
-                <button
-                  onClick={handleAddRow}
-                  className="text-left p-4 md:p-5 md:min-h-[150px] md:flex md:flex-col md:justify-between rounded-xl border border-dashed border-slate-300 bg-white hover:bg-slate-50 hover:border-slate-400 transition cursor-pointer group"
+              {/* Secondary options, always the same two */}
+              {!templatesLoading && (
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
+                  {categoryTemplate && (
+                    <button
+                      onClick={() => (window.innerWidth < 768 ? handleAddRowMobile() : handleAddRow())}
+                      disabled={!hasProject}
+                      className="inline-flex items-center gap-1.5 font-medium text-slate-600 hover:text-slate-900 cursor-pointer disabled:opacity-40"
+                    >
+                      <Plus className="w-4 h-4" /> Start from scratch
+                    </button>
+                  )}
+                  {allTemplates.length > (categoryTemplate ? 1 : 0) && (
+                    <button
+                      onClick={() => setShowTemplateBrowser(true)}
+                      disabled={!hasProject}
+                      className="inline-flex items-center gap-1.5 font-medium text-slate-600 hover:text-slate-900 cursor-pointer disabled:opacity-40"
+                    >
+                      <FileText className="w-4 h-4" /> {categoryTemplate ? 'Use a different template' : 'Use a saved template'}
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* No template for this service yet → why it's worth setting one up */}
+              {!templatesLoading && !categoryTemplate && lead?.category && (
+                <a
+                  href={servicesHref}
+                  className="flex items-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-3.5 hover:border-slate-400 hover:bg-slate-50 transition"
                 >
-                  <div className="w-9 h-9 rounded-lg bg-slate-900 text-white flex items-center justify-center mb-3 md:mb-0 shadow-2xs group-hover:scale-105 transition-transform">
-                    <Plus className="w-4 h-4" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-600">
+                    <FileText className="w-4 h-4" />
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-slate-900">Create from Scratch</p>
-                    <p className="text-xs text-slate-500 mt-1">Add line items one at a time</p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">
+                      Quote {formatCategoryLabel(lead.category)} jobs in one tap
+                    </p>
+                    <p className="text-xs text-slate-500">Save your usual pricing once in Services. Next time, the quote fills itself in.</p>
                   </div>
-                </button>
-              </div>
-
-              {!templatesLoading &&
-                serviceTemplateStatus.length > 0 &&
-                servicesWithTemplate < serviceTemplateStatus.length && (
-                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
-                        Templates set up: {servicesWithTemplate} of {serviceTemplateStatus.length}
-                      </p>
-                      <a
-                        href={`/${companySlug}/dashboard/services`}
-                        className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
-                      >
-                        Manage
-                      </a>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {serviceTemplateStatus.slice(0, 6).map((s: any) => {
-                        const base = `inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-semibold transition ${
-                          s.value === lead?.category ? 'ring-2 ring-indigo-300' : ''
-                        }`;
-                        return s.template ? (
-                          <button
-                            key={s.value}
-                            type="button"
-                            onClick={() => applyTemplate(s.template)}
-                            title={`Load ${s.label} template`}
-                            className={`${base} cursor-pointer border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100`}
-                          >
-                            <CheckCircle2 className="h-3 w-3" /> {s.label}
-                          </button>
-                        ) : (
-                          <a
-                            key={s.value}
-                            href={`/${companySlug}/dashboard/services`}
-                            title={`Set up a ${s.label} template`}
-                            className={`${base} border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700`}
-                          >
-                            <X className="h-3 w-3 text-rose-400" /> {s.label}
-                          </a>
-                        );
-                      })}
-                      {serviceTemplateStatus.length > 6 && (
-                        <a
-                          href={`/${companySlug}/dashboard/services`}
-                          className="px-1 py-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800"
-                        >
-                          +{serviceTemplateStatus.length - 6} more
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                )}
+                </a>
+              )}
             </div>
           )}
 
@@ -736,7 +701,7 @@ export default function QuoteSection({
                           if (!e.currentTarget.contains(e.relatedTarget as Node)) setFocusedRowId(null);
                         }}
                         className={`border-b border-slate-100 last:border-b-0 group transition-colors ${
-                          isFocused ? 'bg-indigo-50/40' : 'hover:bg-slate-50/60'
+                          isFocused ? 'bg-slate-50' : 'hover:bg-slate-50/60'
                         }`}
                       >
                         {/* DESCRIPTION FIELD */}
@@ -752,7 +717,7 @@ export default function QuoteSection({
                               handleUpdateCell(item.id, 'description', e.target.value);
                               autoResizeTextarea(e.target);
                             }}
-                            placeholder="Describe line item or service..."
+                            placeholder="What are you charging for?"
                             className="w-full bg-transparent text-sm font-medium text-slate-800 placeholder:text-slate-400 placeholder:font-normal outline-none resize-none overflow-hidden leading-relaxed block py-0.5"
                           />
                         </td>
@@ -843,8 +808,8 @@ export default function QuoteSection({
                     onClick={() => setShowTemplateBrowser(true)}
                     className="shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-white text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-50 hover:border-slate-300 transition cursor-pointer"
                   >
-                                  <FileText className="w-3.5 h-3.5 text-indigo-500" />
-                    Add from Saved
+                    <FileText className="w-3.5 h-3.5 text-slate-500" />
+                    Add saved items
                   </button>
                 )
               )}
@@ -863,7 +828,7 @@ export default function QuoteSection({
                 ) : isDirty ? (
                   <Save className="w-3.5 h-3.5" />
                 ) : (
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
                 )}
                 {isDirty ? 'Save Changes' : 'Saved'}
               </button>
@@ -924,14 +889,14 @@ export default function QuoteSection({
                   onClick={handleAddRowMobile}
                   className="py-3 bg-slate-900 text-white rounded-xl flex items-center justify-center gap-2 text-xs font-semibold active:scale-[0.99] transition"
                 >
-                  <Plus className="w-4 h-4" /> New Item
+                  <Plus className="w-4 h-4" /> Add item
                 </button>
                 {!templatesLoading && allTemplates.length > 0 && (
                   <button
                     onClick={() => setShowTemplateBrowser(true)}
                     className="py-3 bg-white border border-slate-200 rounded-xl flex items-center justify-center gap-2 text-xs font-semibold text-slate-700 active:scale-[0.99] transition"
                   >
-                    <FileText className="w-4 h-4 text-indigo-500" /> Add from Saved
+                    <FileText className="w-4 h-4 text-slate-500" /> Add saved items
                   </button>
                 )}
               </div>
@@ -1089,7 +1054,7 @@ export default function QuoteSection({
                   ) : isDirty ? (
                     <Save className="w-3.5 h-3.5" />
                   ) : (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-slate-400" />
                   )}
                   {isDirty ? 'Save Changes' : 'Saved'}
                 </button>
@@ -1123,7 +1088,7 @@ export default function QuoteSection({
                 </div>
 
                 <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100">
-                  <p className="text-sm font-bold text-slate-900">Edit Line Item</p>
+                  <p className="text-sm font-bold text-slate-900">Line item</p>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -1158,7 +1123,7 @@ export default function QuoteSection({
                         setEditingItem({ ...editingItem, description: e.target.value });
                         autoResizeTextarea(e.target);
                       }}
-                      placeholder="Item or service name..."
+                      placeholder="What are you charging for?"
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-slate-400 focus:bg-white resize-none overflow-hidden leading-snug"
                     />
                   </div>
@@ -1166,7 +1131,7 @@ export default function QuoteSection({
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-                        Unit Price
+                        Price each
                       </label>
                       <div className="flex items-center gap-1 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus-within:border-slate-400 focus-within:bg-white">
                         <span className="text-sm font-bold text-slate-500">$</span>
@@ -1240,7 +1205,7 @@ export default function QuoteSection({
           <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-2 mb-3">
               <Mail className="w-3.5 h-3.5 text-slate-400" />
-              <span className="text-xs font-semibold text-slate-500">Estimate Email History ({outboxLog.length})</span>
+              <span className="text-xs font-semibold text-slate-500">Sent to customer ({outboxLog.length})</span>
             </div>
             <div className="max-h-[160px] overflow-y-auto space-y-2 pr-1">
               {outboxLog.map((entry: any, i: number) => (
@@ -1251,7 +1216,7 @@ export default function QuoteSection({
                   <div className="flex items-center gap-2.5 min-w-0">
                     <div
                       className={`w-2 h-2 rounded-full shrink-0 ${
-                        entry.status === 'failed' ? 'bg-rose-500' : 'bg-emerald-500'
+                        entry.status === 'failed' ? 'bg-rose-500' : 'bg-slate-400'
                       }`}
                     />
                     <div className="min-w-0">

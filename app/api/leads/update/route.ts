@@ -945,7 +945,17 @@ await sql`UPDATE projects
       quote_declined_at = NULL,
       quote_accepted_at = NULL,
       updated_at = NOW()
-  WHERE id = ${lead.project_id}`;
+   WHERE id = ${lead.project_id}`;
+
+      // Resending a quote they already accepted (nothing paid — that's
+      // blocked above) starts it over: clear "deposit request sent" so the
+      // next acceptance sends a fresh deposit request for the new amount
+      // and shows the Pay deposit box. Without this, sendCollectionInvoice
+      // skipped it as already sent.
+      if (lead.proj_quote_accepted_at) {
+        await sql`UPDATE projects SET deposit_invoice_sent_at = NULL WHERE id = ${lead.project_id}`;
+        await sql`UPDATE invoices SET deposit_sent_at = NULL, updated_at = NOW() WHERE project_id = ${lead.project_id}`;
+      }
 
    const emailResult = await sendQuoteToCustomer({
   customerEmail: lead.email,

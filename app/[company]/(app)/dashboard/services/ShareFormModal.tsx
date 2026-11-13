@@ -7,7 +7,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { X, Link2, Code, Check, Copy, Download, ExternalLink, QrCode } from 'lucide-react';
+import { X, Link2, Code, Check, Copy, Download, ExternalLink, QrCode, Mail } from 'lucide-react';
 
 type Tab = 'link' | 'embed';
 
@@ -48,6 +48,7 @@ export default function ShareFormModal({
   companyName,
   isDark,
   initialTab = 'link',
+  onTestEmail,
 }: {
   open: boolean;
   onClose: () => void;
@@ -55,6 +56,8 @@ export default function ShareFormModal({
   companyName?: string;
   isDark: boolean;
   initialTab?: Tab;
+  /** Shows a "Send me a test email" link (opens the test-email flow). */
+  onTestEmail?: () => void;
 }) {
   const c = tokens(isDark);
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -263,6 +266,16 @@ export default function ShareFormModal({
                     </p>
                   </div>
                 </div>
+              )}
+
+              {onTestEmail && (
+                <button
+                  type="button"
+                  onClick={() => { onClose(); onTestEmail(); }}
+                  className={`mt-4 inline-flex items-center gap-1.5 text-sm font-medium transition hover:opacity-80 ${c.sub}`}
+                >
+                  <Mail className="h-4 w-4" /> Send me the confirmation email customers get
+                </button>
               )}
 
               {copyFailed && (

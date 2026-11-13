@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ChevronLeft, Tag, FileText, ChevronRight, Sun, Moon, Check } from 'lucide-react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { ChevronLeft, Tag, FileText, ChevronRight, Check } from 'lucide-react';
 import CategoriesTab from './CategoriesTab';
 import BookingFormConfig from './BookingFormConfig';
 import { useFormTabLogic } from '../../../admin/settings/tabs/useFormTabLogic';
@@ -54,8 +55,27 @@ function landingTokens(isDark: boolean) {
       };
 }
 
+const isView = (v: string | null): v is View => v === 'landing' || v === 'services' || v === 'form';
+
 export default function ServicesFormLanding({ company, currentUser }: { company: any; currentUser: any }) {
-  const [view, setView] = useState<View>('landing');
+  // The view lives in the URL (?view=services / ?view=form), so the sidebar
+  // can link straight to Services or Booking form, and Back works.
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const paramView = searchParams.get('view');
+  const [view, setView] = useState<View>(isView(paramView) ? paramView : 'landing');
+
+  // Sidebar click while already on this page → follow the URL.
+  useEffect(() => {
+    const next: View = isView(paramView) ? paramView : 'landing';
+    setView((cur) => (cur === next ? cur : next));
+  }, [paramView]);
+
+  const go = (next: View) => {
+    setView(next);
+    router.replace(next === 'landing' ? pathname : `${pathname}?view=${next}`, { scroll: false });
+  };
 
   // Unsaved-changes guard for the Services view (same prompt as the lead modal).
   const [servicesDirty, setServicesDirty] = useState(false);
@@ -71,32 +91,34 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
       setPendingView(next);
       return;
     }
-    setView(next);
+    go(next);
   };
   const leaveTo = (next: View) => {
     setServicesDirty(false);
     setPendingView(null);
-    setView(next);
+    go(next);
   };
 
-  // Theme: same key + event as the rest of the app.
+  // Theme: set from the sidebar toggle (same saved key + event as the rest of the app).
   const [isDark, setIsDark] = useState<boolean>(true);
-  const skipFirstThemeWrite = useRef(true);
   useEffect(() => {
-    try {
-      setIsDark(localStorage.getItem('dashboard-theme') !== 'light');
-    } catch {}
+    const read = () => {
+      try { setIsDark(localStorage.getItem('dashboard-theme') !== 'light'); } catch {}
+    };
+    read();
+    window.addEventListener('theme-changed', read);
+    window.addEventListener('storage', read);
+    return () => {
+      window.removeEventListener('theme-changed', read);
+      window.removeEventListener('storage', read);
+    };
   }, []);
-  useEffect(() => {
-    if (skipFirstThemeWrite.current) {
-      skipFirstThemeWrite.current = false;
-      return;
-    }
-    try {
-      localStorage.setItem('dashboard-theme', isDark ? 'dark' : 'light');
-    } catch {}
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    try { localStorage.setItem('dashboard-theme', next ? 'dark' : 'light'); } catch {}
     window.dispatchEvent(new Event('theme-changed'));
-  }, [isDark]);
+  };
 
   // Scroll to top when switching views (matters most on phones).
   useEffect(() => {
@@ -105,7 +127,8 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
 
   const t = themeTokens(isDark);
   const l = landingTokens(isDark);
-  const formLogic = useFormTabLogic(company);
+  // Booking form switches save as you flip them, so the live form preview updates.
+  const formLogic = useFormTabLogic(company, { autoSave: true });
   const { data: templates = [], isLoading: templatesLoading } = useQuoteTemplates(company?.slug, {
     enabled: can((company?.plan_tier || 'free') as PlanTier, 'quote_templates'),
   });
@@ -163,7 +186,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
           company={company}
           currentUser={currentUser}
           isDark={isDark}
-          onToggleTheme={() => setIsDark((v) => !v)}
+          onToggleTheme={toggleTheme}
           onDirtyChange={setServicesDirty}
           onRegisterSave={registerServicesSave}
         />
@@ -228,7 +251,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
   if (view === 'form') {
     return (
       <div className={`min-h-screen ${t.bg} transition-colors`}>
-        {backBar('max-w-4xl')}
+        {backBar('max-w-6xl')}
         <BookingFormConfig company={company} formLogic={formLogic} isDark={isDark} t={t} />
       </div>
     );
@@ -243,21 +266,14 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
             <h1 className={`text-xl font-semibold tracking-tight sm:text-2xl ${l.text}`}>Services &amp; booking form</h1>
             <p className={`mt-0.5 text-sm ${l.sub}`}>What customers can book, and the form they use to book it.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsDark((v) => !v)}
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition ${l.btn}`}
-            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
+
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {/* Services */}
           <button
             type="button"
-            onClick={() => setView('services')}
+            onClick={() => go('services')}
             className={`group flex flex-col rounded-2xl border p-5 text-left transition sm:p-6 ${l.card}`}
           >
             <div className="flex items-center gap-3">
@@ -314,7 +330,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
           {/* Booking form */}
           <button
             type="button"
-            onClick={() => setView('form')}
+            onClick={() => go('form')}
             className={`group flex flex-col rounded-2xl border p-5 text-left transition sm:p-6 ${l.card}`}
           >
             <div className="flex items-center gap-3">
@@ -333,7 +349,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
             </div>
 
             <p className={`mt-3 text-sm leading-relaxed ${l.sub}`}>
-              Choose which fields customers fill in, get your booking link, and test it as a customer.
+              See your live form, choose what it asks, and share it as a link, QR code or on your website.
             </p>
 
             <div className="mt-4 flex-1">
@@ -353,7 +369,7 @@ export default function ServicesFormLanding({ company, currentUser }: { company:
               {fieldsOff.length > 0 && <p className={`mt-2.5 text-[13px] ${l.faint}`}>Dashed fields are turned off.</p>}
             </div>
 
-            <span className={`mt-5 border-t pt-3 text-sm font-semibold ${l.divider} ${l.link}`}>Edit and test form</span>
+            <span className={`mt-5 border-t pt-3 text-sm font-semibold ${l.divider} ${l.link}`}>Open booking form</span>
           </button>
         </div>
       </div>

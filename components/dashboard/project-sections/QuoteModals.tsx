@@ -1,24 +1,60 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { X, Mail, Loader2, Sparkles, CheckCircle2, ArrowRightLeft, FileText, Trash2, Search, Plus, Check } from 'lucide-react';
+import { X, Mail, Loader2, CheckCircle2, ArrowRightLeft, FileText, Trash2, Search, Plus, Check, Star, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-// Category values are stored as snake_case ("plumbing_repair") — this is
-// purely a display fix, the underlying value passed to applyTemplate etc.
-// stays exactly as stored.
+// Category values are stored as snake_case ("plumbing_repair") — display only.
 const formatCategoryLabel = (value?: string) =>
   (value || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
+// How many items the matching template shows before "Show all".
+const MATCH_PREVIEW = 5;
+
+// A template's line items, read-only, for previewing before loading it.
+function TemplateItemList({ items }: { items: any[] }) {
+  return (
+    <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+      {items.map((it: any, idx: number) => {
+        const qty = parseFloat(it.quantity) || 1;
+        const unit = parseFloat(it.unitPrice) || 0;
+        const amount = it.amount != null ? parseFloat(it.amount) || 0 : unit * qty;
+        return (
+          <li key={idx} className="flex items-start justify-between gap-3 px-3 py-2">
+            <div className="min-w-0">
+              <p className="text-sm text-slate-800 leading-snug">{it.description || it.label || 'Item'}</p>
+              {qty !== 1 && unit > 0 && (
+                <p className="text-xs text-slate-500">{qty} × {fmt(unit)}</p>
+              )}
+            </div>
+            <p className="text-sm font-medium text-slate-900 tabular-nums shrink-0">{fmt(amount)}</p>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// Shared look for the small confirm dialogs (bottom sheet on phones, centered on desktop).
+const overlayCls = 'fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-xs';
+const sheetCls = 'bg-white w-full sm:max-w-sm rounded-t-3xl sm:rounded-2xl p-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] shadow-2xl';
+const btnSecondary = 'py-3 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition cursor-pointer disabled:opacity-50';
+const btnPrimary = 'inline-flex items-center justify-center gap-1.5 py-3 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition cursor-pointer disabled:opacity-50';
+const btnDanger = 'inline-flex items-center justify-center gap-1.5 py-3 rounded-xl bg-rose-600 text-white text-sm font-semibold hover:bg-rose-700 transition cursor-pointer disabled:opacity-50';
+const sheetMotion = {
+  initial: { y: 24, opacity: 0 },
+  animate: { y: 0, opacity: 1 },
+  exit: { y: 24, opacity: 0 },
+  transition: { type: 'spring' as const, damping: 28, stiffness: 320 },
+};
+
 // Every popup QuoteSection can show, in one place. QuoteSection owns all the
 // state and handlers below — this component just renders whichever modal is
-// currently open. Nothing here mutates state on its own except through the
-// setters/handlers passed in, so there's one source of truth for quote data
-// regardless of which file you're reading.
+// currently open.
 type QuoteModalsProps = {
   lead: any;
   companySlug: string;
@@ -46,8 +82,7 @@ type QuoteModalsProps = {
   allTemplates: any[];
   applyTemplate: (template: any) => void;
 
-  // Clear all items (start the current quote over from scratch — this
-  // never touches saved templates)
+  // Clear all items (never touches saved templates)
   showClearAllConfirm: boolean;
   setShowClearAllConfirm: React.Dispatch<React.SetStateAction<boolean>>;
   handleClearAllItems: () => void;
@@ -91,16 +126,12 @@ type QuoteModalsProps = {
 
 export default function QuoteModals({
   lead,
-  companySlug,
   quoteData,
   setQuoteData,
   setIsDirty,
   previewHtml,
   setPreviewHtml,
-  showAI,
   setShowAI,
-  leadPhotos,
-  handleAddItems,
   pendingAiItems,
   setPendingAiItems,
   showTemplateBrowser,
@@ -139,30 +170,43 @@ export default function QuoteModals({
 }: QuoteModalsProps) {
   const [browserMode, setBrowserMode] = useState<'templates' | 'items'>('templates');
   const [itemSearchQuery, setItemSearchQuery] = useState('');
-  // Content key -> the quoteData row id that add created. A plain Set
-  // only ever remembered "this was added at some point," with no way to
-  // know which specific row to remove on a second click — clicking again
-  // just ran the same add logic again, creating a genuine duplicate
-  // instead of the toggle the checkmark UI implied.
+  // Content key -> the quoteData row id that add created, so a second tap
+  // removes that exact row instead of adding a duplicate.
   const [addedItems, setAddedItems] = useState<Map<string, number>>(new Map());
+  // Which template card has its items expanded (one at a time).
+  const [expandedTemplate, setExpandedTemplate] = useState<string | null>(null);
+  const toggleTemplate = (key: string) => setExpandedTemplate((cur) => (cur === key ? null : key));
+  const templateKey = (t: any, fallback: string) => String(t?.id ?? fallback);
 
-  // Reset to a clean state each time the browser opens, since this
-  // component never unmounts — only the modal's visibility toggles.
+  const jobCategory: string | undefined = lead?.category || undefined;
+  const firstName = lead?.name?.split(' ')[0] || 'the customer';
+
+  // Reset each time the browser opens (this component never unmounts).
   useEffect(() => {
-       if (showTemplateBrowser) {
+    if (showTemplateBrowser) {
       setBrowserMode(quoteData.length > 0 ? 'items' : 'templates');
       setItemSearchQuery('');
       setAddedItems(new Map());
+      setExpandedTemplate(null);
     }
   }, [showTemplateBrowser]);
 
-  // Every line item across every saved template, flattened into one
-  // searchable pool. Deduped on description+price+quantity so the same
-  // "Labor" line saved in three templates doesn't show up three times.
+  // Templates: the one(s) matching this job's service go on top, big.
+  const { matchingTemplates, otherTemplates } = useMemo(() => {
+    const byName = (a: any, b: any) =>
+      formatCategoryLabel(a.category).localeCompare(formatCategoryLabel(b.category));
+    const matching = allTemplates.filter((t: any) => jobCategory && t.category === jobCategory);
+    const others = allTemplates.filter((t: any) => !jobCategory || t.category !== jobCategory).sort(byName);
+    return { matchingTemplates: matching, otherTemplates: others };
+  }, [allTemplates, jobCategory]);
+
+  // Every line item across every saved template, deduped on description+price+qty.
+  // Items from this job's service come first.
   const lineItemPool = useMemo(() => {
     const pool: { description: string; unitPrice: number; quantity: number; category: string }[] = [];
     const seen = new Set<string>();
-    allTemplates.forEach((t: any) => {
+    const ordered = [...matchingTemplates, ...otherTemplates];
+    ordered.forEach((t: any) => {
       (t.items || []).forEach((item: any) => {
         const description = String(item.description || item.label || '').trim();
         if (!description) return;
@@ -175,7 +219,7 @@ export default function QuoteModals({
       });
     });
     return pool;
-  }, [allTemplates]);
+  }, [matchingTemplates, otherTemplates]);
 
   const filteredLineItems = useMemo(() => {
     const q = itemSearchQuery.trim().toLowerCase();
@@ -183,27 +227,17 @@ export default function QuoteModals({
     return lineItemPool.filter((item) => item.description.toLowerCase().includes(q));
   }, [lineItemPool, itemSearchQuery]);
 
-  // Content-based key (not array index) so the "added" state stays correct
-  // even as the search filter reorders or narrows the visible list.
   const poolItemKey = (item: { description: string; unitPrice: number; quantity: number }) =>
     `${item.description.toLowerCase()}|${item.unitPrice}|${item.quantity}`;
 
-  // Cross-checks the tracked row id against what's actually still in
-  // quoteData, rather than trusting the map blindly — if that exact row
-  // got removed a different way (the table's own trash icon on that
-  // line), this correctly reverts to "not added" instead of the button
-  // getting stuck showing a stale checkmark for a row that's already gone.
+  // Checks the tracked row is still on the quote (it may have been deleted
+  // from the table), so the checkmark never goes stale.
   const isPoolItemAdded = (item: { description: string; unitPrice: number; quantity: number }) => {
     const trackedId = addedItems.get(poolItemKey(item));
     if (trackedId === undefined) return false;
     return quoteData.some((i: any) => i.id === trackedId);
   };
 
-  // A real toggle now, not a one-way add. First click adds the row and
-  // remembers its id; a second click removes that exact row and clears
-  // the tracking, so a third click can add it fresh again. Previously the
-  // button always called the same add logic regardless of state, so a
-  // second click silently created a duplicate instead of undoing the first.
   const togglePoolItem = (item: { description: string; unitPrice: number; quantity: number }) => {
     const key = poolItemKey(item);
     const trackedId = addedItems.get(key);
@@ -237,42 +271,49 @@ export default function QuoteModals({
     toast.success(`Added "${item.description}"`);
   };
 
+  const addedCount = lineItemPool.filter((i) => isPoolItemAdded(i)).length;
+  const itemCount = quoteData.length;
+  const itemsWord = `${itemCount} item${itemCount === 1 ? '' : 's'}`;
+
+  // Quick deposit picks
+  const percentPicks = ['10', '25', '33', '50'];
+
   return (
     <>
-      {/* EMAIL PREVIEW MODAL */}
+      {/* EMAIL PREVIEW */}
       <AnimatePresence>
         {previewHtml && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm"
+            className="fixed inset-0 z-[10000] flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/80 backdrop-blur-sm"
             onClick={() => setPreviewHtml(null)}
           >
             <motion.div
-              initial={{ scale: 0.97, y: 16 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.97, y: 16 }}
-              className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden flex flex-col shadow-2xl h-[85vh]"
+              {...sheetMotion}
+              className="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col shadow-2xl h-[90vh] sm:h-[85vh]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-slate-50">
-                <div className="flex items-center gap-2.5">
-                  <Mail className="w-4 h-4 text-slate-400" />
-                  <div>
-                    <p className="text-xs text-slate-400 font-medium">Estimate Email Preview</p>
-                    <p className="text-sm font-semibold text-slate-900">{lead?.name || 'Customer'}</p>
+              <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                    <Mail className="w-4 h-4 text-slate-600" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900 truncate">Quote email preview</p>
+                    <p className="text-xs text-slate-500 truncate">What {lead?.name || 'the customer'} will see</p>
                   </div>
                 </div>
-                <button onClick={() => setPreviewHtml(null)} className="p-1.5 hover:bg-slate-200 rounded-lg transition cursor-pointer">
-                  <X className="w-4 h-4 text-slate-500" />
+                <button onClick={() => setPreviewHtml(null)} className="p-2 hover:bg-slate-100 rounded-lg transition cursor-pointer" aria-label="Close">
+                  <X className="w-5 h-5 text-slate-500" />
                 </button>
               </div>
-              <div className="flex-1 overflow-hidden bg-slate-100 p-3">
+              <div className="flex-1 overflow-hidden bg-slate-100 p-2 sm:p-3">
                 <iframe
                   title="Email Preview"
                   srcDoc={`${previewHtml}<style>a,button{pointer-events:none!important;cursor:default!important;}</style>`}
-                  className="w-full h-full border-0 rounded-xl bg-white shadow-sm"
+                  className="w-full h-full border-0 rounded-xl bg-white"
                   sandbox="allow-same-origin"
                 />
               </div>
@@ -281,34 +322,17 @@ export default function QuoteModals({
         )}
       </AnimatePresence>
 
- 
-
-      {/* PENDING AI ITEMS CONFIRMATION MODAL */}
+      {/* PENDING AI ITEMS (legacy, kept working) */}
       <AnimatePresence>
         {pendingAiItems && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 16 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 16 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="bg-white w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl"
-            >
-              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <ArrowRightLeft className="w-6 h-6" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`${overlayCls} z-[300]`}>
+            <motion.div {...sheetMotion} className={sheetCls}>
+              <div className="w-11 h-11 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center mb-4">
+                <ArrowRightLeft className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">Merge AI Draft?</h3>
-              <p className="text-xs text-slate-500 mb-5 leading-relaxed px-2">
-                You already have{' '}
-                <span className="font-semibold text-slate-800">
-                  {quoteData.length} item{quoteData.length > 1 ? 's' : ''}
-                </span>
-                . Would you like to append the new AI items or replace your existing list?
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">Add the draft items?</h3>
+              <p className="text-sm text-slate-600 mb-5 leading-relaxed">
+                This quote already has {itemsWord}. Add the new items to them, or replace them.
               </p>
               <div className="flex flex-col gap-2">
                 <button
@@ -318,9 +342,9 @@ export default function QuoteModals({
                     setShowAI(false);
                     setIsDirty(true);
                   }}
-                  className="w-full py-3 bg-slate-900 text-white rounded-xl font-semibold text-xs hover:bg-slate-800 transition cursor-pointer shadow-xs"
+                  className={btnPrimary}
                 >
-                  Append to existing items
+                  Add to current items
                 </button>
                 <button
                   onClick={() => {
@@ -329,14 +353,11 @@ export default function QuoteModals({
                     setShowAI(false);
                     setIsDirty(true);
                   }}
-                  className="w-full py-3 bg-white border border-slate-200 text-rose-600 rounded-xl font-semibold text-xs hover:bg-rose-50 transition cursor-pointer"
+                  className={`${btnSecondary} text-rose-600`}
                 >
-                  Replace all current items
+                  Replace current items
                 </button>
-                <button
-                  onClick={() => setPendingAiItems(null)}
-                  className="mt-1 text-xs font-semibold text-slate-400 hover:text-slate-600 transition cursor-pointer py-1"
-                >
+                <button onClick={() => setPendingAiItems(null)} className="py-2 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer">
                   Cancel
                 </button>
               </div>
@@ -345,7 +366,7 @@ export default function QuoteModals({
         )}
       </AnimatePresence>
 
-      {/* TEMPLATE BROWSER MODAL */}
+      {/* ADD TO QUOTE: templates + saved line items */}
       <AnimatePresence>
         {showTemplateBrowser && (
           <motion.div
@@ -354,179 +375,269 @@ export default function QuoteModals({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-[250] flex items-end sm:items-center justify-center"
           >
-            <motion.div
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs"
-              onClick={() => setShowTemplateBrowser(false)}
-            />
+            <motion.div className="absolute inset-0 bg-slate-900/60 backdrop-blur-xs" onClick={() => setShowTemplateBrowser(false)} />
             <motion.div
               initial={{ y: '100%' }}
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="relative bg-white w-full sm:max-w-lg sm:mx-4 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden"
-              style={{ maxHeight: '80vh' }}
+              className="relative bg-white w-full sm:max-w-xl sm:mx-4 rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden max-h-[88vh] sm:max-h-[80vh]"
             >
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0">
                 <div className="w-10 h-1.5 rounded-full bg-slate-200" />
               </div>
-              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-900 leading-tight">Add to Quote</p>
+
+              {/* Header */}
+              <div className="px-5 sm:px-6 pt-3 sm:pt-5 pb-3 flex items-start justify-between gap-3 shrink-0">
+                <div>
+                  <p className="text-lg font-semibold text-slate-900 leading-tight">Add to quote</p>
+                  <p className="text-sm text-slate-500 mt-0.5">
+                    {browserMode === 'templates'
+                      ? 'Load a saved template. Tap the item count to see what\u2019s in it first.'
+                      : 'Tap items to add them. Tap again to remove.'}
+                  </p>
                 </div>
-                <button
-                  onClick={() => setShowTemplateBrowser(false)}
-                  className="p-1.5 hover:bg-slate-100 rounded-lg transition cursor-pointer"
-                >
-                  <X className="w-4 h-4 text-slate-500" />
+                <button onClick={() => setShowTemplateBrowser(false)} className="p-2 -mr-2 hover:bg-slate-100 rounded-lg transition cursor-pointer" aria-label="Close">
+                  <X className="w-5 h-5 text-slate-500" />
                 </button>
               </div>
 
-              {/* Mode switcher — whole templates vs. individual saved
-                  line items pulled from every template */}
-              <div className="px-4 pt-3 shrink-0">
-                <div className="flex items-center gap-1 rounded-lg bg-slate-100 p-1">
-                                 <button
-                    onClick={() => setBrowserMode('items')}
-                    className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
-                      browserMode === 'items' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Line Items
-                  </button>
-                  <button
-                    onClick={() => setBrowserMode('templates')}
-                    className={`flex-1 py-1.5 rounded-md text-xs font-semibold transition cursor-pointer ${
-                      browserMode === 'templates' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    Templates
-                  </button>
+              {/* Tabs */}
+              <div className="px-5 sm:px-6 pb-3 shrink-0">
+                <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1">
+                  {([
+                    { key: 'templates', label: 'Templates', count: allTemplates.length },
+                    { key: 'items', label: 'Single items', count: lineItemPool.length },
+                  ] as const).map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setBrowserMode(tab.key)}
+                      className={`py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
+                        browserMode === tab.key ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      {tab.label} <span className="font-normal text-slate-400">{tab.count}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
 
               {browserMode === 'templates' ? (
-                <div className="flex-1 overflow-y-auto p-4">
+                <div className="flex-1 overflow-y-auto px-5 sm:px-6 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-5">
                   {allTemplates.length === 0 ? (
-                    <p className="text-sm text-slate-400 text-center py-8">No templates set up yet.</p>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                      {allTemplates.map((template: any, i: number) => (
-                        <button
-                          key={template.id ?? i}
-                          onClick={() => applyTemplate(template)}
-                          className="flex flex-col gap-1.5 text-left p-3.5 border border-slate-200 rounded-xl hover:border-slate-300 hover:bg-slate-50 transition cursor-pointer"
-                        >
-                          {template.category === lead?.category && (
-                            <span className="self-start text-[9px] font-bold uppercase tracking-wide text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">
-                              Matches lead
-                            </span>
-                          )}
-                          <p className="text-sm font-semibold text-slate-900 leading-snug">
-                            {formatCategoryLabel(template.category) || 'Untitled Template'}
-                          </p>
-                          <div className="flex items-center justify-between mt-auto pt-1">
-                            <span className="text-[11px] text-slate-400">
-                              {template.items?.length || 0} item{(template.items?.length || 0) === 1 ? '' : 's'}
-                            </span>
-                            <span className="text-xs font-bold text-emerald-600">{fmt(template.total || 0)}</span>
-                          </div>
-                        </button>
-                      ))}
+                    <div className="text-center py-10">
+                      <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-slate-700">No templates yet</p>
+                      <p className="text-sm text-slate-500 mt-1">Set up pricing once per service under Services, then load it here in one tap.</p>
                     </div>
+                  ) : (
+                    <>
+                      {/* Matches this job — big, on top, items listed */}
+                      {matchingTemplates.length > 0 && (
+                        <div>
+                          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                            <Star className="w-3.5 h-3.5" /> Matches this job
+                          </p>
+                          <div className="space-y-2.5">
+                            {matchingTemplates.map((template: any, i: number) => {
+                              const key = templateKey(template, `m${i}`);
+                              const items = template.items || [];
+                              const showAll = expandedTemplate === key || items.length <= MATCH_PREVIEW;
+                              const shown = showAll ? items : items.slice(0, MATCH_PREVIEW);
+                              return (
+                                <div key={key} className="rounded-2xl border-2 border-slate-900 bg-white p-4 sm:p-5">
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <p className="text-base sm:text-lg font-semibold text-slate-900 leading-snug">
+                                        {formatCategoryLabel(template.category) || 'Untitled template'}
+                                      </p>
+                                      <p className="text-sm text-slate-500 mt-0.5">
+                                        {items.length} item{items.length === 1 ? '' : 's'}
+                                      </p>
+                                    </div>
+                                    <p className="text-lg font-bold text-slate-900 tabular-nums shrink-0">{fmt(template.total || 0)}</p>
+                                  </div>
+                                  {items.length > 0 && (
+                                    <div className="mt-3">
+                                      <TemplateItemList items={shown} />
+                                      {items.length > MATCH_PREVIEW && (
+                                        <button
+                                          type="button"
+                                          onClick={() => toggleTemplate(key)}
+                                          className="mt-1.5 inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 cursor-pointer"
+                                        >
+                                          {showAll ? 'Show less' : `Show all ${items.length} items`}
+                                          <ChevronDown className={`w-4 h-4 transition-transform ${showAll ? 'rotate-180' : ''}`} />
+                                        </button>
+                                      )}
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => applyTemplate(template)}
+                                    className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-slate-900 py-3 text-sm font-semibold text-white hover:bg-slate-800 transition cursor-pointer active:scale-[0.99]"
+                                  >
+                                    Use this template
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Everything else — peek at the items before loading */}
+                      {otherTemplates.length > 0 && (
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">
+                            {matchingTemplates.length > 0 ? 'Other templates' : 'Your templates'}
+                          </p>
+                          <div className="space-y-2">
+                            {otherTemplates.map((template: any, i: number) => {
+                              const key = templateKey(template, `o${i}`);
+                              const items = template.items || [];
+                              const open = expandedTemplate === key;
+                              return (
+                                <div
+                                  key={key}
+                                  className={`rounded-xl border transition ${open ? 'border-slate-300 bg-slate-50/60' : 'border-slate-200'}`}
+                                >
+                                  <div className="flex items-center gap-3 p-3.5">
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-semibold text-slate-900 truncate">
+                                        {formatCategoryLabel(template.category) || 'Untitled template'}
+                                      </p>
+                                      <p className="text-sm text-slate-500 tabular-nums">{fmt(template.total || 0)}</p>
+                                    </div>
+                                    {items.length > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleTemplate(key)}
+                                        aria-expanded={open}
+                                        className="inline-flex items-center gap-1 rounded-lg px-2.5 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer shrink-0"
+                                      >
+                                        {items.length} item{items.length === 1 ? '' : 's'}
+                                        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => applyTemplate(template)}
+                                      className="rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-100 transition cursor-pointer shrink-0"
+                                    >
+                                      Use
+                                    </button>
+                                  </div>
+                                  <AnimatePresence initial={false}>
+                                    {open && (
+                                      <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.18 }}
+                                        className="overflow-hidden"
+                                      >
+                                        <div className="px-3.5 pb-3.5">
+                                          <TemplateItemList items={items} />
+                                        </div>
+                                      </motion.div>
+                                    )}
+                                  </AnimatePresence>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               ) : (
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                  <div className="relative shrink-0">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                    <input
-                      type="text"
-                      value={itemSearchQuery}
-                      onChange={(e) => setItemSearchQuery(e.target.value)}
-                      placeholder="Search saved line items..."
-                      className="w-full pl-8 pr-3 py-2.5 rounded-lg border border-slate-200 bg-slate-50 text-sm outline-none focus:border-slate-400 focus:bg-white transition"
-                    />
+                <>
+                  <div className="px-5 sm:px-6 pb-3 shrink-0">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={itemSearchQuery}
+                        onChange={(e) => setItemSearchQuery(e.target.value)}
+                        placeholder="Search your saved items…"
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-base sm:text-sm outline-none focus:border-slate-400 focus:bg-white transition"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
+                  <div className="flex-1 overflow-y-auto px-5 sm:px-6 space-y-1.5 pb-3">
                     {filteredLineItems.length === 0 ? (
-                      <p className="text-sm text-slate-400 text-center py-8">
-                        {itemSearchQuery ? 'No matching line items found.' : 'No line items saved in any template yet.'}
+                      <p className="text-sm text-slate-500 text-center py-10">
+                        {itemSearchQuery ? 'No saved items match that search.' : 'No saved items yet. They come from your templates under Services.'}
                       </p>
                     ) : (
-                      filteredLineItems.map((item, i) => {
+                      filteredLineItems.map((item) => {
                         const isAdded = isPoolItemAdded(item);
+                        const isMatch = !!jobCategory && item.category === jobCategory;
                         return (
                           <button
-                            key={i}
+                            key={poolItemKey(item)}
                             onClick={() => togglePoolItem(item)}
-                            className={`w-full flex items-center justify-between gap-2 sm:gap-3 p-3 border rounded-lg transition cursor-pointer text-left active:scale-[0.98] ${
-                              isAdded
-                                ? 'border-emerald-200 bg-emerald-50/60'
-                                : 'border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/40'
+                            className={`w-full flex items-center justify-between gap-3 px-3.5 py-3 border rounded-xl transition cursor-pointer text-left active:scale-[0.99] ${
+                              isAdded ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300 hover:bg-slate-50'
                             }`}
                           >
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-slate-800 truncate">{item.description}</p>
-                              <p className="text-[11px] text-slate-400">{formatCategoryLabel(item.category)}</p>
+                              <p className="text-sm font-medium text-slate-900 truncate">{item.description}</p>
+                              <p className="text-xs text-slate-500 truncate">
+                                {formatCategoryLabel(item.category)}
+                                {isMatch && <span className="text-slate-700 font-medium"> · this job</span>}
+                              </p>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-sm font-bold text-slate-900 tabular-nums">
-                                {fmt(item.unitPrice)}
-                                {item.quantity !== 1 ? ` ×${item.quantity}` : ''}
-                              </span>
-                              {isAdded ? (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-1 text-[11px] font-bold text-emerald-700 shrink-0">
-                                  <Check className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Added</span>
-                                </span>
-                              ) : (
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-50">
-                                  <Plus className="w-3.5 h-3.5 text-indigo-500" />
-                                </span>
-                              )}
-                            </div>
+                            <span className="text-sm font-semibold text-slate-900 tabular-nums shrink-0">
+                              {fmt(item.unitPrice)}
+                              {item.quantity !== 1 ? <span className="font-normal text-slate-500"> ×{item.quantity}</span> : null}
+                            </span>
+                            <span
+                              className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition ${
+                                isAdded ? 'bg-slate-900 text-white' : 'border border-slate-300 text-slate-500'
+                              }`}
+                              aria-hidden="true"
+                            >
+                              {isAdded ? <Check className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                            </span>
                           </button>
                         );
                       })
                     )}
                   </div>
-                </div>
+
+                  {/* Done bar */}
+                  <div className="shrink-0 border-t border-slate-100 px-5 sm:px-6 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center justify-between gap-3">
+                    <p className="text-sm text-slate-500">
+                      {addedCount > 0 ? `${addedCount} added` : `Quote has ${itemsWord}`}
+                    </p>
+                    <button onClick={() => setShowTemplateBrowser(false)} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-semibold hover:bg-slate-800 transition cursor-pointer">
+                      Done
+                    </button>
+                  </div>
+                </>
               )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* PENDING TEMPLATE CONFIRMATION MODAL */}
+      {/* TEMPLATE: ADD OR REPLACE */}
       <AnimatePresence>
         {pendingTemplate && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-xs"
-          >
-            <motion.div
-              initial={{ scale: 0.95, y: 16 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 16 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="bg-white w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl"
-            >
-              <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <FileText className="w-6 h-6" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className={`${overlayCls} z-[300]`}>
+            <motion.div {...sheetMotion} className={sheetCls}>
+              <div className="w-11 h-11 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center mb-4">
+                <FileText className="w-5 h-5" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">Apply "{formatCategoryLabel(pendingTemplate.category)}" template?</h3>
-              <p className="text-xs text-slate-500 mb-5 leading-relaxed px-2">
-                You already have{' '}
-                <span className="font-semibold text-slate-800">
-                  {quoteData.length} item{quoteData.length > 1 ? 's' : ''}
-                </span>
-                . Append the template's items, or replace your current list (and its tax rate)?
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">
+                Use the {formatCategoryLabel(pendingTemplate.category)} template?
+              </h3>
+              <p className="text-sm text-slate-600 mb-5 leading-relaxed">
+                This quote already has {itemsWord}. Add the template&rsquo;s items to them, or start over with just the template (this also uses its tax rate).
               </p>
               <div className="flex flex-col gap-2">
                 <button
@@ -541,20 +652,14 @@ export default function QuoteModals({
                     setIsDirty(true);
                     toast.success('Template items added');
                   }}
-                  className="w-full py-3 bg-slate-900 text-white rounded-xl font-semibold text-xs hover:bg-slate-800 transition cursor-pointer shadow-xs"
+                  className={btnPrimary}
                 >
-                  Append to existing items
+                  Add to current items
                 </button>
-                <button
-                  onClick={() => loadTemplateNow(pendingTemplate)}
-                  className="w-full py-3 bg-white border border-slate-200 text-rose-600 rounded-xl font-semibold text-xs hover:bg-rose-50 transition cursor-pointer"
-                >
-                  Replace all current items
+                <button onClick={() => loadTemplateNow(pendingTemplate)} className={`${btnSecondary} text-rose-600`}>
+                  Replace with template
                 </button>
-                <button
-                  onClick={() => setPendingTemplate(null)}
-                  className="mt-1 text-xs font-semibold text-slate-400 hover:text-slate-600 transition cursor-pointer py-1"
-                >
+                <button onClick={() => setPendingTemplate(null)} className="py-2 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer">
                   Cancel
                 </button>
               </div>
@@ -563,47 +668,31 @@ export default function QuoteModals({
         )}
       </AnimatePresence>
 
-      {/* MANUAL ACCEPT CONFIRM MODAL */}
+      {/* MARK ACCEPTED */}
       <AnimatePresence>
         {showAcceptConfirm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            className={`${overlayCls} z-[600]`}
             onClick={() => !markingAccepted && setShowAcceptConfirm(false)}
           >
-            <motion.div
-              initial={{ scale: 0.96, y: 12 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 12 }}
-              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <motion.div {...sheetMotion} className={sheetCls} onClick={(e) => e.stopPropagation()}>
+              <div className="w-11 h-11 bg-slate-100 rounded-xl flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-5 h-5 text-slate-700" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">
-                Mark quote as accepted?
-              </h3>
-              <p className="text-xs text-slate-500 leading-relaxed mb-5">
-                This manually records approval for {lead?.name?.split(' ')[0] || 'the client'} (e.g. verbally over phone or in-person).
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">Mark as accepted?</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-5">
+                Use this when {firstName} said yes by phone or in person. It counts the same as them tapping Accept in the email, so if Auto invoices is on, the deposit request goes out.
               </p>
               <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  onClick={() => setShowAcceptConfirm(false)}
-                  disabled={markingAccepted}
-                  className="py-2.5 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
-                >
+                <button onClick={() => setShowAcceptConfirm(false)} disabled={markingAccepted} className={btnSecondary}>
                   Cancel
                 </button>
-                <button
-                  onClick={handleMarkAccepted}
-                  disabled={markingAccepted}
-                  className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-xl transition cursor-pointer disabled:opacity-50 shadow-xs"
-                >
+                <button onClick={handleMarkAccepted} disabled={markingAccepted} className={btnPrimary}>
                   {markingAccepted ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Confirm
+                  Mark accepted
                 </button>
               </div>
             </motion.div>
@@ -611,43 +700,30 @@ export default function QuoteModals({
         )}
       </AnimatePresence>
 
-      {/* DELETE LINE ITEM CONFIRM MODAL */}
+      {/* DELETE LINE ITEM */}
       <AnimatePresence>
         {deleteConfirmId !== null && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            className={`${overlayCls} z-[600]`}
             onClick={() => setDeleteConfirmId(null)}
           >
-            <motion.div
-              initial={{ scale: 0.96, y: 12 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 12 }}
-              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <motion.div {...sheetMotion} className={sheetCls} onClick={(e) => e.stopPropagation()}>
               <div className="w-11 h-11 bg-rose-50 rounded-xl flex items-center justify-center mb-4">
                 <Trash2 className="w-5 h-5 text-rose-600" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">Delete this line item?</h3>
-              <p className="text-xs text-slate-500 leading-relaxed mb-5">
-                This removes it from the quote. You'll need to re-add it if this was a mistake.
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">Remove this item?</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-5">
+                It comes off this quote only. Your saved templates aren&rsquo;t changed.
               </p>
               <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="py-2.5 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
-                >
+                <button onClick={() => setDeleteConfirmId(null)} className={btnSecondary}>
                   Cancel
                 </button>
-                <button
-                  onClick={confirmRemoveRow}
-                  className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-xs"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
+                <button onClick={confirmRemoveRow} className={btnDanger}>
+                  <Trash2 className="w-4 h-4" /> Remove
                 </button>
               </div>
             </motion.div>
@@ -655,45 +731,30 @@ export default function QuoteModals({
         )}
       </AnimatePresence>
 
-      {/* CLEAR ALL ITEMS CONFIRM MODAL — starts the current quote over from
-          scratch. This never touches saved templates. */}
+      {/* CLEAR ALL ITEMS */}
       <AnimatePresence>
         {showClearAllConfirm && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[600] flex items-end sm:items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+            className={`${overlayCls} z-[600]`}
             onClick={() => setShowClearAllConfirm(false)}
           >
-            <motion.div
-              initial={{ scale: 0.96, y: 12 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.96, y: 12 }}
-              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
+            <motion.div {...sheetMotion} className={sheetCls} onClick={(e) => e.stopPropagation()}>
               <div className="w-11 h-11 bg-rose-50 rounded-xl flex items-center justify-center mb-4">
                 <Trash2 className="w-5 h-5 text-rose-600" />
               </div>
-              <h3 className="text-base font-bold text-slate-900 mb-1">Clear all items?</h3>
-              <p className="text-xs text-slate-500 leading-relaxed mb-5">
-                This removes every line item on this quote so you can start fresh. It doesn't touch any saved
-                templates — just this quote.
+              <h3 className="text-lg font-semibold text-slate-900 mb-1">Clear all {itemsWord}?</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-5">
+                Start this quote over from scratch. Your saved templates aren&rsquo;t changed.
               </p>
               <div className="grid grid-cols-2 gap-2.5">
-                <button
-                  onClick={() => setShowClearAllConfirm(false)}
-                  className="py-2.5 border border-slate-200 text-slate-700 font-semibold text-xs rounded-xl hover:bg-slate-50 transition cursor-pointer"
-                >
+                <button onClick={() => setShowClearAllConfirm(false)} className={btnSecondary}>
                   Cancel
                 </button>
-                <button
-                  onClick={handleClearAllItems}
-                  className="inline-flex items-center justify-center gap-1.5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs rounded-xl transition cursor-pointer shadow-xs"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Clear All
+                <button onClick={handleClearAllItems} className={btnDanger}>
+                  <Trash2 className="w-4 h-4" /> Clear all
                 </button>
               </div>
             </motion.div>
@@ -701,160 +762,149 @@ export default function QuoteModals({
         )}
       </AnimatePresence>
 
-      {/* DEPOSIT TERMS MODAL */}
+      {/* DEPOSIT */}
       <AnimatePresence>
         {showDepositEditor && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className={`${overlayCls} z-[600]`}
             onClick={() => !savingDeposit && setShowDepositEditor(false)}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">
-                  {depositAmount > 0 ? 'Edit Deposit Terms' : 'Require a Deposit?'}
+            <motion.div {...sheetMotion} onClick={(e) => e.stopPropagation()} className={sheetCls}>
+              <div className="flex justify-between items-start mb-1">
+                <h3 className="text-lg font-semibold text-slate-900">
+                  {depositAmount > 0 ? 'Change the deposit' : 'Ask for a deposit'}
                 </h3>
                 <button
                   type="button"
                   onClick={() => !savingDeposit && setShowDepositEditor(false)}
                   disabled={savingDeposit}
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-2 -mr-2 -mt-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
                   aria-label="Close"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
+              <p className="text-sm text-slate-600 mb-4">
+                What {firstName} pays to get on your schedule. The rest is due when the job is done.
+                {depositAmount > 0 && <> Right now: <strong className="text-slate-900">{fmt(depositAmount)}</strong>.</>}
+              </p>
 
-              <div className="space-y-3 mb-5">
-                <p className="text-xs font-medium text-slate-600">
-                  {depositAmount > 0 ? 'Change the deposit amount' : 'How much is the deposit?'}
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="inline-flex overflow-hidden rounded-lg border border-slate-200 shrink-0">
-                    {(['percent', 'fixed'] as const).map((t) => (
-                      <button
-                        key={t}
-                        type="button"
-                        onClick={() => setDepositTypeDraft(t)}
-                        className={`px-3 py-1.5 text-xs font-semibold transition-colors cursor-pointer ${
-                          depositTypeDraft === t
-                            ? 'bg-slate-900 text-white'
-                            : 'bg-white text-slate-600 hover:bg-slate-50'
-                        }`}
-                      >
-                        {t === 'percent' ? '%' : '$'}
-                      </button>
-                    ))}
-                  </div>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={depositValueDraft}
-                    onChange={(e) => setDepositValueDraft(e.target.value)}
-                    placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
-                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-slate-400"
-                  />
+              <div className="flex items-center gap-2">
+                <div className="inline-flex overflow-hidden rounded-xl border border-slate-200 shrink-0">
+                  {(['percent', 'fixed'] as const).map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setDepositTypeDraft(t)}
+                      className={`px-3.5 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
+                        depositTypeDraft === t ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-50'
+                      }`}
+                      aria-pressed={depositTypeDraft === t}
+                    >
+                      {t === 'percent' ? '%' : '$'}
+                    </button>
+                  ))}
                 </div>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={depositValueDraft}
+                  onChange={(e) => setDepositValueDraft(e.target.value)}
+                  placeholder={depositTypeDraft === 'percent' ? '25' : '500'}
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-base font-semibold tabular-nums outline-none focus:border-slate-400"
+                  aria-label={depositTypeDraft === 'percent' ? 'Deposit percent' : 'Deposit amount in dollars'}
+                />
               </div>
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowDepositEditor(false)}
-                  disabled={savingDeposit}
-                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
-                >
+              {depositTypeDraft === 'percent' && (
+                <div className="flex flex-wrap gap-1.5 mt-2.5">
+                  {percentPicks.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setDepositValueDraft(p)}
+                      className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition cursor-pointer ${
+                        depositValueDraft === p ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {p}%
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-5 grid grid-cols-2 gap-2.5">
+                <button type="button" onClick={() => setShowDepositEditor(false)} disabled={savingDeposit} className={btnSecondary}>
                   Cancel
                 </button>
-                {depositAmount > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => handleSaveDepositTerms(true)}
-                    disabled={savingDeposit}
-                    className="px-3 py-2 rounded-lg border border-rose-200 text-xs font-medium text-rose-600 hover:bg-rose-50 disabled:opacity-50 cursor-pointer"
-                  >
-                    Remove deposit
-                  </button>
-                )}
                 <button
                   type="button"
                   onClick={() => handleSaveDepositTerms(false)}
                   disabled={savingDeposit || !depositValueDraft}
-                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  className={btnPrimary}
                 >
-                  {savingDeposit && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  {savingDeposit ? 'Saving...' : 'Save'}
+                  {savingDeposit && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {savingDeposit ? 'Saving…' : 'Save'}
                 </button>
               </div>
+              {depositAmount > 0 && (
+                <button
+                  type="button"
+                  onClick={() => handleSaveDepositTerms(true)}
+                  disabled={savingDeposit}
+                  className="mt-3 w-full py-2 text-sm font-medium text-rose-600 hover:text-rose-700 disabled:opacity-50 cursor-pointer"
+                >
+                  Don&rsquo;t ask for a deposit
+                </button>
+              )}
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* TAX RATE MODAL — mirrors the Deposit modal above. Previously this
-          was an inline table row, which worked on desktop but was
-          invisible on mobile once that table became hidden lg:block —
-          the mobile accordion's edit trigger had nothing to open. */}
+      {/* TAX RATE */}
       <AnimatePresence>
         {editingTaxRate && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[600] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm"
+            className={`${overlayCls} z-[600]`}
             onClick={() => setEditingTaxRate(false)}
           >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-base font-bold text-slate-900">
-                  {taxRate > 0 ? 'Edit Tax Rate' : 'Add Tax'}
-                </h3>
+            <motion.div {...sheetMotion} onClick={(e) => e.stopPropagation()} className={sheetCls}>
+              <div className="flex justify-between items-start mb-1">
+                <h3 className="text-lg font-semibold text-slate-900">{taxRate > 0 ? 'Change the tax rate' : 'Add sales tax'}</h3>
                 <button
                   type="button"
                   onClick={() => setEditingTaxRate(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
+                  className="p-2 -mr-2 -mt-1 rounded-lg text-slate-400 hover:bg-slate-100 transition-colors"
                   aria-label="Close"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
+              <p className="text-sm text-slate-600 mb-4">Applies to this quote only. Use 0 for no tax.</p>
 
-              <div className="space-y-3 mb-5">
-                <p className="text-xs font-medium text-slate-600">Tax rate for this quote</p>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    value={taxRateDraft}
-                    onKeyDown={(e) => handleNumericKeyDown(e, true)}
-                    onChange={(e) => setTaxRateDraft(e.target.value)}
-                    placeholder="8.625"
-                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold tabular-nums outline-none focus:border-slate-400"
-                  />
-                  <span className="text-sm font-semibold text-slate-500 shrink-0">%</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  value={taxRateDraft}
+                  onKeyDown={(e) => handleNumericKeyDown(e, true)}
+                  onChange={(e) => setTaxRateDraft(e.target.value)}
+                  placeholder="8.625"
+                  className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-base font-semibold tabular-nums outline-none focus:border-slate-400"
+                  aria-label="Tax rate percent"
+                />
+                <span className="text-base font-semibold text-slate-500 shrink-0">%</span>
               </div>
 
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setEditingTaxRate(false)}
-                  className="px-3 py-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50 cursor-pointer"
-                >
+              <div className="mt-5 grid grid-cols-2 gap-2.5">
+                <button type="button" onClick={() => setEditingTaxRate(false)} className={btnSecondary}>
                   Cancel
                 </button>
                 <button
@@ -866,7 +916,7 @@ export default function QuoteModals({
                     setEditingTaxRate(false);
                   }}
                   disabled={!taxRateDraft}
-                  className="px-3 py-2 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-50 cursor-pointer"
+                  className={btnPrimary}
                 >
                   Done
                 </button>

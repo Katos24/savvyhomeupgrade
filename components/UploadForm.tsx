@@ -66,6 +66,11 @@ interface UploadFormProps {
   embedded?: boolean;
   /** Marketing demo (?demo=1): walks through the form but saves and sends nothing. */
   demo?: boolean;
+  /** Settings preview only: jump to this step (1 or 2). Bump previewNonce to re-apply. */
+  previewStep?: 1 | 2;
+  previewNonce?: number;
+  /** Settings preview only: pre-pick a service so step 2 shows its questions. */
+  previewCategory?: string;
 }
 
 export default function UploadForm({
@@ -77,6 +82,9 @@ export default function UploadForm({
   headerSubtitle = 'Fast, professional service tailored to your needs.',
    embedded = false,
   demo = false,
+  previewStep,
+  previewNonce = 0,
+  previewCategory,
 }: UploadFormProps) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
@@ -246,6 +254,17 @@ export default function UploadForm({
   // After a successful submission: the full success page normally; inside
   // another site, a thank-you message in place (no navigating the iframe).
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Settings preview: jump straight to a step / service (never on the public form).
+  useEffect(() => {
+    if (!previewStep) return;
+    setShowSuccess(false);
+    setStep(previewStep);
+  }, [previewStep, previewNonce]);
+  useEffect(() => {
+    if (previewCategory === undefined) return;
+    setStep1Data((prev) => ({ ...prev, category: previewCategory }));
+  }, [previewCategory]);
 
   const handleSuccess = () => {
     if (embedded) {

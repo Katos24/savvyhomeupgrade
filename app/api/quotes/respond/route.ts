@@ -26,7 +26,7 @@ async function loadProject(token: string) {
       p.quote_accepted_at,
       p.quote_declined_at,
       p.deposit_type,
-           p.deposit_value,
+      p.deposit_value,
       p.deposit_due_date,
       p.customer_name,
       p.customer_email,
@@ -39,7 +39,6 @@ async function loadProject(token: string) {
       c.logo_url as company_logo,
       c.website as company_website,
       c.email_brand_color_1 as brand_color_1,
-      c.email_brand_color_2 as brand_color_2,
       c.on_accept_collect
     FROM projects p
     JOIN leads l ON p.lead_id = l.id
@@ -77,7 +76,7 @@ function notFoundPage() {
 
 // Shared by GET and POST: a quote that was already answered shows that answer.
 function alreadyAnsweredPage(project: any) {
-  const brandColor = project.brand_color_1 || '#6366f1';
+  const brandColor = project.brand_color_1;
   if (project.quote_accepted_at) {
     return html(renderPage({
       title: 'Already Accepted',
@@ -128,7 +127,7 @@ export async function GET(request: NextRequest) {
       companyPhone: project.company_phone,
       companyWebsite: project.company_website,
       companyLogo: project.company_logo,
-      brandColor: project.brand_color_1 || '#6366f1',
+      brandColor: project.brand_color_1,
       quoteTotal: parseFloat(project.quote_total),
       taxRate: project.quote_tax_rate ? parseFloat(project.quote_tax_rate) : undefined,
       quoteItems: project.quote_data || [],
@@ -165,7 +164,7 @@ export async function POST(request: NextRequest) {
     if (!project) return notFoundPage();
     if (project.quote_accepted_at || project.quote_declined_at) return alreadyAnsweredPage(project);
 
-    const brandColor = project.brand_color_1 || '#6366f1';
+    const brandColor = project.brand_color_1;
 
     if ((action as Action) === 'accept') {
       // Only the first tap wins: a double-tap or a second tab can't accept twice.
@@ -211,7 +210,7 @@ export async function POST(request: NextRequest) {
       // Emails the invoice like the Send button does, and shows a Pay button here.
       let payment: { url?: string; amount: number; kind: 'deposit' | 'balance' | 'full' } | undefined;
       const mode = project.on_accept_collect || 'none';
-            if (mode === 'deposit' || mode === 'full') {
+      if (mode === 'deposit' || mode === 'full') {
         try {
           // Keep the due date picked when the quote was sent. Without passing
           // it, sendCollectionInvoice would overwrite it with null. If that
@@ -313,8 +312,41 @@ function safeUrl(v: unknown): string {
 }
 
 // ─────────────────────────────────────────────────────────────
-// renderPage — branded quote response page
+// renderPage — the page a customer sees after tapping Accept / Decline
+//
+// Design matches the customer emails (slate on white). The contractor's
+// brand color is used for ONE thing: the main button (plus a thin top
+// bar and the logo placeholder). No color set → dark slate, never purple.
+// Button text flips between white and dark automatically, so a light
+// brand color (yellow, white) still has readable text.
 // ─────────────────────────────────────────────────────────────
+
+const INK = '#0f172a';
+const TEXT = '#334155';
+const MUTED = '#64748b';
+const BORDER = '#e2e8f0';
+const SOFT = '#f8fafc';
+
+/** A safe accent from the contractor's brand color, plus readable text on it. */
+function accentFrom(raw?: string | null): { bg: string; fg: string; edge: string } {
+  const m = typeof raw === 'string' ? raw.trim().match(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/) : null;
+  if (!m) return { bg: INK, fg: '#ffffff', edge: INK };
+  let hex = m[1];
+  if (hex.length === 3) hex = hex.split('').map((ch) => ch + ch).join('');
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+  // WCAG relative luminance
+  const lin = (v: number) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+  const L = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  const bg = `#${hex.toLowerCase()}`;
+  // Pick whichever text color has more contrast against the background.
+  const contrastWhite = 1.05 / (L + 0.05);
+  const contrastInk = (L + 0.05) / 0.0317; // INK luminance ≈ 0.0117
+  const fg = contrastWhite >= contrastInk ? '#ffffff' : INK;
+  // Very light colors get a visible edge so the button doesn't vanish on white.
+  const edge = L > 0.8 ? '#cbd5e1' : bg;
+  return { bg, fg, edge };
+}
+
 function renderPage({
   title,
   message,
@@ -323,7 +355,7 @@ function renderPage({
   companyPhone,
   companyWebsite,
   companyLogo,
-  brandColor = '#6366f1',
+  brandColor,
   quoteTotal,
   taxRate,
   quoteItems = [],
@@ -339,7 +371,7 @@ function renderPage({
   companyPhone?: string;
   companyWebsite?: string;
   companyLogo?: string;
-  brandColor?: string;
+  brandColor?: string | null;
   quoteTotal?: number;
   taxRate?: number;
   quoteItems?: any[];
@@ -352,204 +384,170 @@ function renderPage({
   deposit?: { amount: number; label?: string };
 }) {
   const isSuccess = state === 'success';
-  // Brand color goes into inline styles; only allow a plain hex color.
-  brandColor = /^#[0-9a-fA-F]{3,8}$/.test(brandColor) ? brandColor : '#6366f1';
+  const accent = accentFrom(brandColor);
   const logoSrc = safeUrl(companyLogo);
   const websiteHref = safeUrl(companyWebsite);
 
   const fmt = (n: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
 
-  const logoHtml = logoSrc
-    ? `<img src="${logoSrc}" alt="${esc(companyName)}" style="height:48px;width:auto;object-fit:contain;margin-bottom:16px;" />`
-    : companyName
-    ? `<div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:12px;background:${brandColor};color:#fff;font-size:20px;font-weight:900;margin-bottom:16px;">${esc(companyName.charAt(0).toUpperCase())}</div>`
+  // ── Header: logo (or initial) + company name ──
+  const brandHtml = companyName
+    ? `
+      <div class="brand">
+        ${logoSrc
+          ? `<img src="${logoSrc}" alt="${esc(companyName)}" class="logo" />`
+          : `<div class="initial" style="background:${accent.bg};color:${accent.fg};">${esc(companyName.charAt(0).toUpperCase())}</div>`}
+        <p class="brand-name">${esc(companyName)}</p>
+      </div>`
     : '';
 
+  const iconHtml = isSuccess
+    ? `<div class="icon" style="background:#f0fdf4;"><svg width="26" height="26" viewBox="0 0 28 28" fill="none"><path d="M6 14l6 6 10-12" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`
+    : '';
+
+  // ── Line items: two columns, qty × price under the description ──
   const hasTax = !!taxRate && taxRate > 0;
   const itemsSubtotal = quoteItems.reduce((s: number, i: any) => s + (i.amount || 0), 0);
   const taxAmount = hasTax ? itemsSubtotal * (taxRate! / 100) : 0;
 
-  const taxRowsHtml = hasTax ? `
-          <tr style="background:#fff;border-top:1px solid #f1f5f9;">
-            <td colspan="2" style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">Subtotal</td>
-            <td style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">${fmt(itemsSubtotal)}</td>
-          </tr>
-          <tr style="background:#fff;">
-            <td colspan="2" style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">Tax (${esc(taxRate)}%)</td>
-            <td style="padding:8px 14px;text-align:right;color:#64748b;font-size:12px;">${fmt(taxAmount)}</td>
-          </tr>
-  ` : '';
+  const itemRows = quoteItems.map((item: any) => {
+    const qty = item.quantity ?? 1;
+    const detail = qty !== 1 && item.unitPrice
+      ? `<div class="detail">${esc(qty)} × ${fmt(Number(item.unitPrice) || 0)}</div>`
+      : '';
+    return `<tr><td>${esc(item.description)}${detail}</td><td class="amt">${fmt(item.amount || 0)}</td></tr>`;
+  }).join('');
 
-  const depositRowsHtml = deposit && quoteTotal ? `
-          <tr style="background:#fff;border-top:1px solid #e2e8f0;">
-            <td colspan="2" style="padding:10px 14px;text-align:right;color:#0f172a;font-weight:700;font-size:13px;">Deposit due to get started${deposit.label ? ` (${esc(deposit.label)})` : ''}</td>
-            <td style="padding:10px 14px;text-align:right;color:#0f172a;font-weight:800;font-size:15px;">${fmt(deposit.amount)}</td>
-          </tr>
-          <tr style="background:#fff;">
-            <td colspan="2" style="padding:0 14px 10px;text-align:right;color:#64748b;font-size:12px;">Balance on completion</td>
-            <td style="padding:0 14px 10px;text-align:right;color:#64748b;font-size:12px;">${fmt(quoteTotal - deposit.amount)}</td>
-          </tr>
-  ` : '';
+  const totalsRows = `
+    ${hasTax ? `
+      <tr class="sub"><td>Subtotal</td><td class="amt">${fmt(itemsSubtotal)}</td></tr>
+      <tr class="sub"><td>Tax (${esc(taxRate)}%)</td><td class="amt">${fmt(taxAmount)}</td></tr>` : ''}
+    ${quoteTotal ? `<tr class="total"><td>Total</td><td class="amt">${fmt(quoteTotal)}</td></tr>` : ''}
+    ${deposit && quoteTotal ? `
+      <tr class="dep"><td>Deposit to get started${deposit.label ? ` (${esc(deposit.label)})` : ''}</td><td class="amt">${fmt(deposit.amount)}</td></tr>
+      <tr class="sub"><td>Balance when the job is done</td><td class="amt">${fmt(quoteTotal - deposit.amount)}</td></tr>` : ''}
+  `;
 
-  const lineItemsHtml = quoteItems.length > 0 ? `
-    <div style="margin-top:28px;">
-      <p style="margin:0 0 10px 0;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:0.12em;color:#94a3b8;">Quote Summary</p>
-      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;font-size:14px;">
-        <thead>
-          <tr style="background:#f8fafc;">
-            <th style="padding:10px 14px;text-align:left;color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e2e8f0;">Description</th>
-            <th style="padding:10px 14px;text-align:center;color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e2e8f0;width:50px;">Qty</th>
-            <th style="padding:10px 14px;text-align:right;color:#64748b;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid #e2e8f0;width:90px;">Amount</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${quoteItems.map((item: any, i: number) => `
-            <tr style="background:${i % 2 === 0 ? '#fff' : '#fafafa'};border-bottom:1px solid #f1f5f9;">
-              <td style="padding:12px 14px;color:#334155;font-size:14px;">${esc(item.description)}</td>
-              <td style="padding:12px 14px;text-align:center;color:#64748b;font-size:14px;">${esc(item.quantity ?? 1)}</td>
-              <td style="padding:12px 14px;text-align:right;color:#334155;font-weight:600;font-size:14px;">${fmt(item.amount || 0)}</td>
-            </tr>
-          `).join('')}
-          ${taxRowsHtml}
-        </tbody>
-        <tfoot>
-          <tr style="background:#f8fafc;border-top:2px solid #e2e8f0;">
-            <td colspan="2" style="padding:14px;text-align:right;color:#475569;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;">Total</td>
-            <td style="padding:14px;text-align:right;color:${brandColor};font-weight:800;font-size:20px;">${quoteTotal ? fmt(quoteTotal) : ''}</td>
-          </tr>
-          ${depositRowsHtml}
-        </tfoot>
-      </table>
-    </div>
-  ` : quoteTotal ? `
-    <div style="margin-top:20px;padding:16px 20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;">
-      ${hasTax ? `
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-          <span style="font-size:12px;color:#94a3b8;">Subtotal</span>
-          <span style="font-size:12px;color:#94a3b8;">${fmt(itemsSubtotal)}</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-          <span style="font-size:12px;color:#94a3b8;">Tax (${esc(taxRate)}%)</span>
-          <span style="font-size:12px;color:#94a3b8;">${fmt(taxAmount)}</span>
-        </div>
-        <div style="border-top:1px solid #e2e8f0;padding-top:10px;display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Total</span>
-          <span style="font-size:22px;font-weight:800;color:${brandColor};">${fmt(quoteTotal)}</span>
-        </div>
-      ` : `
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;">Quote Total</span>
-          <span style="font-size:22px;font-weight:800;color:${brandColor};">${fmt(quoteTotal)}</span>
-        </div>
-      `}
-    </div>
-  ` : '';
+  const quoteHtml = quoteItems.length > 0
+    ? `
+      <p class="label">Quote</p>
+      <table class="items" role="presentation">${itemRows}${totalsRows}</table>`
+    : quoteTotal
+    ? `
+      <p class="label">Quote</p>
+      <table class="items" role="presentation">${totalsRows}</table>`
+    : '';
 
+  // ── After accepting: what's due now, with the pay button ──
   const payLabel = payment?.kind === 'deposit' ? 'Pay your deposit' : 'Pay your invoice';
   const paymentHtml = payment ? `
-    <div style="margin-top:24px;padding:18px 20px;border:2px solid ${brandColor};border-radius:14px;text-align:center;">
-      <p style="margin:0 0 4px 0;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:${brandColor};">${payment.kind === 'deposit' ? 'Deposit due to get started' : 'Amount due'}</p>
-      <p style="margin:0 0 14px 0;font-size:26px;font-weight:800;color:#0f172a;">${fmt(payment.amount)}</p>
-      ${payment.url ? `<a href="${safeUrl(payment.url)}" style="display:block;padding:14px 16px;border-radius:12px;background:${brandColor};color:#fff;font-size:16px;font-weight:700;text-decoration:none;">${payLabel} now</a>
-      <p style="margin:10px 0 0 0;font-size:13px;color:#64748b;">Or pay later from the invoice we emailed you.</p>` : `<p style="margin:0;font-size:13px;color:#64748b;">We've emailed you the invoice with payment details.</p>`}
-    </div>
-  ` : '';
+    <div class="due">
+      <p class="due-label">${payment.kind === 'deposit' ? 'Deposit due to get started' : 'Amount due'}</p>
+      <p class="due-amount">${fmt(payment.amount)}</p>
+      ${payment.url
+        ? `<a href="${safeUrl(payment.url)}" class="btn-primary">${payLabel} now</a>
+           <p class="hint">Or pay later from the invoice we emailed you.</p>`
+        : `<p class="hint">We&rsquo;ve emailed you the invoice with payment details.</p>`}
+    </div>` : '';
 
   const nextStepsHtml = isSuccess && !payment ? `
-    <div style="margin-top:24px;padding:16px 20px;background:${brandColor}08;border:1px solid ${brandColor}20;border-radius:10px;">
-      <p style="margin:0 0 4px 0;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:${brandColor};">What happens next?</p>
-      <p style="margin:0;font-size:14px;color:#475569;line-height:1.6;">${esc(companyName || 'The team')} will contact you shortly to confirm your appointment and go over any final details.</p>
-    </div>
-  ` : '';
+    <div class="note">
+      <p class="note-title">What happens next</p>
+      <p>${esc(companyName || 'The team')} will contact you shortly to confirm your appointment and go over any final details.</p>
+    </div>` : '';
 
-  const contactHtml = (companyPhone || websiteHref) ? `
-    <div style="margin-top:24px;padding-top:20px;border-top:1px solid #f1f5f9;text-align:center;">
-      <p style="margin:0 0 8px 0;font-size:12px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Contact</p>
-      ${companyPhone ? `<p style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#334155;"><a href="tel:${esc(companyPhone)}" style="color:${brandColor};text-decoration:none;">${esc(companyPhone)}</a></p>` : ''}
-      ${websiteHref ? `<p style="margin:0;font-size:13px;"><a href="${websiteHref}" style="color:${brandColor};text-decoration:none;">${websiteHref}</a></p>` : ''}
-    </div>
-  ` : '';
-
-  const iconHtml = isSuccess
-    ? `<div style="width:56px;height:56px;border-radius:50%;background:#f0fdf4;display:flex;align-items:center;justify-content:center;margin:0 auto 16px auto;">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M6 14l6 6 10-12" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-       </div>`
-    : `<div style="width:56px;height:56px;border-radius:50%;background:#f8fafc;display:flex;align-items:center;justify-content:center;margin:0 auto 16px auto;">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><path d="M14 8v8M14 20h.01" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round"/></svg>
-       </div>`;
-
-  const btnPrimary = `display:block;width:100%;padding:14px 16px;border:none;border-radius:12px;background:${brandColor};color:#fff;font-size:16px;font-weight:700;cursor:pointer;`;
-  const btnSecondary = 'display:block;width:100%;padding:13px 16px;border:1px solid #cbd5e1;border-radius:12px;background:#fff;color:#334155;font-size:15px;font-weight:600;cursor:pointer;';
   const confirmHtml = confirm ? `
-    <form method="POST" action="/api/quotes/respond" style="margin-top:24px;display:flex;flex-direction:column;gap:10px;">
+    <form method="POST" action="/api/quotes/respond" class="actions">
       <input type="hidden" name="token" value="${esc(confirm.token)}" />
       ${confirm.primary === 'decline'
-        ? `<button type="submit" name="action" value="decline" style="${btnPrimary}">Decline quote</button>
-           <button type="submit" name="action" value="accept" style="${btnSecondary}">Accept instead</button>`
-        : `<button type="submit" name="action" value="accept" style="${btnPrimary}">Accept quote</button>
-           <button type="submit" name="action" value="decline" style="${btnSecondary}">Decline</button>`}
-    </form>
-  ` : '';
+        ? `<button type="submit" name="action" value="decline" class="btn-dark">Decline quote</button>
+           <button type="submit" name="action" value="accept" class="btn-secondary">Accept instead</button>`
+        : `<button type="submit" name="action" value="accept" class="btn-primary">Accept quote</button>
+           <button type="submit" name="action" value="decline" class="btn-link">Decline</button>`}
+    </form>` : '';
 
-  const poweredByHtml = `
-    <div style="text-align:center;margin-top:32px;">
-      <a href="https://lead2project.com" style="font-size:11px;color:#cbd5e1;text-decoration:none;font-weight:600;letter-spacing:0.05em;">
-        Powered by Lead2Project
-      </a>
-    </div>
-  `;
+  const phoneDigits = String(companyPhone || '').replace(/\D/g, '');
+  const contactHtml = (companyPhone || websiteHref) ? `
+    <div class="contact">
+      <p class="label" style="text-align:center;">Questions?</p>
+      ${companyPhone ? `<a href="tel:${esc(phoneDigits)}" class="btn-secondary">Call ${esc(companyPhone)}</a>` : ''}
+      ${websiteHref ? `<p class="site"><a href="${websiteHref}">${esc(String(companyWebsite).replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></p>` : ''}
+    </div>` : '';
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
   <title>${esc(title)}${companyName ? ` — ${esc(companyName)}` : ''}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f8fafc;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9; color: ${TEXT};
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+      padding: 32px 16px; -webkit-font-smoothing: antialiased;
     }
-    .card {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
-      padding: 40px 36px;
-      max-width: 480px;
-      width: 100%;
+    .card { width: 100%; max-width: 480px; background: #fff; border: 1px solid ${BORDER}; border-radius: 16px; overflow: hidden; }
+    .bar { height: 4px; background: ${accent.bg}; }
+    .inner { padding: 28px 24px 24px; }
+    .brand { text-align: center; padding-bottom: 20px; margin-bottom: 24px; border-bottom: 1px solid #f1f5f9; }
+    .logo { max-height: 48px; max-width: 180px; width: auto; display: block; margin: 0 auto 10px; object-fit: contain; }
+    .initial { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; margin: 0 auto 10px; }
+    .brand-name { font-size: 15px; font-weight: 600; color: ${INK}; }
+    .icon { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; }
+    h1 { color: ${INK}; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.3; text-align: center; margin-bottom: 8px; }
+    .message { color: ${MUTED}; font-size: 15px; line-height: 1.6; text-align: center; }
+    .label { margin: 24px 0 10px; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: ${MUTED}; }
+    .items { width: 100%; border: 1px solid ${BORDER}; border-radius: 12px; border-collapse: separate; border-spacing: 0; overflow: hidden; font-size: 14px; }
+    .items td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; color: ${INK}; vertical-align: top; line-height: 1.45; }
+    .items tr:last-child td { border-bottom: none; }
+    .items .amt { text-align: right; white-space: nowrap; font-weight: 500; }
+    .items .detail { margin-top: 2px; color: ${MUTED}; font-size: 13px; }
+    .items .sub td { background: ${SOFT}; color: ${MUTED}; padding-top: 8px; padding-bottom: 8px; border-bottom: none; }
+    .items .total td { background: ${SOFT}; border-top: 1px solid ${BORDER}; font-size: 16px; font-weight: 700; color: ${INK}; }
+    .items .dep td { background: ${SOFT}; border-top: 1px solid ${BORDER}; font-weight: 600; color: ${INK}; }
+    .due { margin-top: 24px; padding: 22px 18px; border-radius: 12px; background: ${SOFT}; border: 1px solid ${BORDER}; text-align: center; }
+    .due-label { font-size: 13px; font-weight: 600; color: ${MUTED}; margin-bottom: 4px; }
+    .due-amount { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; color: ${INK}; margin-bottom: 16px; }
+    .hint { margin-top: 10px; font-size: 13px; color: ${MUTED}; }
+    .actions { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+    .btn-primary, .btn-dark, .btn-secondary {
+      display: block; width: 100%; padding: 14px 16px; border-radius: 12px; font-size: 16px; font-weight: 600;
+      text-align: center; text-decoration: none; cursor: pointer; font-family: inherit;
     }
-    .header { text-align: center; margin-bottom: 24px; }
-    h1 { color: #0f172a; font-size: 22px; font-weight: 800; margin-bottom: 8px; }
-    .message { color: #64748b; font-size: 15px; line-height: 1.7; text-align: center; }
-    @media (max-width: 480px) {
-      .card { padding: 28px 20px; }
-      h1 { font-size: 20px; }
-    }
+    .btn-primary { background: ${accent.bg}; color: ${accent.fg}; border: 1px solid ${accent.edge}; }
+    .btn-dark { background: ${INK}; color: #fff; border: 1px solid ${INK}; }
+    .btn-secondary { background: #fff; color: ${INK}; border: 1px solid #cbd5e1; font-size: 15px; }
+    .btn-link { background: none; border: none; color: ${MUTED}; font-size: 14px; text-decoration: underline; cursor: pointer; padding: 6px; font-family: inherit; }
+    .note { margin-top: 24px; padding: 14px 16px; border-radius: 12px; background: ${SOFT}; border: 1px solid ${BORDER}; font-size: 14px; line-height: 1.6; }
+    .note-title { font-weight: 600; color: ${INK}; margin-bottom: 2px; }
+    .contact { margin-top: 24px; padding-top: 20px; border-top: 1px solid #f1f5f9; }
+    .contact .label { margin-top: 0; }
+    .site { margin-top: 10px; text-align: center; font-size: 13px; }
+    .site a { color: ${TEXT}; }
+    .powered { margin-top: 24px; font-size: 11px; color: #94a3b8; text-decoration: none; font-weight: 500; }
+    @media (max-width: 480px) { .inner { padding: 24px 18px 20px; } h1 { font-size: 20px; } }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="header">
-      ${logoHtml}
+    <div class="bar"></div>
+    <div class="inner">
+      ${brandHtml}
       ${iconHtml}
       <h1>${esc(title)}</h1>
       <p class="message">${esc(message)}</p>
+      ${paymentHtml}
+      ${quoteHtml}
+      ${confirmHtml}
+      ${nextStepsHtml}
+      ${contactHtml}
     </div>
-    ${paymentHtml}
-    ${lineItemsHtml}
-    ${confirmHtml}
-    ${nextStepsHtml}
-    ${contactHtml}
   </div>
-  ${poweredByHtml}
+  <a href="https://lead2project.com" class="powered">Powered by Lead2Project</a>
 </body>
 </html>`;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Plus,
@@ -84,10 +84,18 @@ type Props = {
   isDark: boolean;
   onClose: () => void;
   onSaved: (updatedQuestions: CustomQuestion[]) => void;
+  /** Rendered inside the service panel (no popup frame; stays open after saving). */
+  embedded?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
+  /** Panel only: hands this tab's save to the panel ("Save and switch"). Resolves true if it saved. */
+  onRegisterSave?: (fn: (() => Promise<boolean>) | null) => void;
 };
 
-export default function CategoriesQuestionsModal({ companySlug, category, allQuestions, isDark, onClose, onSaved }: Props) {
+export default function CategoriesQuestionsModal({
+  companySlug, category, allQuestions, isDark, onClose, onSaved, embedded = false, onDirtyChange, onRegisterSave,
+}: Props) {
   const c = tokens(isDark);
+  const [savedFlash, setSavedFlash] = useState(false);
   const [questions, setQuestions] = useState<CustomQuestion[]>(allQuestions);
   const [dirty, setDirty] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
@@ -107,6 +115,10 @@ export default function CategoriesQuestionsModal({ companySlug, category, allQue
 
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
+
+  useEffect(() => {
+    onDirtyChange?.(dirty || (viewMode === 'editor' && !!label.trim()));
+  }, [dirty, viewMode, label, onDirtyChange]);
 
   const mine = useMemo(() => questions.filter((q) => q.category === category.value), [questions, category.value]);
 
@@ -181,11 +193,12 @@ export default function CategoriesQuestionsModal({ companySlug, category, allQue
     setOptionsError('');
   };
 
-  const confirmQuestion = () => {
+  /** Adds/updates the question in the list. Returns the new list, or null if something's missing. */
+  const confirmQuestion = (): CustomQuestion[] | null => {
     const trimmed = label.trim();
     if (!trimmed) {
       setLabelError('Write the question first.');
-      return;
+      return null;
     }
     // Include anything still typed in the choice box.
     let finalOptions = options;
@@ -195,28 +208,28 @@ export default function CategoriesQuestionsModal({ companySlug, category, allQue
     }
     if (type === 'select' && finalOptions.length < 2) {
       setOptionsError('Add at least 2 choices.');
-      return;
+      return null;
     }
 
-    if (editingQId) {
-      setQuestions((prev) =>
-        prev.map((q) => (q.id === editingQId ? { ...q, label: trimmed, type, options: type === 'select' ? finalOptions : [] } : q))
-      );
-    } else {
-      setQuestions((prev) => [
-        ...prev,
-        {
-          id: `q_${Date.now()}`,
-          label: trimmed,
-          type,
-          required: false,
-          options: type === 'select' ? finalOptions : [],
-          category: category.value,
-        },
-      ]);
-    }
+    const next: CustomQuestion[] = editingQId
+      ? questions.map((q) =>
+          q.id === editingQId ? { ...q, label: trimmed, type, options: type === 'select' ? finalOptions : [] } : q
+        )
+      : [
+          ...questions,
+          {
+            id: `q_${Date.now()}`,
+            label: trimmed,
+            type,
+            required: false,
+            options: type === 'select' ? finalOptions : [],
+            category: category.value,
+          },
+        ];
+    setQuestions(next);
     setDirty(true);
     backToList();
+    return next;
   };
 
   const removeQuestion = (id: string) => {
@@ -240,28 +253,54 @@ export default function CategoriesQuestionsModal({ companySlug, category, allQue
     setDirty(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (list: CustomQuestion[] = questions): Promise<boolean> => {
     setSaving(true);
     setSaveError('');
     try {
       const res = await fetch(`/api/company/${companySlug}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'update-form', data: { questions } }),
+        body: JSON.stringify({ action: 'update-form', data: { questions: list } }),
       });
       const data = await res.json();
       if (data.success) {
-        onSaved(questions);
-        onClose();
-      } else {
-        setSaveError(data.error || 'Could not save questions.');
+        onSaved(list);
+        if (embedded) {
+          setDirty(false);
+          setSavedFlash(true);
+          setTimeout(() => setSavedFlash(false), 1800);
+        } else {
+          onClose();
+        }
+        return true;
       }
+      setSaveError(data.error || 'Could not save questions.');
+      return false;
     } catch {
       setSaveError('Network error. Try again.');
+      return false;
     } finally {
       setSaving(false);
     }
   };
+
+  // Panel "Save and switch": add a half-written question first, then save everything.
+  const saveForPanel = async (): Promise<boolean> => {
+    let list = questions;
+    if (viewMode === 'editor' && label.trim()) {
+      const next = confirmQuestion();
+      if (!next) return false;
+      list = next;
+    }
+    return handleSave(list);
+  };
+  const saveRef = useRef(saveForPanel);
+  saveRef.current = saveForPanel;
+  useEffect(() => {
+    if (!onRegisterSave) return;
+    onRegisterSave(() => saveRef.current());
+    return () => onRegisterSave(null);
+  }, [onRegisterSave]);
 
   // What the customer sees on the booking form (pills, like the real form).
   const previewChoices = type === 'select' ? [...options, ...(optionDraft.trim() ? [optionDraft.trim()] : [])] : [];
@@ -307,55 +346,8 @@ export default function CategoriesQuestionsModal({ companySlug, category, allQue
 
   const editorTitle = editingQId ? 'Edit question' : typePicked ? 'New question' : 'What kind of question?';
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
-      onClick={requestClose}
-    >
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18 }}
-        role="dialog"
-        aria-modal="true"
-        aria-label={`Booking questions for ${category.label}`}
-        className={`flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border shadow-2xl sm:rounded-2xl ${c.panel}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${c.bar}`}>
-          <div className="flex min-w-0 items-center gap-2.5">
-            {viewMode === 'editor' ? (
-              <button
-                type="button"
-                onClick={backToList}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
-                aria-label="Back to questions"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </button>
-            ) : (
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.accentIcon}`}>
-                <List className="h-4 w-4" />
-              </span>
-            )}
-            <div className="min-w-0">
-              <h3 className={`truncate text-base font-semibold ${c.text}`}>
-                {viewMode === 'editor' ? editorTitle : 'Booking questions'}
-              </h3>
-              <p className={`truncate text-sm ${c.sub}`}>{category.label}</p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={requestClose}
-            aria-label="Close"
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
+  const inner = (
+    <>
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-5 py-5">
           <AnimatePresence mode="wait" initial={false}>
@@ -656,20 +648,22 @@ export default function CategoriesQuestionsModal({ companySlug, category, allQue
           ) : (
             <div className="flex items-center justify-between gap-3">
               <p className={`text-sm ${dirty ? (isDark ? 'text-amber-300' : 'text-amber-700') : c.faint}`}>
-                {dirty ? 'Changes not saved yet' : `${mine.length} question${mine.length === 1 ? '' : 's'}`}
+                {dirty ? 'Changes not saved yet' : savedFlash ? 'Saved' : `${mine.length} question${mine.length === 1 ? '' : 's'}`}
               </p>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={requestClose}
-                  className={`rounded-xl border px-4 py-2.5 text-sm font-semibold ${c.btn}`}
-                >
-                  {dirty ? 'Cancel' : 'Close'}
-                </button>
+                {!(embedded && !dirty) && (
+                  <button
+                    type="button"
+                    onClick={embedded ? () => { setQuestions(allQuestions); setDirty(false); } : requestClose}
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-semibold ${c.btn}`}
+                  >
+                    {dirty ? (embedded ? 'Undo changes' : 'Cancel') : 'Close'}
+                  </button>
+                )}
                 {dirty && (
                   <button
                     type="button"
-                    onClick={handleSave}
+                    onClick={() => handleSave()}
                     disabled={saving}
                     className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${c.primary}`}
                   >
@@ -681,6 +675,75 @@ export default function CategoriesQuestionsModal({ companySlug, category, allQue
             </div>
           )}
         </div>
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        {viewMode === 'editor' && (
+          <div className={`flex items-center gap-2 border-b px-5 py-2.5 ${c.bar}`}>
+            <button type="button" onClick={backToList} className={`flex h-8 w-8 items-center justify-center rounded-lg ${c.iconBtn}`} aria-label="Back to questions">
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <p className={`text-sm font-semibold ${c.text}`}>{editorTitle}</p>
+          </div>
+        )}
+        {inner}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      onClick={requestClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.18 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Booking questions for ${category.label}`}
+        className={`flex max-h-[92dvh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border shadow-2xl sm:rounded-2xl ${c.panel}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className={`flex items-center justify-between gap-3 border-b px-5 py-4 ${c.bar}`}>
+          <div className="flex min-w-0 items-center gap-2.5">
+            {viewMode === 'editor' ? (
+              <button
+                type="button"
+                onClick={backToList}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
+                aria-label="Back to questions"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+            ) : (
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.accentIcon}`}>
+                <List className="h-4 w-4" />
+              </span>
+            )}
+            <div className="min-w-0">
+              <h3 className={`truncate text-base font-semibold ${c.text}`}>
+                {viewMode === 'editor' ? editorTitle : 'Booking questions'}
+              </h3>
+              <p className={`truncate text-sm ${c.sub}`}>{category.label}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={requestClose}
+            aria-label="Close"
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.iconBtn}`}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {inner}
       </motion.div>
     </div>
   );

@@ -1,20 +1,25 @@
 'use client';
 
+// Booking form settings. Kept deliberately quiet:
+//   left  = four switches ("Ask customers for…")
+//   right = the real form, updating as you flip them
+//   top   = one Share button (link, QR code, website, test email)
+
 import {
-  AlertCircle, Check, X, Eye, User, Mail, Phone, MapPin, Calendar, ImageIcon, Megaphone,
-  Lock, ArrowUpRight, Play, Link2, ExternalLink, Loader2, FileText, Tag, Share2,
+  AlertCircle, Check, X, Eye, MapPin, Calendar, ImageIcon, Megaphone,
+  Lock, ArrowRight, Loader2, Share2,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TestModeModal from './TestModeModal';
 import ShareFormModal from './ShareFormModal';
+import UploadForm from '@/components/UploadForm';
 import SettingsUpgradeBanner from '@/components/SettingsUpgradeBanner';
-import { REQUIRED_PLAN, type Category } from '../../../admin/settings/tabs/useFormTabLogic';
+import { REQUIRED_PLAN } from '../../../admin/settings/tabs/useFormTabLogic';
 import { themeTokens } from './CategoriesTaskEditorModal';
 
 type Theme = ReturnType<typeof themeTokens>;
 
-// Neutral slate tokens, same family as Services / Financials.
 function tokens(isDark: boolean) {
   return isDark
     ? {
@@ -23,18 +28,13 @@ function tokens(isDark: boolean) {
         faint: 'text-slate-400',
         card: 'border-white/10 bg-[#0f1420]',
         divide: 'divide-white/10',
-        border: 'border-white/10',
         btn: 'border-white/10 bg-white/5 text-slate-200 hover:bg-white/10',
         primary: 'bg-white text-slate-900 hover:bg-slate-100',
-        chip: 'border-white/15 bg-white/[0.06] text-slate-100',
-        code: 'border-white/10 bg-black/20 text-slate-200',
-        icon: 'bg-white/[0.06] text-slate-300',
+        icon: 'text-slate-400',
+        iconOn: 'text-white',
         lockPill: 'border-white/15 text-slate-300 hover:bg-white/10',
-        sticky: 'border-white/10 bg-[#0f1420]/95',
-        drawer: 'border-white/10 bg-[#0b0f17] text-slate-100',
-        drawerBody: 'bg-black/20',
-        iconOn: 'bg-sky-400/15 text-sky-300',
-        stepBadge: 'bg-white text-slate-900',
+        panel: 'border-white/10 bg-white/[0.03]',
+        link: 'text-slate-200',
       }
     : {
         text: 'text-slate-900',
@@ -42,23 +42,16 @@ function tokens(isDark: boolean) {
         faint: 'text-slate-500',
         card: 'border-slate-200 bg-white',
         divide: 'divide-slate-100',
-        border: 'border-slate-200',
         btn: 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
         primary: 'bg-slate-900 text-white hover:bg-slate-800',
-        chip: 'border-slate-200 bg-slate-50 text-slate-800',
-        code: 'border-slate-200 bg-slate-50 text-slate-800',
-        icon: 'bg-slate-100 text-slate-700',
+        icon: 'text-slate-400',
+        iconOn: 'text-slate-900',
         lockPill: 'border-slate-300 text-slate-600 hover:bg-slate-50',
-        sticky: 'border-slate-200 bg-white/95',
-        drawer: 'border-slate-200 bg-white text-slate-900',
-        drawerBody: 'bg-slate-50',
-        iconOn: 'bg-sky-100 text-sky-700',
-        stepBadge: 'bg-slate-900 text-white',
+        panel: 'border-slate-200 bg-slate-100',
+        link: 'text-slate-900',
       };
 }
 type Tok = ReturnType<typeof tokens>;
-
-/* ─────────────── Small pieces ─────────────── */
 
 function ToggleSwitch({ enabled, onToggle, ariaLabel, isDark }: { enabled: boolean; onToggle: () => void; ariaLabel: string; isDark: boolean }) {
   const on = isDark ? 'bg-white' : 'bg-slate-900';
@@ -71,86 +64,129 @@ function ToggleSwitch({ enabled, onToggle, ariaLabel, isDark }: { enabled: boole
       aria-checked={enabled}
       aria-label={ariaLabel}
       onClick={onToggle}
-      className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors ${enabled ? on : off}`}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-colors ${enabled ? on : off}`}
     >
-      <span className={`h-6 w-6 rounded-full shadow transition-transform ${knob} ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+      <span className={`h-5 w-5 rounded-full shadow transition-transform ${knob} ${enabled ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
   );
 }
 
-function PlanPill({ companySlug, c }: { companySlug: string; c: Tok }) {
-  return (
-    <a
-      href={`/${companySlug}/home?section=billing`}
-      className={`inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition ${c.lockPill}`}
-    >
-      <Lock className="h-3 w-3" /> {REQUIRED_PLAN.label}
-    </a>
-  );
-}
-
 function FieldRow({
-  icon: Icon, label, hint, enabled, onToggle, planLocked, companySlug, c, isDark,
+  icon: Icon, label, enabled, onToggle, locked, companySlug, c, isDark,
 }: {
-  icon: React.ElementType; label: string; hint: string; enabled: boolean; onToggle: () => void;
-  planLocked?: boolean; companySlug: string; c: Tok; isDark: boolean;
+  icon: React.ElementType; label: string; enabled: boolean; onToggle: () => void;
+  locked?: boolean; companySlug: string; c: Tok; isDark: boolean;
 }) {
-  const active = enabled && !planLocked;
+  const active = enabled && !locked;
   return (
-    <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${active ? c.iconOn : `${c.icon} opacity-60`}`}>
-                <Icon className="h-4 w-4" />
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className={`text-[15px] font-semibold ${active ? c.text : c.sub}`}>{label}</p>
-        <p className={`text-[13px] leading-snug ${c.faint}`}>{hint}</p>
-      </div>
-      {planLocked ? (
-        <PlanPill companySlug={companySlug} c={c} />
+    <div className="flex items-center gap-3 px-4 py-3">
+      <Icon className={`h-4 w-4 shrink-0 ${active ? c.iconOn : c.icon}`} />
+      <p className={`flex-1 text-[15px] font-medium ${active ? c.text : c.sub}`}>{label}</p>
+      {locked ? (
+        <a
+          href={`/${companySlug}/home?section=billing`}
+          className={`inline-flex shrink-0 items-center gap-1 rounded-lg border px-2 py-1 text-xs font-semibold transition ${c.lockPill}`}
+        >
+          <Lock className="h-3 w-3" /> {REQUIRED_PLAN.label}
+        </a>
       ) : (
-        <ToggleSwitch enabled={enabled} onToggle={onToggle} ariaLabel={`Show ${label} on your form`} isDark={isDark} />
+        <ToggleSwitch enabled={enabled} onToggle={onToggle} ariaLabel={`Ask for ${label}`} isDark={isDark} />
       )}
     </div>
   );
 }
 
-/* ─────────────── Phone mockups (customer's view, keeps their brand colors) ─────────────── */
+/**
+ * The real booking form component, in demo mode, using the switches as they
+ * are right now. Opens on step 2 (the part the switches change).
+ */
+function LivePreview({
+  company, fieldConfig, customQuestions, categories,
+  canUseCustomQuestions, canUsePhotoUpload, canCustomizeForm, scrollClass,
+}: {
+  company: any; fieldConfig: any; customQuestions: any[]; categories: any[];
+  canUseCustomQuestions: boolean; canUsePhotoUpload: boolean; canCustomizeForm: boolean; scrollClass: string;
+}) {
+  const [step, setStep] = useState<1 | 2>(2);
+  const [nonce, setNonce] = useState(0);
+  const [service, setService] = useState<string>(categories?.[0]?.value || '');
+  const go = (s: 1 | 2) => { setStep(s); setNonce((n) => n + 1); };
 
-function PhoneFrame({ children, isDark }: { children: React.ReactNode; isDark: boolean }) {
+  const questions = canUseCustomQuestions ? customQuestions || [] : [];
+  const questionsForService = questions.filter((q: any) => !q.category || q.category === service);
+  // Service chips only matter when services actually have different questions.
+  const showServicePicker = step === 2 && categories.length > 1 && questions.some((q: any) => q.category);
+
+  const anyField =
+    canCustomizeForm &&
+    (fieldConfig.address?.enabled ||
+      fieldConfig.preferred_date?.enabled ||
+      fieldConfig.lead_source?.enabled ||
+      (canUsePhotoUpload && fieldConfig.file_upload?.enabled));
+  const step2Empty = !canCustomizeForm || (!anyField && questionsForService.length === 0);
+
+  const previewCompany = {
+    ...company,
+    form_field_config: {
+      ...fieldConfig,
+      file_upload: { enabled: canUsePhotoUpload ? !!fieldConfig.file_upload?.enabled : false },
+    },
+    custom_questions: questions,
+  };
+
+  const tabCls = (on: boolean) =>
+    `rounded-lg py-1.5 text-sm font-semibold transition ${on ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`;
+
   return (
-    <div className="mx-auto w-full max-w-[300px]">
-      <div className="relative h-[520px] rounded-[2.25rem] border-[8px] border-slate-900 bg-slate-900 shadow-xl">
-        <div className="absolute left-1/2 top-1.5 z-20 h-4 w-20 -translate-x-1/2 rounded-full bg-slate-900" />
-        <div className={`h-full overflow-y-auto rounded-[1.6rem] ${isDark ? 'bg-slate-900 text-slate-100' : 'bg-white text-slate-900'}`}>{children}</div>
+    <div className="flex h-full flex-col gap-2">
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-slate-200 bg-white p-1">
+        <button type="button" onClick={() => go(1)} className={tabCls(step === 1)} aria-pressed={step === 1}>Step 1 · Contact</button>
+        <button type="button" onClick={() => go(2)} className={tabCls(step === 2)} aria-pressed={step === 2}>Step 2 · Details</button>
+      </div>
+
+      {showServicePicker && (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-[12px] text-slate-500">Questions for</span>
+          {categories.map((cat: any) => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => setService(cat.value)}
+              className={`rounded-md border px-2 py-0.5 text-xs font-semibold transition ${
+                service === cat.value ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className={`overflow-y-auto rounded-xl border border-slate-200 bg-white ${scrollClass}`}>
+        {step === 2 && step2Empty ? (
+          <div className="px-6 py-14 text-center">
+            <p className="text-sm font-semibold text-slate-800">
+              {canCustomizeForm ? 'Nothing extra is asked' : `Step 2 is on the ${REQUIRED_PLAN.label} plan`}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              {canCustomizeForm ? 'Customers are done after step 1. Turn on a switch to ask more.' : 'Customers are done after step 1.'}
+            </p>
+          </div>
+        ) : (
+          <UploadForm
+            company={previewCompany}
+            demo
+            embedded
+            showHeader={false}
+            previewStep={step}
+            previewNonce={nonce}
+            previewCategory={service}
+          />
+        )}
       </div>
     </div>
   );
 }
-
-function PhoneHeader({ logoUrl, heading, brandColor1, brandColor2 }: { logoUrl?: string | null; heading: string; brandColor1: string; brandColor2: string }) {
-  return (
-    <div className="px-5 pb-5 pt-8 text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>
-      {logoUrl && <img src={logoUrl} alt="" className="mb-3 h-7 w-auto object-contain" />}
-      <h3 className="text-sm font-bold tracking-tight text-white">{heading}</h3>
-    </div>
-  );
-}
-
-const fieldBoxCls = (isDark: boolean) =>
-  `flex min-h-[40px] w-full items-center gap-2 overflow-hidden rounded-lg border px-3 text-xs font-medium ${
-    isDark ? 'border-slate-800 bg-slate-800/60 text-slate-200' : 'border-slate-200 bg-slate-50 text-slate-700'
-  }`;
-
-function PhoneField({ label, children, isDark }: { label: string; children: React.ReactNode; isDark: boolean }) {
-  return (
-    <div>
-      <p className={`mb-1 text-[11px] font-semibold ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{label}</p>
-      {children}
-    </div>
-  );
-}
-
-/* ─────────────── Main ─────────────── */
 
 export default function BookingFormConfig({
   company,
@@ -160,455 +196,180 @@ export default function BookingFormConfig({
   company: any;
   formLogic: any;
   isDark: boolean;
-  t?: Theme; // still accepted from the parent; this screen uses its own tokens
+  t?: Theme; // still accepted from the parent
 }) {
   const {
     canUsePhotoUpload, canUseCustomQuestions, canCustomizeForm, loading, status, customQuestions,
-    isPreviewOpen, setIsPreviewOpen, fieldConfig, isDirty, categories,
-    brandColor1, brandColor2, getCtaHeading, toggleField, togglePreferredDateTime,
-    handleSaveAll, enabledCount,
+    fieldConfig, isDirty, categories, brandColor1, brandColor2, getCtaHeading, toggleField,
+    togglePreferredDateTime, handleSaveAll, publicUrl,
   } = formLogic;
-  const { publicUrl, linkCopied, setLinkCopied } = formLogic;
-    const [isTestModeOpen, setIsTestModeOpen] = useState(false);
-  const [isShareOpen, setIsShareOpen] = useState(false);
-  const [copyFailed, setCopyFailed] = useState(false);
-  const [previewStep, setPreviewStep] = useState<1 | 2>(2);
-  const [previewService, setPreviewService] = useState<string | null>(null);
-  const c = tokens(isDark);
-  const fieldBox = fieldBoxCls(isDark);
+  const autoSave: boolean = !!formLogic.autoSave;
+  const retrySave: () => void = formLogic.retrySave ?? handleSaveAll;
 
-  // Esc closes the preview drawer.
+  const [isTestModeOpen, setIsTestModeOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false); // phones
+  const c = tokens(isDark);
+
   useEffect(() => {
     if (!isPreviewOpen) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setIsPreviewOpen(false);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [isPreviewOpen, setIsPreviewOpen]);
+  }, [isPreviewOpen]);
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(publicUrl);
-      setCopyFailed(false);
-      setLinkCopied(true);
-      setTimeout(() => setLinkCopied(false), 1800);
-    } catch {
-      setCopyFailed(true);
-    }
+  const previewProps = {
+    company,
+    fieldConfig,
+    customQuestions,
+    categories: categories || [],
+    canUseCustomQuestions,
+    canUsePhotoUpload,
+    canCustomizeForm,
   };
 
-  // Step 2 preview shows the questions for the service picked in the drawer (first one by default).
-  const firstService: Category | undefined =
-    (categories || []).find((cat: Category) => cat.value === previewService) || categories?.[0];
-  const previewQuestions = canUseCustomQuestions
-    ? (customQuestions || []).filter((q: any) => !firstService || q.category === firstService.value)
-    : [];
-
-  const alwaysAsked = ['Name', 'Email', 'Phone', 'Service', 'Description'];
-
-  const RequiredPhone = (
-    <PhoneFrame isDark={isDark}>
-      <PhoneHeader logoUrl={company.logo_url} heading={getCtaHeading()} brandColor1={brandColor1} brandColor2={brandColor2} />
-      <div className="space-y-3.5 p-4">
-        <PhoneField label="Full name" isDark={isDark}><div className={fieldBox}><User className="h-3.5 w-3.5 shrink-0 text-slate-400" />John Smith</div></PhoneField>
-        <PhoneField label="Email" isDark={isDark}><div className={fieldBox}><Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">john@example.com</span></div></PhoneField>
-        <PhoneField label="Phone" isDark={isDark}><div className={fieldBox}><Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />(555) 123-4567</div></PhoneField>
-        <PhoneField label="Service needed" isDark={isDark}>
-          <div className="flex flex-wrap gap-1.5">
-            {(categories || []).map((cat: Category, i: number) => (
-              <span
-                key={cat.value || i}
-                className={`rounded-md border px-2 py-0.5 text-[11px] font-semibold ${i === 0 ? 'border-transparent text-white' : isDark ? 'border-slate-800 bg-slate-800 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`}
-                style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : {}}
-              >
-                {cat.label}
-              </span>
-            ))}
-          </div>
-        </PhoneField>
-        <PhoneField label="Describe the job" isDark={isDark}>
-          <div className={`h-16 w-full rounded-lg border p-2.5 text-xs ${isDark ? 'border-slate-800 bg-slate-800/60 text-slate-400' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>Describe your project here…</div>
-        </PhoneField>
-        <div className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>Submit request</div>
-      </div>
-    </PhoneFrame>
-  );
-
-  const chipCls = isDark ? 'border-slate-700 bg-slate-800 text-slate-300' : 'border-slate-200 bg-slate-50 text-slate-600';
-
-  const OptionalPhone = (
-    <PhoneFrame isDark={isDark}>
-      <PhoneHeader logoUrl={company.logo_url} heading={getCtaHeading()} brandColor1={brandColor1} brandColor2={brandColor2} />
-      <div className="space-y-3.5 p-4">
-        {enabledCount === 0 && previewQuestions.length === 0 && (
-          <div className={`rounded-lg border border-dashed px-4 py-8 text-center ${isDark ? 'border-slate-700' : 'border-slate-300'}`}>
-            <p className={`text-xs font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>No extra fields on</p>
-            <p className={`mt-1 text-[11px] ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Customers only fill in step 1.</p>
-          </div>
-        )}
-        {fieldConfig.address.enabled && <PhoneField label="Address" isDark={isDark}><div className={fieldBox}><MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">123 Main St, New York 12345</span></div></PhoneField>}
-
-        {/* Service questions: after address, before timing (same order as the real form) */}
-        {previewQuestions.map((q: any) => (
-          <PhoneField key={q.id} label={q.label} isDark={isDark}>
-            {q.type === 'text' && <div className={`${fieldBox} text-slate-400`}>Their answer…</div>}
-            {q.type === 'select' && (
-              <div className="flex flex-wrap gap-1.5">
-                {(q.options || []).map((o: string) => (
-                  <span key={o} className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${chipCls}`}>{o}</span>
-                ))}
-              </div>
-            )}
-            {q.type === 'checkbox' && (
-              <div className="flex gap-1.5">
-                {['Yes', 'No'].map((v) => (
-                  <span key={v} className={`rounded-lg border px-3 py-1 text-[11px] font-semibold ${chipCls}`}>{v}</span>
-                ))}
-              </div>
-            )}
-          </PhoneField>
-        ))}
-
-        {fieldConfig.preferred_date.enabled && (
-          <>
-            <PhoneField label="How soon do you need this?" isDark={isDark}>
-              <div className="flex flex-wrap gap-1.5">
-                {['ASAP', 'Within a week', 'Within a month', 'Just getting prices'].map((l, i) => (
-                  <span
-                    key={l}
-                    className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${i === 0 ? 'border-transparent text-white' : chipCls}`}
-                    style={i === 0 ? { background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` } : undefined}
-                  >
-                    {l}
-                  </span>
-                ))}
-              </div>
-            </PhoneField>
-            <PhoneField label="Best time to reach you" isDark={isDark}>
-              <div className="flex flex-wrap gap-1.5">
-                {['Weekday mornings', 'Weekday afternoons', 'Evenings', 'Weekends'].map((l) => (
-                  <span key={l} className={`rounded-lg border px-2 py-1 text-[11px] font-semibold ${chipCls}`}>{l}</span>
-                ))}
-              </div>
-            </PhoneField>
-          </>
-        )}
-
-        {fieldConfig.lead_source.enabled && <PhoneField label="How did you hear about us?" isDark={isDark}><div className={fieldBox}><Megaphone className="h-3.5 w-3.5 shrink-0 text-slate-400" /><span className="truncate">Google, referral, saw your truck…</span></div></PhoneField>}
-        {fieldConfig.file_upload.enabled && canUsePhotoUpload && (
-          <PhoneField label="Photos" isDark={isDark}>
-            <div className={`flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed py-4 ${isDark ? 'border-slate-700 text-slate-400' : 'border-slate-200 text-slate-600'}`}>
-              <ImageIcon className="h-4 w-4 text-slate-400" />
-              <p className="text-[11px] font-semibold">Tap to upload photos</p>
-            </div>
-          </PhoneField>
-        )}
-        <div className="flex h-10 w-full items-center justify-center rounded-lg text-xs font-bold text-white" style={{ background: `linear-gradient(135deg, ${brandColor1}, ${brandColor2})` }}>Submit</div>
-      </div>
-    </PhoneFrame>
-  );
+  const saveIndicator = autoSave
+    ? loading || (isDirty && status.type !== 'error')
+      ? <span className={`inline-flex items-center gap-1 text-xs ${c.faint}`}><Loader2 className="h-3 w-3 animate-spin" /> Saving</span>
+      : status.type === 'error'
+      ? <button type="button" onClick={retrySave} className="inline-flex items-center gap-1 text-xs font-medium text-rose-500"><AlertCircle className="h-3 w-3" /> Try again</button>
+      : status.type === 'success'
+      ? <span className={`inline-flex items-center gap-1 text-xs ${c.faint}`}><Check className="h-3 w-3" /> Saved</span>
+      : null
+    : null;
 
   return (
     <>
-      <div className="mx-auto max-w-4xl space-y-6 px-4 pb-28 pt-4 sm:px-6">
-        {/* Header */}
-        <div>
-          <h1 className={`text-xl font-semibold tracking-tight sm:text-2xl ${c.text}`}>Booking form</h1>
-          <p className={`mt-0.5 text-sm ${c.sub}`}>Where customers request a job. Share the link, test it, and pick what it asks.</p>
-        </div>
-
-        {company.plan_tier === 'free' && (
-          <SettingsUpgradeBanner
-            planLabel={REQUIRED_PLAN.label}
-            price={REQUIRED_PLAN.price}
-            message="Your booking form is live. Upgrade to add photo uploads, service questions, and more fields."
-            companySlug={company.slug}
-          />
-        )}
-
-        <AnimatePresence>
-          {status.type && (
-            <motion.div
-              initial={{ opacity: 0, y: -6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${
-                status.type === 'success' ? `${c.card} ${c.text}` : 'border-rose-500/30 bg-rose-500/5 font-medium text-rose-500'
-              }`}
-            >
-              {status.type === 'success' ? <Check className="h-4 w-4 shrink-0 text-emerald-500" /> : <AlertCircle className="h-4 w-4 shrink-0" />}
-              {status.message}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Link + Test */}
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <div className={`flex flex-col rounded-2xl border p-4 sm:p-5 ${c.card}`}>
-            <div className="flex items-center gap-2.5">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.icon}`}><Link2 className="h-4 w-4" /></span>
-              <div>
-                             <p className={`text-base font-semibold ${c.text}`}>Share your form</p>
-                <p className={`text-[13px] ${c.faint}`}>Send the link, print the QR code, or put the form on your website.</p>
-              </div>
-            </div>
-            <code className={`mt-3 block truncate rounded-lg border px-3 py-2 font-mono text-xs ${c.code}`} title={publicUrl}>
-              {publicUrl}
-            </code>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={copyLink}
-                className={`inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border py-2.5 text-sm font-semibold transition ${c.btn}`}
-              >
-                {linkCopied ? <Check className="h-4 w-4 text-emerald-500" /> : <Link2 className="h-4 w-4" />}
-                {linkCopied ? 'Copied' : 'Copy link'}
-              </button>
-              <a
-                href={publicUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${c.btn}`}
-              >
-                            Open <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsShareOpen(true)}
-              className={`mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold transition ${c.primary}`}
-            >
-              <Share2 className="h-4 w-4" /> QR code &amp; website embed
-            </button>
-            {copyFailed && <p className="mt-2 text-xs font-medium text-rose-500">Couldn't copy. Press and hold the link to copy it.</p>}
-            <p className={`mt-2 flex items-start gap-1.5 text-[13px] ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              Sending a request from the live link creates a real lead. Use “Test it as a customer” instead.
-            </p>
-                      </div>
-
-          <div className={`flex flex-col rounded-2xl border p-4 sm:p-5 ${c.card}`}>
-            <div className="flex items-center gap-2.5">
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.icon}`}><Play className="h-4 w-4" /></span>
-              <div>
-                <p className={`text-base font-semibold ${c.text}`}>Test it as a customer</p>
-                <p className={`text-[13px] ${c.faint}`}>Nothing is saved and no lead is created.</p>
-              </div>
-            </div>
-            <p className={`mt-3 flex-1 text-sm ${c.sub}`}>
-              Fill out both steps, including the questions for each service, and email yourself what you&apos;d receive.
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsTestModeOpen(true)}
-              className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition ${c.primary}`}
-            >
-              <Play className="h-4 w-4" /> Start test
-            </button>
+      <div className="mx-auto max-w-6xl px-4 pb-24 pt-4 sm:px-6">
+        {/* Header: title + one Share button */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className={`text-xl font-semibold tracking-tight sm:text-2xl ${c.text}`}>Booking form</h1>
+            <p className={`mt-0.5 text-sm ${c.sub}`}>What customers fill out to request a job.</p>
           </div>
-        </div>
-
-        {/* Fields */}
-        <section>
-          <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className={`text-lg font-semibold ${c.text}`}>What the form asks</h2>
-              <p className={`mt-0.5 text-sm ${c.sub}`}>Step 1 is always asked. Turn step 2 fields on or off.</p>
-            </div>
+          <div className="flex shrink-0 gap-2">
             <button
               type="button"
               onClick={() => setIsPreviewOpen(true)}
-              className={`inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-2 text-sm font-medium transition ${c.btn}`}
+              className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-semibold transition lg:hidden ${c.btn}`}
             >
               <Eye className="h-4 w-4" /> Preview
             </button>
-          </div>
-
-          <div className={`overflow-hidden rounded-2xl border ${c.card}`}>
-            {/* Step 1 */}
-            <div className={`border-b px-4 py-4 sm:px-5 ${c.border}`}>
-              <p className={`flex items-center gap-2 text-sm font-semibold ${c.text}`}>
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${c.stepBadge}`}>1</span>
-                Always asked
-              </p>
-                            <div className="mt-2 flex flex-wrap gap-1.5">
-                {alwaysAsked.map((f) => (
-                  <span key={f} className={`inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[13px] font-medium ${c.chip}`}>
-                    <Lock className="h-3 w-3 opacity-60" /> {f}
-                  </span>
-                ))}
-              </div>
-              <p className={`mt-2.5 text-[13px] ${c.faint}`}>
-                The request lands on your dashboard as a new lead as soon as they finish step 1. Step 2 adds to that same lead.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className={`px-4 pt-4 sm:px-5 ${c.sub}`}>
-              <p className={`flex items-center gap-2 text-sm font-semibold ${c.text}`}>
-                <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${c.stepBadge}`}>2</span>
-                Optional fields <span className={`font-normal ${c.faint}`}>· turn on what you need</span>
-              </p>
-                          </div>
-            <div className={`divide-y ${c.divide}`}>
-              <FieldRow icon={MapPin} label="Address" hint="Where the job is" enabled={fieldConfig.address.enabled} onToggle={() => toggleField('address')} planLocked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
-              <FieldRow icon={Calendar} label="Timing" hint="How soon they need it and the best times to reach them" enabled={fieldConfig.preferred_date.enabled} onToggle={togglePreferredDateTime} planLocked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
-              <FieldRow icon={Megaphone} label="How they found you" hint="Google, referral, saw your truck…" enabled={fieldConfig.lead_source.enabled} onToggle={() => toggleField('lead_source')} planLocked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
-              <FieldRow icon={ImageIcon} label="Photos" hint="Customers attach photos of the job" enabled={fieldConfig.file_upload.enabled} onToggle={() => toggleField('file_upload')} planLocked={!canUsePhotoUpload} companySlug={company.slug} c={c} isDark={isDark} />
-            </div>
-
-            {/* Service questions pointer */}
-            <div className={`flex items-start gap-3 border-t px-4 py-4 sm:px-5 ${c.border}`}>
-              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${c.icon}`}><Tag className="h-4 w-4" /></span>
-              <div className="min-w-0">
-                <p className={`text-[15px] font-semibold ${c.text}`}>Service questions</p>
-                <p className={`text-[13px] leading-snug ${c.faint}`}>
-                  {canUseCustomQuestions
-                    ? `${(customQuestions || []).length} set up. Add or edit them on each service under Services. Customers only see the ones for the service they pick.`
-                    : `Ask extra questions per service on the ${REQUIRED_PLAN.label} plan.`}
-                </p>
-              </div>
-              {!canUseCustomQuestions && (
-                <a
-                  href={`/${company.slug}/home?section=billing`}
-                  className={`ml-auto inline-flex shrink-0 items-center gap-1 rounded-lg border px-2.5 py-1.5 text-xs font-semibold ${c.lockPill}`}
-                >
-                  Upgrade <ArrowUpRight className="h-3 w-3" />
-                </a>
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* Unsaved changes */}
-        <AnimatePresence>
-          {isDirty && (
-            <motion.div
-              initial={{ y: 80, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 80, opacity: 0 }}
-                         className={`sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-2xl border-2 border-amber-400 p-3 pl-4 shadow-2xl ${
-                isDark ? 'bg-white' : 'bg-slate-900'
-              }`}
+            <button
+              type="button"
+              onClick={() => setIsShareOpen(true)}
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-sm font-semibold transition ${c.primary}`}
             >
-              <div className="flex items-center justify-between gap-4">
-                <p className={`flex items-center gap-2 text-sm font-semibold ${isDark ? 'text-slate-900' : 'text-white'}`}>
-                  <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-amber-400" />
-                  Unsaved form changes
-                </p>
-                <button
-                  type="button"
-                  onClick={handleSaveAll}
-                  disabled={loading}
-                  className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                    isDark ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-900 hover:bg-slate-100'
-                  }`}
-                >
-                  {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {loading ? 'Saving…' : 'Save'}
-                </button>
+              <Share2 className="h-4 w-4" /> Share
+            </button>
+          </div>
+        </div>
+
+        {company.plan_tier === 'free' && (
+          <div className="mt-5">
+            <SettingsUpgradeBanner
+              planLabel={REQUIRED_PLAN.label}
+              price={REQUIRED_PLAN.price}
+              message="Your booking form is live. Upgrade to ask for photos, address, and questions per service."
+              companySlug={company.slug}
+            />
+          </div>
+        )}
+
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[320px_minmax(0,1fr)]">
+          {/* Left: the switches */}
+          <div className="min-w-0">
+            <div className={`overflow-hidden rounded-2xl border ${c.card}`}>
+              <div className="flex items-center justify-between px-4 pb-1 pt-3.5">
+                <p className={`text-sm font-semibold ${c.text}`}>Ask customers for…</p>
+                {saveIndicator}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+              <div className={`divide-y ${c.divide}`}>
+                <FieldRow icon={MapPin} label="Address" enabled={fieldConfig.address.enabled} onToggle={() => toggleField('address')} locked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
+                <FieldRow icon={Calendar} label="Timing" enabled={fieldConfig.preferred_date.enabled} onToggle={togglePreferredDateTime} locked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
+                <FieldRow icon={Megaphone} label="How they found you" enabled={fieldConfig.lead_source.enabled} onToggle={() => toggleField('lead_source')} locked={!canCustomizeForm} companySlug={company.slug} c={c} isDark={isDark} />
+                <FieldRow icon={ImageIcon} label="Photos" enabled={fieldConfig.file_upload.enabled} onToggle={() => toggleField('file_upload')} locked={!canUsePhotoUpload} companySlug={company.slug} c={c} isDark={isDark} />
+              </div>
+            </div>
+
+            <a
+              href={`/${company.slug}/dashboard/services?view=services`}
+              className={`mt-3 flex items-center justify-between gap-2 rounded-xl px-1 py-1.5 text-sm transition hover:opacity-80 ${c.sub}`}
+            >
+              <span>Services and their questions are set in <strong className={c.link}>Services</strong></span>
+              <ArrowRight className="h-4 w-4 shrink-0" />
+            </a>
+
+            {/* Manual-save mode only */}
+            {!autoSave && isDirty && (
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={loading}
+                className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition disabled:opacity-50 ${c.primary}`}
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {loading ? 'Saving…' : 'Save changes'}
+              </button>
+            )}
+            {!autoSave && status.type === 'error' && (
+              <p className="mt-2 text-sm font-medium text-rose-500">{status.message}</p>
+            )}
+          </div>
+
+          {/* Right: the real form (desktop) */}
+          <div className="hidden min-w-0 lg:block">
+            <div className="sticky top-6">
+              <div className={`rounded-2xl border p-2.5 ${c.panel}`}>
+                <LivePreview {...previewProps} scrollClass="h-[min(620px,calc(100vh-12rem))]" />
+              </div>
+              <p className={`mt-2 text-center text-[12px] ${c.faint}`}>This is your real form. Try it — nothing here is sent.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Preview drawer: full screen on phones, side panel on desktop */}
+      {/* Phones: full-screen preview */}
       <AnimatePresence>
         {isPreviewOpen && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsPreviewOpen(false)}
-              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 28, stiffness: 240 }}
-              role="dialog"
-              aria-modal="true"
-              aria-label="Booking form preview"
-              className={`fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l shadow-2xl ${c.drawer}`}
-            >
-              <div className={`flex items-center justify-between border-b px-5 py-4 ${c.border}`}>
-                <div className="flex items-center gap-2">
-                  <FileText className={`h-4 w-4 ${c.sub}`} />
-                  <span className={`text-sm font-semibold ${c.text}`}>What customers see</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsPreviewOpen(false)}
-                  className={`flex h-9 w-9 items-center justify-center rounded-lg transition ${c.btn} border-transparent`}
-                  aria-label="Close preview"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+          <motion.div
+            initial={{ y: '100%' }}
+            animate={{ y: 0 }}
+            exit={{ y: '100%' }}
+            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+            className="fixed inset-0 z-[60] flex flex-col bg-slate-100 lg:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Booking form preview"
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Your booking form</p>
+                <p className="text-xs text-slate-500">Try it — nothing here is sent.</p>
               </div>
-              <div className={`flex-1 overflow-y-auto px-4 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] ${c.drawerBody}`}>
-                               <div className="mx-auto max-w-xs">
-                  {/* Step tabs */}
-                  <div className={`mb-4 grid grid-cols-2 gap-1 rounded-xl border p-1 ${c.border}`}>
-                    {([1, 2] as const).map((s) => (
-                      <button
-                        key={s}
-                        type="button"
-                        onClick={() => setPreviewStep(s)}
-                        aria-pressed={previewStep === s}
-                        className={`rounded-lg py-2 text-sm font-semibold transition ${
-                          previewStep === s ? c.primary : `${c.sub} hover:opacity-80`
-                        }`}
-                      >
-                        Step {s} · {s === 1 ? 'Contact' : 'Details'}
-                      </button>
-                    ))}
-                  </div>
-
-                  {previewStep === 1 ? (
-                    RequiredPhone
-                  ) : (
-                    <>
-                      {/* Which service's questions to show */}
-                      {canUseCustomQuestions && (categories || []).length > 1 && (
-                        <div className="mb-4">
-                          <p className={`mb-1.5 text-center text-[13px] ${c.faint}`}>Questions for</p>
-                          <div className="flex flex-wrap justify-center gap-1.5">
-                            {(categories || []).map((cat: Category) => {
-                              const on = firstService?.value === cat.value;
-                              return (
-                                <button
-                                  key={cat.value}
-                                  type="button"
-                                  onClick={() => setPreviewService(cat.value)}
-                                  className={`rounded-lg border px-2.5 py-1 text-xs font-semibold transition ${
-                                    on ? `border-transparent ${c.primary}` : c.btn
-                                  }`}
-                                >
-                                  {cat.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
-                      {OptionalPhone}
-                    </>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          </>
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <LivePreview {...previewProps} scrollClass="h-[calc(100dvh-10.5rem)]" />
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-            <ShareFormModal
+      <ShareFormModal
         open={isShareOpen}
         onClose={() => setIsShareOpen(false)}
         publicUrl={publicUrl}
         companyName={company.name}
         isDark={isDark}
+        onTestEmail={() => setIsTestModeOpen(true)}
       />
 
       <AnimatePresence>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, AlertCircle, Check, Loader2, X, Wallet, Percent } from 'lucide-react';
+import { Plus, AlertCircle, Check, X, Wallet, Percent } from 'lucide-react';
 import { CATEGORY_MAP } from '@/lib/formCategories';
 import { can, type PlanTier } from '@/lib/permissions';
 import {
@@ -12,22 +12,13 @@ import {
   depositLabel,
   clean,
   CategoriesLockedSection,
-  QuoteSheetPreviewModal,
   DeleteServiceConfirmModal,
 } from './CategoriesTaskEditorModal';
 import { type DepositType } from '@/hooks/useQuoteTemplates';
 import { useQueryClient } from '@tanstack/react-query';
 import { useQuoteTemplates, useQuoteTemplateMutation } from '@/hooks/useQuoteTemplates';
 import CategoriesServiceCard from './CategoriesServiceCard';
-import CategoriesTaskEditorModal from './CategoriesTaskEditorModal';
-import CategoriesPricingModal from './CategoriesPricingModal';
-import CategoriesQuestionsModal from './CategoriesQuestionsModal';
-
-type ActiveModal =
-  | { type: 'tasks'; categoryIndex: number }
-  | { type: 'pricing'; categoryValue: string }
-  | { type: 'questions'; categoryValue: string }
-  | null;
+import ServicePanel, { type ServiceTab } from './ServicePanel';
 
 // Neutral slate tokens, same family as Dashboard / Financials.
 function pageTokens(isDark: boolean) {
@@ -44,10 +35,7 @@ function pageTokens(isDark: boolean) {
         segOn: 'bg-white text-slate-900',
         segOff: 'text-slate-300 hover:bg-white/10',
         note: 'border-white/10 bg-white/[0.03] text-slate-300',
-        sticky: 'border-white/10 bg-[#0f1420]/95',
-        tile: 'bg-white/[0.05]',
-        tileIcon: 'bg-white/10 text-slate-100',
-            }
+      }
     : {
         text: 'text-slate-900',
         sub: 'text-slate-600',
@@ -60,19 +48,14 @@ function pageTokens(isDark: boolean) {
         segOn: 'bg-slate-900 text-white',
         segOff: 'text-slate-600 hover:bg-slate-50',
         note: 'border-slate-200 bg-slate-50 text-slate-600',
-        sticky: 'border-slate-200 bg-white/95',
-        tile: 'bg-slate-100',
-        tileIcon: 'bg-white text-slate-700',
-            };
+      };
 }
 
+// Every change on this page saves right away (no page-level Save button).
+// onDirtyChange / onRegisterSave are kept so the parent page still compiles.
 export default function CategoriesTab({
   company,
-  currentUser,
   isDark,
-  onToggleTheme,
-  onDirtyChange,
-  onRegisterSave,
 }: {
   company: any;
   currentUser?: any;
@@ -86,26 +69,23 @@ export default function CategoriesTab({
   const defaultCategories = CATEGORY_MAP[company.business_type || 'general'] || CATEGORY_MAP.general;
 
   const p = pageTokens(isDark);
-  const accentColor = company.email_brand_color_1 || '#2563eb';
   const queryClient = useQueryClient();
 
   const [categories, setCategories] = useState<Category[]>(
     company.form_categories?.length > 0 ? company.form_categories : defaultCategories
   );
   const [useDefaults, setUseDefaults] = useState(!company.form_categories?.length);
-  const [isDirty, setIsDirty] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState('');
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newCatLabel, setNewCatLabel] = useState('');
   const [newCatError, setNewCatError] = useState('');
+  const [adding, setAdding] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ index: number; label: string } | null>(null);
-  const [expandedService, setExpandedService] = useState<string | null>(null);
-  const [showQuotePreview, setShowQuotePreview] = useState(false);
 
-  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  // Which service's panel is open, and on which tab.
+  const [openService, setOpenService] = useState<{ value: string; tab: ServiceTab } | null>(null);
 
   const { data: quoteTemplates = [] } = useQuoteTemplates(company.slug, {
     enabled: can((company.plan_tier || 'free') as PlanTier, 'quote_templates'),
@@ -129,20 +109,32 @@ export default function CategoriesTab({
   const [depositSaving, setDepositSaving] = useState(false);
   const [depositError, setDepositError] = useState('');
 
-  const [applyTarget, setApplyTarget] = useState<'tax' | 'deposit' | null>(null);
+  const [applyTarget, setApplyTarget] = useState<'deposit' | null>(null);
   const [applyingToAll, setApplyingToAll] = useState(false);
 
-  useEffect(() => {
-    const handler = (e: BeforeUnloadEvent) => {
-      if (!isDirty) return;
-      e.preventDefault();
-      e.returnValue = '';
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
-  }, [isDirty]);
-
-  const markDirty = useCallback(() => setIsDirty(true), []);
+  /** Saves the services list now. Rolls back the screen if it fails. */
+  const persistCategories = async (next: Category[]): Promise<boolean> => {
+    const prev = categories;
+    const prevDefaults = useDefaults;
+    setCategories(next);
+    setUseDefaults(false);
+    setSaveError('');
+    try {
+      const res = await fetch(`/api/company/${company.slug}/settings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update-categories', data: { form_categories: next } }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.success) throw new Error(data.error || 'Could not save your services.');
+      return true;
+    } catch (err) {
+      setCategories(prev);
+      setUseDefaults(prevDefaults);
+      setSaveError(err instanceof Error ? err.message : 'Could not save your services.');
+      return false;
+    }
+  };
 
   const saveDepositDefault = async (clearIt = false) => {
     const parsed = clearIt ? 0 : parseFloat(depositValueDraft);
@@ -238,7 +230,8 @@ export default function CategoriesTab({
     }
   };
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
+    if (adding) return;
     const label = newCatLabel.trim();
     if (!label) {
       setNewCatError('Enter a service name.');
@@ -249,12 +242,15 @@ export default function CategoriesTab({
       setNewCatError('You already have a service with that name.');
       return;
     }
-    setCategories((prev) => [...prev, { value, label, task_templates: [] }]);
+    setAdding(true);
+    const ok = await persistCategories([...categories, { value, label, task_templates: [] }]);
+    setAdding(false);
+    if (!ok) return;
     setNewCatLabel('');
     setNewCatError('');
     setShowAddForm(false);
-    setUseDefaults(false);
-    markDirty();
+    // Go straight to setting it up.
+    setOpenService({ value, tab: 'price' });
   };
 
   const closeAddForm = () => {
@@ -263,22 +259,22 @@ export default function CategoriesTab({
     setNewCatError('');
   };
 
-  const confirmDeleteCategory = () => {
+  const confirmDeleteCategory = async () => {
     if (!deleteConfirm) return;
-    setCategories((prev) => prev.filter((_, i) => i !== deleteConfirm.index));
-    setUseDefaults(false);
+    const { index } = deleteConfirm;
     setDeleteConfirm(null);
-    markDirty();
+    const ok = await persistCategories(categories.filter((_, i) => i !== index));
+    if (ok) setOpenService(null);
   };
 
-  const handleSetTaxOverride = async (index: number, rate: number | null) => {
-    setCategories((prev) => prev.map((c, i) => (i === index ? { ...c, tax_rate_override: rate } : c)));
-    setUseDefaults(false);
-    markDirty();
+  const handleSetTaxOverride = async (index: number, rate: number | null): Promise<boolean> => {
+    const ok = await persistCategories(categories.map((c, i) => (i === index ? { ...c, tax_rate_override: rate } : c)));
+    if (!ok) return false;
 
+    // Keep this service's saved price in step with its tax rate.
     const categoryValue = categories[index]?.value;
     const existingTemplate = quoteTemplates.find((qt) => qt.category === categoryValue);
-    if (!existingTemplate) return;
+    if (!existingTemplate) return true;
 
     const effectiveRate = rate ?? taxRate;
     const normalizedItems = existingTemplate.items.map((item: any, i: number) => {
@@ -301,120 +297,23 @@ export default function CategoriesTab({
     } catch (err) {
       console.error('Failed to sync tax override to existing template:', err);
     }
+    return true;
   };
-
-   const handleSave = async (): Promise<boolean> => {
-    setSaving(true);
-    setSaveError('');
-    setSaveSuccess(false);
-    try {
-      const res = await fetch(`/api/company/${company.slug}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'update-categories',
-          data: { form_categories: useDefaults ? null : categories },
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setSaveSuccess(true);
-               setIsDirty(false);
-        setTimeout(() => setSaveSuccess(false), 3000);
-        return true;
-      } else {
-        setSaveError(data.error || 'Failed to save.');
-        return false;
-      }
-    } catch {
-      setSaveError('Network error.');
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ── Unsaved-changes guard ──
-  // Report dirty state to the page; clear it when this view closes.
-  useEffect(() => {
-    onDirtyChange?.(isDirty);
-  }, [isDirty, onDirtyChange]);
-  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
-
-  // Let the page's leave prompt save the services.
-  const handleSaveRef = useRef(handleSave);
-  handleSaveRef.current = handleSave;
-  useEffect(() => {
-    onRegisterSave?.(() => handleSaveRef.current());
-    return () => onRegisterSave?.(null);
-  }, [onRegisterSave]);
-
-  // Sidebar and other in-app links: ask before leaving with unsaved changes.
-  // (Refresh / closing the tab is already covered by beforeunload above.)
-  useEffect(() => {
-    if (!isDirty) return;
-    const onClick = (e: MouseEvent) => {
-      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-      const a = (e.target as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
-      if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
-      const url = new URL(a.href, window.location.href);
-      if (url.origin !== window.location.origin) return;
-      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
-      if (!window.confirm('You have unsaved changes to your services. Leave without saving?')) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    };
-    document.addEventListener('click', onClick, true);
-    return () => document.removeEventListener('click', onClick, true);
-  }, [isDirty]);
 
   if (!can((company.plan_tier || 'free') as PlanTier, 'categories')) {
         return <CategoriesLockedSection companySlug={company.slug} isDark={isDark} />;
   }
 
-  const activeModalCategory =
-    activeModal?.type === 'tasks'
-      ? categories[activeModal.categoryIndex]
-      : activeModal
-      ? categories.find((c) => c.value === activeModal.categoryValue)
-      : undefined;
+  const openIndex = openService ? categories.findIndex((c) => c.value === openService.value) : -1;
+  const openCategory = openIndex >= 0 ? categories[openIndex] : undefined;
 
   return (
     <>
       <div className="transition-colors">
-        <div className="mx-auto max-w-5xl space-y-8 px-4 py-4 pb-28 sm:px-6">
-                    {/* Banners */}
-                   {applyTarget === 'tax' && (
-            <div className={`flex flex-col gap-3 rounded-2xl border px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between ${p.card}`}>
-              <p className={`text-sm ${p.text}`}>
-                Apply{' '}
-                {applyTarget === 'tax' ? `${taxRate}% tax` : depositLabel(depositType, depositValue).toLowerCase()} to your{' '}
-                {quoteTemplates.length} existing estimate template{quoteTemplates.length !== 1 ? 's' : ''} too?
-              </p>
-              <div className="flex shrink-0 items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => applyDefaultToAllTemplates(applyTarget)}
-                  disabled={applyingToAll}
-                  className={`rounded-xl px-3.5 py-2 text-xs font-semibold transition disabled:opacity-60 ${p.primary}`}
-                >
-                  {applyingToAll ? 'Applying…' : 'Apply to all'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setApplyTarget(null)}
-                  className={`rounded-xl border px-3.5 py-2 text-xs font-semibold transition ${p.btn}`}
-                >
-                  Only new quotes
-                </button>
-              </div>
-            </div>
-          )}
-
+        <div className="mx-auto max-w-6xl space-y-5 px-4 py-4 pb-28 sm:px-6">
           {saveSuccess && (
             <div className={`flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm ${p.card} ${p.text}`}>
-              <Check className="h-4 w-4 shrink-0 text-emerald-500" /> Saved.
+              <Check className="h-4 w-4 shrink-0" /> Saved.
             </div>
           )}
           {saveError && (
@@ -423,48 +322,149 @@ export default function CategoriesTab({
             </div>
           )}
 
-          {/* Defaults: deposit (left) + tax (right). Tinted tiles, not cards, so they read differently from services. */}
-          <section>
-            <h2 className={`text-xl font-semibold tracking-tight sm:text-2xl ${p.text}`}>Defaults for new quotes</h2>
-            <p className={`mb-3 mt-0.5 text-sm ${p.sub}`}>
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
+            {/* Services */}
+            <section>
+              <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <h2 className={`text-xl font-semibold tracking-tight sm:text-2xl ${p.text}`}>
+                    Services <span className={`text-base font-normal ${p.faint}`}>{categories.length}</span>
+                  </h2>
+                  <p className={`mt-0.5 text-sm ${p.sub}`}>
+                    What customers can book. Tap one to set its price, questions and checklist.
+                  </p>
+                </div>
+                {!showAddForm && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAddForm(true)}
+                    className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${p.primary}`}
+                  >
+                    <Plus className="h-4 w-4" /> Add service
+                  </button>
+                )}
+              </div>
+
+              {useDefaults && categories.length > 0 && (
+                <p className={`mb-3 rounded-xl border px-3.5 py-2.5 text-xs ${p.note}`}>
+                  These are suggested services for your trade. Remove any you don&apos;t offer and add your own.
+                </p>
+              )}
+
+              {/* Add a service */}
+                <AnimatePresence initial={false}>
+                  {showAddForm && (
+                    <motion.div
+                      key="add"
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      className={`mb-3 rounded-2xl border p-4 sm:p-5 ${p.card}`}
+                    >
+                      <div className="mb-2 flex items-center justify-between">
+                        <p className={`text-sm font-semibold ${p.text}`}>New service</p>
+                        <button type="button" onClick={closeAddForm} className={`rounded-lg p-1 ${p.faint}`} aria-label="Cancel">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <input
+                          autoFocus
+                          value={newCatLabel}
+                          onChange={(e) => {
+                            setNewCatLabel(e.target.value);
+                            setNewCatError('');
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleAddCategory();
+                            if (e.key === 'Escape') closeAddForm();
+                          }}
+                          placeholder="e.g. Roof repair, AC install, Panel upgrade"
+                          className={`min-w-0 flex-1 rounded-xl border px-3.5 py-2.5 text-base sm:text-sm outline-none transition ${
+                            newCatError ? 'border-rose-500/60' : ''
+                          } ${p.input}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddCategory}
+                          disabled={adding}
+                          className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition disabled:opacity-60 ${p.primary}`}
+                        >
+                          {adding ? 'Adding…' : 'Add'}
+                        </button>
+                      </div>
+                      {newCatError ? (
+                        <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-rose-500">
+                          <AlertCircle className="h-3 w-3" /> {newCatError}
+                        </p>
+                      ) : (
+                        <p className={`mt-1.5 text-[13px] ${p.faint}`}>Next you&apos;ll set its price, questions and checklist.</p>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
+                {categories.length === 0 && !showAddForm ? (
+                  <div className={`rounded-2xl border px-4 py-10 text-center ${p.card}`}>
+                                      <p className={`text-sm font-medium ${p.text}`}>No services yet</p>
+                    <p className={`mt-1 text-[13px] ${p.sub}`}>Add what you offer so customers can pick it on your booking form.</p>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddForm(true)}
+                      className={`mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold ${p.primary}`}
+                    >
+                      <Plus className="h-4 w-4" /> Add service
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {categories.map((cat) => (
+                      <CategoriesServiceCard
+                        key={cat.value}
+                        category={cat}
+                        quoteTemplate={quoteTemplates.find((qt) => qt.category === cat.value)}
+                        questions={customQuestions.filter((q) => q.category === cat.value)}
+                        isDark={isDark}
+                        taxRate={taxRate}
+                        onOpen={() => setOpenService({ value: cat.value, tab: 'price' })}
+                      />
+                    ))}
+                  </div>
+                )}
+            </section>
+
+            {/* Defaults: small panel on the right — set once, rarely changed. */}
+            <section className="lg:sticky lg:top-6">
+            <h2 className={`text-sm font-semibold ${p.text}`}>Defaults for new quotes</h2>
+            <p className={`mb-2.5 mt-0.5 text-[13px] ${p.faint}`}>
               Every new quote starts with these. A service or a single quote can change them.
             </p>
-
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <div className={`divide-y rounded-2xl border ${p.card} ${isDark ? 'divide-white/10' : 'divide-slate-100'}`}>
               {/* Deposit */}
-              <div className={`rounded-2xl p-4 sm:p-5 ${p.tile}`}>
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${p.tileIcon}`}>
-                      <Wallet className="h-4 w-4" />
+              <div className="px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <Wallet className={`h-4 w-4 shrink-0 ${p.faint}`} />
+                  <p className={`flex-1 text-sm font-medium ${p.text}`}>
+                    Deposit{' '}
+                    <span className={`font-normal ${depositType ? p.sub : p.faint}`}>
+                      {depositType
+                        ? depositType === 'percent'
+                          ? `· ${depositValue}%`
+                          : `· ${fmt(depositValue)}`
+                        : '· none'}
                     </span>
-                    <p className={`text-sm font-semibold ${p.text}`}>Deposit</p>
-                  </div>
+                  </p>
                   {!editingDepositDefault && (
                     <button
                       type="button"
                       onClick={() => setEditingDepositDefault(true)}
                       className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${p.btn}`}
                     >
-                      {depositType ? 'Edit' : 'Set deposit'}
+                      {depositType ? 'Change' : 'Set'}
                     </button>
                   )}
                 </div>
-
-                {!editingDepositDefault ? (
-                  <>
-                    <p className={`mt-3 text-2xl font-semibold tabular-nums ${depositType ? p.text : p.faint}`}>
-                      {depositType ? (depositType === 'percent' ? `${depositValue}%` : fmt(depositValue)) : 'None'}
-                    </p>
-                    <p className={`mt-0.5 text-[13px] ${p.sub}`}>
-                      {depositType
-                        ? depositType === 'percent'
-                          ? 'of the job total, due to get started'
-                          : 'flat, due to get started'
-                        : 'New quotes won’t ask for a deposit.'}
-                    </p>
-                  </>
-                ) : (
+                {editingDepositDefault && (
                   <div className="mt-4 space-y-3">
                     <div className="flex flex-wrap items-center gap-2">
                       <div className={`flex overflow-hidden rounded-lg border ${p.seg}`}>
@@ -529,7 +529,6 @@ export default function CategoriesTab({
                     </div>
                   </div>
                 )}
-
                              {depositError && (
                   <p className="mt-2 flex items-center gap-1 text-xs font-medium text-rose-500">
                     <AlertCircle className="h-3 w-3" /> {depositError}
@@ -573,228 +572,64 @@ export default function CategoriesTab({
               </div>
 
               {/* Tax (read-only here; changed in Overview) */}
-              <div className={`rounded-2xl p-4 sm:p-5 ${p.tile}`}>
-                <div className="flex items-center gap-2.5">
-                  <span className={`flex h-9 w-9 items-center justify-center rounded-xl ${p.tileIcon}`}>
-                    <Percent className="h-4 w-4" />
+              <div className="flex items-center gap-3 px-4 py-3">
+                <Percent className={`h-4 w-4 shrink-0 ${p.faint}`} />
+                <p className={`flex-1 text-sm font-medium ${p.text}`}>
+                  Sales tax{' '}
+                  <span className={`font-normal ${taxRate > 0 ? p.sub : p.faint}`}>
+                    · {taxRate > 0 ? `${taxRate}%` : 'none'}
                   </span>
-                  <p className={`text-sm font-semibold ${p.text}`}>Sales tax</p>
-                </div>
-                <p className={`mt-3 text-2xl font-semibold tabular-nums ${taxRate > 0 ? p.text : p.faint}`}>
-                  {taxRate > 0 ? `${taxRate}%` : 'No tax'}
                 </p>
-                <p className={`mt-0.5 text-[13px] ${p.sub}`}>
-                  Your company rate. Change it in{' '}
-                  <a href={`/${company.slug}/home?section=overview`} className={`font-semibold underline underline-offset-2 ${p.text}`}>
-                    Overview
-                  </a>
-                  .
-                </p>
-                <p className={`mt-2 text-[13px] ${p.faint}`}>
-                  {(() => {
-                    const own = categories.filter((c: any) => c.tax_rate_override != null).length;
-                    return own > 0
-                      ? `${own} service${own === 1 ? '' : 's'} use${own === 1 ? 's' : ''} its own rate. Change it on that service's card below.`
-                      : 'Need a different rate for one service? Set it on that service’s card below.';
-                  })()}
-                </p>
-              </div>
-            </div>
-          </section>
-
-          {/* Services */}
-          <section>
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <h2 className={`text-xl font-semibold tracking-tight sm:text-2xl ${p.text}`}>
-                  Services <span className={`text-base font-normal ${p.faint}`}>{categories.length}</span>
-                </h2>
-                <p className={`mt-0.5 text-sm ${p.sub}`}>
-                  What customers can book. Set a starting price, questions and a checklist for each.
-                </p>
-              </div>
-              {!showAddForm && (
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(true)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${p.primary}`}
+                <a
+                  href={`/${company.slug}/home?section=overview`}
+                  className={`rounded-lg border px-3 py-1.5 text-xs font-semibold transition ${p.btn}`}
                 >
-                  <Plus className="h-4 w-4" /> Add service
-                </button>
-              )}
+                  Change
+                </a>
+              </div>
             </div>
-
-            {useDefaults && categories.length > 0 && (
-              <p className={`mb-3 rounded-xl border px-3.5 py-2.5 text-xs ${p.note}`}>
-                These are suggested services for your trade. Remove any you don&apos;t offer and add your own.
-              </p>
-            )}
-
-                       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              {/* Add a service */}
-              <AnimatePresence initial={false}>
-                {showAddForm && (
-                  <motion.div
-                    key="add"
-                    initial={{ opacity: 0, y: -4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                                       className={`rounded-2xl border p-4 sm:p-5 md:col-span-2 ${p.card}`}
-                  >
-                    <div className="mb-2 flex items-center justify-between">
-                      <p className={`text-sm font-semibold ${p.text}`}>New service</p>
-                      <button type="button" onClick={closeAddForm} className={`rounded-lg p-1 ${p.faint}`} aria-label="Cancel">
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <input
-                        autoFocus
-                        value={newCatLabel}
-                        onChange={(e) => {
-                          setNewCatLabel(e.target.value);
-                          setNewCatError('');
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleAddCategory();
-                          if (e.key === 'Escape') closeAddForm();
-                        }}
-                        placeholder="e.g. Roof repair, AC install, Panel upgrade"
-                        className={`min-w-0 flex-1 rounded-xl border px-3.5 py-2.5 text-base sm:text-sm outline-none transition ${
-                          newCatError ? 'border-rose-500/60' : ''
-                        } ${p.input}`}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleAddCategory}
-                        className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition ${p.primary}`}
-                      >
-                        Add
-                      </button>
-                    </div>
-                    {newCatError ? (
-                      <p className="mt-1.5 flex items-center gap-1 text-xs font-medium text-rose-500">
-                        <AlertCircle className="h-3 w-3" /> {newCatError}
-                      </p>
-                    ) : (
-                      <p className={`mt-1.5 text-[13px] ${p.faint}`}>You can add pricing, questions and a checklist after.</p>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {categories.length === 0 && !showAddForm ? (
-                <div className={`rounded-2xl border px-4 py-10 text-center md:col-span-2 ${p.card}`}>
-                                    <p className={`text-sm font-medium ${p.text}`}>No services yet</p>
-                  <p className={`mt-1 text-[13px] ${p.sub}`}>Add what you offer so customers can pick it on your booking form.</p>
-                  <button
-                    type="button"
-                    onClick={() => setShowAddForm(true)}
-                    className={`mt-4 inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold ${p.primary}`}
-                  >
-                    <Plus className="h-4 w-4" /> Add service
-                  </button>
-                </div>
-              ) : (
-                categories.map((cat, index) => (
-                  <CategoriesServiceCard
-                    key={cat.value}
-                    category={cat}
-                    index={index}
-                    quoteTemplate={quoteTemplates.find((qt) => qt.category === cat.value)}
-                    questions={customQuestions.filter((q) => q.category === cat.value)}
-                    expanded={expandedService === cat.value}
-                    isDark={isDark}
-                    accentColor={accentColor}
-                    onToggleExpand={() => setExpandedService(expandedService === cat.value ? null : cat.value)}
-                    onDelete={() => setDeleteConfirm({ index, label: cat.label })}
-                    onOpenTasks={() => setActiveModal({ type: 'tasks', categoryIndex: index })}
-                    onOpenPricing={() => setActiveModal({ type: 'pricing', categoryValue: cat.value })}
-                    onOpenQuestions={() => setActiveModal({ type: 'questions', categoryValue: cat.value })}
-                    onSetTaxOverride={(rate) => handleSetTaxOverride(index, rate)}
-                    taxRate={taxRate}
-                  />
-                ))
-              )}
-            </div>
+            <p className={`mt-2 px-1 text-[12px] ${p.faint}`}>
+              {(() => {
+                const own = categories.filter((c: any) => c.tax_rate_override != null).length;
+                return own > 0
+                  ? `${own} service${own === 1 ? '' : 's'} use${own === 1 ? 's' : ''} its own tax rate (set on the service).`
+                  : 'Need a different tax rate for one service? Set it on that service.';
+              })()}
+            </p>
           </section>
+          </div>
 
-          {/* Unsaved changes */}
-          <AnimatePresence>
-            {isDirty && (
-              <motion.div
-                initial={{ y: 80, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 80, opacity: 0 }}
-                               className={`sticky bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-2xl border-2 border-amber-400 p-3 pl-4 shadow-2xl ${
-                  isDark ? 'bg-white' : 'bg-slate-900'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <p className={`flex items-center gap-2 text-sm font-semibold ${isDark ? 'text-slate-900' : 'text-white'}`}>
-                    <span className="h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-amber-400" />
-                    Unsaved changes to your services
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-50 ${
-                      isDark ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-white text-slate-900 hover:bg-slate-100'
-                    }`}
-                  >
-                    {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                    {saving ? 'Saving…' : 'Save'}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </div>
       </div>
 
-      {/* Modals */}
-      {activeModal?.type === 'tasks' && activeModalCategory && (
-        <CategoriesTaskEditorModal
-          companySlug={company.slug}
-          category={activeModalCategory}
-          categoryIndex={activeModal.categoryIndex}
-          allCategories={categories}
-          isDark={isDark}
-          onClose={() => setActiveModal(null)}
-          onSaved={(updated) => {
-            setCategories(updated);
-            setUseDefaults(false);
-          }}
-        />
-      )}
-
-      {activeModal?.type === 'pricing' && activeModalCategory && (
-        <CategoriesPricingModal
-          companySlug={company.slug}
-          category={activeModalCategory}
-          existingTemplate={quoteTemplates.find((qt) => qt.category === activeModal.categoryValue)}
-          taxRate={taxRate}
-          depositType={depositType}
-          depositValue={depositValue}
-          isDark={isDark}
-          onClose={() => setActiveModal(null)}
-          onSaved={(templates) => queryClient.setQueryData(['quoteTemplates', company.slug], templates)}
-        />
-      )}
-
-      {activeModal?.type === 'questions' && activeModalCategory && (
-        <CategoriesQuestionsModal
-          companySlug={company.slug}
-          category={activeModalCategory}
-          allQuestions={customQuestions}
-          isDark={isDark}
-          onClose={() => setActiveModal(null)}
-          onSaved={setCustomQuestions}
-        />
-      )}
-
-      {showQuotePreview && <QuoteSheetPreviewModal onClose={() => setShowQuotePreview(false)} isDark={isDark} />}
+      {/* Service panel */}
+      <AnimatePresence>
+        {openService && openCategory && (
+          <ServicePanel
+            key={openCategory.value}
+            companySlug={company.slug}
+            category={openCategory}
+            categoryIndex={openIndex}
+            allCategories={categories}
+            quoteTemplate={quoteTemplates.find((qt) => qt.category === openCategory.value)}
+            allQuestions={customQuestions}
+            taxRate={taxRate}
+            depositType={depositType}
+            depositValue={depositValue}
+            isDark={isDark}
+            initialTab={openService.tab}
+            onClose={() => setOpenService(null)}
+            onDelete={() => setDeleteConfirm({ index: openIndex, label: openCategory.label })}
+            onSetTaxOverride={(rate) => handleSetTaxOverride(openIndex, rate)}
+            onSavedTemplates={(templates) => queryClient.setQueryData(['quoteTemplates', company.slug], templates)}
+            onSavedQuestions={setCustomQuestions}
+            onSavedCategories={(updated) => {
+              setCategories(updated);
+              setUseDefaults(false);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       {deleteConfirm && (
         <DeleteServiceConfirmModal

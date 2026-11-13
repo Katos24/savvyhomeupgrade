@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { can, type PlanTier } from '@/lib/permissions';
 import { resolveFieldConfig, defaultFieldConfig } from '@/lib/formFields';
 
@@ -25,23 +25,19 @@ export type FieldConfig = {
 
 // Kept for backwards compatibility with anything that imports it, but it's
 // now derived from the single shared default in lib/formFields.ts rather
-// than being its own separate definition. Settings used to assume its own
-// defaults here while signup, the public form and Create Lead each assumed
-// different ones, which is what caused the "fields only work after you
-// toggle them off and on" bug.
+// than being its own separate definition.
 export const DEFAULT_FIELD_CONFIG: FieldConfig = defaultFieldConfig(null);
 
 export const REQUIRED_PLAN = { label: 'Pro', price: '$49.99/mo' };
 
-export function useFormTabLogic(company: any) {
-  // FIXED: defaulted to 'basic' (a paid plan) when plan_tier was missing,
-  // which unlocked photo uploads. Every other part of the app defaults to 'free'.
+export function useFormTabLogic(company: any, options: { autoSave?: boolean } = {}) {
+  const { autoSave = false } = options;
+
+  // Defaults to 'free' when plan_tier is missing, like the rest of the app.
   const planTier = (company.plan_tier ?? 'free') as PlanTier;
   const canUsePhotoUpload = can(planTier, 'customer_video_upload');
   const canUseCustomQuestions = can(planTier, 'custom_form_questions');
-  // Field toggles are a Basic feature (lib/permissions: customize_form).
-  // Free companies get the basic form only, and the public form never shows
-  // Step 2 for them — so the toggles must be locked here too, not just photos.
+  // Field toggles are a paid feature (lib/permissions: customize_form).
   const canCustomizeForm = can(planTier, 'customize_form');
 
   const [loading, setLoading] = useState(false);
@@ -51,9 +47,7 @@ export function useFormTabLogic(company: any) {
 
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  // Resolved through the same shared function the public form, Create Lead
-  // and signup use, so what these toggles show is exactly what customers see.
-  // Handles a missing config, missing keys, and JSON stored as a string.
+  // Same shared resolver the public form, Create Lead and signup use.
   const [fieldConfig, setFieldConfig] = useState<FieldConfig>(() =>
     resolveFieldConfig(company.form_field_config, {
       planTier,
@@ -68,8 +62,13 @@ export function useFormTabLogic(company: any) {
   const [linkCopied, setLinkCopied] = useState(false);
   const [publicUrl, setPublicUrl] = useState(`https://lead2project.com/${company.slug}`);
 
-  const [savedSnapshot, setSavedSnapshot] = useState(() => JSON.stringify({ fieldConfig, customQuestions }));
-  const isDirty = JSON.stringify({ fieldConfig, customQuestions }) !== savedSnapshot;
+  const currentSnapshot = JSON.stringify({ fieldConfig, customQuestions });
+  const [savedSnapshot, setSavedSnapshot] = useState(() => currentSnapshot);
+  const isDirty = currentSnapshot !== savedSnapshot;
+
+  // Goes up by one after every successful save, so a live preview of the
+  // form can reload and show the change.
+  const [savedVersion, setSavedVersion] = useState(0);
 
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
@@ -90,8 +89,8 @@ export function useFormTabLogic(company: any) {
     ? company.form_categories
     : [{ label: 'General', value: 'general' }];
 
-  const brandColor1 = company.email_brand_color_1 || '#0B3C6D';
-  const brandColor2 = company.email_brand_color_2 || '#1F5F8F';
+  const brandColor1 = company.email_brand_color_1 || '#0f172a';
+  const brandColor2 = company.email_brand_color_2 || brandColor1;
 
   const getCtaHeading = () => {
     if (company.cta_heading) return company.cta_heading;
@@ -106,11 +105,8 @@ export function useFormTabLogic(company: any) {
   const toggleField = (field: keyof FieldConfig) =>
     setFieldConfig((prev) => ({ ...prev, [field]: { ...prev[field], enabled: !prev[field].enabled } }));
 
-  // Preferred Date and Preferred Time aren't really two independent optional
-  // fields — a time slot picker only makes sense once a date is selected, so
-  // they're presented (and toggled) as one combined field. Both keys are
-  // kept in the underlying config and save payload in lockstep, since the
-  // public booking form reads them as separate fields.
+  // Date and time are shown and toggled as one "Timing" field; both keys
+  // are kept in lockstep because the public form reads them separately.
   const togglePreferredDateTime = () =>
     setFieldConfig((prev) => {
       const next = !prev.preferred_date.enabled;
@@ -120,6 +116,7 @@ export function useFormTabLogic(company: any) {
   const handleSaveAll = async () => {
     setLoading(true);
     setStatus({ type: null, message: '' });
+    const snapshotBeingSaved = JSON.stringify({ fieldConfig, customQuestions });
 
     const payload = {
       action: 'update-form',
@@ -141,14 +138,41 @@ export function useFormTabLogic(company: any) {
       });
       const result = await res.json();
       if (!result.success) throw new Error(result.error || 'Failed to update settings');
-      setStatus({ type: 'success', message: 'Form settings saved!' });
-      setSavedSnapshot(JSON.stringify({ fieldConfig, customQuestions }));
-      setTimeout(() => setStatus({ type: null, message: '' }), 3000);
+      setSavedSnapshot(snapshotBeingSaved);
+      setSavedVersion((v) => v + 1);
+      setStatus({ type: 'success', message: autoSave ? 'Saved' : 'Form settings saved!' });
+      setTimeout(() => setStatus((s) => (s.type === 'success' ? { type: null, message: '' } : s)), autoSave ? 1500 : 3000);
     } catch (err) {
       setStatus({ type: 'error', message: err instanceof Error ? err.message : 'Something went wrong — please try again.' });
     } finally {
       setLoading(false);
     }
+  };
+
+  // Auto-save: a short pause after the last switch flip, then save. Keeps
+  // the latest handleSaveAll in a ref so the timer never saves stale values.
+  const saveRef = useRef(handleSaveAll);
+  saveRef.current = handleSaveAll;
+  const lastFailedSnapshot = useRef<string | null>(null);
+  useEffect(() => {
+    if (!autoSave || !isDirty || loading) return;
+    // Don't retry the exact same change in a loop after an error; the
+    // contractor can tap "Try again".
+    if (lastFailedSnapshot.current === currentSnapshot) return;
+    const timer = setTimeout(async () => {
+      await saveRef.current();
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [autoSave, isDirty, loading, currentSnapshot]);
+  useEffect(() => {
+    if (status.type === 'error') lastFailedSnapshot.current = currentSnapshot;
+    if (status.type === 'success') lastFailedSnapshot.current = null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status.type]);
+
+  const retrySave = () => {
+    lastFailedSnapshot.current = null;
+    handleSaveAll();
   };
 
   const addOrUpdateQuestion = () => {
@@ -199,6 +223,9 @@ export function useFormTabLogic(company: any) {
     setLinkCopied,
     publicUrl,
     isDirty,
+    savedVersion,
+    autoSave,
+    retrySave,
     categories,
     brandColor1,
     brandColor2,

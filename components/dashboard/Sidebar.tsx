@@ -1,14 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 import {
   LayoutGrid, Calendar, LogOut, X,
   User, Users as UsersIcon,
-  ChevronRight, ChevronsLeft, ChevronsRight, Sparkles,
-  DollarSign, Settings, ListChecks, Wrench
+  ChevronRight, ChevronsLeft, ChevronsRight,
+  DollarSign, Settings, ListChecks, Wrench, FileText, Sun, Moon,
 } from 'lucide-react';
 
 type SidebarProps = {
@@ -30,6 +30,8 @@ type SidebarProps = {
   onToggleCollapse?: () => void;
 };
 
+type NavItem = { href: string; icon: any; label: string; exactMatch: boolean; view?: 'services' | 'form' };
+
 export default function Sidebar({
   companySlug,
   companyName,
@@ -42,55 +44,68 @@ export default function Sidebar({
   onToggleCollapse,
 }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  // Real cause of the tooltip being invisible: <nav> below has
-  // overflow-y-auto, and per the CSS spec, that forces overflow-x to
-  // also compute as "auto" — clipping the tooltip since it's positioned
-  // outside nav's own width. Rendering it here, at the <aside> level
-  // (no overflow set), sidesteps that clipping entirely. Position is
-  // tracked via a plain ref + getBoundingClientRect on hover, since a
-  // CSS-only group-hover tooltip can't escape its scrolling ancestor.
-  const [hoveredTooltip, setHoveredTooltip] = useState<{ label: string; top: number } | null>(null);
-  const navRef = useRef<HTMLElement>(null);
-
-  const showTooltip = (e: React.MouseEvent, label: string) => {
-    if (!collapsed) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    setHoveredTooltip({ label, top: rect.top + rect.height / 2 });
+  // Light / dark for the whole app. Same saved key + event the pages use.
+  const [isDark, setIsDark] = useState(true);
+  useEffect(() => {
+    const read = () => {
+      try { setIsDark(localStorage.getItem('dashboard-theme') !== 'light'); } catch {}
+    };
+    read();
+    window.addEventListener('theme-changed', read);
+    window.addEventListener('storage', read);
+    return () => {
+      window.removeEventListener('theme-changed', read);
+      window.removeEventListener('storage', read);
+    };
+  }, []);
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    try { localStorage.setItem('dashboard-theme', next ? 'dark' : 'light'); } catch {}
+    window.dispatchEvent(new Event('theme-changed'));
   };
-  const hideTooltip = () => setHoveredTooltip(null);
+  const currentView = searchParams?.get('view');
 
-  const isActive = (path: string, exactMatch = false) => {
-    if (exactMatch) return pathname === path;
+  // Services and Booking form share one page (?view=services / ?view=form).
+  const isActive = (item: NavItem) => {
+    const path = item.href.split('?')[0];
+    if (item.view) {
+      if (!pathname.includes(path)) return false;
+      return item.view === 'form' ? currentView === 'form' : currentView !== 'form';
+    }
+    if (item.exactMatch) return pathname === path;
     return pathname.includes(path);
   };
 
-  const homeHref = `/${companySlug}/home`;
-  const homeActive = isActive(homeHref, true);
-
-  const navItems: Array<{
-    href: string;
-    icon: any;
-    label: string;
-    exactMatch: boolean;
-  }> = [
-    { href: `/${companySlug}/dashboard`,            icon: LayoutGrid, label: 'Dashboard',       exactMatch: true },
-    { href: `/${companySlug}/leads`,                icon: ListChecks, label: 'Leads',           exactMatch: false },
-    { href: `/${companySlug}/dashboard/calendar`,   icon: Calendar,   label: 'Calendar',        exactMatch: false },
-    { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',       exactMatch: false },
-    { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials',      exactMatch: false },
-    { href: `/${companySlug}/dashboard/services`,   icon: Wrench,     label: 'Services & Form', exactMatch: false },
+  // Grouped by how often they're used: daily work, money & people, then
+  // one-time setup. A thin divider separates groups (labels when expanded).
+  const groups: { title: string; items: NavItem[] }[] = [
+    {
+      title: 'Work',
+      items: [
+        { href: `/${companySlug}/dashboard`,           icon: LayoutGrid, label: 'Dashboard', exactMatch: true },
+        { href: `/${companySlug}/leads`,               icon: ListChecks, label: 'Leads',     exactMatch: false },
+        { href: `/${companySlug}/dashboard/calendar`,  icon: Calendar,   label: 'Calendar',  exactMatch: false },
+      ],
+    },
+    {
+      title: 'Money & customers',
+      items: [
+        { href: `/${companySlug}/dashboard/financials`, icon: DollarSign, label: 'Financials', exactMatch: false },
+        { href: `/${companySlug}/dashboard/customers`,  icon: UsersIcon,  label: 'Customers',  exactMatch: false },
+      ],
+    },
+    {
+      title: 'Setup',
+      items: [
+        { href: `/${companySlug}/dashboard/services?view=services`, icon: Wrench,   label: 'Services',     exactMatch: false, view: 'services' },
+        { href: `/${companySlug}/dashboard/services?view=form`,     icon: FileText, label: 'Booking form', exactMatch: false, view: 'form' },
+        { href: `/${companySlug}/home`,               icon: Settings, label: 'Settings',     exactMatch: true },
+      ],
+    },
   ];
-
-  // One neutral style for every item. Teal is the only accent.
-  const itemClass = (active: boolean) =>
-    `relative flex items-center rounded-xl border font-semibold text-sm transition-all ${
-      collapsed ? 'justify-center py-3' : 'gap-3 px-3 py-2.5'
-    } ${
-      active
-        ? 'border-slate-700 bg-slate-800/70 text-white'
-        : 'border-transparent text-slate-400 hover:bg-slate-800/40 hover:text-white'
-    }`;
 
   useEffect(() => {
     if (isOpen && window.innerWidth < 1024) {
@@ -105,178 +120,195 @@ export default function Sidebar({
     onClose();
   }, [pathname]);
 
+  const renderItem = (item: NavItem) => {
+    const Icon = item.icon;
+    const active = isActive(item);
+
+    // Collapsed: icon with a small label underneath, so nothing needs a hover.
+    if (collapsed) {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          title={item.label}
+          aria-current={active ? 'page' : undefined}
+          className={`flex flex-col items-center gap-1 rounded-xl border px-1 py-2 transition-colors ${
+            active
+              ? 'border-slate-700 bg-slate-800/70 text-white'
+              : 'border-transparent text-slate-400 hover:bg-slate-800/40 hover:text-white'
+          }`}
+        >
+          <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? 'text-teal-400' : ''}`} />
+          <span className="w-full truncate text-center text-[10px] font-medium leading-tight">{item.label}</span>
+        </Link>
+      );
+    }
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        aria-current={active ? 'page' : undefined}
+        className={`relative flex items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition-all ${
+          active
+            ? 'border-slate-700 bg-slate-800/70 text-white'
+            : 'border-transparent text-slate-400 hover:bg-slate-800/40 hover:text-white'
+        }`}
+      >
+        {active && <div className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-teal-400" />}
+        <Icon className={`h-4 w-4 shrink-0 transition-colors ${active ? 'text-teal-400' : ''}`} />
+        <span className="flex-1">{item.label}</span>
+        {active && <ChevronRight className="h-3.5 w-3.5 text-slate-400" />}
+      </Link>
+    );
+  };
+
   return (
     <>
       {/* Mobile backdrop */}
       <div
-        className={`fixed inset-0 bg-slate-950/80 z-20 transition-opacity duration-200 lg:hidden ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        className={`fixed inset-0 z-20 bg-slate-950/80 transition-opacity duration-200 lg:hidden ${
+          isOpen ? 'opacity-100' : 'pointer-events-none opacity-0'
         }`}
         onClick={onClose}
       />
 
       <aside
-        className={`fixed lg:sticky left-0 top-0 h-full lg:h-screen z-30 flex flex-col bg-[#0f1117] border-r border-slate-800/80 transform-gpu transition-[transform,width] duration-200 ease-out ${
+        className={`fixed left-0 top-0 z-30 flex h-full transform-gpu flex-col border-r border-slate-800/80 bg-[#0f1117] transition-[transform,width] duration-200 ease-out lg:sticky lg:h-screen ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
-        } ${collapsed ? 'w-[72px]' : 'w-60'}`}
+        } ${collapsed ? 'w-[84px]' : 'w-60'}`}
       >
         {/* Header */}
         <div className={`shrink-0 border-b border-slate-800/60 ${collapsed ? 'px-2 py-4' : 'px-4 py-4'}`}>
           <div className={`flex items-center ${collapsed ? 'flex-col gap-3' : 'justify-between gap-2'}`}>
-            <div className={`flex items-center gap-2.5 min-w-0 ${collapsed ? '' : 'flex-1'}`}>
+            <div className={`flex min-w-0 items-center gap-2.5 ${collapsed ? '' : 'flex-1'}`}>
               {companyLogoUrl ? (
                 // White tile so dark logos (black text on transparent) stay visible.
-                <div className="w-9 h-9 rounded-lg bg-white flex items-center justify-center shrink-0 border border-slate-700 shadow-sm p-1">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 bg-white p-1 shadow-sm">
                   <img src={companyLogoUrl} alt={companyName} className="max-h-7 w-auto object-contain" />
                 </div>
               ) : (
-                <div className="w-9 h-9 rounded-lg bg-slate-700 flex items-center justify-center text-white font-black text-base shrink-0 shadow-sm">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-700 text-base font-black text-white shadow-sm">
                   {companyName.charAt(0)}
                 </div>
               )}
 
               {!collapsed && (
                 <div className="min-w-0">
-                  <p className="text-white font-bold text-sm truncate leading-tight">{companyName}</p>
-                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mt-0.5">Workspace</p>
+                  <p className="truncate text-sm font-bold leading-tight text-white">{companyName}</p>
+                  <p className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-slate-500">Workspace</p>
                 </div>
               )}
             </div>
 
-            <div className={`flex items-center gap-1.5 ${collapsed ? '' : 'shrink-0'}`}>
-              {!collapsed && (
-                <button
-                  onClick={() => {
-                    localStorage.removeItem(`tour-completed-${companySlug}`);
-                    onClose();
-                    window.location.href = `/${companySlug}/dashboard?tour=1`;
-                  }}
-                  title="Replay Dashboard Tour"
-                  className="p-2 rounded-lg border border-slate-700 bg-slate-800/60 text-slate-300 transition-colors hover:bg-slate-800 hover:text-white active:scale-95"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                </button>
-              )}
-
-              {onToggleCollapse ? (
-                <button
-                  onClick={onToggleCollapse}
-                  title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                  className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                >
-                  {collapsed ? <ChevronsRight className="w-4 h-4" /> : <ChevronsLeft className="w-4 h-4" />}
-                </button>
-              ) : (
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+            {onToggleCollapse ? (
+              <button
+                onClick={onToggleCollapse}
+                title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+              >
+                {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                aria-label="Close menu"
+                className="shrink-0 rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Navigation */}
-        <nav ref={navRef} className={`flex-1 overflow-y-auto py-4 space-y-1.5 ${collapsed ? 'px-2' : 'px-3'}`}>
-          {!collapsed && (
-            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] px-3 mb-2">Navigation</p>
-          )}
-
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href, item.exactMatch);
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onMouseEnter={(e) => showTooltip(e, item.label)}
-                onMouseLeave={hideTooltip}
-                className={itemClass(active)}
-              >
-                {active && !collapsed && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-teal-400" />
-                )}
-
-                <Icon className={`w-4 h-4 shrink-0 transition-colors ${active ? 'text-teal-400' : ''}`} />
-
-                {!collapsed && (
-                  <>
-                    <span className="flex-1">{item.label}</span>
-                    {active && <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
-                  </>
-                )}
-              </Link>
-            );
-          })}
-
-          <Link
-            href={homeHref}
-            onMouseEnter={(e) => showTooltip(e, 'Settings')}
-            onMouseLeave={hideTooltip}
-            className={itemClass(homeActive)}
-          >
-            {homeActive && !collapsed && (
-              <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r-full bg-teal-400" />
-            )}
-            <Settings className={`w-4 h-4 shrink-0 ${homeActive ? 'text-teal-400' : ''}`} />
-            {!collapsed && (
-              <>
-                <span className="flex-1">Settings</span>
-                {homeActive && <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
-              </>
-            )}
-          </Link>
+        <nav className={`flex-1 overflow-y-auto py-4 ${collapsed ? 'px-2' : 'px-3'}`} aria-label="Main">
+          {groups.map((group, gi) => (
+            <div key={group.title} className={gi > 0 ? 'mt-4 border-t border-slate-800/70 pt-4' : ''}>
+              {!collapsed && (
+                <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">{group.title}</p>
+              )}
+              <div className="space-y-1">{group.items.map(renderItem)}</div>
+            </div>
+          ))}
         </nav>
-
-        {/* Rendered here, outside <nav>'s clipping overflow context —
-            fixed positioning means this floats above everything,
-            correctly placed via the hovered item's real screen
-            coordinates rather than CSS-relative positioning. */}
-        {hoveredTooltip && (
-          <div
-            className="pointer-events-none fixed z-50 -translate-y-1/2 whitespace-nowrap rounded-lg bg-slate-900 px-3.5 py-2 text-sm font-semibold text-white shadow-lg"
-            style={{ left: 'calc(72px + 12px)', top: hoveredTooltip.top }}
-          >
-            {hoveredTooltip.label}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-slate-900" />
-          </div>
-        )}
 
         {/* User Footer */}
         <div className={`shrink-0 border-t border-slate-800/60 ${collapsed ? 'px-2 py-3' : 'px-3 py-4'}`}>
           {currentUser && (
             <div className="space-y-2">
+              {/* Theme: a small two-option switch, so it doesn't look like a page link */}
+              {collapsed ? (
+                <div className="flex justify-center pb-1">
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-700 text-slate-400 transition-colors hover:border-slate-500 hover:text-white"
+                  >
+                    {isDark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between px-1 pb-1">
+                  <span className="text-[11px] font-medium text-slate-500">Theme</span>
+                  <div className="inline-flex rounded-full border border-slate-700 bg-slate-900/80 p-0.5" role="group" aria-label="Theme">
+                    {([
+                      { dark: false, Icon: Sun, label: 'Light' },
+                      { dark: true, Icon: Moon, label: 'Dark' },
+                    ] as const).map(({ dark, Icon, label }) => {
+                      const on = isDark === dark;
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() => { if (!on) toggleTheme(); }}
+                          aria-pressed={on}
+                          title={`${label} mode`}
+                          className={`flex h-6 w-8 items-center justify-center rounded-full transition-colors ${
+                            on ? 'bg-slate-700 text-white' : 'text-slate-500 hover:text-slate-300'
+                          }`}
+                        >
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="sr-only">{label} mode</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <Link
                 href={`/${companySlug}/profile`}
                 title={collapsed ? currentUser?.name : undefined}
-                className={`flex items-center rounded-xl bg-slate-900/80 border border-slate-800 transition-colors group hover:border-slate-700 ${
+                className={`group flex items-center rounded-xl border border-slate-800 bg-slate-900/80 transition-colors hover:border-slate-700 ${
                   collapsed ? 'justify-center p-2' : 'gap-3 p-2.5'
                 }`}
               >
-                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-700 text-xs font-bold text-white">
                   {currentUser?.name?.charAt(0) || 'U'}
                 </div>
                 {!collapsed && (
                   <>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white font-semibold text-xs truncate">{currentUser?.name}</p>
-                      <p className="text-slate-400 text-[10px] truncate">{currentUser?.email}</p>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-white">{currentUser?.name}</p>
+                      <p className="truncate text-[10px] text-slate-400">{currentUser?.email}</p>
                     </div>
-                    <User className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300" />
+                    <User className="h-3.5 w-3.5 text-slate-500 group-hover:text-slate-300" />
                   </>
                 )}
               </Link>
 
               <button
                 onClick={() => { onLogout(); onClose(); }}
-                title={collapsed ? 'Sign Out' : undefined}
-                className="w-full flex items-center justify-center gap-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 font-bold text-xs uppercase tracking-wider transition-colors hover:bg-red-500/20 py-2.5"
+                title={collapsed ? 'Sign out' : undefined}
+                className={`flex w-full items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-500/20 ${
+                  collapsed ? 'flex-col gap-1' : 'uppercase tracking-wider'
+                }`}
               >
-                <LogOut className="w-3.5 h-3.5" />
-                {!collapsed && 'Sign Out'}
+                <LogOut className="h-3.5 w-3.5" />
+                {collapsed ? <span className="text-[10px] font-medium normal-case tracking-normal">Sign out</span> : 'Sign Out'}
               </button>
             </div>
           )}
